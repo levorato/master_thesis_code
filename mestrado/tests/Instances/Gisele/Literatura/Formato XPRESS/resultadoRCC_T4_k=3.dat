@@ -1,0 +1,95 @@
+
+Reading Problem \xprs_d20d860
+Problem Statistics
+       25378 (      0 spare) rows
+      111816 (      0 spare) structural columns
+       88573 (      0 spare) non-zero elements
+Global Statistics
+        7564 entities        0 sets        0 set members
+Minimizing MILP \xprs_d20d860
+Original problem has:
+     25378 rows       111816 cols        88573 elements      7564 globals 
+Presolved problem has:
+     21741 rows         7591 cols        76712 elements      7448 globals 
+LP relaxation tightened
+
+Concurrent solve, 0s
+           Dual                       Primal         
+     objective    suminf        objective    suminf  
+  D  1.782E+09   .0000000                            
+  D  1.782E+09   .0000000 |  p   .0000000   .0000000 
+  D  1.386E+09  1.286E+10 |  p   .0000000   .0000000 
+  D  1.386E+09  1.286E+10 |  p   .0000000   .0000000 
+  D  3.825E+08  1.305E+10 |  p   .0000000   .0000000 
+  D  3.825E+08  1.305E+10 |  P   .0000000   .0000000 
+  P   .0000000   .0000000 |  P   .0000000   .0000000 
+  ----- interrupted ----- | ------- optimal -------  
+Deterministic concurrent statistics:
+   Dual: 383 simplex iterations, 0.109201s
+   Primal: 196 simplex iterations, 0.109201s
+Primal solved problem
+
+   Its         Obj Value      S   Ninf  Nneg        Sum Inf  Time
+   196           .000000      P      0     0        .000000     0
+Optimal solution found
+
+Starting root cutting & heuristics
+
+ Its Type    BestSoln    BestBound   Sols    Add    Del     Gap     GInf   Time
+   1  K    187.000000      .000000      3    172      0 187.000      112      0
+   2  K    187.000000      .000000      3     49    139 187.000       74      0
+   3  K    167.000000      .000000      4     47     39 167.000      100      1
+   4  K    167.000000      .000000      4     39     32 167.000       80      1
+   5  K    167.000000      .000000      4     28     32 167.000       81      1
+   6  K    167.000000      .000000      4     21     24 167.000      122      1
+   7  K    167.000000      .000000      4      8     12 167.000       89      1
+   8  K    167.000000      .000000      4      0      9 167.000       89      2
+   9  G    167.000000      .000000      4     89      0 167.000       89      2
+  10  G    167.000000      .000000      4     89    144 167.000       89      2
+
+Cuts in the matrix         : 111
+Cut elements in the matrix : 3490
+Will try to keep branch and bound tree memory usage below 1.3Gb
+
+Starting tree search with up to 2 threads (deterministic mode)
+Will try to keep branch and bound tree memory usage below 1.0Gb
+ *** Search completed ***     Time:  1403 Nodes: 28531
+Number of integer feasible solutions found is 9
+Best integer solution found is    62.000000
+Best bound is    62.000000
+Uncrunching matrix
+****************************************
+Problem status: Optimum found
+****************************************
+depth : 26 Number of nodes explored: 28531 Node at last feasible integer solution was found :2413
+ 
+Matriz de entrada - MonkT4v2.txt
+Total de vertices: 18
+Total de arestas: 154
+Total de arestas pos: 78
+Total de arestas neg: 76
+-----------------------------------------
+Valor tot de arestas : 612
+Valor tot de arestas pos : 315
+Valor tot de arestas neg : 297
+Valor F.Objetivo: 62
+Tempo de Execução Total: 871.245
+Cenario da solucao 
+Representante....1
+  Representado .... 2
+  Representado .... 3
+  Representado .... 4
+  Representado .... 5
+  Representado .... 6
+  Representado .... 7
+Representante....8
+  Representado .... 9
+  Representado .... 10
+  Representado .... 11
+Representante....12
+  Representado .... 13
+  Representado .... 14
+  Representado .... 15
+  Representado .... 16
+  Representado .... 17
+  Representado .... 18

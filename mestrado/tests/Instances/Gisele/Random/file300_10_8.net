@@ -1,0 +1,119 @@
+*Vertices  30 
+1 V1 
+2 V2 
+3 V3 
+4 V4 
+5 V5 
+6 V6 
+7 V7 
+8 V8 
+9 V9 
+10 V10 
+11 V11 
+12 V12 
+13 V13 
+14 V14 
+15 V15 
+16 V16 
+17 V17 
+18 V18 
+19 V19 
+20 V20 
+21 V21 
+22 V22 
+23 V23 
+24 V24 
+25 V25 
+26 V26 
+27 V27 
+28 V28 
+29 V29 
+30 V30 
+*Arcs 
+1 6 -1   Red
+1 25 -1   Red
+1 26 -1   Red
+2 5 -1   Red
+2 13 -1   Red
+2 18 -1   Red
+4 12 1  Black
+4 21 -1   Red
+5 3 -1   Red
+5 11 -1   Red
+5 15 -1   Red
+5 17 -1   Red
+7 1 1  Black
+7 13 -1   Red
+7 24 -1   Red
+8 11 -1   Red
+8 14 1  Black
+9 13 -1   Red
+9 23 -1   Red
+11 7 -1   Red
+11 24 1  Black
+12 15 -1   Red
+12 30 -1   Red
+13 4 -1   Red
+13 9 -1   Red
+13 18 -1   Red
+13 19 -1   Red
+14 16 1  Black
+14 18 -1   Red
+14 28 1  Black
+16 5 1  Black
+16 20 -1   Red
+16 29 -1   Red
+16 30 1  Black
+17 5 -1   Red
+17 11 -1   Red
+17 15 -1   Red
+17 20 -1   Red
+17 21 -1   Red
+18 14 -1   Red
+18 17 -1   Red
+18 28 -1   Red
+18 29 -1   Red
+18 30 1  Black
+19 2 -1   Red
+19 7 -1   Red
+19 22 -1   Red
+19 25 -1   Red
+19 28 -1   Red
+20 8 -1   Red
+21 12 -1   Red
+22 5 -1   Red
+22 6 1  Black
+22 10 -1   Red
+22 11 1  Black
+22 12 -1   Red
+22 29 1  Black
+23 4 1  Black
+23 11 -1   Red
+23 13 1  Black
+23 14 1  Black
+23 30 -1   Red
+24 1 -1   Red
+24 3 -1   Red
+24 7 -1   Red
+24 12 -1   Red
+24 20 -1   Red
+24 21 1  Black
+25 1 -1   Red
+26 22 -1   Red
+26 25 1  Black
+26 27 -1   Red
+27 16 -1   Red
+27 20 -1   Red
+27 26 -1   Red
+28 2 -1   Red
+28 3 -1   Red
+28 17 -1   Red
+28 19 -1   Red
+28 23 -1   Red
+29 19 -1   Red
+30 4 -1   Red
+30 17 -1   Red
+30 18 -1   Red
+30 21 -1   Red
+30 23 -1   Red
+30 26 -1   Red

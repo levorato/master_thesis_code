@@ -1,0 +1,83 @@
+*Vertices 13
+      1 "A"
+      2 "B"
+      3 "C"
+      4 "D"
+      5 "E"
+      6 "F"
+      7 "G"
+      8 "H"
+      9 "I"
+     10 "J"
+     11 "K"
+     12 "L"
+     13 "M"
+*Arcs
+      1      2       1 c Black
+      1      6       1 c Black
+      1      9      -1 c  Red
+      2      4       1 c Black
+      2      6       1 c Black
+      2      7      -1 c  Red
+      2      9      -1 c  Red
+      2     10      -1 c  Red
+      3      1       1 c Black
+      3      2       1 c Black
+      3      4       1 c Black
+      3      5       1 c Black
+      3      7      -1 c  Red
+      3      8      -1 c  Red
+      3      9      -1 c  Red
+      3     13       1 c Black
+      4      3       1 c Black
+      4      6       1 c Black
+      4      7      -1 c  Red
+      4      8      -1 c  Red
+      4     10      -1 c  Red
+      5      1       1 c Black
+      5      2       1 c Black
+      5      6       1 c Black
+      5     10      -1 c  Red
+      5     11       1 c Black
+      6      2       1 c Black
+      6      4       1 c Black
+      6      8      -1 c  Red
+      6     10      -1 c  Red
+      6     11       1 c Black
+      6     13       1 c Black
+      7      1      -1 c  Red
+      7      3      -1 c  Red
+      7      5      -1 c  Red
+      7      8       1 c Black
+      7     10       1 c Black
+      7     12       1 c Black
+      7     13       1 c Black
+      8      3      -1 c  Red
+      8      6      -1 c  Red
+      8     10       1 c Black
+      9      1      -1 c  Red
+      9      2      -1 c  Red
+      9      4      -1 c  Red
+      9      5      -1 c  Red
+      9      7       1 c Black
+      9     10       1 c Black
+      9     12       1 c Black
+     10      1      -1 c  Red
+     10      2      -1 c  Red
+     10      5      -1 c  Red
+     10      6      -1 c  Red
+     10      7       1 c Black
+     10      9       1 c Black
+     11      4       1 c Black
+     11      5       1 c Black
+     11     12      -1 c  Red
+     11     13      -1 c  Red
+     12      7       1 c Black
+     12      8       1 c Black
+     12     11      -1 c  Red
+     13      5       1 c Black
+     13      6       1 c Black
+     13      7       1 c Black
+     13     11      -1 c  Red
+     13     12      -1 c  Red
+

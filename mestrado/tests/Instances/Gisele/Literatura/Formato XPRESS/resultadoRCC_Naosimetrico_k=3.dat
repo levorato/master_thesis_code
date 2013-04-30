@@ -1,0 +1,94 @@
+
+Reading Problem \xprs_be40048
+Problem Statistics
+       29419 (      0 spare) rows
+       89318 (      0 spare) structural columns
+       86686 (      0 spare) non-zero elements
+Global Statistics
+        7675 entities        0 sets        0 set members
+Minimizing MILP \xprs_be40048
+Original problem has:
+     29419 rows        89318 cols        86686 elements      7675 globals 
+Presolved problem has:
+     21045 rows         7293 cols        65812 elements      7035 globals 
+LP relaxation tightened
+
+Concurrent solve, 0s
+           Dual                       Primal         
+     objective    suminf        objective    suminf  
+  D  1.683E+09  1.643E+10                            
+  D  1.683E+09  1.643E+10 |  p -15.000000   .0000000 
+  D  5.940E+08  1.255E+10 |  p -15.000000   .0000000 
+  D  5.940E+08  1.255E+10 |  p   .0000000   .0000000 
+  D  5.012E+08  1.949E+10 |  p   .0000000   .0000000 
+  D  5.012E+08  1.949E+10 |  P   .0000000   .0000000 
+  D  3.093E+08  1.047E+10 |  P   .0000000   .0000000 
+  D  20048610.  6.203E+09 |  P   .0000000   .0000000 
+  D  6119980.7  2.203E+09 |  P   .0000000   .0000000 
+  D  6119980.7  2.203E+09 |  P   .0000000   .0000000 
+  D  1227504.9  1.316E+09 |  P   .0000000   .0000000 
+  P   .0000000   .0000000 |  P   .0000000   .0000000 
+  ----- interrupted ----- | ------- optimal -------  
+Deterministic concurrent statistics:
+   Dual: 914 simplex iterations, 0.187201s
+   Primal: 212 simplex iterations, 0.109201s
+Primal solved problem
+
+   Its         Obj Value      S   Ninf  Nneg        Sum Inf  Time
+   212           .000000      P      0     0        .000000     0
+Optimal solution found
+
+Starting root cutting & heuristics
+
+ Its Type    BestSoln    BestBound   Sols    Add    Del     Gap     GInf   Time
+   1  K     38.000000      .000000      2    198      0 38.0000      178      1
+   2  K     38.000000      .000000      2     29    186 38.0000      128      1
+   3  K     38.000000      .000000      2     14     24 38.0000       95      1
+   4  K     38.000000      .000000      2      0     11 38.0000       44      1
+   5  G     38.000000      .000000      2     44      0 38.0000       44      1
+   6  G     38.000000      .000000      2     49     89 38.0000       45      2
+
+Cuts in the matrix         : 24
+Cut elements in the matrix : 479
+Will try to keep branch and bound tree memory usage below 1.1Gb
+
+Starting tree search with up to 2 threads (deterministic mode)
+ *** Search completed ***     Time:   477 Nodes:  9869
+Number of integer feasible solutions found is 11
+Best integer solution found is     7.000000
+Best bound is     7.000000
+Uncrunching matrix
+****************************************
+Problem status: Optimum found
+****************************************
+depth : 25 Number of nodes explored: 9869 Node at last feasible integer solution was found :1790
+ 
+Matriz de entrada - NewComb.dat
+Total de vertices: 17
+Total de arestas: 119
+Total de arestas pos: 68
+Total de arestas neg: 51
+-----------------------------------------
+Valor tot de arestas : 119
+Valor tot de arestas pos : 68
+Valor tot de arestas neg : 51
+Valor F.Objetivo: 7
+Tempo de Execução Total: 301.944
+Cenario da solucao 
+Representante....1
+  Representado .... 4
+  Representado .... 6
+  Representado .... 7
+  Representado .... 8
+  Representado .... 9
+  Representado .... 12
+  Representado .... 17
+Representante....2
+  Representado .... 5
+  Representado .... 11
+  Representado .... 13
+  Representado .... 14
+Representante....3
+  Representado .... 10
+  Representado .... 15
+  Representado .... 16

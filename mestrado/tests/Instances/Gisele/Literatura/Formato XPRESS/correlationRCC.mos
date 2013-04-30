@@ -1,0 +1,507 @@
+model Correl
+uses "mmxprs";
+uses "mmsystem";
+parameters
+  !DATAFILE = 'C:\Gisele\Arq_trab\Mestrado\Monografia\Dissertacao\Instancias\Literatura\Xpress\Edge_weighted_Matrix_Brusco.txt'  ! File with problem data (just to run the tests to tun the model)
+ DATAFILE = 'MonkT4Sum.dat'  ! File with problem data
+  !MAX_DEPTH_BC = 9999
+end-parameters
+
+declarations
+   people:  integer
+   VarErr: real
+   cluster: integer
+   primvez: string
+end-declarations
+
+initializations from  DATAFILE
+   people             !total of peoples in my social network
+   VarErr           !variable to calculate the errors in cluster
+end-initializations
+
+declarations
+   Names  : array(1..people) of string                    !peoples names
+   Mrel : array(1..people, 1..people) of integer          !how peoples relate to each other
+   k:  integer                                            !number of clusters
+   x : array(1..people,1..people) of mpvar                !representation
+   t : array(1..people,1..people,1..people) of mpvar      !
+   y : array(1..people,1..people,1..people,1..people) of mpvar      !
+   c : array(1..people)           of mpvar      !
+   r : array(1..people)           of mpvar      !
+   d : array(1..people,1..people) of mpvar      ! 
+   s : array(1..people,1..people) of mpvar      ! 
+  
+   solx : array(1..people,1..people) of real
+   solc : array(1..people) of real
+   feastol: real
+   
+   Mcpos : array(1..people) of real
+   Mcneg : array(1..people) of real
+   Mdpos : array(1..people,1..people) of real
+   Mdneg : array(1..people,1..people) of real
+   
+  
+end-declarations
+
+
+! ------------------------------------------------------------
+! Separation routines
+! ------------------------------------------------------------
+
+!public function separate_seti_ineq(solx: array (set of integer,set of integer) of real,
+ !                                  solc: array (set of integer) of real)               : integer
+!   declarations
+!      ncut: integer   
+!      cut: dynamic array(range) of linctr    !Cuts
+!      cutid: dynamic array(range) of integer !Cut type identification
+!      type: dynamic array(range) of integer  !Cut constraint type
+      
+!      cardS: integer
+!      setS: array(1..people) of integer
+!   end-declarations
+   
+!   ncut:= 0
+   
+   !forall(i in 1..people,j in 1..people | i<=j) do
+   !   writeln("x_",i,"_",j," ",solx(i,j))
+   !end-do
+   
+ !  forall(i in 1..people) do
+ !     writeln("c_",i,": ",solc(i))
+ !     cardS:= 0
+!     sumx:= 0.0
+ !     sumpos:= 0.0
+ !     sumneg:= 0.0
+!      minj:= people
+!      forall(j in i+1..people) do
+!         if ((solx(i,j) > feastol) and (sumx + solx(i,j) > cardS + feastol)) then
+!            setS(cardS+1):= j
+!            cardS+= 1
+!            sumx:= sumx + solx(i,j)
+!            if (j<minj) then
+!               minj:= j
+!            end-if
+!            writeln(j,": ",sumx)
+!         end-if
+!      end-do
+!      if (sumx > cardS-1+feastol) then
+!         forall(j in 1..cardS) do
+!            if (Mrel(i,setS(j))>0) then
+!               sumpos:= sumpos + Mrel(i,setS(j))
+!            end-if
+!            if (Mrel(i,setS(j))<0) then
+!               sumneg:= sumneg + abs(Mrel(i,setS(j)))
+!            end-if
+!            if (Mrel(setS(j),i)>0) then
+!               sumpos:= sumpos + Mrel(setS(j),i)
+!            end-if
+!            if (Mrel(setS(j),i)<0) then
+!               sumneg:= sumneg + abs(Mrel(setS(j),i))
+!            end-if
+!         
+!            forall(q in j+1..cardS) do
+!               if (Mrel(setS(q),setS(j))>0) then
+!                  sumpos:= sumpos + Mrel(setS(q),setS(j))
+!               end-if
+!               if (Mrel(setS(q),setS(j))<0) then
+!                  sumneg:= sumneg + abs(Mrel(setS(q),setS(j)))
+!               end-if
+!               if (Mrel(setS(j),setS(q))>0) then
+!                  sumpos:= sumpos + Mrel(setS(j),setS(q))
+!               end-if
+!               if (Mrel(setS(j),setS(q))<0) then
+!                  sumneg:= sumneg + abs(Mrel(setS(j),setS(q)))
+!               end-if
+!            end-do
+!         end-do
+!         writeln("sumpos: ",sumpos," sumneg: ",sumneg)
+!         if (sumneg<sumpos) then
+!            pS:= sumneg
+!         else
+!         	pS:= sumpos
+!         end-if
+!         if (solc(i) < pS*(sumx - (cardS - 1)) - feastol) then  
+!            writeln("violada")
+!            cut(ncut):= sum(q in 1..people| q < minj) (c(q) - pS*( (sum(j in 1..cardS) x(q,setS(j)))) - (cardS - 1))
+!            cutid(ncut):= 1
+!            type(ncut):= CT_GEQ
+!            ncut+=1
+!         end-if
+!      end-if
+!   end-do
+      
+!   if (ncut>0) then
+!      writeln("adding cuts: ",ncut)
+!      addcuts(cutid, type, cut)
+!   end-if
+
+!   returned:= ncut
+!end-function
+
+! ------------------------------------------------------------
+! Callback functions and procedures
+! ------------------------------------------------------------
+
+!callback to be called as the cut_manager
+!public function cb_node:boolean
+!   declarations
+!      ncut: integer        !Counters for cuts
+!      depth_node: integer
+!      node: integer
+      !starttime_sep: real
+      !endtime_sep: real
+!   end-declarations
+   
+!   depth_node:=getparam("XPRS_NODEDEPTH")
+!   node:=getparam("XPRS_CURRENTNODE")
+   
+!   writeln("CB CUTMGR:")
+!   writeln("***Depth: ",depth_node," Node: ", node, " obj: ", getparam("XPRS_LPOBJVAL"))
+!   writeln("***Cutstrategy: ",getparam("XPRS_CUTSTRATEGY"))
+!   writeln("***Curmipcutoff: ",getparam("XPRS_CURRMIPCUTOFF"))
+   
+!   ncut:=0
+
+   !keep the obj val in the root
+   !if (node=0) then
+   !   objval_lp:=getparam("XPRS_LPOBJVAL")
+   !end-if
+   
+!   if (depth_node<=MAX_DEPTH_BC) then
+   
+      !starttime_sep:= gettime
+      
+      !Get the solution values
+!      setparam("XPRS_SOLUTIONFILE",0) !if one wishes to access the solution values in a callback function     
+!      forall(i in 1..people) do
+!          solc(i):=getsol(c(i))
+!      end-do
+!      forall (i in 1..people, j in 1..people | i<=j) do
+!	      solx(i,j):=getsol(x(i,j))
+!      end-do
+!      setparam("XPRS_SOLUTIONFILE",1) !after getting the solutions values it must be set back to 1
+   
+      !Separation for tournement inequalities
+!      ncut:= ncut+separate_seti_ineq(solx,solc)
+
+      !endtime_sep:= gettime
+      !time_sep := time_sep + endtime_sep - starttime_sep
+!  end-if
+
+ !  if (ncut>0) then
+      !total_cuts+=ncut
+ !     returned:= true
+ !  else
+ !  	  returned:= false
+ !  end-if
+   
+ !  writeln("***Cuts added : ", ncut, " (depth ", depth_node, ", node ", node, ", obj. ", getparam("XPRS_LPOBJVAL"), ")")
+ !  writeln("***returned: ",returned)
+    
+!end-function
+
+initializations from  DATAFILE
+ Mrel
+ Names
+! k
+end-initializations
+  k:=2
+!Starting the model
+fopen("resultadoRCC.dat", F_OUTPUT)
+setparam("XPRS_MIPLOG",1)
+setparam("XPRS_MIPPRESOLVE",2)
+!
+setparam("XPRS_CUTSTRATEGY",2)
+!cutstrategy     how aggressively to generate MIP cuts; more ==> fewer nodes
+!                but more time per node:
+!                        -1 = automatic choice (default)
+!                         0 = no cuts
+!                         1 = conservative strategy
+!                         2 = moderate strategy
+!                         3 = aggressive strategy
+setparam("XPRS_verbose", true)
+!setparam("XPRS_presolve",0)	!Turn off presolve for lp
+setparam("XPRS_HEURSTRATEGY",1)	!Turn on primal heuristics
+setparam("XPRS_CPUTIME",1)	!which times to report when logfile is speccified:1=cputime
+setparam("XPRS_MAXTIME",-4000)
+
+feastol:= getparam("XPRS_FEASTOL")  ! Get the Optimizer zero tolerance
+!setparam("zerotol", feastol * 10)   ! Set the comparison tolerance of Mosel
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! DEFINE CALLBACKS                                 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!setcallback(XPRS_CB_OPTNODE, "cb_optnode")
+!setcallback(XPRS_CB_PREINTSOL, "cb_preint")
+!setcallback(XPRS_CB_CM, "cb_node")
+
+!-------------------------------------------------------------
+!Counting the edges
+!-------------------------------------------------------------
+TotEdge:= sum(i in 1..people,j in 1..people | Mrel(i,j) <> 0 ) 1
+TotPosEdge := sum(i in 1..people,j in 1..people | Mrel(i,j) > 0 ) 1
+TotNegEdge := sum(i in 1..people,j in 1..people | Mrel(i,j) < 0 ) 1
+ValEdge:= sum(i in 1..people,j in 1..people | Mrel(i,j) <> 0 ) abs(Mrel(i,j))
+ValPosEdge:= sum(i in 1..people,j in 1..people | Mrel(i,j) > 0 ) abs(Mrel(i,j))
+ValNegEdge:= sum(i in 1..people,j in 1..people | Mrel(i,j) < 0 ) abs(Mrel(i,j))
+
+!Constraints
+!-------------
+
+!(Restricao 8! )
+forall(j in 1..people)do
+  (sum(i in 1..people| i <= j) x(i,j)) = 1
+end-do
+
+!(Restricao 9 !)
+forall(i in 1..people,j in 1..people | i < j )do
+      x(i,j) <=  x(i,i)  
+end-do
+
+!(Restricao 10 !)
+sum(i in 1 ..people) x(i,i) =  k 
+
+!(!Restricao 11 !)
+forall(i in 1..people,j in 1..people | i <= j )do
+      x(i,j) is_binary    
+end-do
+
+!(!Restricao 16 !)
+forall(i in 1..people) do
+  forall(p in 1..people,q in 1..people | (Mrel(p,q) <> 0 or Mrel(q,p) <> 0) and i<=p and i<=q and p < q)do
+      x(i,p) + x(i,q) - t(i,p,q) <= 1    
+  end-do  
+end-do
+
+!(!Restricao 17 e 18 !)
+forall(i in 1..people) do
+  forall(p in 1..people,q in 1..people | (Mrel(p,q) <> 0 or Mrel(q,p) <> 0) and i<=p and i<=q and p<q)do
+      t(i,p,q) <=  x(i,p) 
+      t(i,p,q) <=  x(i,q)  
+  end-do  
+end-do
+
+!(!Restricao 19 !)
+forall(i in 1..people) do
+  forall(p in 1..people,q in 1..people | (Mrel(p,q) <> 0 or Mrel(q,p) <> 0) and i<=p and i<= q and p<q)do
+     !0 <=  t(i,p,q) 
+     !t(i,p,q) <= 1    
+     t(i,p,q) is_binary !essa é a nova
+  end-do  
+end-do
+
+!(!Restricao 20 !)
+forall(i in 1..people,j in 1..people | i<j) do
+  forall(p in 1..people,q in 1..people | (Mrel(p,q)<>0) and i<=p and j<=q )do
+     x(i,p) + x(j,q) - y(i,p,j,q) <=1
+  end-do  
+end-do
+
+!(!Restricao 21 !)
+forall(i in 1..people,j in 1..people | i<j) do
+  forall(p in 1..people,q in 1..people | (Mrel(p,q) <> 0) and i<=q and j<=p)do
+     x(i,q) + x(j,p) - y(i,q,j,p) <=1
+  end-do  
+end-do
+
+!(!Restricao 22 !)
+forall(i in 1..people,j in 1..people | i<j) do
+  forall(p in 1..people,q in 1..people | (Mrel(p,q) <> 0) and i<=p and j<=q)do
+     y(i,p,j,q) <= x(i,p)
+     y(i,p,j,q) <= x(j,q)
+  end-do  
+end-do
+
+!(!Restricao 23 !)
+forall(i in 1..people,j in 1..people | i<j) do
+  forall(p in 1..people,q in 1..people | (Mrel(p,q) <> 0) and i<=q and j<=p)do
+     y(i,q,j,p) <= x(i,q)
+     y(i,q,j,p) <= x(j,p)
+  end-do  
+end-do
+
+!(!Restricao 24 !)
+forall(i in 1..people,j in 1..people | i<j) do
+  forall(p in 1..people,q in 1..people | (Mrel(p,q) <> 0) and (i<=p and j<=q))do
+     y(i,p,j,q) is_binary
+  end-do  
+  forall(p in 1..people,q in 1..people | (Mrel(p,q) <> 0) and (i<=q and j<=p))do
+     y(i,q,j,p) is_binary
+  end-do  
+end-do
+
+!(!Restricao 27 !)
+forall(i in 1..people) do
+    c(i) <= sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and i<=p and i<=q and p<q) abs(Mrel(p,q))* t(i,p,q) + sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and i<=p and i<=q and p>q) abs(Mrel(p,q))* t(i,q,p)
+end-do
+
+!(!Restricao 28 !)
+forall(i in 1..people) do
+    c(i) <= sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and i<=p and i<=q and p<q) abs(Mrel(p,q))* t(i,p,q) + sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and i<=p and i<=q and p>q) abs(Mrel(p,q))* t(i,q,p)
+end-do
+
+!Big-M (positivo)
+forall(i in 1..people) do
+   Mcpos(i) := 1 + sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and i<=p and i<=q ) abs(Mrel(p,q))
+   forall(j in i+1..people) do
+        Mdpos(i,j) := 1 + sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and (i<=p and j<=q) or (i<=q and j<=p)) abs(Mrel(p,q))
+   end-do
+end-do
+
+!Big-M (negativo)
+forall(i in 1..people) do
+   Mcneg(i) := 1 + sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and i<=p and i<=q ) abs(Mrel(p,q))
+   forall(j in i+1..people) do
+        Mdneg(i,j) := 1 + sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and ((i<=p and j<=q) or (i<=q and j<=p))) abs(Mrel(p,q))
+   end-do
+end-do
+
+!(!Restricao 29 !)
+forall(i in 1..people) do
+    c(i) - ( sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and i<=p and i<=q and p<q) abs(Mrel(p,q))* t(i,p,q)) - ( sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and i<=p and i<=q and p>q) abs(Mrel(p,q))* t(i,q,p)) - (Mcpos(i) * r(i)) >= -Mcpos(i)
+end-do
+
+!(!Restricao 30 !)
+forall(i in 1..people) do
+    c(i) - ( sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and i<=p and i<=q and p<q) abs(Mrel(p,q))* t(i,p,q)) - ( sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and i<=p and i<=q and p>q) abs(Mrel(p,q))* t(i,q,p)) -( Mcneg(i) * (1-r(i)) ) >= -Mcneg(i)
+end-do
+
+!(!Restricao 31 !)
+forall(i in 1..people) do
+   r(i) is_binary 
+end-do
+
+!(!Restricao 32 !)
+forall(i in 1..people) do
+   0 <= c(i) 
+end-do
+
+!(!Restricao 33 !)
+forall(i in 1..people,j in 1..people | i<j) do
+   d(i,j) <= (sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and (i<=p and j<=q)) abs(Mrel(p,q))* y(i,p,j,q))
+   d(j,i) <= (sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and (i<=q and j<=p)) abs(Mrel(p,q))* y(i,q,j,p))
+end-do
+
+!(!Restricao 34!)
+forall(i in 1..people,j in 1..people | i<j) do
+   d(i,j) <= (sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and (i<=p and j<=q)) abs(Mrel(p,q))* y(i,p,j,q))
+   d(j,i) <= (sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and (i<=q and j<=p)) abs(Mrel(p,q))* y(i,q,j,p))
+end-do
+
+!(!Restricao 35 !)
+forall(i in 1..people,j in 1..people | i<j) do
+    d(i,j) - (sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and (i<=p and j<=q)) abs(Mrel(p,q))* y(i,p,j,q)) - (Mdpos(i,j)*s(i,j)) >= -Mdpos(i,j)
+    d(j,i) - (sum(p in 1..people,q in 1..people | Mrel(p,q) > 0 and (i<=q and j<=p)) abs(Mrel(p,q))* y(i,q,j,p)) - (Mdpos(i,j)*s(j,i)) >= -Mdpos(i,j)
+end-do
+
+!(!Restricao 36 !)
+forall(i in 1..people,j in 1..people | i<j) do
+    d(i,j) - (sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and (i<=p and j<=q)) abs(Mrel(p,q))* y(i,p,j,q)) - (Mdneg(i,j)*(1-s(i,j))) >= -Mdneg(i,j)
+    d(j,i) - (sum(p in 1..people,q in 1..people | Mrel(p,q) < 0 and (i<=q and j<=p)) abs(Mrel(p,q))* y(i,q,j,p)) - (Mdneg(i,j)*(1-s(j,i))) >= -Mdneg(i,j)
+end-do
+
+!(!Restricao 37 ! )
+forall(i in 1..people,j in 1..people) do
+   s(i,j) is_binary
+end-do
+
+!(!Restricao 38 !)
+forall(i in 1..people,j in 1..people) do
+   0 <= d(i,j) 
+end-do
+
+!Objective function
+!-------------------
+obj := ( sum(i in 1..people) c(i)) + (sum(i in 1..people,j in 1..people | i<>j) d(i,j))
+
+!Variables set to zero and bounds on c and d
+forall(i in 1..people,j in 1..people | i > j)do
+   x(i,j)=0
+end-do
+forall(i in 1..people,p in 1..people,q in 1..people | (Mrel(p,q) = 0 and Mrel(q,p) = 0) or i>p or i>q or p>=q)do
+   t(i,p,q)=0
+end-do
+forall(i in 1..people,j in 1..people,p in 1..people,q in 1..people | i >= j or (Mrel(p,q)=0 and Mrel(q,p)=0) or i>p or j>q)do
+   y(i,p,j,q)=0
+end-do
+forall(i in 1..people,j in 1..people,p in 1..people,q in 1..people | i >= j or (Mrel(p,q)=0 and Mrel(q,p)=0) or i>q or j>p)do
+   y(i,q,j,p)=0
+end-do
+
+
+c(people) = 0.0
+if( (Mrel(people,people-1) = 0 or Mrel(people-1,people) = 0) or (Mrel(people,people-1) < 0 and Mrel(people-1,people) < 0) or (Mrel(people,people-1) > 0 and Mrel(people-1,people) > 0)) then
+   c(people-1) = 0.0
+else
+   if ( abs(Mrel(people,people-1)) < abs(Mrel(people-1,people)) ) then
+      c(people-1) = abs(Mrel(people,people-1))*x(people-1,people)
+   else
+      c(people-1) = abs(Mrel(people-1,people))*x(people-1,people)
+   end-if
+end-if
+
+
+minimize(obj)
+
+! Calculating the error
+!Total error -> negatives inside a cluster and positive between clusters
+!-----------------------------------------------------------------------
+   
+!Exhibiting the solution
+!------------------------
+!fopen("resultadoRCC.dat", F_OUTPUT)
+
+!writeln('Exportanto o problema')
+!writeln('----------------------')
+!exportprob(EP_MIN, "", obj) 
+!writeln('----------------------')
+
+case getprobstat of
+  XPRS_OPT: status:="Optimum found"
+  XPRS_UNF: status:="Unfinished"
+  XPRS_INF: status:="Infeasible"
+  XPRS_UNB: status:="Unbounded"
+  XPRS_OTH: status:="Failed"
+  else status:="???"
+end-case
+
+ writeln("****************************************")
+ writeln("Problem status: ", status)
+ writeln("****************************************")
+ depth:=getparam("XPRS_NODEDEPTH")
+ ! Get the number of nodes solved */
+ NodeSolved:=getparam("XPRS_NODES")
+ ! Get the node at which the last feasible integer solution was found */
+ NodeInt:=getparam("XPRS_MIPSOLNODE")
+  ! Get the number of outstanding nodes */
+ !NodeOut:=getparam("XPRS_ACTIVENODES")
+
+ writeln("depth : ", depth, " Number of nodes explored: ",NodeSolved, " Node at last feasible integer solution was found :",NodeInt ) 
+ 
+   writeln(' ')
+   writeln("Matriz de entrada - ",DATAFILE)
+   writeln('Total de vertices: ',people)
+   writeln('Total de arestas: ',TotEdge)
+   writeln('Total de arestas pos: ',TotPosEdge)
+   writeln('Total de arestas neg: ',TotNegEdge)
+   writeln('-----------------------------------------')
+   writeln('Valor tot de arestas : ',ValEdge)
+   writeln('Valor tot de arestas pos : ',ValPosEdge)
+   writeln('Valor tot de arestas neg : ',ValNegEdge)
+   writeln('Valor F.Objetivo: ',getobjval)
+  
+   writeln('Tempo de Execução Total: ',gettime) 
+   writeln('Cenario da solucao ')
+   forall(i in 1..people)do
+      if(getsol(x(i,i))=1) then
+          writeln('Representante....',i)
+          forall(j in i..people)do
+             if(j>i and getsol(x(i,j))=1) then
+                writeln('  Representado .... ',j)
+             end-if   
+          end-do      
+      end-if
+   end-do
+
+fclose(F_OUTPUT)
+end-model

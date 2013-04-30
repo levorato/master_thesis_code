@@ -1,0 +1,107 @@
+
+Reading Problem \xprs_be40048
+Problem Statistics
+       17591 (      0 spare) rows
+       89335 (      0 spare) structural columns
+       62452 (      0 spare) non-zero elements
+Global Statistics
+        5537 entities        0 sets        0 set members
+Minimizing MILP \xprs_be40048
+Original problem has:
+     17591 rows        89335 cols        62452 elements      5537 globals 
+Presolved problem has:
+     15504 rows         5658 cols        55527 elements      5507 globals 
+LP relaxation tightened
+
+Concurrent solve, 0s
+           Dual                       Primal         
+     objective    suminf        objective    suminf  
+                          |  p   .0000000  12.000000 
+  D   .0000000  2408.0000 |  p   .0000000  12.000000 
+  D   .0000000  2408.0000 |  p   .0000000  9.0000000 
+  D   .0000000  2408.0000 |  p   .0000000  9.0000000 
+  D   .0000000  4365.9325 |  p   .0000000  9.0000000 
+  D   .0000000  4365.9325 |  p   .0000000  4.0000000 
+  D   .0000000  1061.6792 |  p   .0000000  4.0000000 
+  D   .0000000  1061.6792 |  p   .6666667  4.0000000 
+  D -7.202E-04  3483.3630 |  p   .6666667  4.0000000 
+  D -7.202E-04  3483.3630 |  p   .6666829  4.0023602 
+  D -4.981E-04  392.20573 |  p   .6666829  4.0023602 
+  D -4.981E-04  392.20573 |  p   .6666103  3.3341003 
+  D -3.582E-04  63.367188 |  p   .6666103  3.3341003 
+  D -3.582E-04  63.367188 |  p   .0000000   .3336021 
+  P   .0000000   .0000000 |  p   .0000000   .3336021 
+  P   .0000000   .0000000 |  p   .0000000  6.178E-05 
+  ------- optimal ------- | ----- interrupted -----  
+Deterministic concurrent statistics:
+   Dual: 1557 simplex iterations, 0.421203s
+   Primal: 1698 simplex iterations, 0.826805s
+Dual solved problem
+
+   Its         Obj Value      S   Ninf  Nneg        Sum Inf  Time
+  1557           .000000      P      0     0        .000000     1
+Optimal solution found
+
+Starting root cutting & heuristics
+
+ Its Type    BestSoln    BestBound   Sols    Add    Del     Gap     GInf   Time
+   1  K     38.000000      .000000      2    209      0 38.0000       84      1
+   2  K     38.000000      .000000      2     69    181 38.0000       96      1
+   3  K     38.000000      .000000      2     65     41 38.0000      115      1
+   4  K     38.000000      .000000      2     63     54 38.0000       80      1
+   5  K     38.000000      .000000      2     74     56 38.0000      137      2
+   6  K     38.000000      .000000      2     43     68 38.0000       76      2
+   7  K     38.000000      .000000      2      8     40 38.0000       85      2
+   8  K     38.000000      .000000      2      2      6 38.0000       83      2
+   9  K     38.000000      .000000      2      0      1 38.0000       84      2
+  10  G     38.000000      .000000      2     84      0 38.0000       84      2
+  11  G     38.000000      .000000      2     91    175 38.0000       88      2
+
+Cuts in the matrix         : 86
+Cut elements in the matrix : 484
+Will try to keep branch and bound tree memory usage below 0.9Gb
+
+Starting tree search with up to 2 threads (deterministic mode)
+Will try to keep branch and bound tree memory usage below 1.3Gb
+Will try to keep branch and bound tree memory usage below 1.0Gb
+Will try to keep branch and bound tree memory usage below 1.3Gb
+ *** Relative MIP gap less than MIPRELSTOP ***
+ *** Search completed ***     Time:  1722 Nodes: 55667
+Number of integer feasible solutions found is 7
+Best integer solution found is    19.000000
+Best bound is    19.000000
+Uncrunching matrix
+****************************************
+Problem status: Optimum found
+****************************************
+depth : 27 Number of nodes explored: 55667 Node at last feasible integer solution was found :44890
+ 
+Matriz de entrada - NewComb.dat
+Total de vertices: 17
+Total de arestas: 119
+Total de arestas pos: 68
+Total de arestas neg: 51
+-----------------------------------------
+Valor tot de arestas : 119
+Valor tot de arestas pos : 68
+Valor tot de arestas neg : 51
+Valor F.Objetivo: 19
+Tempo de Execução Total: 1099.51
+Cenario da solucao 
+Representante....1
+  Representado .... 2
+  Representado .... 4
+  Representado .... 6
+  Representado .... 8
+  Representado .... 9
+  Representado .... 11
+  Representado .... 12
+  Representado .... 13
+  Representado .... 17
+Representante....3
+  Representado .... 10
+  Representado .... 15
+  Representado .... 16
+Representante....5
+  Representado .... 7
+  Representado .... 14
