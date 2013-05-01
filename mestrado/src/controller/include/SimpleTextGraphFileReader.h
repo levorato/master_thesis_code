@@ -8,12 +8,17 @@
 #ifndef SIMPLETEXTGRAPHFILEREADER_H_
 #define SIMPLETEXTGRAPHFILEREADER_H_
 
+#include "../../graph/GraphTypes.h"
+#include <string>
+
 namespace controller {
 
 class SimpleTextGraphFileReader {
 public:
 	SimpleTextGraphFileReader();
 	virtual ~SimpleTextGraphFileReader();
+
+	static Graph readGraphFromFile(std::string filepath);
 };
 
 } /* namespace controller */
