@@ -18,7 +18,7 @@ public:
 	SimpleTextGraphFileReader();
 	virtual ~SimpleTextGraphFileReader();
 
-	static Graph readGraphFromFile(std::string filepath);
+	static *SignedGraph readGraphFromFile(std::string filepath);
 };
 
 } /* namespace controller */

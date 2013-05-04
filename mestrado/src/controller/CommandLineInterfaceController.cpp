@@ -97,7 +97,7 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
         cout << "Number of iterations is " << numberOfIterations << "\n";
         cout << "Resolution strategy is " << strategy << endl;
 
-        SimpleTextGraphFileReader::readGraphFromFile(vm["input-file"].at(0));
+        SimpleTextGraphFileReader::readGraphFromFile(vm["input-file"].as< vector<string> >().at(0));
     }
     catch(std::exception& e)
     {

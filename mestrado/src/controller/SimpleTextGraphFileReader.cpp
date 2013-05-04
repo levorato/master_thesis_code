@@ -6,6 +6,7 @@
  */
 
 #include "include/SimpleTextGraphFileReader.h"
+#include "../graph/Graph.h"
 #include <iostream>     // cout, endl
 #include <fstream>      // fstream
 #include <vector>
@@ -14,6 +15,8 @@
 #include <iterator>     // ostream_operator
 
 #include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
 
 using namespace std;
 using namespace boost;
@@ -29,9 +32,8 @@ SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 	// TODO Auto-generated destructor stub
 }
 
-static Graph SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
+*SignedGraph SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 
-	Graph g;
 	int n = 0, e = 0;
 	ifstream in(filepath.c_str());
 	if (!in.is_open()) return NULL;
@@ -46,8 +48,14 @@ static Graph SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 	getline(in,line);
 	Tokenizer tok(line);
 	vec.assign(tok.begin(),tok.end());
-	n = stoi(vec.at(0));
-	e = stoi(vec.at(1));
+	try {
+	    n = boost::lexical_cast<int>(vec.at(0));
+	    e = boost::lexical_cast<int>(vec.at(1));
+	} catch( boost::bad_lexical_cast const& ) {
+	    std::cout << "Error: input string was not valid" << std::endl;
+	}
+
+	g = new SignedGraph(n);
 
 	// captura as arestas do grafo com seus valores
 	while (getline(in,line))
@@ -57,24 +65,18 @@ static Graph SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 
 		if (vec.size() < 3) continue;
 
-		int a = stoi(vec.at(0));
-		int b = stoi(vec.at(1));
-		int value = stoi(vec.at(2));
+		try {
+			int a = boost::lexical_cast<int>(vec.at(0));
+			int b = boost::lexical_cast<int>(vec.at(1));
+			int value = boost::lexical_cast<int>(vec.at(2));
+		} catch( boost::bad_lexical_cast const& ) {
+			std::cout << "Error: input string was not valid" << std::endl;
+		}
 
-		add_edge(a, b, value);
+		g->addEdge(a, b, value);
 	}
 
-	std::cout << "vertex set: ";
-	boost::print_vertices(g, name);
-	std::cout << std::endl;
-
-	std::cout << "edge set: ";
-	boost::print_edges(g, name);
-	std::cout << std::endl;
-
-	std::cout << "out-edges: " << std::endl;
-	boost::print_graph(g, name);
-	std::cout << std::endl;
+	g->printGraph();
 
 	return g;
 }
