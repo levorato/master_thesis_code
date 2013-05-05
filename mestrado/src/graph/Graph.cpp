@@ -24,7 +24,7 @@
 using namespace std;
 using namespace boost;
 
-namespace graph {
+namespace clusteringgraph {
 typedef boost::graph_traits < DirectedGraph >::vertex_descriptor Vertex;
 
 SignedGraph::SignedGraph(int numberOfNodes) : digraphPtr(new DirectedGraph(numberOfNodes)) {

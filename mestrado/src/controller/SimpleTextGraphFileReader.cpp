@@ -32,9 +32,9 @@ SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 	// TODO Auto-generated destructor stub
 }
 
-*SignedGraph SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
+SignedGraph* SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 
-	int n = 0, e = 0;
+	int n = 20, e = 0;
 	ifstream in(filepath.c_str());
 	if (!in.is_open()) return NULL;
 
@@ -46,8 +46,10 @@ SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 	// captura a primeira linha do arquivo contendo as informacoes
 	// de numero de vertices e arestas do grafo
 	getline(in,line);
-	Tokenizer tok(line);
-	vec.assign(tok.begin(),tok.end());
+	char_separator<char> sep(" ");
+	tokenizer< char_separator<char> > tokens(line, sep);
+	vec.assign(tokens.begin(),tokens.end());
+	std::cout << line << std::endl;
 	try {
 	    n = boost::lexical_cast<int>(vec.at(0));
 	    e = boost::lexical_cast<int>(vec.at(1));
@@ -55,28 +57,28 @@ SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 	    std::cout << "Error: input string was not valid" << std::endl;
 	}
 
-	g = new SignedGraph(n);
+	SignedGraph* g = new SignedGraph(n);
 
 	// captura as arestas do grafo com seus valores
+	// TODO BUG corrigir problema de captura de linha \n extra
 	while (getline(in,line))
 	{
-		Tokenizer tok(line);
-		vec.assign(tok.begin(),tok.end());
-
+		char_separator<char> sep(" ");
+		tokenizer< char_separator<char> > tokens(line, sep);
+		vec.assign(tokens.begin(),tokens.end());
 		if (vec.size() < 3) continue;
+		std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
 		try {
 			int a = boost::lexical_cast<int>(vec.at(0));
 			int b = boost::lexical_cast<int>(vec.at(1));
 			int value = boost::lexical_cast<int>(vec.at(2));
+			std::cout << a << " e " << b << " = " << value << std::endl;
+			g->addEdge(a, b, value);
 		} catch( boost::bad_lexical_cast const& ) {
 			std::cout << "Error: input string was not valid" << std::endl;
 		}
-
-		g->addEdge(a, b, value);
 	}
-
-	g->printGraph();
 
 	return g;
 }

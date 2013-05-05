@@ -14,11 +14,11 @@
 
 using namespace boost;
 
-namespace graph {
-
 typedef adjacency_matrix<directedS, no_property, property<edge_weight_t, int > > DirectedGraph;
 typedef boost::scoped_ptr<DirectedGraph> DigraphPtr;
 
+
+namespace clusteringgraph {
 class SignedGraph {
 public:
 	SignedGraph(int numberOfNodes);
@@ -32,5 +32,5 @@ private:
 
 };
 
-} /* namespace graph */
+} /* namespace clusteringgraph */
 #endif /* GRAPH_H_ */

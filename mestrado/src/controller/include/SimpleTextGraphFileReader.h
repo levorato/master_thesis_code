@@ -8,8 +8,10 @@
 #ifndef SIMPLETEXTGRAPHFILEREADER_H_
 #define SIMPLETEXTGRAPHFILEREADER_H_
 
-#include "../../graph/GraphTypes.h"
+#include "../../graph/Graph.h"
 #include <string>
+
+using namespace clusteringgraph;
 
 namespace controller {
 
@@ -18,7 +20,7 @@ public:
 	SimpleTextGraphFileReader();
 	virtual ~SimpleTextGraphFileReader();
 
-	static *SignedGraph readGraphFromFile(std::string filepath);
+	SignedGraph* readGraphFromFile(std::string filepath);
 };
 
 } /* namespace controller */

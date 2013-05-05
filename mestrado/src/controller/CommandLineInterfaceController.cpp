@@ -7,6 +7,7 @@
 
 #include "include/CommandLineInterfaceController.h"
 #include "include/SimpleTextGraphFileReader.h"
+#include "../graph/Graph.h"
 
 #include <boost/program_options.hpp>
 
@@ -18,6 +19,7 @@ namespace po = boost::program_options;
 #include <iterator>
 #include <iomanip>
 using namespace std;
+using namespace clusteringgraph;
 
 namespace controller {
 
@@ -91,13 +93,18 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
         {
             cout << "Input files are: "
                  << vm["input-file"].as< vector<string> >() << "\n";
+        } else {
+        	cout << "Please specify at least one input file.";
+        	return 1;
         }
 
         cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
         cout << "Number of iterations is " << numberOfIterations << "\n";
         cout << "Resolution strategy is " << strategy << endl;
 
-        SimpleTextGraphFileReader::readGraphFromFile(vm["input-file"].as< vector<string> >().at(0));
+        SimpleTextGraphFileReader reader;
+        SignedGraph* g = reader.readGraphFromFile(vm["input-file"].as< vector<string> >().at(0));
+        g->printGraph();
     }
     catch(std::exception& e)
     {
