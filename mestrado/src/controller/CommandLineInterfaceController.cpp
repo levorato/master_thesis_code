@@ -59,6 +59,7 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
 	try {
         float alpha;
         int numberOfIterations;
+        bool debug;
         CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
         po::options_description desc("Available options:");
@@ -69,6 +70,7 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
             ("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
                   "number of iterations")
             ("input-file", po::value< vector<string> >(), "input file")
+            ("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
             /* TODO Resolver problema com o parametro da descricao
             ("strategy",
                          po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
@@ -104,7 +106,10 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
 
         SimpleTextGraphFileReader reader;
         SignedGraph* g = reader.readGraphFromFile(vm["input-file"].as< vector<string> >().at(0));
-        g->printGraph();
+        if(debug) {
+        	g->printGraph();
+        }
+
     }
     catch(std::exception& e)
     {

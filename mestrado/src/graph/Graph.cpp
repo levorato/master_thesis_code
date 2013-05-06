@@ -25,7 +25,6 @@ using namespace std;
 using namespace boost;
 
 namespace clusteringgraph {
-typedef boost::graph_traits < DirectedGraph >::vertex_descriptor Vertex;
 
 SignedGraph::SignedGraph(int numberOfNodes) : digraphPtr(new DirectedGraph(numberOfNodes)) {
 
@@ -37,14 +36,14 @@ SignedGraph::~SignedGraph() {
 }
 
 void SignedGraph::addEdge(int a, int b, int value) {
-	Vertex v0 = boost::add_vertex(a, *digraphPtr);
-	Vertex v1 = boost::add_vertex(b, *digraphPtr);
-	typedef typename DirectedGraph::edge_property_type Weight;
-	add_edge(v0, v1, Weight(value), *digraphPtr);
+	add_edge(a, b, Edge(value), *digraphPtr);
 }
 
 void SignedGraph::printGraph() {
 	const char* name = "ABCDEF";
+
+	int numberOfInEdges = boost::in_degree(1,*digraphPtr);
+	std::cout << "numberOfInEdges: " << numberOfInEdges << std::endl;
 
 	cout << "vertex set: ";
 	print_vertices(*digraphPtr, name);

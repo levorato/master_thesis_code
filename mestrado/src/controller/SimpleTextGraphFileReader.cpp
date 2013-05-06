@@ -34,7 +34,7 @@ SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 
 SignedGraph* SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 
-	int n = 20, e = 0;
+	int n = 0, e = 0;
 	ifstream in(filepath.c_str());
 	if (!in.is_open()) return NULL;
 
@@ -46,7 +46,7 @@ SignedGraph* SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 	// captura a primeira linha do arquivo contendo as informacoes
 	// de numero de vertices e arestas do grafo
 	getline(in,line);
-	char_separator<char> sep(" ");
+	char_separator<char> sep(" \r\n");
 	tokenizer< char_separator<char> > tokens(line, sep);
 	vec.assign(tokens.begin(),tokens.end());
 	std::cout << line << std::endl;
@@ -54,29 +54,30 @@ SignedGraph* SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 	    n = boost::lexical_cast<int>(vec.at(0));
 	    e = boost::lexical_cast<int>(vec.at(1));
 	} catch( boost::bad_lexical_cast const& ) {
-	    std::cout << "Error: input string was not valid" << std::endl;
+	    std::cerr << "Error: input string was not valid" << std::endl;
 	}
 
 	SignedGraph* g = new SignedGraph(n);
+	std::cout << "Successfully created signed graph with " << n << " vertices." << std::endl;
 
 	// captura as arestas do grafo com seus valores
-	// TODO BUG corrigir problema de captura de linha \n extra
 	while (getline(in,line))
 	{
-		char_separator<char> sep(" ");
+		char_separator<char> sep(" \r\n");
 		tokenizer< char_separator<char> > tokens(line, sep);
 		vec.assign(tokens.begin(),tokens.end());
 		if (vec.size() < 3) continue;
+		if(vec.at(2).rfind('\n') != string::npos)
 		std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
 		try {
 			int a = boost::lexical_cast<int>(vec.at(0));
 			int b = boost::lexical_cast<int>(vec.at(1));
 			int value = boost::lexical_cast<int>(vec.at(2));
-			std::cout << a << " e " << b << " = " << value << std::endl;
+			// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
 			g->addEdge(a, b, value);
 		} catch( boost::bad_lexical_cast const& ) {
-			std::cout << "Error: input string was not valid" << std::endl;
+			std::cerr << "Error: input string was not valid" << std::endl;
 		}
 	}
 

@@ -11,14 +11,20 @@
 #include <boost/config.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
+#include <boost/graph/graph_utility.hpp>
 
 using namespace boost;
 
-typedef adjacency_matrix<directedS, no_property, property<edge_weight_t, int > > DirectedGraph;
+namespace clusteringgraph {
+
+struct Edge {
+    int weight;
+    Edge() : weight(0) { }
+    Edge(int w) : weight(w) { }
+};
+typedef adjacency_matrix<directedS, no_property, Edge > DirectedGraph;
 typedef boost::scoped_ptr<DirectedGraph> DigraphPtr;
 
-
-namespace clusteringgraph {
 class SignedGraph {
 public:
 	SignedGraph(int numberOfNodes);
