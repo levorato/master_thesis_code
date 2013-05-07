@@ -10,5 +10,5 @@
 
 int main(int ac, char* av[])
 {
-	return controller::CommandLineInterfaceController::processArguments(ac, av);
+	return controller::CommandLineInterfaceController::processArgumentsAndExecute(ac, av);
 }

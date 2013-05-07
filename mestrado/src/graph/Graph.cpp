@@ -28,17 +28,17 @@ namespace clusteringgraph {
 
 SignedGraph::SignedGraph(int numberOfNodes) : digraphPtr(new DirectedGraph(numberOfNodes)) {
 
-
 }
 
 SignedGraph::~SignedGraph() {
 	// TODO Auto-generated destructor stub
 }
 
-/**
- * Add an edge to the graph. Accepts only edges whose weight is
- * equal to -1, 0 or 1.
- */
+
+int SignedGraph::getN() {
+	return num_vertices(*digraphPtr);
+}
+
 void SignedGraph::addEdge(int a, int b, int value) {
 	if(value == -1 || value == 0 || value == -1)
 		add_edge(a, b, Edge(value), *digraphPtr);

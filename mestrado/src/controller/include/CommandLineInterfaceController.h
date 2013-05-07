@@ -18,7 +18,7 @@ public:
 	virtual ~CommandLineInterfaceController();
 
 	enum StategyName {GRASP, GRASP_PR};
-	static int processArguments(int argc, char *argv[]);
+	static int processArgumentsAndExecute(int argc, char *argv[]);
 };
 } /* namespace controller */
 

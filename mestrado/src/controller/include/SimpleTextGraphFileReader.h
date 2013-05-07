@@ -8,7 +8,7 @@
 #ifndef SIMPLETEXTGRAPHFILEREADER_H_
 #define SIMPLETEXTGRAPHFILEREADER_H_
 
-#include "../../graph/Graph.h"
+#include "../../graph/include/Graph.h"
 #include <string>
 
 using namespace clusteringgraph;

@@ -23,6 +23,20 @@ public:
 	virtual ~Grasp();
 
 	/**
+	 * Executes the GRASP algorithm. Returns the local optimum
+	 * solution C(l) in the l-neighborhood of the current solution C.
+	 * This GRASP algorithm consists of two phases: constructClustering
+	 * and localSearch.
+	 * @param g the graph to be used as the base
+	 * @param iter maximum number of iterations
+	 * @param alpha ramdom seed belonging to the interval (0, 1)
+	 * @param l the size of the neighborhood
+	 * @return Clustering C(l), the local optinum solution
+	 */
+	Clustering* executeGRASP(SignedGraph* g, int iter, float alpha, int l);
+
+private:
+	/**
 	 * Constructs a clustering in a greedy ramdomized fashion,
 	 * starting from the empty set.
 	 * This is the first phase of the GRASP algorithm.
@@ -30,7 +44,7 @@ public:
 	 * @param alpha ramdom seed belonging to the interval (0, 1)
 	 * @return Clustering C(c)
 	 */
-	Clustering constructClustering(SignedGraph* g, float alpha);
+	Clustering* constructClustering(SignedGraph* g, float alpha);
 
 	/**
 	 * Executes the local search algorithm. Repeatedly derives
@@ -43,7 +57,7 @@ public:
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	Clustering localSearch(SignedGraph* g, Clustering c, int l);
+	Clustering* localSearch(SignedGraph* g, Clustering* c, int l);
 };
 
 } /* namespace grasp */

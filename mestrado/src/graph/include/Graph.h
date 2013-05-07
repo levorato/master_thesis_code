@@ -30,6 +30,15 @@ public:
 	SignedGraph(int numberOfNodes);
 	virtual ~SignedGraph();
 
+	/**
+	 * Returns the numbers of vertices of the graph.
+	 */
+	int getN();
+
+	/**
+	 * Add an edge to the graph. Accepts only edges whose weight is
+	 * equal to -1, 0 or 1.
+	 */
 	void addEdge(int a, int b, int value);
 	void printGraph();
 

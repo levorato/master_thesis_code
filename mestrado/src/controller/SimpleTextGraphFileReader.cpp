@@ -6,7 +6,7 @@
  */
 
 #include "include/SimpleTextGraphFileReader.h"
-#include "../graph/Graph.h"
+#include "../graph/include/Graph.h"
 #include <iostream>     // cout, endl
 #include <fstream>      // fstream
 #include <vector>

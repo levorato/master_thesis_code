@@ -9,18 +9,20 @@
 #define GRASPPR_H_
 
 #include "../../include/ResolutionStrategy.h"
+#include "../../../graph/include/Graph.h"
+#include "../../../graph/include/Clustering.h"
 
 using namespace clusteringgraph;
 
 namespace resolution {
 namespace grasp {
 
-class GraspPR: public Grasp {
+class GraspPR: public ResolutionStrategy {
 public:
 	GraspPR();
 	virtual ~GraspPR();
 
-	void pathRelinking(SignedGraph* g, );
+	void pathRelinking(SignedGraph* g);
 };
 
 } /* namespace grasp */

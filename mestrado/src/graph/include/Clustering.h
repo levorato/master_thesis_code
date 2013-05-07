@@ -22,6 +22,11 @@ public:
 	Clustering(int n, int k);
 	virtual ~Clustering();
 
+	void printClustering();
+	int getN();
+
+	static std::vector<Clustering*> generateNeighborhood(Clustering* c, int l);
+
 private:
 	/** number of nodes in the graph (n) */
 	int numberOfNodes;

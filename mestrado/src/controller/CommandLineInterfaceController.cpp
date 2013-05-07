@@ -7,7 +7,9 @@
 
 #include "include/CommandLineInterfaceController.h"
 #include "include/SimpleTextGraphFileReader.h"
-#include "../graph/Graph.h"
+#include "../graph/include/Graph.h"
+#include "../resolution/grasp/include/Grasp.h"
+#include "../graph/include/Clustering.h"
 
 #include <boost/program_options.hpp>
 
@@ -20,6 +22,7 @@ namespace po = boost::program_options;
 #include <iomanip>
 using namespace std;
 using namespace clusteringgraph;
+using namespace resolution::grasp;
 
 namespace controller {
 
@@ -53,23 +56,25 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 	// TODO Auto-generated destructor stub
 }
 
-int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
+int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[]) {
     cout << "Correlation clustering problem solver" << endl << endl;
 
 	try {
         float alpha = 0.5F;
-        int numberOfIterations = 500, k = -1;
+        int numberOfIterations = 500, k = -1, l = 1;
         bool debug = false, RCC = false;
         CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
         po::options_description desc("Available options:");
         desc.add_options()
             ("help", "show program options")
-            ("alpha", po::value<float>(&alpha)->default_value(0.5F),
+            ("alpha,a", po::value<float>(&alpha)->default_value(0.5F),
                   "alpha - randomness factor")
             ("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
                   "number of iterations")
-            ("k", po::value<int>(&k)->default_value(-1), "k parameter (RCC problem)")
+            ("neighborhood_size,l", po::value<int>(&l)->default_value(1),
+                  "neighborhood size")
+            ("k,k", po::value<int>(&k)->default_value(-1), "k parameter (RCC problem)")
             ("input-file", po::value< vector<string> >(), "input file")
             ("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
             /* TODO Resolver problema com o parametro da descricao
@@ -106,15 +111,20 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
         	RCC = true;
         }
         cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
+        cout << "Neighborhood size (l) is " << l << "\n";
         cout << "Number of iterations is " << numberOfIterations << "\n";
         cout << "Resolution strategy is " << strategy << endl;
 
+        // Reads the graph from the specified text file
         SimpleTextGraphFileReader reader;
         SignedGraph* g = reader.readGraphFromFile(vm["input-file"].as< vector<string> >().at(0));
         if(debug) {
         	g->printGraph();
         }
-
+        // Triggers the execution of the GRASP algorithm
+        Grasp resolution;
+        Clustering* c = resolution.executeGRASP(g, numberOfIterations, alpha, l);
+        c->printClustering();
     }
     catch(std::exception& e)
     {
