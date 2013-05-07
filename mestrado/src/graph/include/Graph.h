@@ -31,7 +31,7 @@ public:
 	virtual ~SignedGraph();
 
 	/**
-	 * Returns the numbers of vertices of the graph.
+	 * Returns the numbers of verticves of the graph.
 	 */
 	int getN();
 

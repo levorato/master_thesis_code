@@ -14,6 +14,12 @@ Clustering::Clustering(int n, int k) : numberOfNodes(n), numberOfClusters(k),
 	// Create the cluster array: n x k
 }
 
+// TODO test dimension attribution
+Clustering::Clustering(BoolMatrix* clusterMatrix) : clusterMatrixPtr(clusterMatrix) {
+	numberOfClusters = clusterMatrixPtr->shape()[0];
+	numberOfNodes = clusterMatrixPtr->shape()[1];
+}
+
 Clustering::~Clustering() {
 	// TODO Auto-generated destructor stub
 }
@@ -22,12 +28,17 @@ int Clustering::getN() {
 	return numberOfNodes;
 }
 
+void Clustering::addCluster() {
+
+}
+
 void Clustering::printClustering() {
 	std::cout << "Clustering configuration: TODO" << std::endl;
 }
 
-std::vector<Clustering*> Clustering::generateNeighborhood(Clustering* c, int l) {
-
+// TODO: Implement this
+NeighborhoodList* Clustering::generateNeighborhood(int l) {
+	return NULL;
 }
 
 } /* namespace clusteringgraph */

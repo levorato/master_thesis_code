@@ -6,6 +6,8 @@
  */
 
 #include "include/Grasp.h"
+#include "../../graph/include/Clustering.h"
+#include "include/VertexSet.h"
 
 namespace resolution {
 namespace grasp {
@@ -25,18 +27,19 @@ Clustering* Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l) {
 
 Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
 	Clustering *c = NULL; // c = empty
-	Clustering *lc = new Clustering(1, g->getN()); // lc = VG
+	VertexSet *lc = new VertexSet(g->getN()); // lc = VG
 
-	while(lc->getN() > 0) { // lc != empty
+	while(lc->size() > 0) { // lc != empty
 		// compute lc
 
-		// choose i ramdomly among the first alpha elements of lc
-		// and recalculates the objective function
+		// choose i randomly among the first alpha elements of lc
+		int i = 0;
 
 		// c = c + {i}
 
 		// lc = lc - {i}
-
+		// the removal of vertex i recalculates the gain function
+		lc->removeVertex(i);
 	}
 	return c;
 }
@@ -44,10 +47,10 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
 Clustering* localSearch(SignedGraph* g, Clustering* c, int l) {
 	Clustering* cl = c;
 	Clustering* cStar = NULL;
-	std::vector<Clustering*> neighborhood;
+	NeighborhoodList* neighborhood;
 	do {
 		cStar = cl;
-		neighborhood = Clustering::generateNeighborhood(cStar, l);
+		neighborhood = cStar->generateNeighborhood(l);
 		for each Clustering* c in neighborhood do {
 			if(Q(c) > Q(cl))
 				cl = c;
