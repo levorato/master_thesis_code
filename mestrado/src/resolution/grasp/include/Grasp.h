@@ -9,6 +9,10 @@
 #define GRASP_H_
 
 #include "../../include/ResolutionStrategy.h"
+#include "../../../graph/include/Graph.h"
+#include "../../../graph/include/Clustering.h"
+
+using namespace clusteringgraph;
 
 namespace resolution {
 namespace grasp {
@@ -17,6 +21,29 @@ class Grasp: public ResolutionStrategy {
 public:
 	Grasp();
 	virtual ~Grasp();
+
+	/**
+	 * Constructs a clustering in a greedy ramdomized fashion,
+	 * starting from the empty set.
+	 * This is the first phase of the GRASP algorithm.
+	 * @param g graph to be used as the base
+	 * @param alpha ramdom seed belonging to the interval (0, 1)
+	 * @return Clustering C(c)
+	 */
+	Clustering constructClustering(SignedGraph* g, float alpha);
+
+	/**
+	 * Executes the local search algorithm. Repeatedly derives
+	 * the local optimum solution C(l) in the l-neighborhood of
+	 * the current solution C.
+	 * This is the second phase of the GRASP algorithm.
+	 * @param g the graph to be used as the base
+	 * @param c the clustering given by the construct clustering
+	 * phase of GRASP.
+	 * @param l the size of the neighborhood
+	 * @return Clustering C(l), the local optinum solution
+	 */
+	Clustering localSearch(SignedGraph* g, Clustering c, int l);
 };
 
 } /* namespace grasp */

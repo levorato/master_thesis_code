@@ -10,13 +10,17 @@
 
 #include "../../include/ResolutionStrategy.h"
 
+using namespace clusteringgraph;
+
 namespace resolution {
 namespace grasp {
 
-class GraspPR: public ResolutionStrategy {
+class GraspPR: public Grasp {
 public:
 	GraspPR();
 	virtual ~GraspPR();
+
+	void pathRelinking(SignedGraph* g, );
 };
 
 } /* namespace grasp */

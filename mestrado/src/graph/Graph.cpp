@@ -5,7 +5,7 @@
  *      Author: mario
  */
 
-#include "Graph.h"
+#include "include/Graph.h"
 #include <boost/config.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
@@ -35,8 +35,13 @@ SignedGraph::~SignedGraph() {
 	// TODO Auto-generated destructor stub
 }
 
+/**
+ * Add an edge to the graph. Accepts only edges whose weight is
+ * equal to -1, 0 or 1.
+ */
 void SignedGraph::addEdge(int a, int b, int value) {
-	add_edge(a, b, Edge(value), *digraphPtr);
+	if(value == -1 || value == 0 || value == -1)
+		add_edge(a, b, Edge(value), *digraphPtr);
 }
 
 void SignedGraph::printGraph() {

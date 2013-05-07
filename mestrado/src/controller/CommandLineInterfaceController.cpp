@@ -57,9 +57,9 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
     cout << "Correlation clustering problem solver" << endl << endl;
 
 	try {
-        float alpha;
-        int numberOfIterations;
-        bool debug;
+        float alpha = 0.5F;
+        int numberOfIterations = 500, k = -1;
+        bool debug = false, RCC = false;
         CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
         po::options_description desc("Available options:");
@@ -69,6 +69,7 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
                   "alpha - randomness factor")
             ("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
                   "number of iterations")
+            ("k", po::value<int>(&k)->default_value(-1), "k parameter (RCC problem)")
             ("input-file", po::value< vector<string> >(), "input file")
             ("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
             /* TODO Resolver problema com o parametro da descricao
@@ -100,6 +101,10 @@ int CommandLineInterfaceController::processArguments(int argc, char *argv[]) {
         	return 1;
         }
 
+        if (k != -1) {
+        	cout << "k value is " << k << ". RCC is enabled." << endl;
+        	RCC = true;
+        }
         cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
         cout << "Number of iterations is " << numberOfIterations << "\n";
         cout << "Resolution strategy is " << strategy << endl;
