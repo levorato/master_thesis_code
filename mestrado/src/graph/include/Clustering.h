@@ -84,7 +84,7 @@ private:
 	/** the l-neighborhood list of clusters */
 	NeighborhoodListPtr neighborhoodListPtr;
 
-	void print(std::ostream& os, const BoolMatrix& A);
+	void print(std::ostream& os, BoolMatrix *m);
 };
 
 } /* namespace clusteringgraph */

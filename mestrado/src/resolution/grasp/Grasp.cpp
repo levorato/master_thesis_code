@@ -38,7 +38,7 @@ Clustering* Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l) {
 }
 
 Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
-	Clustering *Cc = new Clustering(0); // Cc = empty; TODO: check what happens with multi_array (0,0)
+	Clustering *Cc = new Clustering(g->getN()); // Cc = empty
 	VertexSet *lc = new VertexSet(g->getN()); // L(Cc) = V(G)
 	std::cout << "GRASP construct clustering...\n";
 
@@ -48,19 +48,24 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
 		int i = lc->chooseRandomVertex(boost::math::iround(alpha * lc->size()));
+		std::cout << "Random vertex is " << i << std::endl;
 
 		// 3. Cc = C union {i}
 		// Adds the vertex i to the partial clustering C, in a way so defined by
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
+		// TODO: Aqui estou sempre colocando como um cluster a parte, esta certo?
 		int vertexList[1] = {i};
 		Cc->addCluster(vertexList, 1);
 
 		// 4. lc = lc - {i}
 		// the removal of vertex i automatically recalculates the gain function
 		lc->removeVertex(i);
+
+		Cc->printClustering();
 	}
-	std::cout << "Initial clustering completed.\n";
+	std::cout << "\nInitial clustering completed.\n";
+	Cc->printClustering();
 	return Cc;
 }
 

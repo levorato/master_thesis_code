@@ -41,41 +41,43 @@ int Clustering::getNumberOfClusters() {
 }
 
 void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
-	BoolMatrix m = *(clusterMatrixPtr.get());
-
 	// 1. Create a new line for the new cluster in the matrix
 	// the method below keeps existing array data
 	if(numberOfClusters == 0) {
-		clusterMatrixPtr.reset(new BoolMatrix(boost::extents[numberOfClusters++][numberOfNodes]));
+		clusterMatrixPtr.reset(new BoolMatrix(boost::extents[++numberOfClusters][numberOfNodes]));
 	} else {
-		clusterMatrixPtr->resize(boost::extents[numberOfClusters++][numberOfNodes]);
+		clusterMatrixPtr->resize(boost::extents[++numberOfClusters][numberOfNodes]);
+		BoolMatrix mat = *(clusterMatrixPtr.get());
 		for(int i = 0; i < numberOfNodes; i++) {
-			m[numberOfClusters - 1][i] = false;
+			mat[numberOfClusters - 1][i] = false;
 		}
 	}
 
 	// 2. For every vertex in the list, remove the vertex from
 	// any other cluster and add it to the newly created cluster
+	BoolMatrix *m = clusterMatrixPtr.get();
 	for(unsigned int i = 0; i < arraySize; i++) {
+		std::cout << "Adding vertex " << vertexList[i] << " to cluster " << numberOfClusters - 1 << std::endl;
 		int vertex = vertexList[i];
 		for(int k = 0; k < numberOfClusters; k++) {
-			m[k][vertex] = false;
+			(*m)[k][vertex] = false;
 		}
-		m[numberOfClusters - 1][vertex] = true;
+		(*m)[numberOfClusters - 1][vertex] = true;
 	}
 }
 
 void Clustering::printClustering() {
 	std::cout << "Clustering configuration: " << std::endl;
-	print(std::cout, *this->clusterMatrixPtr.get());
+	print(std::cout, clusterMatrixPtr.get());
 }
 
-void Clustering::print(std::ostream& os, const BoolMatrix& A)
+void Clustering::print(std::ostream& os, BoolMatrix* m)
 {
+	BoolMatrix A = *m;
 	int numberOfClusters = A.shape()[0];
 	int numberOfNodes = A.shape()[1];
     for(int k = 0; k < numberOfClusters; k++) {
-    	os << " Partition " << k << ": [";
+    	os << " Partition " << k << ": [ ";
     	for(int i = 0; i < numberOfNodes; i++) {
     		if(A[k][i]) {
     			os << i << " ";

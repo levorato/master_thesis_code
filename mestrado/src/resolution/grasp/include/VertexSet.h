@@ -19,17 +19,16 @@ using namespace boost;
 
 // TODO implement the gain function according to the CC problem.
 // See Class ClusteringProblem.
-class GainFunctionComparison
+class GainFunctionComparison : std::binary_function <int, int, bool>
 {
   bool reverse;
 public:
   GainFunctionComparison(const bool& revparam=false)
     {reverse=revparam;}
-  bool operator() (const int& lhs, const int&rhs) const
-  {
-    if (reverse) return (lhs>rhs);
-    else return (lhs<rhs);
-  }
+    bool operator () ( const int& a, const int& b ) const
+    {
+      return a < b;
+    }
 };
 
 typedef set<int, GainFunctionComparison> GainFunctionVertexSet;
