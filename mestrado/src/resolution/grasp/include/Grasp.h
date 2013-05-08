@@ -11,8 +11,10 @@
 #include "../../include/ResolutionStrategy.h"
 #include "../../../graph/include/Graph.h"
 #include "../../../graph/include/Clustering.h"
+#include "../../../problem/include/ClusteringProblem.h"
 
 using namespace clusteringgraph;
+using namespace problem;
 
 namespace resolution {
 namespace grasp {
@@ -33,7 +35,8 @@ public:
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	Clustering* executeGRASP(SignedGraph* g, int iter, float alpha, int l);
+	Clustering* executeGRASP(SignedGraph* g, int iter, float alpha, int l,
+			ClusteringProblem* problem);
 
 private:
 	/**
@@ -57,7 +60,9 @@ private:
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	Clustering* localSearch(SignedGraph* g, Clustering* Cc, int l);
+	Clustering* localSearch(SignedGraph* g, Clustering* Cc, int l,
+			ClusteringProblem* problem);
+
 };
 
 } /* namespace grasp */

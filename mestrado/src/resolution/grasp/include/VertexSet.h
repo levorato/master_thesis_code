@@ -17,7 +17,8 @@ namespace grasp {
 using namespace std;
 using namespace boost;
 
-// TODO implement the gain function according to the CC problem.
+// TODO implement the gain function according to the gain function
+// gc(i) specified in the article.
 // See Class ClusteringProblem.
 class GainFunctionComparison : std::binary_function <int, int, bool>
 {

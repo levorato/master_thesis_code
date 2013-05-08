@@ -87,7 +87,8 @@ void Clustering::print(std::ostream& os, BoolMatrix* m)
     }
 }
 
-// TODO: Implement this
+// TODO: Implementar de acordo com o especificado pelo Yuri
+// para 1-opt e 2-opt
 NeighborhoodList* Clustering::generateNeighborhood(int l) {
 	return NULL;
 }

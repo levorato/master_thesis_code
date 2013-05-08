@@ -24,17 +24,22 @@ Grasp::~Grasp() {
 }
 
 // TODO: como implementar o loop de iteracoes do GRASP?
-Clustering* Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l) {
-	Clustering* Cl = NULL;
+Clustering* Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
+		ClusteringProblem* problem) {
+	Clustering* CStar = NULL;
 	std::cout << "Initializing GRASP procedure...\n";
 
 	for (int i = 0; i < iter; i++) {
 		// 1. Construct the clustering
 		Clustering* Cc = constructClustering(g, alpha);
 		// 2. Execute local search algorithm
-		Cl = localSearch(g, Cc, l);
+		Clustering* Cl = localSearch(g, Cc, l, problem);
+		// 3. Select the best clustring so far
+		if(problem->objectiveFunction(Cl) > problem->objectiveFunction(CStar)) { // if Q(Cl) > Q(Cstar)
+			CStar = Cl;
+		}
 	}
-	return Cl;
+	return CStar;
 }
 
 Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
@@ -54,7 +59,8 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
 		// Adds the vertex i to the partial clustering C, in a way so defined by
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
-		// TODO: Aqui estou sempre colocando como um cluster a parte, esta certo?
+		// TODO: Colocar o vertice i em um cluster a parte ou em um cluster
+		// existente, dependendo do valor calculado da funcao gain gc(i)
 		int vertexList[1] = {i};
 		Cc->addCluster(vertexList, 1);
 
@@ -69,12 +75,8 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
 	return Cc;
 }
 
-// TODO: Implementar funcao de modularidade Q(C)
-int Q(Clustering* c) {
-	return 0;
-}
-
-Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l) {
+Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
+		ClusteringProblem* problem) {
 	Clustering* Cl = Cc;
 	Clustering* cStar = NULL;
 	NeighborhoodList* neighborhood;
@@ -89,7 +91,7 @@ Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l) {
 		for(unsigned int i = 0; i < neighborhood->size(); i++) {
 			Clustering* C = new Clustering(neighborhood->at(i).get());
 			// if Q(C) > Q(Cl) then
-			if(Q(C) > Q(Cl))
+			if(problem->objectiveFunction(C) > problem->objectiveFunction(Cl))
 				Cl = C;
 			// end if
 			// N = N \ {c}

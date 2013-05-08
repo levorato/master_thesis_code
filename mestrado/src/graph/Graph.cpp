@@ -39,9 +39,8 @@ int SignedGraph::getN() {
 	return num_vertices(*digraphPtr);
 }
 
-void SignedGraph::addEdge(int a, int b, int value) {
-	if(value == -1 || value == 0 || value == -1)
-		add_edge(a, b, Edge(value), *digraphPtr);
+void SignedGraph::addEdge(int a, int b, Edge edge) {
+	add_edge(a, b, edge, *digraphPtr);
 }
 
 void SignedGraph::printGraph() {

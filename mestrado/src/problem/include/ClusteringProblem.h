@@ -8,6 +8,10 @@
 #ifndef CLUSTERINGPROBLEM_H_
 #define CLUSTERINGPROBLEM_H_
 
+#include "../../graph/include/Clustering.h"
+
+using namespace clusteringgraph;
+
 namespace problem {
 
 class ClusteringProblem {
@@ -15,7 +19,7 @@ public:
 	ClusteringProblem();
 	virtual ~ClusteringProblem();
 
-	// virtual int gainFunction();
+	virtual int objectiveFunction(Clustering *c);
 
 	int getNumberOfIterations() const {
 		return numberOfIterations;

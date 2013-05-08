@@ -10,6 +10,8 @@
 
 #include "ClusteringProblem.h"
 
+using namespace clusteringgraph;
+
 namespace problem {
 
 class CCProblem: public problem::ClusteringProblem {
@@ -17,7 +19,7 @@ public:
 	CCProblem();
 	virtual ~CCProblem();
 
-	int gainFunction();
+	int objectiveFunction(Clustering *c);
 };
 
 } /* namespace problem */

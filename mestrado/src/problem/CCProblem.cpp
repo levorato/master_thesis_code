@@ -23,7 +23,7 @@ CCProblem::~CCProblem() {
  * The Imbalance of a partition P (I(P)) is defined as the total
  * weight of negative uncut arcs and positive cut arcs.
  */
-int CCProblem::gainFunction() {
+int CCProblem::objectiveFunction(Clustering *c) {
 	return 0;
 }
 

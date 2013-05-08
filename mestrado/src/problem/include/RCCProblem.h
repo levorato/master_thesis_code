@@ -17,7 +17,7 @@ public:
 	RCCProblem();
 	virtual ~RCCProblem();
 
-	int gainFunction();
+	int objectiveFunction(Clustering *c);
 };
 
 } /* namespace problem */

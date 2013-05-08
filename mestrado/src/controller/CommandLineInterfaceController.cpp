@@ -10,6 +10,8 @@
 #include "../graph/include/Graph.h"
 #include "../resolution/grasp/include/Grasp.h"
 #include "../graph/include/Clustering.h"
+#include "../problem/include/ClusteringProblem.h"
+#include "../problem/include/CCProblem.h"
 
 #include <boost/program_options.hpp>
 
@@ -23,6 +25,7 @@ namespace po = boost::program_options;
 using namespace std;
 using namespace clusteringgraph;
 using namespace resolution::grasp;
+using namespace problem;
 
 namespace controller {
 
@@ -123,7 +126,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
         }
         // Triggers the execution of the GRASP algorithm
         Grasp resolution;
-        Clustering* c = resolution.executeGRASP(g, numberOfIterations, alpha, l);
+        // TODO resolver problema de referencia do objeto CCProblem
+        CCProblem* problem = new problem::CCProblem();
+        Clustering* c = resolution.executeGRASP(g, numberOfIterations, alpha, l, problem);
         c->printClustering();
     }
     catch(std::exception& e)

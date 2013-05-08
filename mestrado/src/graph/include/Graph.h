@@ -18,9 +18,9 @@ using namespace boost;
 namespace clusteringgraph {
 
 struct Edge {
-    int weight;
+    float weight;
     Edge() : weight(0) { }
-    Edge(int w) : weight(w) { }
+    Edge(float w) : weight(w) { }
 };
 typedef adjacency_matrix<directedS, no_property, Edge > DirectedGraph;
 typedef boost::scoped_ptr<DirectedGraph> DigraphPtr;
@@ -39,7 +39,7 @@ public:
 	 * Add an edge to the graph. Accepts only edges whose weight is
 	 * equal to -1, 0 or 1.
 	 */
-	void addEdge(int a, int b, int value);
+	void addEdge(int a, int b, Edge edge);
 	void printGraph();
 
 private:

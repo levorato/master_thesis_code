@@ -19,6 +19,9 @@ using namespace std;
 namespace clusteringgraph {
 
 // Defines the boolean matrix and its pointer
+// TODO verificar se a estrutura de dados multi_array traz overhead
+// na alocacao de memoria e copia de dados; possibilidade seria substituir
+// por um vector de arrays de tamanho n
 typedef multi_array<bool, 2> BoolMatrix;
 typedef shared_ptr<BoolMatrix> ClusterMatrixPtr;
 // Defines the neighborhood list (of cluster matrices) and its pointer
