@@ -28,5 +28,10 @@ void VertexSet::removeVertex(int i) {
 	vertexSetPtr->erase(i);
 }
 
+// TODO: implement random picking of a vertex
+int VertexSet::chooseRandomVertex(int x) {
+	return 0;
+}
+
 } /* namespace grasp */
 } /* namespace resolution */

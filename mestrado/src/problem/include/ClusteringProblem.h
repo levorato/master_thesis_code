@@ -15,6 +15,8 @@ public:
 	ClusteringProblem();
 	virtual ~ClusteringProblem();
 
+	// virtual int gainFunction();
+
 	int getNumberOfIterations() const {
 		return numberOfIterations;
 	}

@@ -6,8 +6,10 @@
  */
 
 #include "include/Grasp.h"
-#include "../../graph/include/Clustering.h"
 #include "include/VertexSet.h"
+
+#include <algorithm>
+#include <boost/math/special_functions/round.hpp>
 
 namespace resolution {
 namespace grasp {
@@ -21,45 +23,76 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
+// TODO: como implementar o loop de iteracoes do GRASP?
 Clustering* Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l) {
+	Clustering* Cl = NULL;
+	std::cout << "Initializing GRASP procedure...\n";
 
+	for (int i = 0; i < iter; i++) {
+		// 1. Construct the clustering
+		Clustering* Cc = constructClustering(g, alpha);
+		// 2. Execute local search algorithm
+		Cl = localSearch(g, Cc, l);
+	}
+	return Cl;
 }
 
 Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
-	Clustering *c = NULL; // c = empty
-	VertexSet *lc = new VertexSet(g->getN()); // lc = VG
+	Clustering *Cc = new Clustering(0); // Cc = empty; TODO: check what happens with multi_array (0,0)
+	VertexSet *lc = new VertexSet(g->getN()); // L(Cc) = V(G)
+	std::cout << "GRASP construct clustering...\n";
 
 	while(lc->size() > 0) { // lc != empty
-		// compute lc
+		// 1. Compute L(Cc): this is done automatically by the VertexSet class (lc)
 
-		// choose i randomly among the first alpha elements of lc
-		int i = 0;
+		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
+		// (alpha x |lc|) is a rounded number
+		int i = lc->chooseRandomVertex(boost::math::iround(alpha * lc->size()));
 
-		// c = c + {i}
+		// 3. Cc = C union {i}
+		// Adds the vertex i to the partial clustering C, in a way so defined by
+		// its gain function. The vertex i can be augmented to C either as a
+		// separate cluster {i} or as a member of an existing cluster c in C.
+		int vertexList[1] = {i};
+		Cc->addCluster(vertexList, 1);
 
-		// lc = lc - {i}
-		// the removal of vertex i recalculates the gain function
+		// 4. lc = lc - {i}
+		// the removal of vertex i automatically recalculates the gain function
 		lc->removeVertex(i);
 	}
-	return c;
+	std::cout << "Initial clustering completed.\n";
+	return Cc;
 }
 
-Clustering* localSearch(SignedGraph* g, Clustering* c, int l) {
-	Clustering* cl = c;
+// TODO: Implementar funcao de modularidade Q(C)
+int Q(Clustering* c) {
+	return 0;
+}
+
+Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l) {
+	Clustering* Cl = Cc;
 	Clustering* cStar = NULL;
 	NeighborhoodList* neighborhood;
+	std::cout << "GRASP local search...\n";
+
 	do {
-		cStar = cl;
+		// C* := Cc
+		cStar = Cl; // TODO: trocar codigo para copia profunda
+		// N := Nl(C*)
 		neighborhood = cStar->generateNeighborhood(l);
-		for each Clustering* c in neighborhood do {
-			if(Q(c) > Q(cl))
-				cl = c;
-			// N = N - {c}
+		// for all C in N do
+		for(unsigned int i = 0; i < neighborhood->size(); i++) {
+			Clustering* C = new Clustering(neighborhood->at(i).get());
+			// if Q(C) > Q(Cl) then
+			if(Q(C) > Q(Cl))
+				Cl = C;
+			// end if
+			// N = N \ {c}
 
 		}
-	} while(cl == cStar); // TODO sobecarregar funcao de igual
-
-	return cl;
+	} while(Cl->equals(cStar)); // until Cl != C*;
+	std::cout << "GRASP local search done.\n";
+	return Cl;
 }
 
 } /* namespace grasp */

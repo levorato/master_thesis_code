@@ -11,7 +11,6 @@
 #include <vector>
 #include <boost/config.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 using namespace boost;
@@ -21,13 +20,17 @@ namespace clusteringgraph {
 
 // Defines the boolean matrix and its pointer
 typedef multi_array<bool, 2> BoolMatrix;
-typedef scoped_ptr<BoolMatrix> ClusterMatrixPtr;
+typedef shared_ptr<BoolMatrix> ClusterMatrixPtr;
 // Defines the neighborhood list (of cluster matrices) and its pointer
 typedef vector<ClusterMatrixPtr> NeighborhoodList;
 typedef shared_ptr<NeighborhoodList> NeighborhoodListPtr;
 
 class Clustering {
 public:
+	/**
+	 * Creates a Clustering object with n nodes and no clusters.
+	 */
+	Clustering(int n);
 	/**
 	 * Creates a Clustering object based on the number of nodes (n)
 	 * and numbers of clusters (k).
@@ -37,18 +40,39 @@ public:
 	 * Creates a Clustering object based on the boolean clustering
 	 * matrix (clusterMatrix).
 	 */
-	Clustering(BoolMatrix *clusterMatrix);
+	Clustering(BoolMatrix* clusterMatrix);
 	virtual ~Clustering();
 
-	void addCluster();
+	/**
+	 * Adds a new cluster to the clustering configuration.
+	 */
+	void addCluster(int vertexList[], unsigned int arraySize);
+	/**
+	 * Prints the clustering config on the screen.
+	 */
 	void printClustering();
-	int getN();
+
+	/**
+	 * Returns the number of nodes in the graph.
+	 */
+	int getNumberOfNodes();
+
+	/**
+	 * Returns the number of clusters in this clustering configuration.
+	 */
+	int getNumberOfClusters();
 
 	/**
 	 * Generates a l-neighborhood for this clustering.
 	 * @return NeighborhoodList*
 	 */
 	NeighborhoodList* generateNeighborhood(int l);
+
+	/**
+	 * Verifies if this clustering object equals another clustering object.
+	 * @return bool
+	 */
+	bool equals(Clustering *c);
 
 private:
 	/** number of nodes in the graph (n) */
@@ -59,6 +83,8 @@ private:
 	ClusterMatrixPtr clusterMatrixPtr;
 	/** the l-neighborhood list of clusters */
 	NeighborhoodListPtr neighborhoodListPtr;
+
+	void print(std::ostream& os, const BoolMatrix& A);
 };
 
 } /* namespace clusteringgraph */

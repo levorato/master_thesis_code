@@ -18,6 +18,7 @@ using namespace std;
 using namespace boost;
 
 // TODO implement the gain function according to the CC problem.
+// See Class ClusteringProblem.
 class GainFunctionComparison
 {
   bool reverse;
@@ -50,6 +51,10 @@ public:
 	 * Removes the specified vertex from the list.
 	 */
 	void removeVertex(int i);
+	/**
+	 * Picks a random vertex among the first x elements.
+	 */
+	int chooseRandomVertex(int x);
 private:
 	GainFunctionVertexSetPtr vertexSetPtr;
 };

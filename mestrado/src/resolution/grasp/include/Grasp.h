@@ -52,12 +52,12 @@ private:
 	 * the current solution C.
 	 * This is the second phase of the GRASP algorithm.
 	 * @param g the graph to be used as the base
-	 * @param c the clustering given by the construct clustering
+	 * @param Cc the clustering given by the construct clustering
 	 * phase of GRASP.
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	Clustering* localSearch(SignedGraph* g, Clustering* c, int l);
+	Clustering* localSearch(SignedGraph* g, Clustering* Cc, int l);
 };
 
 } /* namespace grasp */
