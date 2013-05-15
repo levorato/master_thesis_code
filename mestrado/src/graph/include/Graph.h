@@ -13,6 +13,9 @@
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_utility.hpp>
 
+// Maximum number of nodes in a graph
+#define MAX_NODES 1000
+
 using namespace boost;
 
 namespace clusteringgraph {

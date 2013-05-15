@@ -89,7 +89,7 @@ Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
 		neighborhood = cStar->generateNeighborhood(l);
 		// for all C in N do
 		for(unsigned int i = 0; i < neighborhood->size(); i++) {
-			Clustering* C = new Clustering(neighborhood->at(i).get());
+			Clustering* C = new Clustering(neighborhood->at(i).get(), g->getN());
 			// if Q(C) > Q(Cl) then
 			if(problem->objectiveFunction(C) > problem->objectiveFunction(Cl))
 				Cl = C;

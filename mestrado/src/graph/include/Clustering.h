@@ -10,22 +10,26 @@
 
 #include <vector>
 #include <boost/config.hpp>
-#include <boost/multi_array.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include "Graph.h"
 
 using namespace boost;
 using namespace std;
 
 namespace clusteringgraph {
 
-// Defines the boolean matrix and its pointer
-// TODO verificar se a estrutura de dados multi_array traz overhead
-// na alocacao de memoria e copia de dados; possibilidade seria substituir
-// por um vector de arrays de tamanho n
-typedef multi_array<bool, 2> BoolMatrix;
-typedef shared_ptr<BoolMatrix> ClusterMatrixPtr;
-// Defines the neighborhood list (of cluster matrices) and its pointer
-typedef vector<ClusterMatrixPtr> NeighborhoodList;
+// uses dynamic_bitset for bool array, a high performance and space saving structure
+// based on real bits
+// the following array is initially empty and needs to be dynamically intialized
+typedef boost::dynamic_bitset<> BoolArray;
+// Defines the cluster list and its pointer
+// the list is made of boolean arrays, indicating that node i is in the cluster
+typedef vector<BoolArray> ClusterList;
+typedef shared_ptr<ClusterList> ClusterListPtr;
+// Defines the neighborhood list (of cluster lists) and its pointer
+typedef vector<ClusterListPtr> NeighborhoodList;
 typedef shared_ptr<NeighborhoodList> NeighborhoodListPtr;
 
 class Clustering {
@@ -35,15 +39,13 @@ public:
 	 */
 	Clustering(int n);
 	/**
-	 * Creates a Clustering object based on the number of nodes (n)
-	 * and numbers of clusters (k).
+	 * Creates a Clustering object with n nodes based on the clusterList.
 	 */
-	Clustering(int n, int k);
+	Clustering(ClusterList* clusterList, int numberOfNodes);
 	/**
-	 * Creates a Clustering object based on the boolean clustering
-	 * matrix (clusterMatrix).
+	 * Creates a Clustering object based on the clusterList.
 	 */
-	Clustering(BoolMatrix* clusterMatrix);
+	Clustering(ClusterList* clusterList);
 	virtual ~Clustering();
 
 	/**
@@ -80,14 +82,12 @@ public:
 private:
 	/** number of nodes in the graph (n) */
 	int numberOfNodes;
-	/** number of clusters (k) */
-	int numberOfClusters;
-	/** the clustering matrix, with dimensions k x n */
-	ClusterMatrixPtr clusterMatrixPtr;
+	/** the cluster list, with dimensions k x n */
+	ClusterListPtr clusterListPtr;
 	/** the l-neighborhood list of clusters */
 	NeighborhoodListPtr neighborhoodListPtr;
 
-	void print(std::ostream& os, BoolMatrix *m);
+	void print(std::ostream& os, ClusterList *l);
 };
 
 } /* namespace clusteringgraph */
