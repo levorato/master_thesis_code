@@ -19,7 +19,7 @@ public:
 	ClusteringProblem();
 	virtual ~ClusteringProblem();
 
-	virtual int objectiveFunction(Clustering *c);
+	virtual int objectiveFunction(SignedGraph* g, Clustering* c);
 
 	int getNumberOfIterations() const {
 		return numberOfIterations;

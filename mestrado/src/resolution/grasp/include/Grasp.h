@@ -47,13 +47,14 @@ private:
 	 * @param alpha ramdom seed belonging to the interval (0, 1)
 	 * @return Clustering C(c)
 	 */
-	Clustering* constructClustering(SignedGraph* g, float alpha);
+	Clustering* constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed);
 
 	/**
 	 * Executes the local search algorithm. Repeatedly derives
 	 * the local optimum solution C(l) in the l-neighborhood of
 	 * the current solution C.
-	 * This is the second phase of the GRASP algorithm.
+	 * This is the second phase of the GRASP algorithm. It uses the
+	 * Variable Neighborhood Descent (VND) strategy.
 	 * @param g the graph to be used as the base
 	 * @param Cc the clustering given by the construct clustering
 	 * phase of GRASP.

@@ -43,6 +43,10 @@ public:
 	 * equal to -1, 0 or 1.
 	 */
 	void addEdge(int a, int b, Edge edge);
+	/**
+	 * Return the value of the corresponding edge.
+	 */
+	float getEdge(int a, int b);
 	void printGraph();
 
 private:

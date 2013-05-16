@@ -22,7 +22,7 @@ RCCProblem::~RCCProblem() {
 /**
  * Returns he Relaxed Imbalance of a partition P (RI(P)).
  */
-int RCCProblem::objectiveFunction(Clustering *c) {
+int RCCProblem::objectiveFunction(SignedGraph* g, Clustering *c) {
 	return 0;
 }
 

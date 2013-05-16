@@ -19,7 +19,7 @@ public:
 	CCProblem();
 	virtual ~CCProblem();
 
-	int objectiveFunction(Clustering *c);
+	int objectiveFunction(SignedGraph* g, Clustering* c);
 };
 
 } /* namespace problem */

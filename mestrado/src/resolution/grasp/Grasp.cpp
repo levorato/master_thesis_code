@@ -7,9 +7,14 @@
 
 #include "include/Grasp.h"
 #include "include/VertexSet.h"
+#include "../../graph/include/Neighborhood.h"
+#include "../../problem/include/ClusteringProblem.h"
+#include "../../problem/include/CCProblem.h"
 
 #include <algorithm>
 #include <boost/math/special_functions/round.hpp>
+
+using namespace problem;
 
 namespace resolution {
 namespace grasp {
@@ -23,26 +28,27 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-// TODO: como implementar o loop de iteracoes do GRASP?
 Clustering* Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
 		ClusteringProblem* problem) {
 	Clustering* CStar = NULL;
 	std::cout << "Initializing GRASP procedure...\n";
+	unsigned int ramdomSeed = 0;
 
 	for (int i = 0; i < iter; i++) {
 		// 1. Construct the clustering
-		Clustering* Cc = constructClustering(g, alpha);
+		Clustering* Cc = constructClustering(g, alpha, ramdomSeed);
 		// 2. Execute local search algorithm
 		Clustering* Cl = localSearch(g, Cc, l, problem);
 		// 3. Select the best clustring so far
-		if(problem->objectiveFunction(Cl) > problem->objectiveFunction(CStar)) { // if Q(Cl) > Q(Cstar)
+		// if Q(Cl) > Q(Cstar)
+		if(problem->objectiveFunction(g, Cl) < problem->objectiveFunction(g, CStar)) {
 			CStar = Cl;
 		}
 	}
 	return CStar;
 }
 
-Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
+Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed) {
 	Clustering *Cc = new Clustering(g->getN()); // Cc = empty
 	VertexSet *lc = new VertexSet(g->getN()); // L(Cc) = V(G)
 	std::cout << "GRASP construct clustering...\n";
@@ -77,29 +83,27 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha) {
 
 Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
 		ClusteringProblem* problem) {
-	Clustering* Cl = Cc;
-	Clustering* cStar = NULL;
-	NeighborhoodList* neighborhood;
+	// k is the current neighborhood distance in the local search
+	int k = 1;
+	Clustering* cStar = Cc; // C* := Cc
 	std::cout << "GRASP local search...\n";
 
-	do {
-		// C* := Cc
-		cStar = Cl; // TODO: trocar codigo para copia profunda
+	while(k <= l) {
 		// N := Nl(C*)
-		neighborhood = cStar->generateNeighborhood(l);
-		// for all C in N do
-		for(unsigned int i = 0; i < neighborhood->size(); i++) {
-			Clustering* C = new Clustering(neighborhood->at(i).get(), g->getN());
-			// if Q(C) > Q(Cl) then
-			if(problem->objectiveFunction(C) > problem->objectiveFunction(Cl))
-				Cl = C;
-			// end if
-			// N = N \ {c}
-
+		// apply a local search in cStar using the k-neighborhood
+		NeighborhoodList neig(cStar, g->getN());
+		ClusteringProblem* problem = new problem::CCProblem();
+		neig.generateNeighborhood(k);
+		Clustering* cl = neig.findLocalOptimum(g, problem);
+		if(problem->objectiveFunction(g, cl) < problem->objectiveFunction(g, cStar)) {
+			cStar = cl;
+			k = 1;
+		} else {
+			k++;
 		}
-	} while(Cl->equals(cStar)); // until Cl != C*;
+	}
 	std::cout << "GRASP local search done.\n";
-	return Cl;
+	return cStar;
 }
 
 } /* namespace grasp */

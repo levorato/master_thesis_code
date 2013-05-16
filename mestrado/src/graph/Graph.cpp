@@ -43,6 +43,10 @@ void SignedGraph::addEdge(int a, int b, Edge edge) {
 	add_edge(a, b, edge, *digraphPtr);
 }
 
+float SignedGraph::getEdge(int a, int b) {
+	return (*digraphPtr).get_edge(a, b).second.m_value.weight;
+}
+
 void SignedGraph::printGraph() {
 	const char* name = "ABCDEF";
 

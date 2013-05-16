@@ -10,13 +10,13 @@
 namespace clusteringgraph {
 
 Clustering::Clustering(int n) : numberOfNodes(n),
-		clusterListPtr(new ClusterList()), neighborhoodListPtr(new NeighborhoodList()) {
+		clusterListPtr(new ClusterList()) {
 
 }
 
 // TODO test dimension attribution
 Clustering::Clustering(ClusterList* clusterList, int numberOfNodes) : numberOfNodes(numberOfNodes),
-		clusterListPtr(clusterList), neighborhoodListPtr() {
+		clusterListPtr(clusterList) {
 
 }
 
@@ -35,19 +35,23 @@ int Clustering::getNumberOfClusters() {
 void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 	// 1. Create a new cluster in the list
 	BoolArray array(MAX_NODES);
-	this->clusterListPtr->push_back(array);
 
 	// 2. For every vertex in the list, remove the vertex from
 	// any other cluster and add it to the newly created cluster
 	int numberOfClusters = this->getNumberOfClusters();
 	for(unsigned int i = 0; i < arraySize; i++) {
-		std::cout << "Adding vertex " << vertexList[i] << " to cluster " << numberOfClusters - 1 << std::endl;
+		std::cout << "Adding vertex " << vertexList[i] << " to cluster " << (numberOfClusters - 1) << std::endl;
 		int vertex = vertexList[i];
 		for(int k = 0; k < numberOfClusters; k++) {
 			clusterListPtr->at(k)[vertex] = false;
 		}
 		array[vertex] = true;
 	}
+	this->clusterListPtr->push_back(array);
+}
+
+BoolArray Clustering::getCluster(int clusterNumber) {
+	return clusterListPtr->at(clusterNumber);
 }
 
 void Clustering::printClustering() {
@@ -67,12 +71,6 @@ void Clustering::print(std::ostream& os, ClusterList* l)
     	}
     	os << "] \n";
     }
-}
-
-// TODO: Implementar de acordo com o especificado pelo Yuri
-// para 1-opt e 2-opt
-NeighborhoodList* Clustering::generateNeighborhood(int l) {
-	return NULL;
 }
 
 // TODO verificar se essa igualdade funciona

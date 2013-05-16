@@ -26,12 +26,15 @@ namespace clusteringgraph {
 typedef boost::dynamic_bitset<> BoolArray;
 // Defines the cluster list and its pointer
 // the list is made of boolean arrays, indicating that node i is in the cluster
+// TODO verificar se eh necessario armazenar o ponteiro para o array ao inves do array em si
 typedef vector<BoolArray> ClusterList;
 typedef shared_ptr<ClusterList> ClusterListPtr;
-// Defines the neighborhood list (of cluster lists) and its pointer
-typedef vector<ClusterListPtr> NeighborhoodList;
-typedef shared_ptr<NeighborhoodList> NeighborhoodListPtr;
 
+/**
+ * This class models a set of clusters of a graph. Its main data structure is
+ * the ClusterList, a vector of boolean arrays, where each vector represents
+ * a cluster and each boolean array marks if a node is in the cluster or not.
+ */
 class Clustering {
 public:
 	/**
@@ -46,12 +49,19 @@ public:
 	 * Creates a Clustering object based on the clusterList.
 	 */
 	Clustering(ClusterList* clusterList);
+
 	virtual ~Clustering();
 
 	/**
 	 * Adds a new cluster to the clustering configuration.
 	 */
 	void addCluster(int vertexList[], unsigned int arraySize);
+
+	/**
+	 * Returns the n-th cluster of the list.
+	 */
+	BoolArray getCluster(int clusterNumber);
+
 	/**
 	 * Prints the clustering config on the screen.
 	 */
@@ -68,12 +78,6 @@ public:
 	int getNumberOfClusters();
 
 	/**
-	 * Generates a l-neighborhood for this clustering.
-	 * @return NeighborhoodList*
-	 */
-	NeighborhoodList* generateNeighborhood(int l);
-
-	/**
 	 * Verifies if this clustering object equals another clustering object.
 	 * @return bool
 	 */
@@ -84,8 +88,6 @@ private:
 	int numberOfNodes;
 	/** the cluster list, with dimensions k x n */
 	ClusterListPtr clusterListPtr;
-	/** the l-neighborhood list of clusters */
-	NeighborhoodListPtr neighborhoodListPtr;
 
 	void print(std::ostream& os, ClusterList *l);
 };
