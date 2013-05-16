@@ -26,7 +26,7 @@ using namespace boost;
 
 namespace clusteringgraph {
 
-SignedGraph::SignedGraph(int numberOfNodes) : digraphPtr(new DirectedGraph(numberOfNodes)) {
+SignedGraph::SignedGraph(int numberOfNodes) : graphPtr(new DirectedGraph(numberOfNodes)) {
 
 }
 
@@ -36,33 +36,37 @@ SignedGraph::~SignedGraph() {
 
 
 int SignedGraph::getN() {
-	return num_vertices(*digraphPtr);
+	return num_vertices(*graphPtr);
+}
+
+int SignedGraph::getM() {
+	return graphPtr->m_num_edges;
 }
 
 void SignedGraph::addEdge(int a, int b, Edge edge) {
-	add_edge(a, b, edge, *digraphPtr);
+	add_edge(a, b, edge, *graphPtr);
 }
 
 float SignedGraph::getEdge(int a, int b) {
-	return (*digraphPtr).get_edge(a, b).second.m_value.weight;
+	return (*graphPtr).get_edge(a, b).second.m_value.weight;
 }
 
 void SignedGraph::printGraph() {
 	const char* name = "ABCDEF";
 
-	int numberOfInEdges = boost::in_degree(1,*digraphPtr);
+	int numberOfInEdges = boost::in_degree(1,*graphPtr);
 	std::cout << "numberOfInEdges: " << numberOfInEdges << std::endl;
 
 	cout << "vertex set: ";
-	print_vertices(*digraphPtr, name);
+	print_vertices(*graphPtr, name);
 	cout << std::endl;
 
 	cout << "edge set: ";
-	print_edges(*digraphPtr, name);
+	print_edges(*graphPtr, name);
 	cout << std::endl;
 
 	cout << "out-edges: " << std::endl;
-	print_graph(*digraphPtr, name);
+	print_graph(*graphPtr, name);
 	cout << std::endl;
 }
 

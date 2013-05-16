@@ -8,31 +8,19 @@
 #ifndef VERTEXSET_H_
 #define VERTEXSET_H_
 
-#include <set>
+#include <list>
 #include <boost/shared_ptr.hpp>
+
+#include "../../../graph/include/Clustering.h"
 
 namespace resolution {
 namespace grasp {
 
 using namespace std;
 using namespace boost;
+using namespace clusteringgraph;
 
-// TODO implement the gain function according to the gain function
-// gc(i) specified in the article.
-// See Class ClusteringProblem.
-class GainFunctionComparison : std::binary_function <int, int, bool>
-{
-  bool reverse;
-public:
-  GainFunctionComparison(const bool& revparam=false)
-    {reverse=revparam;}
-    bool operator () ( const int& a, const int& b ) const
-    {
-      return a < b;
-    }
-};
-
-typedef set<int, GainFunctionComparison> GainFunctionVertexSet;
+typedef list<int> GainFunctionVertexSet;
 typedef boost::shared_ptr<GainFunctionVertexSet> GainFunctionVertexSetPtr;
 
 class VertexSet {
@@ -55,6 +43,11 @@ public:
 	 * Picks a random vertex among the first x elements.
 	 */
 	int chooseRandomVertex(int x);
+
+	/**
+	 * Sorts the list according to the partial clustering c.
+	 */
+	void sort(Clustering* c);
 private:
 	GainFunctionVertexSetPtr vertexSetPtr;
 };

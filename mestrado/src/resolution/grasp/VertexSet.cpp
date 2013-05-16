@@ -15,7 +15,7 @@ namespace grasp {
 
 VertexSet::VertexSet(int n) : vertexSetPtr(new GainFunctionVertexSet) {
 	for(int i = 0; i < n; i++) {
-		vertexSetPtr->insert(i);
+		vertexSetPtr->push_back(i);
 	}
 }
 
@@ -28,10 +28,10 @@ int VertexSet::size() {
 }
 
 void VertexSet::removeVertex(int i) {
-	vertexSetPtr->erase(i);
+	vertexSetPtr->remove(i);
 }
 
-// TODO: validar se a funcao esta correta
+// TODO aceitar parametro seed para a geracao do numero aleatorio
 int VertexSet::chooseRandomVertex(int x) {
 	// Generates a random number between 1 and x
 	boost::random::mt19937 gen;
@@ -41,8 +41,8 @@ int VertexSet::chooseRandomVertex(int x) {
 	int selectedVertex = 0;
 
 	// Returns the Vertex
-	set<int, GainFunctionComparison, allocator<int> >::const_iterator pos;
-	set<int, GainFunctionComparison, allocator<int> > vertexSet = *vertexSetPtr.get();
+	list<int, allocator<int> >::const_iterator pos;
+	list<int, allocator<int> > vertexSet = *vertexSetPtr.get();
 	unsigned int i = 0;
 	for(i = 0, pos = vertexSet.begin(); i < vertexSet.size(); ++pos, ++i) {
 		if(i == selectedVertexSetIndex) {
@@ -51,6 +51,10 @@ int VertexSet::chooseRandomVertex(int x) {
 		}
 	}
 	return selectedVertex;
+}
+
+void VertexSet::sort(Clustering* c) {
+	vertexSetPtr->sort(new GainFunctionComparison(c));
 }
 
 } /* namespace grasp */

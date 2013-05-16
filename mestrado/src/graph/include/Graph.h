@@ -25,8 +25,8 @@ struct Edge {
     Edge() : weight(0) { }
     Edge(float w) : weight(w) { }
 };
-typedef adjacency_matrix<directedS, no_property, Edge > DirectedGraph;
-typedef boost::scoped_ptr<DirectedGraph> DigraphPtr;
+typedef adjacency_matrix<undirectedS, no_property, Edge > UndirectedGraph;
+typedef boost::scoped_ptr<UndirectedGraph> GraphPtr;
 
 class SignedGraph {
 public:
@@ -34,9 +34,14 @@ public:
 	virtual ~SignedGraph();
 
 	/**
-	 * Returns the numbers of verticves of the graph.
+	 * Returns the numbers of vertices of the graph.
 	 */
 	int getN();
+
+	/**
+	 * Return the number of edges of the graph
+	 */
+	int getM();
 
 	/**
 	 * Add an edge to the graph. Accepts only edges whose weight is
@@ -44,13 +49,21 @@ public:
 	 */
 	void addEdge(int a, int b, Edge edge);
 	/**
-	 * Return the value of the corresponding edge.
+	 * Returns the value of the corresponding edge.
 	 */
 	float getEdge(int a, int b);
+
+	/**
+	 * Returns the degree of vertex a.
+	 */
+	int getDegree(int a) {
+		return in_degree(a, *graphPtr);
+	}
+
 	void printGraph();
 
 private:
-	DigraphPtr digraphPtr;
+	GraphPtr graphPtr;
 
 };
 

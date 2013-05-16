@@ -54,7 +54,8 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int
 	std::cout << "GRASP construct clustering...\n";
 
 	while(lc->size() > 0) { // lc != empty
-		// 1. Compute L(Cc): this is done automatically by the VertexSet class (lc)
+		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
+		lc->sort(Cc);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
