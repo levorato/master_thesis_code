@@ -18,7 +18,7 @@ Clustering::Clustering(int n) : numberOfNodes(n), clusterListPtr(new ClusterList
 // TODO test dimension attribution
 // TODO importante! realizar a copia profunda dos dados da clusterlist
 Clustering::Clustering(Clustering* clustering, int numberOfNodes) : numberOfNodes(numberOfNodes),
-		modularityMatrix(boost::extents[numberOfNodes][numberOfNodes]) {
+		clusterListPtr(new ClusterList()), modularityMatrix(boost::extents[numberOfNodes][numberOfNodes]) {
 
 }
 
@@ -42,7 +42,7 @@ void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 	// any other cluster and add it to the newly created cluster
 	int numberOfClusters = this->getNumberOfClusters();
 	for(unsigned int i = 0; i < arraySize; i++) {
-		std::cout << "Adding vertex " << vertexList[i] << " to cluster " << (numberOfClusters - 1) << std::endl;
+		std::cout << "Adding vertex " << vertexList[i] << " to cluster " << numberOfClusters << std::endl;
 		int vertex = vertexList[i];
 		for(int k = 0; k < numberOfClusters; k++) {
 			clusterListPtr->at(k)[vertex] = false;
@@ -57,13 +57,13 @@ const BoolArray& Clustering::getCluster(int clusterNumber) {
 }
 
 void Clustering::addNodeToCluster(int i, int k) {
-	BoolArray cluster = this->clusterListPtr->at(k);
+	BoolArray cluster = this->getCluster(k);
 	cluster[i] = true;
 }
 
 // TODO tratar o caso em que o cluster k desaparece
 void Clustering::removeNodeFromCluster(int i, int k) {
-	BoolArray cluster = this->clusterListPtr->at(k);
+	BoolArray cluster = this->getCluster(k);
 	cluster[i] = false;
 }
 

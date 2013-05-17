@@ -35,6 +35,7 @@ Clustering* Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
 	unsigned int ramdomSeed = 0;
 
 	for (int i = 0; i < iter; i++) {
+		cout << "GRASP iteration " << i << endl;
 		// 1. Construct the clustering
 		Clustering* Cc = constructClustering(g, alpha, ramdomSeed);
 		// 2. Execute local search algorithm
@@ -85,11 +86,12 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int
 Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
 		ClusteringProblem* problem) {
 	// k is the current neighborhood distance in the local search
-	int k = 1;
+	int k = 1, iteration = 0;
 	Clustering* cStar = Cc; // C* := Cc
 	std::cout << "GRASP local search...\n";
 
 	while(k <= l) {
+		cout << "Local search iteration " << iteration << endl;
 		// N := Nl(C*)
 		// apply a local search in cStar using the k-neighborhood
 		NeighborhoodList neig(cStar, g->getN());
@@ -101,6 +103,7 @@ Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
 		} else {
 			k++;
 		}
+		iteration++;
 	}
 	std::cout << "GRASP local search done.\n";
 	return cStar;
