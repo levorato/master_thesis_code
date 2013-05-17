@@ -63,7 +63,7 @@ public:
 	/**
 	 * Returns the n-th cluster of the list.
 	 */
-	BoolArray getCluster(int clusterNumber);
+	const BoolArray& getCluster(int clusterNumber);
 
 	/**
 	 * Calculates the modularity matrix for this clustering.

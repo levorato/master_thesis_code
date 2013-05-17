@@ -51,7 +51,7 @@ void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 	this->clusterListPtr->push_back(array);
 }
 
-BoolArray Clustering::getCluster(int clusterNumber) {
+const BoolArray& Clustering::getCluster(int clusterNumber) {
 	return clusterListPtr->at(clusterNumber);
 }
 
