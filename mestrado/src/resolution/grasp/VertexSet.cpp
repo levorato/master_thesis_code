@@ -54,7 +54,7 @@ int VertexSet::chooseRandomVertex(int x) {
 }
 
 void VertexSet::sort(Clustering* c) {
-	vertexSetPtr->sort(new GainFunctionComparison(c));
+	vertexSetPtr->sort(GainFunctionComparison(c));
 }
 
 } /* namespace grasp */

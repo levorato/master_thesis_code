@@ -73,7 +73,7 @@ void Clustering::calculateModularityMatrix(SignedGraph* g) {
 }
 
 // TODO test this method
-float Clustering::gain(int a) {
+float Clustering::gain(const int &a) {
 	float max = modularityMatrix[a][a];
 	// For each cluster k...
 	int nc = this->getNumberOfClusters();

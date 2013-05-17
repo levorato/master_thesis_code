@@ -26,7 +26,7 @@ using namespace boost;
 
 namespace clusteringgraph {
 
-SignedGraph::SignedGraph(int numberOfNodes) : graphPtr(new DirectedGraph(numberOfNodes)) {
+SignedGraph::SignedGraph(int numberOfNodes) : graphPtr(new UndirectedGraph(numberOfNodes)) {
 
 }
 
@@ -47,8 +47,12 @@ void SignedGraph::addEdge(int a, int b, Edge edge) {
 	add_edge(a, b, edge, *graphPtr);
 }
 
-float SignedGraph::getEdge(int a, int b) {
+float SignedGraph::getEdge(const int &a, const int &b) {
 	return (*graphPtr).get_edge(a, b).second.m_value.weight;
+}
+
+int SignedGraph::getDegree(const int &a) {
+	return in_degree(a, *graphPtr);
 }
 
 void SignedGraph::printGraph() {

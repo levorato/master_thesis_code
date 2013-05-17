@@ -40,7 +40,7 @@ public:
 private:
 	int numberOfNodes;
 	ClusteringPtr clusteringPtr;
-	DigraphPtr digraphPtr;
+	GraphPtr graphPtr;
 };
 typedef shared_ptr<NeighborhoodList> NeighborhoodListPtr;
 

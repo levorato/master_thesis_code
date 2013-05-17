@@ -70,7 +70,7 @@ public:
 	 */
 	void calculateModularityMatrix(SignedGraph* g);
 
-	float gain(int a);
+	float gain(const int &a);
 
 	/**
 	 * Prints the clustering config on the screen.
@@ -107,7 +107,7 @@ private:
 // TODO implement the gain function according to the gain function
 // gc(i) specified in the article.
 // See Class ClusteringProblem.
-class GainFunctionComparison : std::binary_function <int, int, bool>
+class GainFunctionComparison
 {
   Clustering* clustering;
 public:

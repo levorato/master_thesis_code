@@ -17,7 +17,7 @@ public:
 	RCCProblem();
 	virtual ~RCCProblem();
 
-	int objectiveFunction(SignedGraph* g, Clustering *c);
+	virtual int objectiveFunction(SignedGraph* g, Clustering *c);
 };
 
 } /* namespace problem */

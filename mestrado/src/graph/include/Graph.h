@@ -51,14 +51,12 @@ public:
 	/**
 	 * Returns the value of the corresponding edge.
 	 */
-	float getEdge(int a, int b);
+	float getEdge(const int &a, const int &b);
 
 	/**
 	 * Returns the degree of vertex a.
 	 */
-	int getDegree(int a) {
-		return in_degree(a, *graphPtr);
-	}
+	int getDegree(const int &a);
 
 	void printGraph();
 
