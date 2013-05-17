@@ -94,8 +94,7 @@ Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
 		// apply a local search in cStar using the k-neighborhood
 		NeighborhoodList neig(cStar, g->getN());
 		ClusteringProblem* problem = new problem::CCProblem();
-		neig.generateNeighborhood(k);
-		Clustering* cl = neig.findLocalOptimum(g, problem);
+		Clustering* cl = neig.generateNeighborhood(k, g, problem);
 		if(problem->objectiveFunction(g, cl) < problem->objectiveFunction(g, cStar)) {
 			cStar = cl;
 			k = 1;

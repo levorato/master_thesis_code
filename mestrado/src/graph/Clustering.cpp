@@ -16,8 +16,9 @@ Clustering::Clustering(int n) : numberOfNodes(n), clusterListPtr(new ClusterList
 }
 
 // TODO test dimension attribution
-Clustering::Clustering(ClusterList* clusterList, int numberOfNodes) : numberOfNodes(numberOfNodes),
-		clusterListPtr(clusterList), modularityMatrix(boost::extents[numberOfNodes][numberOfNodes]) {
+// TODO importante! realizar a copia profunda dos dados da clusterlist
+Clustering::Clustering(Clustering* clustering, int numberOfNodes) : numberOfNodes(numberOfNodes),
+		modularityMatrix(boost::extents[numberOfNodes][numberOfNodes]) {
 
 }
 
@@ -53,6 +54,17 @@ void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 
 const BoolArray& Clustering::getCluster(int clusterNumber) {
 	return clusterListPtr->at(clusterNumber);
+}
+
+void Clustering::addNodeToCluster(int i, int k) {
+	BoolArray cluster = this->clusterListPtr->at(k);
+	cluster[i] = true;
+}
+
+// TODO tratar o caso em que o cluster k desaparece
+void Clustering::removeNodeFromCluster(int i, int k) {
+	BoolArray cluster = this->clusterListPtr->at(k);
+	cluster[i] = false;
 }
 
 // TODO calculate the modularity matrix of weighed graphs

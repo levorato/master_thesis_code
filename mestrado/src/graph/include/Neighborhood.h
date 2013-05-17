@@ -33,9 +33,7 @@ public:
 	 * Generates a l-neighborhood for this clustering.
 	 * @return NeighborhoodList*
 	 */
-	NeighborhoodList* generateNeighborhood(int l);
-
-	Clustering* findLocalOptimum(SignedGraph *g, ClusteringProblem* problem);
+	Clustering* generateNeighborhood(int l, SignedGraph* g, ClusteringProblem* problem);
 
 private:
 	int numberOfNodes;

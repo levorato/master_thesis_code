@@ -47,7 +47,7 @@ public:
 	/**
 	 * Creates a Clustering object with n nodes based on the clusterList.
 	 */
-	Clustering(ClusterList* clusterList, int numberOfNodes);
+	Clustering(Clustering* clustering, int numberOfNodes);
 	/**
 	 * Creates a Clustering object based on the clusterList.
 	 */
@@ -64,6 +64,16 @@ public:
 	 * Returns the n-th cluster of the list.
 	 */
 	const BoolArray& getCluster(int clusterNumber);
+
+	/**
+	 * Adds a node i in cluster k.
+	 */
+	void addNodeToCluster(int i, int k);
+
+	/**
+	 * Removes a node i from cluster k.
+	 */
+	void removeNodeFromCluster(int i, int k);
 
 	/**
 	 * Calculates the modularity matrix for this clustering.
