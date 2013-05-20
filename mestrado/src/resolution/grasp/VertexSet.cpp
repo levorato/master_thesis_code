@@ -53,8 +53,8 @@ int VertexSet::chooseRandomVertex(int x) {
 	return selectedVertex;
 }
 
-void VertexSet::sort(Clustering* c) {
-	vertexSetPtr->sort(GainFunctionComparison(c));
+void VertexSet::sort(SignedGraph* g, Clustering* c) {
+	vertexSetPtr->sort(GainFunctionComparison(g, c));
 }
 
 } /* namespace grasp */

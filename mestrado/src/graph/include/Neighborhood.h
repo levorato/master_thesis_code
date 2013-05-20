@@ -22,8 +22,6 @@ using namespace problem;
 
 namespace clusteringgraph {
 
-typedef shared_ptr<Clustering> ClusteringPtr;
-
 // Defines the neighborhood list (of cluster lists) and its pointer
 class NeighborhoodList : vector<ClusterListPtr> {
 public:

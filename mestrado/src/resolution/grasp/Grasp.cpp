@@ -30,37 +30,39 @@ Grasp::~Grasp() {
 
 Clustering* Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
 		ClusteringProblem* problem) {
-	Clustering* CStar = NULL;
+	ClusteringPtr CStar;
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
 
 	for (int i = 0; i < iter; i++) {
 		cout << "GRASP iteration " << i << endl;
 		// 1. Construct the clustering
-		Clustering* Cc = constructClustering(g, alpha, ramdomSeed);
+		ClusteringPtr Cc(constructClustering(g, alpha, ramdomSeed));
 		// 2. Execute local search algorithm
-		Clustering* Cl = localSearch(g, Cc, l, problem);
+		ClusteringPtr Cl(localSearch(g, Cc.get(), l, problem));
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
-		if(problem->objectiveFunction(g, Cl) < problem->objectiveFunction(g, CStar)) {
+		if(problem->objectiveFunction(g, Cl.get()) < problem->objectiveFunction(g, CStar.get())) {
 			CStar = Cl;
 		}
 	}
-	return CStar;
+	return CStar.get();
 }
 
 Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed) {
-	Clustering *Cc = new Clustering(g->getN()); // Cc = empty
-	VertexSet *lc = new VertexSet(g->getN()); // L(Cc) = V(G)
+	ClusteringPtr Cc(new Clustering(g->getN())); // Cc = empty
+	VertexSet lc(g->getN()); // L(Cc) = V(G)
 	std::cout << "GRASP construct clustering...\n";
+	// It is important to calculate the modularity matrix first (used by vertex sorting)
+	g->calculateModularityMatrix();
 
-	while(lc->size() > 0) { // lc != empty
+	while(lc.size() > 0) { // lc != empty
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-		lc->sort(Cc);
+		lc.sort(g, Cc.get());
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
-		int i = lc->chooseRandomVertex(boost::math::iround(alpha * lc->size()));
+		int i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
 		std::cout << "Random vertex is " << i << std::endl;
 
 		// 3. Cc = C union {i}
@@ -74,13 +76,13 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int
 
 		// 4. lc = lc - {i}
 		// the removal of vertex i automatically recalculates the gain function
-		lc->removeVertex(i);
+		lc.removeVertex(i);
 
 		Cc->printClustering();
 	}
 	std::cout << "\nInitial clustering completed.\n";
 	Cc->printClustering();
-	return Cc;
+	return Cc.get();
 }
 
 Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,

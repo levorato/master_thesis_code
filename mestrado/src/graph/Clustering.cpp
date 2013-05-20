@@ -10,15 +10,14 @@
 
 namespace clusteringgraph {
 
-Clustering::Clustering(int n) : numberOfNodes(n), clusterListPtr(new ClusterList()),
-		modularityMatrix(boost::extents[n][n]) {
+Clustering::Clustering(int n) : numberOfNodes(n), clusterListPtr(new ClusterList()) {
 
 }
 
 // TODO test dimension attribution
-// TODO importante! realizar a copia profunda dos dados da clusterlist
 Clustering::Clustering(Clustering* clustering, int numberOfNodes) : numberOfNodes(numberOfNodes),
-		clusterListPtr(new ClusterList()), modularityMatrix(boost::extents[numberOfNodes][numberOfNodes]) {
+		// deep copy of the clusterlist data
+		clusterListPtr(new ClusterList(*(clustering->clusterListPtr.get()))) {
 
 }
 
@@ -67,26 +66,10 @@ void Clustering::removeNodeFromCluster(int i, int k) {
 	cluster[i] = false;
 }
 
-// TODO calculate the modularity matrix of weighed graphs
-void Clustering::calculateModularityMatrix(SignedGraph* g) {
-	int m = g->getM();
-	int degree[g->getN()];
-	// Prestore the degrees for optimezed lookup
-	for(int i = 0; i < this->numberOfNodes; i++) {
-		degree[i] = g->getDegree(i);
-	}
-
-	for(int i = 0; i < this->numberOfNodes; i++) {
-		for(int j = 0; j < this->numberOfNodes; j++) {
-			int a = (g->getEdge(i, j) != 0) ? 1 : 0;
-			modularityMatrix[i][j] = a - ( (degree[i] * degree[j]) / (2 * m) );
-		}
-	}
-}
-
 // TODO test this method
-float Clustering::gain(const int &a) {
-	float max = modularityMatrix[a][a];
+float Clustering::gain(SignedGraph* graph, const int &a) {
+	ModularityMatrix* modularityMatrix = graph->getModularityMatrix();
+	float max = (*modularityMatrix)[a][a];
 	// For each cluster k...
 	int nc = this->getNumberOfClusters();
 	for(int k = 0; k < nc; k++) {
@@ -96,10 +79,10 @@ float Clustering::gain(const int &a) {
 		// j in Cluster(k)
 		for(int j = 0; j < this->numberOfNodes; j++) {
 			if(cluster[j]) {
-				sum += 2 * modularityMatrix[a][j];
+				sum += 2 * (*modularityMatrix)[a][j];
 			}
 		}
-		sum += modularityMatrix[a][a];
+		sum += (*modularityMatrix)[a][a];
 		if(sum > max) {
 			max = sum ;
 		}

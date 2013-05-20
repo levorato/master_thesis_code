@@ -11,7 +11,6 @@
 #include <vector>
 #include <boost/config.hpp>
 #include <boost/dynamic_bitset.hpp>
-#include <boost/multi_array.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "Graph.h"
@@ -30,8 +29,6 @@ typedef boost::dynamic_bitset<> BoolArray;
 // TODO verificar se eh necessario armazenar o ponteiro para o array ao inves do array em si
 typedef vector<BoolArray> ClusterList;
 typedef shared_ptr<ClusterList> ClusterListPtr;
-// the modularity matrix: a matrix of float
-typedef multi_array<float, 2> ModularityMatrix;
 
 /**
  * This class models a set of clusters of a graph. Its main data structure is
@@ -76,13 +73,6 @@ public:
 	void removeNodeFromCluster(int i, int k);
 
 	/**
-	 * Calculates the modularity matrix for this clustering.
-	 */
-	void calculateModularityMatrix(SignedGraph* g);
-
-	float gain(const int &a);
-
-	/**
 	 * Prints the clustering config on the screen.
 	 */
 	void printClustering();
@@ -98,6 +88,11 @@ public:
 	int getNumberOfClusters();
 
 	/**
+	 * Return the gain of a given vertex (based on the modularity matrix).
+	 */
+	float gain(SignedGraph* graph, const int &a);
+
+	/**
 	 * Verifies if this clustering object equals another clustering object.
 	 * @return bool
 	 */
@@ -108,8 +103,6 @@ private:
 	int numberOfNodes;
 	/** the cluster list, with dimensions k x n */
 	ClusterListPtr clusterListPtr;
-	/** the modularity matrix */
-	ModularityMatrix modularityMatrix;
 
 	void print(std::ostream& os, ClusterList *l);
 };
@@ -119,15 +112,18 @@ private:
 // See Class ClusteringProblem.
 class GainFunctionComparison
 {
-  Clustering* clustering;
+	SignedGraph* graph;
+	Clustering* clustering;
 public:
-  GainFunctionComparison(Clustering* c)
-    { clustering = c; }
+  GainFunctionComparison(SignedGraph *g, Clustering* c)
+    { graph = g;	clustering = c; }
     bool operator () ( const int& a, const int& b ) const
     {
-      return clustering->gain(a) < clustering->gain(b);
+      return clustering->gain(graph, a) < clustering->gain(graph, b);
     }
 };
+
+typedef shared_ptr<Clustering> ClusteringPtr;
 
 } /* namespace clusteringgraph */
 #endif /* CLUSTERING_H_ */

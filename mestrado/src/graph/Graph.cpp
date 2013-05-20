@@ -26,7 +26,8 @@ using namespace boost;
 
 namespace clusteringgraph {
 
-SignedGraph::SignedGraph(int numberOfNodes) : graphPtr(new UndirectedGraph(numberOfNodes)) {
+SignedGraph::SignedGraph(int numberOfNodes) : graphPtr(new UndirectedGraph(numberOfNodes)),
+		modularityMatrixPtr(new ModularityMatrix(boost::extents[numberOfNodes][numberOfNodes])) {
 
 }
 
@@ -53,6 +54,28 @@ float SignedGraph::getEdge(const int &a, const int &b) {
 
 int SignedGraph::getDegree(const int &a) {
 	return in_degree(a, *graphPtr);
+}
+
+// TODO calculate the modularity matrix of weighed graphs
+void SignedGraph::calculateModularityMatrix() {
+	int m =this->getM();
+	int numberOfNodes = this->getN();
+	int degree[numberOfNodes];
+	// Prestore the degrees for optimezed lookup
+	for(int i = 0; i < numberOfNodes; i++) {
+		degree[i] = this->getDegree(i);
+	}
+
+	for(int i = 0; i < numberOfNodes; i++) {
+		for(int j = 0; j < numberOfNodes; j++) {
+			int a = (this->getEdge(i, j) != 0) ? 1 : 0;
+			(*modularityMatrixPtr)[i][j] = a - ( (degree[i] * degree[j]) / (2 * m) );
+		}
+	}
+}
+
+ModularityMatrix* SignedGraph::getModularityMatrix() {
+	return modularityMatrixPtr.get();
 }
 
 void SignedGraph::printGraph() {

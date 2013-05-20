@@ -45,9 +45,10 @@ public:
 	int chooseRandomVertex(int x);
 
 	/**
-	 * Sorts the list according to the partial clustering c.
+	 * Sorts the list according to the partial clustering c
+	 * and the SignedGraph g.
 	 */
-	void sort(Clustering* c);
+	void sort(SignedGraph* g, Clustering* c);
 private:
 	GainFunctionVertexSetPtr vertexSetPtr;
 };
