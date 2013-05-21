@@ -7,6 +7,8 @@
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
+#include <boost/random/linear_congruential.hpp>
+#include <ctime>            // std::time
 
 #include "include/VertexSet.h"
 
@@ -33,11 +35,28 @@ void VertexSet::removeVertex(int i) {
 
 // TODO aceitar parametro seed para a geracao do numero aleatorio
 int VertexSet::chooseRandomVertex(int x) {
+	/*
+		* Change seed to something else.
+		*
+		* Caveat: std::time(0) is not a very good truly-random seed.  When
+		* called in rapid succession, it could return the same values, and
+		* thus the same random number sequences could ensue.  If not the same
+		* values are returned, the values differ only slightly in the
+		* lowest bits.  A linear congruential generator with a small factor
+		* wrapped in a uniform_smallint (see experiment) will produce the same
+		* values for the first few iterations.   This is because uniform_smallint
+		* takes only the highest bits of the generator, and the generator itself
+		* needs a few iterations to spread the initial entropy from the lowest bits
+		* to the whole state.
+	    */
+	boost::minstd_rand generator(1234u);
+	generator.seed(static_cast<unsigned int>(std::time(0)));
+
 	// Generates a random number between 1 and x
-	boost::random::mt19937 gen;
+	// boost::random::mt19937 generator;  TODO Adaptar para o modo deug
 	// distribution that maps to 1..x
 	boost::random::uniform_int_distribution<> dist(0,x-1);
-	unsigned int selectedVertexSetIndex = dist(gen);
+	unsigned int selectedVertexSetIndex = dist(generator);
 	int selectedVertex = 0;
 
 	// Returns the Vertex

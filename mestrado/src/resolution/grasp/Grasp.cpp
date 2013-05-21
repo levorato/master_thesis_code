@@ -86,7 +86,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph* g, float alpha, unsigned i
 		// the removal of vertex i automatically recalculates the gain function
 		lc.removeVertex(i);
 
-		Cc->printClustering();
+		// Cc->printClustering();
 	}
 	std::cout << "\nInitial clustering completed.\n";
 	Cc->printClustering();
@@ -107,7 +107,10 @@ ClusteringPtr Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
 		NeighborhoodList neig(cStar.get(), g->getN());
 		cout << "Generating neighborhood of size l = " << k << endl;
 		ClusteringPtr cl = neig.generateNeighborhood(k, g, problem);
+		cout << "Comparing local solution value." << endl;
 		if(problem->objectiveFunction(g, cl.get()) < problem->objectiveFunction(g, cStar.get())) {
+			cout << "New local solution found." << endl;
+			cl->printClustering();
 			cStar = cl;
 			k = 1;
 		} else {

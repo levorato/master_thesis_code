@@ -9,6 +9,8 @@
 
 namespace problem {
 
+using namespace std;
+
 CCProblem::CCProblem() {
 	// TODO Auto-generated constructor stub
 
@@ -22,10 +24,14 @@ CCProblem::~CCProblem() {
  * The Imbalance of a partition P (I(P)) is defined as the total
  * weight of negative uncut arcs and positive cut arcs.
  */
-int CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
-	int positiveSum = 0, negativeSum = 0;
+float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
+	float positiveSum = 0, negativeSum = 0;
 	int nc = c->getNumberOfClusters();
 	int n = c->getNumberOfNodes();
+
+	cout << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
+	// c->printClustering();
+
 	// For each cluster i
 	for(int i = 0; i < nc; i++) {
 		BoolArray isInClusterI = *(c->getCluster(i));
@@ -37,7 +43,7 @@ int CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
 					if(isInClusterI[b]) {
 						// nodes a and b are in the same cluster
 						if(g->getEdge(a, b) < 0)
-							negativeSum += g->getEdge(a, b);
+							negativeSum += (g->getEdge(a, b) * (-1));
 					}
 				}
 			}
@@ -61,6 +67,7 @@ int CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
 			}
 		}
 	}
+	cout << "Valor calculado: " << (positiveSum + negativeSum) << endl;
 	return (positiveSum + negativeSum);
 }
 

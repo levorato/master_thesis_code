@@ -75,10 +75,11 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 							cTemp->removeNodeFromCluster(i, k1);
 							// TODO program an alternative: node i becomes a new cluster, all by itself
 							cTemp->addNodeToCluster(i, k2);
-							// cTemp->printClustering();
+							cTemp->printClustering();
 							float quality = problem->objectiveFunction(g, cTemp.get());
-							if(quality > originalQuality) {
+							if(quality < originalQuality) {
 								cout << "Better solution found in 1-neighborhood." << endl;
+								candidateClustering.reset(cTemp.get());
 								return cTemp;
 							}
 						}
@@ -92,8 +93,9 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 					cTemp->addCluster(nodeArray, 1);
 					cTemp->printClustering();
 					float quality = problem->objectiveFunction(g, cTemp.get());
-					if(quality > originalQuality) {
+					if(quality < originalQuality) {
 						cout << "Better solution found in 1-neighborhood." << endl;
+						candidateClustering.reset(cTemp.get());
 						return cTemp;
 					}
 				}
@@ -124,7 +126,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 												ClusteringPtr cTemp = process2optCombination(k1, k2, k3, k4, n, i, j);
 												// cTemp->printClustering();
 												float quality = problem->objectiveFunction(g, cTemp.get());
-												if(quality > originalQuality) {
+												if(quality < originalQuality) {
 													cout << "Better solution found in 2-neighborhood." << endl;
 													return cTemp;
 												}
@@ -135,7 +137,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 												n, i, j);
 										// cTemp->printClustering();
 										float quality = problem->objectiveFunction(g, cTemp.get());
-										if(quality > originalQuality) {
+										if(quality < originalQuality) {
 											cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
 										}
@@ -150,7 +152,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 												n, i, j);
 										// cTemp->printClustering();
 										float quality = problem->objectiveFunction(g, cTemp.get());
-										if(quality > originalQuality) {
+										if(quality < originalQuality) {
 											cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
 										}
@@ -161,7 +163,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 										n, i, j);
 								// cTemp->printClustering();
 								float quality = problem->objectiveFunction(g, cTemp.get());
-								if(quality > originalQuality) {
+								if(quality < originalQuality) {
 									cout << "Better solution found in 2-neighborhood." << endl;
 									return cTemp;
 								}

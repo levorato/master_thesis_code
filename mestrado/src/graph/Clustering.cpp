@@ -73,10 +73,12 @@ void remove(vector<T>* vec, size_t pos) {
 }
 
 void Clustering::removeCluster(int k) {
-	remove <BoolArrayPtr> (clusterListPtr.get(), k);
+	ClusterList* ptr = clusterListPtr.get();
+	remove <BoolArrayPtr> (ptr, k);
 }
 
 // TODO tratar o caso em que o cluster k desaparece
+// Ainda esta mantendo o cluster vazio na lista de clusters
 void Clustering::removeNodeFromCluster(int i, int k) {
 	BoolArray* cluster = this->getCluster(k);
 	// verifica se o cluster eh unitario
@@ -86,6 +88,7 @@ void Clustering::removeNodeFromCluster(int i, int k) {
 		(*cluster)[i] = false;
 	}
 	this->numberOfNodes--;
+	std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
 }
 
 // TODO test this method
