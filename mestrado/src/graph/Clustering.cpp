@@ -8,6 +8,8 @@
 #include "include/Clustering.h"
 #include <limits>
 
+using namespace std;
+
 namespace clusteringgraph {
 
 Clustering::Clustering(int n) : numberOfNodes(n), clusterListPtr(new ClusterList()) {
@@ -22,7 +24,7 @@ Clustering::Clustering(Clustering* clustering, int numberOfNodes) : numberOfNode
 }
 
 Clustering::~Clustering() {
-	// TODO Auto-generated destructor stub
+	cout << "Freeing memory of Clustering object..." << endl;
 }
 
 int Clustering::getNumberOfNodes() {
@@ -60,10 +62,26 @@ void Clustering::addNodeToCluster(int i, int k) {
 	cluster[i] = true;
 }
 
+template <typename T>
+void remove(vector<T>* vec, size_t pos) {
+    typename vector<T>::iterator it = vec->begin();
+    advance(it, pos);
+    vec->erase(it);
+}
+
+void Clustering::removeCluster(int k) {
+	remove <BoolArray> (clusterListPtr.get(), k);
+}
+
 // TODO tratar o caso em que o cluster k desaparece
 void Clustering::removeNodeFromCluster(int i, int k) {
 	BoolArray cluster = this->getCluster(k);
-	cluster[i] = false;
+	// verifica se o cluster eh unitario
+	if(cluster.size() == 1) {
+		this->removeCluster(k);
+	} else {
+		cluster[i] = false;
+	}
 }
 
 // TODO test this method

@@ -10,6 +10,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_utility.hpp>
+#include <cassert>
 
 /*
  * Defines the boost::graph_traits class template.
@@ -27,7 +28,8 @@ using namespace boost;
 namespace clusteringgraph {
 
 SignedGraph::SignedGraph(int numberOfNodes) : graphPtr(new UndirectedGraph(numberOfNodes)),
-		modularityMatrixPtr(new ModularityMatrix(boost::extents[numberOfNodes][numberOfNodes])) {
+		modularityMatrixPtr(new ModularityMatrix(boost::extents[numberOfNodes][numberOfNodes])),
+		modularityMatrixCalculated(false) {
 
 }
 
@@ -72,9 +74,11 @@ void SignedGraph::calculateModularityMatrix() {
 			(*modularityMatrixPtr)[i][j] = a - ( (degree[i] * degree[j]) / (2 * m) );
 		}
 	}
+	modularityMatrixCalculated = true;
 }
 
 ModularityMatrix* SignedGraph::getModularityMatrix() {
+	assert(modularityMatrixCalculated);
 	return modularityMatrixPtr.get();
 }
 

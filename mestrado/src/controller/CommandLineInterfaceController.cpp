@@ -128,7 +128,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
         Grasp resolution;
         // TODO resolver problema de referencia do objeto CCProblem
         CCProblem* problem = new problem::CCProblem();
-        Clustering* c = resolution.executeGRASP(g, numberOfIterations, alpha, l, problem);
+        ClusteringPtr c = resolution.executeGRASP(g, numberOfIterations, alpha, l, problem);
         c->printClustering();
     }
     catch(std::exception& e)

@@ -35,7 +35,7 @@ public:
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	Clustering* executeGRASP(SignedGraph* g, int iter, float alpha, int l,
+	ClusteringPtr executeGRASP(SignedGraph* g, int iter, float alpha, int l,
 			ClusteringProblem* problem);
 
 private:
@@ -47,7 +47,7 @@ private:
 	 * @param alpha ramdom seed belonging to the interval (0, 1)
 	 * @return Clustering C(c)
 	 */
-	Clustering* constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed);
+	ClusteringPtr constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed);
 
 	/**
 	 * Executes the local search algorithm. Repeatedly derives
@@ -61,7 +61,7 @@ private:
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	Clustering* localSearch(SignedGraph* g, Clustering* Cc, int l,
+	ClusteringPtr localSearch(SignedGraph* g, Clustering* Cc, int l,
 			ClusteringProblem* problem);
 
 };

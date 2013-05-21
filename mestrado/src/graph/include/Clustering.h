@@ -37,6 +37,8 @@ typedef shared_ptr<ClusterList> ClusterListPtr;
  */
 class Clustering {
 public:
+	static const int NEW_CLUSTER = -1;
+
 	/**
 	 * Creates a Clustering object with n nodes and no clusters.
 	 */
@@ -86,6 +88,11 @@ public:
 	 * Returns the number of clusters in this clustering configuration.
 	 */
 	int getNumberOfClusters();
+
+	/**
+	 * Removes the k-th cluster.
+	 */
+	void removeCluster(int k);
 
 	/**
 	 * Return the gain of a given vertex (based on the modularity matrix).

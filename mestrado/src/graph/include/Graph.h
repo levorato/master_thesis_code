@@ -75,6 +75,7 @@ private:
 	GraphPtr graphPtr;
 	/** the modularity matrix */
 	ModularityMatrixPtr modularityMatrixPtr;
+	bool modularityMatrixCalculated;
 };
 
 } /* namespace clusteringgraph */

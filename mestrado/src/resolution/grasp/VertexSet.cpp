@@ -36,8 +36,8 @@ int VertexSet::chooseRandomVertex(int x) {
 	// Generates a random number between 1 and x
 	boost::random::mt19937 gen;
 	// distribution that maps to 1..x
-	boost::random::uniform_int_distribution<> dist(1,x);
-	int selectedVertexSetIndex = dist(gen);
+	boost::random::uniform_int_distribution<> dist(0,x-1);
+	unsigned int selectedVertexSetIndex = dist(gen);
 	int selectedVertex = 0;
 
 	// Returns the Vertex
