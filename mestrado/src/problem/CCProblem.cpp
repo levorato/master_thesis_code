@@ -28,7 +28,7 @@ int CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
 	int n = c->getNumberOfNodes();
 	// For each cluster i
 	for(int i = 0; i < nc; i++) {
-		BoolArray isInClusterI = c->getCluster(i);
+		BoolArray isInClusterI = *(c->getCluster(i));
 
 		// calculates the sum of internal negative edges (within the same cluster)
 		for(int a = 0; a < n; a++) {
@@ -46,7 +46,7 @@ int CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
 		// For each cluster j
 		for(int j = 0; j < nc; j++) {
 			if(i == j)  continue;
-			BoolArray isInClusterJ = c->getCluster(j);
+			BoolArray isInClusterJ = *(c->getCluster(j));
 
 			for(int a = 0; a < n; a++) {
 				if(isInClusterI[a]) {

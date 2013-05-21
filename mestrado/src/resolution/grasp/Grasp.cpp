@@ -72,10 +72,15 @@ ClusteringPtr Grasp::constructClustering(SignedGraph* g, float alpha, unsigned i
 		// Adds the vertex i to the partial clustering C, in a way so defined by
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
-		// TODO: Colocar o vertice i em um cluster a parte ou em um cluster
-		// existente, dependendo do valor calculado da funcao gain gc(i)
-		int vertexList[1] = {i};
-		Cc->addCluster(vertexList, 1);
+		GainCalculation gainCalculation = Cc->gain(g, i);
+		if(gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
+			// inserts i as a separate cluster
+			int vertexList[1] = {i};
+			Cc->addCluster(vertexList, 1);
+		} else {
+			// inserts i into existing cluster
+			Cc->addNodeToCluster(i, gainCalculation.clusterNumber);
+		}
 
 		// 4. lc = lc - {i}
 		// the removal of vertex i automatically recalculates the gain function

@@ -24,11 +24,16 @@ namespace clusteringgraph {
 // based on real bits
 // the following array is initially empty and needs to be dynamically intialized
 typedef boost::dynamic_bitset<> BoolArray;
+typedef shared_ptr<BoolArray> BoolArrayPtr;
 // Defines the cluster list and its pointer
 // the list is made of boolean arrays, indicating that node i is in the cluster
 // TODO verificar se eh necessario armazenar o ponteiro para o array ao inves do array em si
-typedef vector<BoolArray> ClusterList;
+typedef vector<BoolArrayPtr> ClusterList;
 typedef shared_ptr<ClusterList> ClusterListPtr;
+typedef struct {
+	float value;
+	int clusterNumber;
+} GainCalculation;
 
 /**
  * This class models a set of clusters of a graph. Its main data structure is
@@ -62,7 +67,7 @@ public:
 	/**
 	 * Returns the n-th cluster of the list.
 	 */
-	const BoolArray& getCluster(int clusterNumber);
+	BoolArray* getCluster(int clusterNumber);
 
 	/**
 	 * Adds a node i in cluster k.
@@ -95,9 +100,11 @@ public:
 	void removeCluster(int k);
 
 	/**
-	 * Return the gain of a given vertex (based on the modularity matrix).
+	 * Returns the gain of a given vertex (based on the modularity matrix)
+	 * and the number of the cluster where the insertion of the vertex
+	 * brings the best gain possible (return type is GainCalculation).
 	 */
-	float gain(SignedGraph* graph, const int &a);
+	GainCalculation gain(SignedGraph* graph, const int &a);
 
 	/**
 	 * Verifies if this clustering object equals another clustering object.
@@ -126,7 +133,7 @@ public:
     { graph = g;	clustering = c; }
     bool operator () ( const int& a, const int& b ) const
     {
-      return clustering->gain(graph, a) < clustering->gain(graph, b);
+      return clustering->gain(graph, a).value < clustering->gain(graph, b).value;
     }
 };
 

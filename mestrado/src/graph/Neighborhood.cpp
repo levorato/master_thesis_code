@@ -19,9 +19,9 @@ NeighborhoodList::NeighborhoodList(Clustering *c, int n) :
 ClusteringPtr NeighborhoodList::process2optCombination(int k1, int k2, int k3,
 		int k4, int n, int i, int j) {
 	// cluster(k3)
-	const BoolArray cluster3 = this->clusteringPtr->getCluster(k3);
+	const BoolArray cluster3 = *(this->clusteringPtr->getCluster(k3));
 	// cluster(k4)
-	const BoolArray cluster4 = this->clusteringPtr->getCluster(k4);
+	const BoolArray cluster4 = *(this->clusteringPtr->getCluster(k4));
 
 	ClusteringPtr cTemp(new Clustering(this->clusteringPtr.get(), n));
 	// removes node i from cluster1 and inserts in cluster3
@@ -59,7 +59,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 	if(l == 1) {  // 1-opt
 		for(int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
-			const BoolArray cluster1 = this->clusteringPtr->getCluster(k1);
+			const BoolArray cluster1 = *(this->clusteringPtr->getCluster(k1));
 			// For each node i in cluster(k1)
 			for(int i = 0; i < n; i++) {
 				if(cluster1[i]) {
@@ -67,7 +67,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 					for(int k2 = 0; k2 < nc; k2++) {
 						if(k1 != k2) {
 							// cluster(k2)
-							const BoolArray cluster2 = this->clusteringPtr->getCluster(k2);
+							const BoolArray cluster2 = *(this->clusteringPtr->getCluster(k2));
 							// removes node i from cluster1 and inserts in cluster2
 							cout << "New clustering combination generated." << endl;
 							ClusteringPtr cTemp(new Clustering(this->clusteringPtr.get(), n));
@@ -102,10 +102,10 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g, Clus
 	} else {  // 2-opt
 		for(int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
-			const BoolArray cluster1 = this->clusteringPtr->getCluster(k1);
+			const BoolArray cluster1 = *(this->clusteringPtr->getCluster(k1));
 			for(int k2 = k1 + 1; k2 < nc; k2++) {
 				// cluster(k2)
-				const BoolArray cluster2 = this->clusteringPtr->getCluster(k2);
+				const BoolArray cluster2 = *(this->clusteringPtr->getCluster(k2));
 				// For each node i in cluster(k1)
 				for(int i = 0; i < n; i++) {
 					if(cluster1[i]) {

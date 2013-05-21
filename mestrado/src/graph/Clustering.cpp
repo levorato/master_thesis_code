@@ -37,7 +37,7 @@ int Clustering::getNumberOfClusters() {
 
 void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 	// 1. Create a new cluster in the list
-	BoolArray array(MAX_NODES);
+	BoolArrayPtr array(new BoolArray(MAX_NODES));
 
 	// 2. For every vertex in the list, remove the vertex from
 	// any other cluster and add it to the newly created cluster
@@ -46,20 +46,23 @@ void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 		std::cout << "Adding vertex " << vertexList[i] << " to cluster " << numberOfClusters << std::endl;
 		int vertex = vertexList[i];
 		for(int k = 0; k < numberOfClusters; k++) {
-			clusterListPtr->at(k)[vertex] = false;
+			(*clusterListPtr->at(k))[vertex] = false;
 		}
-		array[vertex] = true;
+		(*array)[vertex] = true;
 	}
 	this->clusterListPtr->push_back(array);
+	this->numberOfNodes += arraySize;
 }
 
-const BoolArray& Clustering::getCluster(int clusterNumber) {
-	return clusterListPtr->at(clusterNumber);
+BoolArray* Clustering::getCluster(int clusterNumber) {
+	return clusterListPtr->at(clusterNumber).get();
 }
 
 void Clustering::addNodeToCluster(int i, int k) {
-	BoolArray cluster = this->getCluster(k);
-	cluster[i] = true;
+	std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
+	BoolArray* cluster = this->getCluster(k);
+	(*cluster)[i] = true;
+	this->numberOfNodes++;
 }
 
 template <typename T>
@@ -70,30 +73,34 @@ void remove(vector<T>* vec, size_t pos) {
 }
 
 void Clustering::removeCluster(int k) {
-	remove <BoolArray> (clusterListPtr.get(), k);
+	remove <BoolArrayPtr> (clusterListPtr.get(), k);
 }
 
 // TODO tratar o caso em que o cluster k desaparece
 void Clustering::removeNodeFromCluster(int i, int k) {
-	BoolArray cluster = this->getCluster(k);
+	BoolArray* cluster = this->getCluster(k);
 	// verifica se o cluster eh unitario
-	if(cluster.size() == 1) {
+	if(cluster->size() == 1) {
 		this->removeCluster(k);
 	} else {
-		cluster[i] = false;
+		(*cluster)[i] = false;
 	}
+	this->numberOfNodes--;
 }
 
 // TODO test this method
-float Clustering::gain(SignedGraph* graph, const int &a) {
+GainCalculation Clustering::gain(SignedGraph* graph, const int &a) {
+	GainCalculation gainCalculation;
 	ModularityMatrix* modularityMatrix = graph->getModularityMatrix();
 	float max = (*modularityMatrix)[a][a];
+	gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
+
 	// For each cluster k...
 	int nc = this->getNumberOfClusters();
 	for(int k = 0; k < nc; k++) {
 		int sum = 0;
 		// Cluster(k)
-		BoolArray cluster = this->clusterListPtr->at(k);
+		BoolArray cluster = *(this->clusterListPtr->at(k));
 		// j in Cluster(k)
 		for(int j = 0; j < this->numberOfNodes; j++) {
 			if(cluster[j]) {
@@ -102,10 +109,13 @@ float Clustering::gain(SignedGraph* graph, const int &a) {
 		}
 		sum += (*modularityMatrix)[a][a];
 		if(sum > max) {
-			max = sum ;
+			max = sum;
+			gainCalculation.clusterNumber = k;
 		}
 	}
-	return max;
+
+	gainCalculation.value = max;
+	return gainCalculation;
 }
 
 void Clustering::printClustering() {
@@ -118,8 +128,9 @@ void Clustering::print(std::ostream& os, ClusterList* l)
 	int numberOfClusters = l->size();
 	for(int k = 0; k < numberOfClusters; k++) {
     	os << " Partition " << k << ": [ ";
-    	for(int i = 0; i < numberOfNodes; i++) {
-    		if(clusterListPtr->at(k)[i]) {
+    	BoolArrayPtr arrayPtr = clusterListPtr->at(k);
+    	for(int i = 0; i < MAX_NODES; i++) {
+    		if((*arrayPtr)[i]) {
     			os << i << " ";
     		}
     	}
