@@ -120,16 +120,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
         // Reads the graph from the specified text file
         SimpleTextGraphFileReader reader;
-        SignedGraph* g = reader.readGraphFromFile(vm["input-file"].as< vector<string> >().at(0));
+        SignedGraphPtr g = reader.readGraphFromFile(vm["input-file"].as< vector<string> >().at(0));
         if(debug) {
         	g->printGraph();
         }
         // Triggers the execution of the GRASP algorithm
         Grasp resolution;
         // TODO resolver problema de referencia do objeto CCProblem
-        CCProblem* problem = new problem::CCProblem();
-        resolution.executeGRASP(g, numberOfIterations, alpha, l, problem);
-        ClusteringPtr c = resolution.CStar;
+        CCProblem problem();
+        ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, problem);
         c->printClustering();
     }
     catch(std::exception& e)

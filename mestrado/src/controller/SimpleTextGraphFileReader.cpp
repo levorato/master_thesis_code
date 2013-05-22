@@ -14,6 +14,7 @@
 #include <algorithm>    // copy
 #include <iterator>     // ostream_operator
 
+#include <boost/smart_ptr.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
@@ -32,7 +33,7 @@ SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 	// TODO Auto-generated destructor stub
 }
 
-SignedGraph* SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
+SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 
 	int n = 0, e = 0;
 	ifstream in(filepath.c_str());
@@ -57,7 +58,7 @@ SignedGraph* SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 	    std::cerr << "Error: input string was not valid" << std::endl;
 	}
 
-	SignedGraph* g = new SignedGraph(n);
+	SignedGraphPtr g = boost::make_shared<SignedGraph>(n);
 	std::cout << "Successfully created signed graph with " << n << " vertices." << std::endl;
 
 	// captura as arestas do grafo com seus valores
@@ -68,7 +69,7 @@ SignedGraph* SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 		vec.assign(tokens.begin(),tokens.end());
 		if (vec.size() < 3) continue;
 		if(vec.at(2).rfind('\n') != string::npos)
-		std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+			std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
 		try {
 			int a = boost::lexical_cast<int>(vec.at(0));

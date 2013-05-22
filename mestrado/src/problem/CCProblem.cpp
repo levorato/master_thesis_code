@@ -24,7 +24,7 @@ CCProblem::~CCProblem() {
  * The Imbalance of a partition P (I(P)) is defined as the total
  * weight of negative uncut arcs and positive cut arcs.
  */
-float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
+float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 	float positiveSum = 0, negativeSum = 0;
 	int nc = c->getNumberOfClusters();
 	int n = c->getNumberOfNodes();
@@ -34,7 +34,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
 
 	// For each cluster i
 	for(int i = 0; i < nc; i++) {
-		BoolArray isInClusterI = *(c->getCluster(i));
+		BoolArray isInClusterI = c->getCluster(i);
 
 		// calculates the sum of internal negative edges (within the same cluster)
 		for(int a = 0; a < n; a++) {
@@ -52,7 +52,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) {
 		// For each cluster j
 		for(int j = 0; j < nc; j++) {
 			if(i == j)  continue;
-			BoolArray isInClusterJ = *(c->getCluster(j));
+			BoolArray isInClusterJ = c->getCluster(j);
 
 			for(int a = 0; a < n; a++) {
 				if(isInClusterI[a]) {

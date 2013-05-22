@@ -9,10 +9,10 @@
 #define GRAPH_H_
 
 #include <boost/config.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/multi_array.hpp>
+#include <boost/shared_ptr.hpp>
 
 // Maximum number of nodes in a graph
 #define MAX_NODES 1000
@@ -27,10 +27,8 @@ struct Edge {
     Edge(float w) : weight(w) { }
 };
 typedef adjacency_matrix<undirectedS, no_property, Edge > UndirectedGraph;
-typedef boost::scoped_ptr<UndirectedGraph> GraphPtr;
 // the modularity matrix: a matrix of float
 typedef multi_array<float, 2> ModularityMatrix;
-typedef boost::shared_ptr<ModularityMatrix> ModularityMatrixPtr;
 
 class SignedGraph {
 public:
@@ -67,16 +65,20 @@ public:
 	 */
 	void calculateModularityMatrix();
 
-	ModularityMatrix* getModularityMatrix();
+	ModularityMatrix& getModularityMatrix();
 
 	void printGraph();
 
 private:
-	GraphPtr graphPtr;
+	UndirectedGraph graph;
 	/** the modularity matrix */
-	ModularityMatrixPtr modularityMatrixPtr;
+	ModularityMatrix modularityMatrix;
 	bool modularityMatrixCalculated;
+	/* the number of nodes of the graph */
+	int n;
 };
+
+typedef boost::shared_ptr<SignedGraph> SignedGraphPtr;
 
 } /* namespace clusteringgraph */
 #endif /* GRAPH_H_ */

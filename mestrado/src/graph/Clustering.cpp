@@ -12,18 +12,18 @@ using namespace std;
 
 namespace clusteringgraph {
 
-Clustering::Clustering(int n) : numberOfNodes(n), clusterListPtr(new ClusterList()) {
+Clustering::Clustering(int n) : numberOfNodes(n), clusterList() {
 
 }
 
 // TODO test dimension attribution
-Clustering::Clustering(Clustering* clustering, int numberOfNodes) : numberOfNodes(numberOfNodes),
-		clusterListPtr(new ClusterList()) {
+Clustering::Clustering(const Clustering& clustering, int n) : numberOfNodes(n),
+		clusterList() {
 	// deep copy of the clusterlist data
-	for(unsigned int i = 0; i < clustering->clusterListPtr->size(); i++) {
-		BoolArray* boolArray = clustering->clusterListPtr->at(i).get();
+	for(unsigned int i = 0; i < clustering.clusterList.size(); i++) {
+		BoolArray* boolArray = clustering.clusterList.at(i).get();
 		BoolArrayPtr newArray(new BoolArray(MAX_NODES, boolArray->to_ulong()));
-		this->clusterListPtr->push_back(newArray);
+		this->clusterList.push_back(newArray);
 	}
 }
 
@@ -36,7 +36,7 @@ int Clustering::getNumberOfNodes() {
 }
 
 int Clustering::getNumberOfClusters() {
-	return this->clusterListPtr->size();
+	return this->clusterList.size();
 }
 
 void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
@@ -50,22 +50,22 @@ void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 		std::cout << "Adding vertex " << vertexList[i] << " to cluster " << numberOfClusters << std::endl;
 		int vertex = vertexList[i];
 		for(int k = 0; k < numberOfClusters; k++) {
-			(*clusterListPtr->at(k))[vertex] = false;
+			(*clusterList.at(k))[vertex] = false;
 		}
 		(*array)[vertex] = true;
 	}
-	this->clusterListPtr->push_back(array);
+	this->clusterList.push_back(array);
 	this->numberOfNodes += arraySize;
 }
 
-BoolArray* Clustering::getCluster(int clusterNumber) {
-	return clusterListPtr->at(clusterNumber).get();
+BoolArray& Clustering::getCluster(int clusterNumber) {
+	return *(clusterList.at(clusterNumber).get());
 }
 
 void Clustering::addNodeToCluster(int i, int k) {
 	std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
-	BoolArray* cluster = this->getCluster(k);
-	(*cluster)[i] = true;
+	BoolArray cluster = this->getCluster(k);
+	cluster[i] = true;
 	this->numberOfNodes++;
 }
 
@@ -77,29 +77,28 @@ void remove(vector<T>* vec, size_t pos) {
 }
 
 void Clustering::removeCluster(int k) {
-	ClusterList* ptr = clusterListPtr.get();
-	remove <BoolArrayPtr> (ptr, k);
+	remove <BoolArrayPtr> (&clusterList, k);
 }
 
 // TODO tratar o caso em que o cluster k desaparece
 // Ainda esta mantendo o cluster vazio na lista de clusters
 void Clustering::removeNodeFromCluster(int i, int k) {
-	BoolArray* cluster = this->getCluster(k);
+	BoolArray cluster = this->getCluster(k);
 	// verifica se o cluster eh unitario
-	if(cluster->size() == 1) {
+	if(cluster.size() == 1) {
 		this->removeCluster(k);
 	} else {
-		(*cluster)[i] = false;
+		cluster[i] = false;
 	}
 	this->numberOfNodes--;
 	std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
 }
 
 // TODO test this method
-GainCalculation Clustering::gain(SignedGraph* graph, const int &a) {
+GainCalculation Clustering::gain(SignedGraph& graph, const int &a) {
 	GainCalculation gainCalculation;
-	ModularityMatrix* modularityMatrix = graph->getModularityMatrix();
-	float max = (*modularityMatrix)[a][a];
+	ModularityMatrix& modularityMatrix = graph.getModularityMatrix();
+	float max = modularityMatrix[a][a];
 	gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
 
 	// For each cluster k...
@@ -107,14 +106,14 @@ GainCalculation Clustering::gain(SignedGraph* graph, const int &a) {
 	for(int k = 0; k < nc; k++) {
 		int sum = 0;
 		// Cluster(k)
-		BoolArray cluster = *(this->clusterListPtr->at(k));
+		BoolArray cluster = *(this->clusterList.at(k));
 		// j in Cluster(k)
 		for(int j = 0; j < this->numberOfNodes; j++) {
 			if(cluster[j]) {
-				sum += 2 * (*modularityMatrix)[a][j];
+				sum += 2 * modularityMatrix[a][j];
 			}
 		}
-		sum += (*modularityMatrix)[a][a];
+		sum += modularityMatrix[a][a];
 		if(sum > max) {
 			max = sum;
 			gainCalculation.clusterNumber = k;
@@ -127,15 +126,15 @@ GainCalculation Clustering::gain(SignedGraph* graph, const int &a) {
 
 void Clustering::printClustering() {
 	std::cout << "Clustering configuration: " << std::endl;
-	print(std::cout, clusterListPtr.get());
+	print(std::cout, clusterList);
 }
 
-void Clustering::print(std::ostream& os, ClusterList* l)
+void Clustering::print(std::ostream& os, ClusterList& l)
 {
-	int numberOfClusters = l->size();
+	int numberOfClusters = l.size();
 	for(int k = 0; k < numberOfClusters; k++) {
     	os << " Partition " << k << ": [ ";
-    	BoolArrayPtr arrayPtr = clusterListPtr->at(k);
+    	BoolArrayPtr arrayPtr = l.at(k);
     	for(int i = 0; i < MAX_NODES; i++) {
     		if((*arrayPtr)[i]) {
     			os << i << " ";
@@ -146,9 +145,9 @@ void Clustering::print(std::ostream& os, ClusterList* l)
 }
 
 // TODO verificar se essa igualdade funciona
-bool Clustering::equals(Clustering* c) {
-	if(std::equal(this->clusterListPtr.get(), this->clusterListPtr.get() +
-			this->clusterListPtr->size(), c->clusterListPtr.get()))
+bool Clustering::equals(Clustering& c) {
+	if(std::equal(&this->clusterList, &this->clusterList +
+			this->clusterList.size(), &c.clusterList))
 		return true;
 	else
 		return false;

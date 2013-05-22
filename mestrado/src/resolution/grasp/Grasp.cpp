@@ -13,8 +13,11 @@
 
 #include <algorithm>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 using namespace problem;
+using namespace boost;
 
 namespace resolution {
 namespace grasp {
@@ -28,44 +31,43 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-void Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
-		ClusteringProblem* problem) {
+ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
+		ClusteringProblem& problem) {
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
-	constructClustering(g, alpha, ramdomSeed);
-	CStar.reset();
+	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
 
 	for (int i = 0; i < iter; i++) {
 		cout << "GRASP iteration " << i << endl;
 		// 1. Construct the clustering
-		Clustering* Cc(constructClustering(g, alpha, ramdomSeed));
+		ClusteringPtr Cc = constructClustering(g, alpha, ramdomSeed);
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl(localSearch(g, Cc, l, problem));
+		ClusteringPtr Cl = localSearch(g, *Cc, l, problem);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		// TODO resolver memory leak aqui!!!
-		if(problem->objectiveFunction(g, Cl.get()) < problem->objectiveFunction(g, CStar.get())) {
+		if(problem.objectiveFunction(g, Cl.get()) < problem.objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;
 			CStar.reset();
 			CStar = Cl;
 		}
 	}
 	cout << "GRASP procedure done." << endl;
-	// return CStar;
+	return CStar;
 }
 
-Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed) {
-	Clustering* Cc = new Clustering(g->getN()); // Cc = empty
+ClusteringPtr Grasp::constructClustering(SignedGraph *g, float alpha, unsigned int ramdomSeed) {
+	ClusteringPtr Cc = make_shared<Clustering>(g->getN()); // Cc = empty
 	VertexSet lc(g->getN()); // L(Cc) = V(G)
 	std::cout << "GRASP construct clustering...\n";
-	// It is important to calculate the modularity matrix first (used by vertex sorting)
-	g->calculateModularityMatrix();
 
 	while(lc.size() > 0) { // lc != empty
 		// cout << "Vertex list size is " << lc.size() << endl;
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-		lc.sort(g, Cc);
+		// It is important to calculate the modularity matrix first (used by vertex sorting)
+		g->calculateModularityMatrix();
+		lc.sort(g, Cc.get());
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
@@ -76,7 +78,7 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int
 		// Adds the vertex i to the partial clustering C, in a way so defined by
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
-		GainCalculation gainCalculation = Cc->gain(g, i);
+		GainCalculation gainCalculation = Cc->gain(*g, i);
 		if(gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
 			int vertexList[1] = {i};
@@ -97,11 +99,11 @@ Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int
 	return Cc;
 }
 
-Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
-		ClusteringProblem* problem) {
+ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int l,
+		ClusteringProblem& problem) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
-	CStar.reset(Cc); // C* := Cc
+	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
 	std::cout << "GRASP local search...\n";
 
 	while(k <= l) {
@@ -113,7 +115,7 @@ Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
 		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
 		cout << "Comparing local solution value." << endl;
 		if(Cl.get() != NULL && CStar != NULL) {
-			if(problem->objectiveFunction(g, Cl.get()) < problem->objectiveFunction(g, CStar.get())) {
+			if(problem.objectiveFunction(g, Cl.get()) < problem.objectiveFunction(g, CStar.get())) {
 				cout << "New local solution found." << endl;
 				Cl->printClustering();
 				CStar.reset();

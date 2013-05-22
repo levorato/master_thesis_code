@@ -7,6 +7,7 @@
 
 #include "include/Neighborhood.h"
 #include <limits>
+#include <boost/make_shared.hpp>
 
 
 namespace clusteringgraph {
@@ -19,11 +20,11 @@ NeighborhoodList::NeighborhoodList(int n) :
 ClusteringPtr NeighborhoodList::process2optCombination(Clustering *clustering, int k1, int k2, int k3,
 		int k4, int n, int i, int j) {
 	// cluster(k3)
-	const BoolArray cluster3 = *(clustering->getCluster(k3));
+	const BoolArray cluster3 = clustering->getCluster(k3);
 	// cluster(k4)
-	const BoolArray cluster4 = *(clustering->getCluster(k4));
+	const BoolArray cluster4 = clustering->getCluster(k4);
 
-	ClusteringPtr cTemp(new Clustering(clustering, n));
+	ClusteringPtr cTemp = make_shared<Clustering>(*clustering, n);
 	// removes node i from cluster1 and inserts in cluster3
 	// TODO check if the removal of node i destroys cluster1
 	cTemp->removeNodeFromCluster(i, k1);
@@ -50,15 +51,15 @@ ClusteringPtr NeighborhoodList::process2optCombination(Clustering *clustering, i
 }
 
 ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
-		Clustering* clustering, ClusteringProblem* problem) {
+		Clustering* clustering, const ClusteringProblem& problem) {
 	int nc = clustering->getNumberOfClusters();
 	int n = clustering->getNumberOfNodes();
-	float bestValue = problem->objectiveFunction(g, clustering);
+	float bestValue = problem.objectiveFunction(g, clustering);
 
 	if(l == 1) {  // 1-opt
 		for(int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
-			const BoolArray cluster1 = *(clustering->getCluster(k1));
+			const BoolArray cluster1 = clustering->getCluster(k1);
 			// For each node i in cluster(k1)
 			for(int i = 0; i < n; i++) {
 				if(cluster1[i]) {
@@ -66,15 +67,15 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 					for(int k2 = 0; k2 < nc; k2++) {
 						if(k1 != k2) {
 							// cluster(k2)
-							const BoolArray cluster2 = *(clustering->getCluster(k2));
+							const BoolArray cluster2 = clustering->getCluster(k2);
 							// removes node i from cluster1 and inserts in cluster2
 							cout << "New clustering combination generated." << endl;
-							ClusteringPtr cTemp(new Clustering(clustering, n));
+							ClusteringPtr cTemp = make_shared<Clustering>(*clustering, n);
 							// TODO check if the removal of node i destroys cluster1
 							cTemp->removeNodeFromCluster(i, k1);
 							cTemp->addNodeToCluster(i, k2);
 							// cTemp->printClustering();
-							float objective = problem->objectiveFunction(g, cTemp.get());
+							float objective = problem.objectiveFunction(g, cTemp.get());
 							if(objective < bestValue) {
 								cout << "Better solution found in 1-neighborhood." << endl;
 								return cTemp;
@@ -84,12 +85,12 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 					// Option 2: node i is moved to a new cluster, alone
 					// removes node i from cluster1 and inserts in newCluster
 					cout << "New clustering combination generated." << endl;
-					ClusteringPtr cTemp(new Clustering(clustering, n));
+					ClusteringPtr cTemp = make_shared<Clustering>(*clustering, n);
 					cTemp->removeNodeFromCluster(i, k1);
 					int nodeArray[1] = {i};
 					cTemp->addCluster(nodeArray, 1);
 					// cTemp->printClustering();
-					float objective = problem->objectiveFunction(g, cTemp.get());
+					float objective = problem.objectiveFunction(g, cTemp.get());
 					if(objective < bestValue) {
 						cout << "Better solution found in 1-neighborhood." << endl;
 						return cTemp;
@@ -100,10 +101,10 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 	} else {  // 2-opt
 		for(int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
-			const BoolArray cluster1 = *(clustering->getCluster(k1));
+			const BoolArray cluster1 = clustering->getCluster(k1);
 			for(int k2 = k1 + 1; k2 < nc; k2++) {
 				// cluster(k2)
-				const BoolArray cluster2 = *(clustering->getCluster(k2));
+				const BoolArray cluster2 = clustering->getCluster(k2);
 				// For each node i in cluster(k1)
 				for(int i = 0; i < n; i++) {
 					if(cluster1[i]) {
@@ -121,7 +122,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 												// cluster(k4)
 												ClusteringPtr cTemp = process2optCombination(clustering, k1, k2, k3, k4, n, i, j);
 												// cTemp->printClustering();
-												float objective = problem->objectiveFunction(g, cTemp.get());
+												float objective = problem.objectiveFunction(g, cTemp.get());
 												if(objective < bestValue) {
 													cout << "Better solution found in 2-neighborhood." << endl;
 													return cTemp;
@@ -132,7 +133,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 										ClusteringPtr cTemp = process2optCombination(clustering, k1, k2, k3, Clustering::NEW_CLUSTER,
 												n, i, j);
 										// cTemp->printClustering();
-										float objective = problem->objectiveFunction(g, cTemp.get());
+										float objective = problem.objectiveFunction(g, cTemp.get());
 										if(objective < bestValue) {
 											cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -147,7 +148,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 										ClusteringPtr cTemp = process2optCombination(clustering, k1, k2, Clustering::NEW_CLUSTER, k4,
 												n, i, j);
 										// cTemp->printClustering();
-										float objective = problem->objectiveFunction(g, cTemp.get());
+										float objective = problem.objectiveFunction(g, cTemp.get());
 										if(objective < bestValue) {
 											cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -158,7 +159,7 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 								ClusteringPtr cTemp = process2optCombination(clustering, k1, k2, Clustering::NEW_CLUSTER, Clustering::NEW_CLUSTER,
 										n, i, j);
 								// cTemp->printClustering();
-								float objective = problem->objectiveFunction(g, cTemp.get());
+								float objective = problem.objectiveFunction(g, cTemp.get());
 								if(objective < bestValue) {
 									cout << "Better solution found in 2-neighborhood." << endl;
 									return cTemp;

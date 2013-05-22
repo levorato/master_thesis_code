@@ -32,7 +32,7 @@ public:
 	 * @return NeighborhoodList*
 	 */
 	ClusteringPtr generateNeighborhood(int l, SignedGraph* g,
-			Clustering* clustering, ClusteringProblem* problem);
+			Clustering* clustering, const ClusteringProblem& problem);
 
 private:
 	int numberOfNodes;

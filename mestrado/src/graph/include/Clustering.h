@@ -29,7 +29,6 @@ typedef shared_ptr<BoolArray> BoolArrayPtr;
 // the list is made of boolean arrays, indicating that node i is in the cluster
 // TODO verificar se eh necessario armazenar o ponteiro para o array ao inves do array em si
 typedef vector<BoolArrayPtr> ClusterList;
-typedef shared_ptr<ClusterList> ClusterListPtr;
 typedef struct {
 	float value;
 	int clusterNumber;
@@ -51,11 +50,11 @@ public:
 	/**
 	 * Creates a Clustering object with n nodes based on the clusterList.
 	 */
-	Clustering(Clustering* clustering, int numberOfNodes);
+	Clustering(const Clustering& clustering, int n);
 	/**
 	 * Creates a Clustering object based on the clusterList.
 	 */
-	Clustering(ClusterList* clusterList);
+	Clustering(ClusterList& clusterList);
 
 	virtual ~Clustering();
 
@@ -67,7 +66,7 @@ public:
 	/**
 	 * Returns the n-th cluster of the list.
 	 */
-	BoolArray* getCluster(int clusterNumber);
+	BoolArray& getCluster(int clusterNumber);
 
 	/**
 	 * Adds a node i in cluster k.
@@ -104,21 +103,21 @@ public:
 	 * and the number of the cluster where the insertion of the vertex
 	 * brings the best gain possible (return type is GainCalculation).
 	 */
-	GainCalculation gain(SignedGraph* graph, const int &a);
+	GainCalculation gain(SignedGraph& graph, const int &a);
 
 	/**
 	 * Verifies if this clustering object equals another clustering object.
 	 * @return bool
 	 */
-	bool equals(Clustering *c);
+	bool equals(Clustering& c);
 
 private:
 	/** number of nodes in the graph (n) */
 	int numberOfNodes;
 	/** the cluster list, with dimensions k x n */
-	ClusterListPtr clusterListPtr;
+	ClusterList clusterList;
 
-	void print(std::ostream& os, ClusterList *l);
+	void print(std::ostream& os, ClusterList& l);
 };
 
 // TODO implement the gain function according to the gain function
@@ -133,7 +132,7 @@ public:
     { graph = g;	clustering = c; }
     bool operator () ( const int& a, const int& b ) const
     {
-      return clustering->gain(graph, a).value < clustering->gain(graph, b).value;
+      return clustering->gain(*graph, a).value < clustering->gain(*graph, b).value;
     }
 };
 

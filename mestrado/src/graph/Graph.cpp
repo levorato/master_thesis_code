@@ -27,9 +27,9 @@ using namespace boost;
 
 namespace clusteringgraph {
 
-SignedGraph::SignedGraph(int numberOfNodes) : graphPtr(new UndirectedGraph(numberOfNodes)),
-		modularityMatrixPtr(new ModularityMatrix(boost::extents[numberOfNodes][numberOfNodes])),
-		modularityMatrixCalculated(false) {
+SignedGraph::SignedGraph(int numberOfNodes) : graph(numberOfNodes),
+		modularityMatrix(boost::extents[numberOfNodes][numberOfNodes]),
+		modularityMatrixCalculated(false), n(numberOfNodes) {
 
 }
 
@@ -39,28 +39,29 @@ SignedGraph::~SignedGraph() {
 
 
 int SignedGraph::getN() {
-	return num_vertices(*graphPtr);
+	cout << "Graph n is " << n << endl;
+	return n;
 }
 
 int SignedGraph::getM() {
-	return graphPtr->m_num_edges;
+	return graph.m_num_edges;
 }
 
 void SignedGraph::addEdge(int a, int b, Edge edge) {
-	add_edge(a, b, edge, *graphPtr);
+	add_edge(a, b, edge, graph);
 }
 
 float SignedGraph::getEdge(const int &a, const int &b) {
-	return (*graphPtr).get_edge(a, b).second.m_value.weight;
+	return ((Edge)graph.get_edge(a, b).second).weight;
 }
 
 int SignedGraph::getDegree(const int &a) {
-	return in_degree(a, *graphPtr);
+	return in_degree(a, graph);
 }
 
 // TODO calculate the modularity matrix of weighed graphs
 void SignedGraph::calculateModularityMatrix() {
-	int m =this->getM();
+	int m = this->getM();
 	int numberOfNodes = this->getN();
 	int degree[numberOfNodes];
 	// Prestore the degrees for optimezed lookup
@@ -71,33 +72,33 @@ void SignedGraph::calculateModularityMatrix() {
 	for(int i = 0; i < numberOfNodes; i++) {
 		for(int j = 0; j < numberOfNodes; j++) {
 			int a = (this->getEdge(i, j) != 0) ? 1 : 0;
-			(*modularityMatrixPtr)[i][j] = a - ( (degree[i] * degree[j]) / (2 * m) );
+			modularityMatrix[i][j] = a - ( (degree[i] * degree[j]) / (2 * m) );
 		}
 	}
 	modularityMatrixCalculated = true;
 }
 
-ModularityMatrix* SignedGraph::getModularityMatrix() {
+ModularityMatrix& SignedGraph::getModularityMatrix() {
 	assert(modularityMatrixCalculated);
-	return modularityMatrixPtr.get();
+	return modularityMatrix;
 }
 
 void SignedGraph::printGraph() {
 	const char* name = "ABCDEF";
 
-	int numberOfInEdges = boost::in_degree(1,*graphPtr);
+	int numberOfInEdges = boost::in_degree(1, graph);
 	std::cout << "numberOfInEdges: " << numberOfInEdges << std::endl;
 
 	cout << "vertex set: ";
-	print_vertices(*graphPtr, name);
+	print_vertices(graph, name);
 	cout << std::endl;
 
 	cout << "edge set: ";
-	print_edges(*graphPtr, name);
+	print_edges(graph, name);
 	cout << std::endl;
 
 	cout << "out-edges: " << std::endl;
-	print_graph(*graphPtr, name);
+	print_graph(graph, name);
 	cout << std::endl;
 }
 
