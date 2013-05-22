@@ -28,37 +28,40 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
+void Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
 		ClusteringProblem* problem) {
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
-	ClusteringPtr CStar(constructClustering(g, alpha, ramdomSeed));
+	constructClustering(g, alpha, ramdomSeed);
+	CStar.reset(Cc.get());
 
 	for (int i = 0; i < iter; i++) {
 		cout << "GRASP iteration " << i << endl;
 		// 1. Construct the clustering
-		ClusteringPtr Cc(constructClustering(g, alpha, ramdomSeed));
+		constructClustering(g, alpha, ramdomSeed);
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl(localSearch(g, Cc.get(), l, problem));
+		localSearch(g, l, problem);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		if(problem->objectiveFunction(g, Cl.get()) < problem->objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;
+			CStar.reset();
 			CStar = Cl;
 		}
 	}
-	return CStar;
+	cout << "GRASP procedure done." << endl;
+	// return CStar;
 }
 
-ClusteringPtr Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed) {
-	ClusteringPtr Cc(new Clustering(g->getN())); // Cc = empty
+void Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed) {
+	Cc.reset(Cc, new Clustering(g->getN())); // Cc = empty
 	VertexSet lc(g->getN()); // L(Cc) = V(G)
 	std::cout << "GRASP construct clustering...\n";
 	// It is important to calculate the modularity matrix first (used by vertex sorting)
 	g->calculateModularityMatrix();
 
 	while(lc.size() > 0) { // lc != empty
-		cout << "Vertex list size is " << lc.size() << endl;
+		// cout << "Vertex list size is " << lc.size() << endl;
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 		lc.sort(g, Cc.get());
@@ -66,7 +69,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph* g, float alpha, unsigned i
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
 		int i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
-		std::cout << "Random vertex is " << i << std::endl;
+		// std::cout << "Random vertex is " << i << std::endl;
 
 		// 3. Cc = C union {i}
 		// Adds the vertex i to the partial clustering C, in a way so defined by
@@ -90,36 +93,41 @@ ClusteringPtr Grasp::constructClustering(SignedGraph* g, float alpha, unsigned i
 	}
 	std::cout << "\nInitial clustering completed.\n";
 	Cc->printClustering();
-	return Cc;
+	// return Cc;
 }
 
-ClusteringPtr Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
+void Grasp::localSearch(SignedGraph* g, int l,
 		ClusteringProblem* problem) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
-	ClusteringPtr cStar(Cc); // C* := Cc
+	CStar.reset(Cc.get()); // C* := Cc
 	std::cout << "GRASP local search...\n";
 
 	while(k <= l) {
 		cout << "Local search iteration " << iteration << endl;
 		// N := Nl(C*)
-		// apply a local search in cStar using the k-neighborhood
-		NeighborhoodList neig(cStar.get(), g->getN());
+		// apply a local search in CStar using the k-neighborhood
+		NeighborhoodList neig(g->getN());
 		cout << "Generating neighborhood of size l = " << k << endl;
-		ClusteringPtr cl = neig.generateNeighborhood(k, g, problem);
+		Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
 		cout << "Comparing local solution value." << endl;
-		if(problem->objectiveFunction(g, cl.get()) < problem->objectiveFunction(g, cStar.get())) {
-			cout << "New local solution found." << endl;
-			cl->printClustering();
-			cStar = cl;
-			k = 1;
-		} else {
+		if(Cl.get() != NULL) {
+			if(problem->objectiveFunction(g, Cl.get()) < problem->objectiveFunction(g, CStar.get())) {
+				cout << "New local solution found." << endl;
+				Cl->printClustering();
+				CStar.reset();
+				CStar = Cl;
+				k = 1;
+			} else {
+				k++;
+			}
+		} else {  // no better result found in neighborhood
 			k++;
 		}
 		iteration++;
 	}
 	std::cout << "GRASP local search done.\n";
-	return cStar;
+	// return CStar;
 }
 
 } /* namespace grasp */

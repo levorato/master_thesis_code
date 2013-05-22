@@ -22,23 +22,20 @@ using namespace problem;
 
 namespace clusteringgraph {
 
-// Defines the neighborhood list (of cluster lists) and its pointer
-class NeighborhoodList : vector<ClusterListPtr> {
+// Defines the neighborhood list
+class NeighborhoodList {
 public:
-	ClusteringPtr candidateClustering;
-
-	NeighborhoodList(Clustering *c, int n);
+	NeighborhoodList(int n);
 
 	/**
 	 * Generates a l-neighborhood for this clustering.
 	 * @return NeighborhoodList*
 	 */
-	ClusteringPtr generateNeighborhood(int l, SignedGraph* g, ClusteringProblem* problem);
+	ClusteringPtr generateNeighborhood(int l, SignedGraph* g,
+			Clustering* clustering, ClusteringProblem* problem);
 
 private:
 	int numberOfNodes;
-	ClusteringPtr clusteringPtr;
-	GraphPtr graphPtr;
 
 	/**
 	 * Generates a new cluster by swithcing the node i from cluster k1 to k3, and
@@ -48,8 +45,8 @@ private:
 	 * If parameter k3 == -1, inserts node i in a new cluster (alone).
 	 * If parameter k4 == -1, inserts node j in a new cluster (anlone).
 	 */
-	ClusteringPtr process2optCombination(int k1, int k2, int k3, int k4, int n,
-			int i, int j);
+	ClusteringPtr process2optCombination(Clustering* clustering, int k1, int k2,
+			int k3, int k4, int n, int i, int j);
 };
 typedef shared_ptr<NeighborhoodList> NeighborhoodListPtr;
 

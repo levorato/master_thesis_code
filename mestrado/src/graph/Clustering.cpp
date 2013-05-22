@@ -18,13 +18,17 @@ Clustering::Clustering(int n) : numberOfNodes(n), clusterListPtr(new ClusterList
 
 // TODO test dimension attribution
 Clustering::Clustering(Clustering* clustering, int numberOfNodes) : numberOfNodes(numberOfNodes),
-		// deep copy of the clusterlist data
-		clusterListPtr(new ClusterList(*(clustering->clusterListPtr.get()))) {
-
+		clusterListPtr(new ClusterList()) {
+	// deep copy of the clusterlist data
+	for(unsigned int i = 0; i < clustering->clusterListPtr->size(); i++) {
+		BoolArray* boolArray = clustering->clusterListPtr->at(i).get();
+		BoolArrayPtr newArray(new BoolArray(MAX_NODES, boolArray->to_ulong()));
+		this->clusterListPtr->push_back(newArray);
+	}
 }
 
 Clustering::~Clustering() {
-	cout << "Freeing memory of Clustering object..." << endl;
+	// cout << "Freeing memory of Clustering object..." << endl;
 }
 
 int Clustering::getNumberOfNodes() {
