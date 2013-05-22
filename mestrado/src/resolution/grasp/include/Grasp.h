@@ -49,7 +49,7 @@ private:
 	 * @param alpha ramdom seed belonging to the interval (0, 1)
 	 * @return Clustering C(c)
 	 */
-	void constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed);
+	Clustering* constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed);
 
 	/**
 	 * Executes the local search algorithm. Repeatedly derives
@@ -63,12 +63,9 @@ private:
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	void localSearch(SignedGraph* g, int l,
+	Clustering* localSearch(SignedGraph* g, Clustering* Cc, int l,
 			ClusteringProblem* problem);
 
-
-	ClusteringPtr Cl;
-	ClusteringPtr Cc;
 };
 
 } /* namespace grasp */

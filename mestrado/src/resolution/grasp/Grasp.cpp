@@ -33,16 +33,17 @@ void Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
 	constructClustering(g, alpha, ramdomSeed);
-	CStar.reset(Cc.get());
+	CStar.reset();
 
 	for (int i = 0; i < iter; i++) {
 		cout << "GRASP iteration " << i << endl;
 		// 1. Construct the clustering
-		constructClustering(g, alpha, ramdomSeed);
+		Clustering* Cc(constructClustering(g, alpha, ramdomSeed));
 		// 2. Execute local search algorithm
-		localSearch(g, l, problem);
+		ClusteringPtr Cl(localSearch(g, Cc, l, problem));
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
+		// TODO resolver memory leak aqui!!!
 		if(problem->objectiveFunction(g, Cl.get()) < problem->objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;
 			CStar.reset();
@@ -53,8 +54,8 @@ void Grasp::executeGRASP(SignedGraph* g, int iter, float alpha, int l,
 	// return CStar;
 }
 
-void Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed) {
-	Cc.reset(Cc, new Clustering(g->getN())); // Cc = empty
+Clustering* Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdomSeed) {
+	Clustering* Cc = new Clustering(g->getN()); // Cc = empty
 	VertexSet lc(g->getN()); // L(Cc) = V(G)
 	std::cout << "GRASP construct clustering...\n";
 	// It is important to calculate the modularity matrix first (used by vertex sorting)
@@ -64,7 +65,7 @@ void Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdom
 		// cout << "Vertex list size is " << lc.size() << endl;
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-		lc.sort(g, Cc.get());
+		lc.sort(g, Cc);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
@@ -93,14 +94,14 @@ void Grasp::constructClustering(SignedGraph* g, float alpha, unsigned int ramdom
 	}
 	std::cout << "\nInitial clustering completed.\n";
 	Cc->printClustering();
-	// return Cc;
+	return Cc;
 }
 
-void Grasp::localSearch(SignedGraph* g, int l,
+Clustering* Grasp::localSearch(SignedGraph* g, Clustering* Cc, int l,
 		ClusteringProblem* problem) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
-	CStar.reset(Cc.get()); // C* := Cc
+	CStar.reset(Cc); // C* := Cc
 	std::cout << "GRASP local search...\n";
 
 	while(k <= l) {
@@ -109,9 +110,9 @@ void Grasp::localSearch(SignedGraph* g, int l,
 		// apply a local search in CStar using the k-neighborhood
 		NeighborhoodList neig(g->getN());
 		cout << "Generating neighborhood of size l = " << k << endl;
-		Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
+		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
 		cout << "Comparing local solution value." << endl;
-		if(Cl.get() != NULL) {
+		if(Cl.get() != NULL && CStar != NULL) {
 			if(problem->objectiveFunction(g, Cl.get()) < problem->objectiveFunction(g, CStar.get())) {
 				cout << "New local solution found." << endl;
 				Cl->printClustering();
