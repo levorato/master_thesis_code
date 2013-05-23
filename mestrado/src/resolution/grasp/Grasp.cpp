@@ -45,11 +45,13 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 		ClusteringPtr Cl = localSearch(g, *Cc, l, problem);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
-		// TODO resolver memory leak aqui!!!
-		if(problem.objectiveFunction(g, Cl.get()) < problem.objectiveFunction(g, CStar.get())) {
+		float newValue = problem.objectiveFunction(g, Cl.get());
+		if(newValue < problem.objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;
 			CStar.reset();
 			CStar = Cl;
+			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
+			if(newValue == 0)  break;
 		}
 	}
 	cout << "GRASP procedure done." << endl;
@@ -130,7 +132,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int l,
 		iteration++;
 	}
 	std::cout << "GRASP local search done.\n";
-	// return CStar;
+	return CStar;
 }
 
 } /* namespace grasp */

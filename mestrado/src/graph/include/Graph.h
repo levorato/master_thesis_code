@@ -32,7 +32,7 @@ typedef multi_array<float, 2> ModularityMatrix;
 
 class SignedGraph {
 public:
-	SignedGraph(int numberOfNodes);
+	SignedGraph(const int &numberOfNodes);
 	virtual ~SignedGraph();
 
 	/**

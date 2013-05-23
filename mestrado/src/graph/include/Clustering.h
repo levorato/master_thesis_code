@@ -66,7 +66,7 @@ public:
 	/**
 	 * Returns the n-th cluster of the list.
 	 */
-	BoolArray& getCluster(int clusterNumber);
+	BoolArray* getCluster(int clusterNumber);
 
 	/**
 	 * Adds a node i in cluster k.

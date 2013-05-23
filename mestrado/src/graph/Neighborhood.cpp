@@ -19,10 +19,6 @@ NeighborhoodList::NeighborhoodList(int n) :
 
 ClusteringPtr NeighborhoodList::process2optCombination(Clustering *clustering, int k1, int k2, int k3,
 		int k4, int n, int i, int j) {
-	// cluster(k3)
-	const BoolArray cluster3 = clustering->getCluster(k3);
-	// cluster(k4)
-	const BoolArray cluster4 = clustering->getCluster(k4);
 
 	ClusteringPtr cTemp = make_shared<Clustering>(*clustering, n);
 	// removes node i from cluster1 and inserts in cluster3
@@ -59,15 +55,14 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 	if(l == 1) {  // 1-opt
 		for(int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
-			const BoolArray cluster1 = clustering->getCluster(k1);
+			BoolArray* cluster1 = clustering->getCluster(k1);
 			// For each node i in cluster(k1)
 			for(int i = 0; i < n; i++) {
-				if(cluster1[i]) {
+				if((*cluster1)[i]) {
 					// Option 1: node i is moved to another existing cluster k2
 					for(int k2 = 0; k2 < nc; k2++) {
 						if(k1 != k2) {
 							// cluster(k2)
-							const BoolArray cluster2 = clustering->getCluster(k2);
 							// removes node i from cluster1 and inserts in cluster2
 							cout << "New clustering combination generated." << endl;
 							ClusteringPtr cTemp = make_shared<Clustering>(*clustering, n);
@@ -101,16 +96,16 @@ ClusteringPtr NeighborhoodList::generateNeighborhood(int l, SignedGraph* g,
 	} else {  // 2-opt
 		for(int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
-			const BoolArray cluster1 = clustering->getCluster(k1);
+			BoolArray* cluster1 = clustering->getCluster(k1);
 			for(int k2 = k1 + 1; k2 < nc; k2++) {
 				// cluster(k2)
-				const BoolArray cluster2 = clustering->getCluster(k2);
+				BoolArray* cluster2 = clustering->getCluster(k2);
 				// For each node i in cluster(k1)
 				for(int i = 0; i < n; i++) {
-					if(cluster1[i]) {
+					if((*cluster1)[i]) {
 						// For each node j in cluster(k2)
 						for(int j = 0; j < n; j++) {
-							if(cluster2[j]) {
+							if((*cluster2)[j]) {
 								// Option 1: node i is moved to another existing cluster k3
 								for(int k3 = 0; k3 < nc; k3++) {
 									if(k1 != k3) {

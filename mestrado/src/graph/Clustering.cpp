@@ -58,14 +58,14 @@ void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 	this->numberOfNodes += arraySize;
 }
 
-BoolArray& Clustering::getCluster(int clusterNumber) {
-	return *(clusterList.at(clusterNumber).get());
+BoolArray* Clustering::getCluster(int clusterNumber) {
+	return clusterList.at(clusterNumber).get();
 }
 
 void Clustering::addNodeToCluster(int i, int k) {
 	std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
-	BoolArray cluster = this->getCluster(k);
-	cluster[i] = true;
+	BoolArray* cluster = this->getCluster(k);
+	(*cluster)[i] = true;
 	this->numberOfNodes++;
 }
 
@@ -83,12 +83,12 @@ void Clustering::removeCluster(int k) {
 // TODO tratar o caso em que o cluster k desaparece
 // Ainda esta mantendo o cluster vazio na lista de clusters
 void Clustering::removeNodeFromCluster(int i, int k) {
-	BoolArray cluster = this->getCluster(k);
+	BoolArray* cluster = this->getCluster(k);
 	// verifica se o cluster eh unitario
-	if(cluster.size() == 1) {
+	if(cluster->size() == 1) {
 		this->removeCluster(k);
 	} else {
-		cluster[i] = false;
+		(*cluster)[i] = false;
 	}
 	this->numberOfNodes--;
 	std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;

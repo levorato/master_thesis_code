@@ -34,13 +34,13 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 
 	// For each cluster i
 	for(int i = 0; i < nc; i++) {
-		BoolArray isInClusterI = c->getCluster(i);
+		BoolArray* isInClusterI = c->getCluster(i);
 
 		// calculates the sum of internal negative edges (within the same cluster)
 		for(int a = 0; a < n; a++) {
-			if(isInClusterI[a]) {
+			if((*isInClusterI)[a]) {
 				for(int b = 0; b < n; b++) {
-					if(isInClusterI[b]) {
+					if((*isInClusterI)[b]) {
 						// nodes a and b are in the same cluster
 						if(g->getEdge(a, b) < 0)
 							negativeSum += (g->getEdge(a, b) * (-1));
@@ -52,12 +52,12 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 		// For each cluster j
 		for(int j = 0; j < nc; j++) {
 			if(i == j)  continue;
-			BoolArray isInClusterJ = c->getCluster(j);
+			BoolArray* isInClusterJ = c->getCluster(j);
 
 			for(int a = 0; a < n; a++) {
-				if(isInClusterI[a]) {
+				if((*isInClusterI)[a]) {
 					for(int b = 0; b < n; b++) {
-						if(isInClusterJ[b]) {
+						if((*isInClusterJ)[b]) {
 							// nodes a and b are in different clusters
 							if(g->getEdge(a, b) > 0)
 								positiveSum += g->getEdge(a, b);

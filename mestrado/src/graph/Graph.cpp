@@ -27,7 +27,7 @@ using namespace boost;
 
 namespace clusteringgraph {
 
-SignedGraph::SignedGraph(int numberOfNodes) : graph(numberOfNodes),
+SignedGraph::SignedGraph(const int &numberOfNodes) : graph(numberOfNodes),
 		modularityMatrix(boost::extents[numberOfNodes][numberOfNodes]),
 		modularityMatrixCalculated(false), n(numberOfNodes) {
 

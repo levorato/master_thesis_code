@@ -37,12 +37,13 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 
 	int n = 0, e = 0;
 	ifstream in(filepath.c_str());
-	if (!in.is_open()) return NULL;
+	if (!in.is_open()) return SignedGraphPtr();
 
 	typedef tokenizer< escaped_list_separator<char> > Tokenizer;
 
 	vector< string > vec;
 	string line;
+	cout << "Reading input file..." << endl;
 
 	// captura a primeira linha do arquivo contendo as informacoes
 	// de numero de vertices e arestas do grafo
