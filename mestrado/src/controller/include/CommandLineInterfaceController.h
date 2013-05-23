@@ -10,6 +10,10 @@
 #ifndef COMMANDLINEINTERFACECONTROLLER_H_
 #define COMMANDLINEINTERFACECONTROLLER_H_
 
+#include <string>
+
+using namespace std;
+
 namespace controller {
 
 class CommandLineInterfaceController {
@@ -18,6 +22,7 @@ public:
 	virtual ~CommandLineInterfaceController();
 
 	enum StategyName {GRASP, GRASP_PR};
+	static string getTimeAndDateAsString();
 	static int processArgumentsAndExecute(int argc, char *argv[]);
 };
 } /* namespace controller */

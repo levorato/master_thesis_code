@@ -33,10 +33,12 @@ public:
 	 * @param iter maximum number of iterations
 	 * @param alpha ramdom seed belonging to the interval (0, 1)
 	 * @param l the size of the neighborhood
+	 * @param problem the ClusteringProblem (objective function) to be used
+	 * @param os the output stream to write the CSV data
 	 * @return Clustering C(l), the local optinum solution
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-			ClusteringProblem& problem);
+			ClusteringProblem& problem, std::ostream& os);
 
 private:
 	/**

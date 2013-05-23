@@ -29,7 +29,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 	int nc = c->getNumberOfClusters();
 	int n = c->getNumberOfNodes();
 
-	cout << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
+	// cout << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
 	// c->printClustering();
 
 	// For each cluster i
@@ -67,7 +67,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 			}
 		}
 	}
-	cout << "Valor calculado: " << (positiveSum + negativeSum) << endl;
+	// cout << "Valor calculado: " << (positiveSum + negativeSum) << endl;
 	return (positiveSum + negativeSum);
 }
 

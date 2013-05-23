@@ -32,7 +32,7 @@ Grasp::~Grasp() {
 }
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-		ClusteringProblem& problem) {
+		ClusteringProblem& problem, std::ostream& os) {
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
@@ -48,6 +48,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		float newValue = problem.objectiveFunction(g, Cl.get());
+		// 4. Write the results into a CSV file
+		// Format: objectiveFunctionValue
+		os << newValue << "\n";
+
 		if(newValue < problem.objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;
 			CStar.reset();
@@ -110,27 +114,30 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int l,
 	int k = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
 	std::cout << "GRASP local search...\n";
+	cout << "Current neighborhood is " << k << endl;
 
 	while(k <= l) {
-		cout << "Local search iteration " << iteration << endl;
+		// cout << "Local search iteration " << iteration << endl;
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood
 		NeighborhoodList neig(g->getN());
-		cout << "Generating neighborhood of size l = " << k << endl;
+
 		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
-		cout << "Comparing local solution value." << endl;
+		// cout << "Comparing local solution value." << endl;
 		if(Cl.get() != NULL && CStar != NULL) {
 			if(problem.objectiveFunction(g, Cl.get()) < problem.objectiveFunction(g, CStar.get())) {
-				cout << "New local solution found." << endl;
-				Cl->printClustering();
+				// cout << "New local solution found." << endl;
+				// Cl->printClustering();
 				CStar.reset();
 				CStar = Cl;
 				k = 1;
 			} else {
 				k++;
+				cout << "Changed to neighborhood size l = " << k << endl;
 			}
 		} else {  // no better result found in neighborhood
 			k++;
+			cout << "Changed to neighborhood size l = " << k << endl;
 		}
 		iteration++;
 	}

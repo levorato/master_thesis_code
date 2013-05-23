@@ -12,13 +12,19 @@
 #include "../graph/include/Clustering.h"
 #include "../problem/include/ClusteringProblem.h"
 #include "../problem/include/CCProblem.h"
+#include "../util/include/TimeDateUtil.h"
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+using namespace boost::posix_time;
 
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <iterator>
 #include <iomanip>
@@ -57,6 +63,13 @@ CommandLineInterfaceController::CommandLineInterfaceController() {
 
 CommandLineInterfaceController::~CommandLineInterfaceController() {
 	// TODO Auto-generated destructor stub
+}
+
+string CommandLineInterfaceController::getTimeAndDateAsString() {
+	ptime now = second_clock::universal_time();
+
+	std::wstring ws(util::TimeDateUtil::FormatTime(now));
+	return string ( ws.begin(), ws.end() );;
 }
 
 int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[]) {
@@ -120,16 +133,36 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
         // Reads the graph from the specified text file
         SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-        SignedGraphPtr g = reader.readGraphFromFile(vm["input-file"].as< vector<string> >().at(0));
-        if(g.get() != NULL) {
+        fs::path filePath (vm["input-file"].as< vector<string> >().at(0));
+        if(fs::exists(filePath) && fs::is_regular_file(filePath)) {
+        	SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
 			if(debug) {
 				g->printGraph();
 			}
 			// Triggers the execution of the GRASP algorithm
+			if(not fs::exists(fs::path("./output"))) {
+				fs::create_directories(fs::path("./output"));
+			}
+			if(not fs::exists(fs::path("./output/" + filePath.filename().string()))) {
+				fs::create_directories(fs::path("./output/" + filePath.filename().string()));
+			}
+			fs::path newFile("./output/" + filePath.filename().string() + "/" + CommandLineInterfaceController::getTimeAndDateAsString() + ".csv");
+			ofstream os;
+			os.open(newFile.c_str(), ios::out | ios::trunc);
+			if(!os) {
+				cerr << "Can't open output file!" << endl;
+				return 1;
+			}
+			// Writes the parameters to the output file
+			// Format: alpha,l,numberOfIterations
+			os << std::setprecision(2) << fixed << alpha << "," << l << "," << numberOfIterations << "\n";
 			Grasp resolution;
 			CCProblem problem = CCProblem();
-			ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, problem);
+			ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, problem, os);
 			c->printClustering();
+
+			os.flush();
+			os.close();
         } else {
         	cout << "Invalid file. Try again." << endl;
         }

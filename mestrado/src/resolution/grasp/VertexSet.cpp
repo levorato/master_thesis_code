@@ -55,6 +55,9 @@ int VertexSet::chooseRandomVertex(int x) {
 	// Generates a random number between 1 and x
 	// boost::random::mt19937 generator;  TODO Adaptar para o modo deug
 	// distribution that maps to 1..x
+	if(x - 1 < 0) {
+		x++;
+	}
 	boost::random::uniform_int_distribution<> dist(0,x-1);
 	unsigned int selectedVertexSetIndex = dist(generator);
 	int selectedVertex = 0;

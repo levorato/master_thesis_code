@@ -91,7 +91,7 @@ void Clustering::removeNodeFromCluster(int i, int k) {
 		(*cluster)[i] = false;
 	}
 	this->numberOfNodes--;
-	std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
+	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
 }
 
 // TODO test this method
