@@ -36,21 +36,26 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
+	ClusteringPtr previousCc = CStar, Cc;
 	float bestValue = problem.objectiveFunction(g, CStar.get());
 
-	for (int i = 0; i < iter; i++) {
+	for (int i = 0; i < iter; i++, previousCc.reset(), previousCc = Cc) {
 		cout << "GRASP iteration " << i << endl;
 		cout << "Best solution so far: I(P) = " << bestValue << endl;
 		// 1. Construct the clustering
-		ClusteringPtr Cc = constructClustering(g, alpha, ramdomSeed);
+		Cc = constructClustering(g, alpha, ramdomSeed);
+		Cc->printClustering();
 		// 2. Execute local search algorithm
 		ClusteringPtr Cl = localSearch(g, *Cc, l, problem);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		float newValue = problem.objectiveFunction(g, Cl.get());
-		// 4. Write the results into a CSV file
-		// Format: objectiveFunctionValue
-		os << newValue << "\n";
+
+		// TODO consertar metodo equals
+		bool same = (previousCc->equals(*Cc.get()));
+		// 4. Write the results into ostream os, using csv format
+		// Format: objectiveFunctionValue,boolean
+		os << newValue << "," << same << "\n";
 
 		if(newValue < problem.objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;

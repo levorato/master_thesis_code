@@ -131,15 +131,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
         cout << "Number of iterations is " << numberOfIterations << "\n";
         cout << "Resolution strategy is " << strategy << endl;
 
-        // Reads the graph from the specified text file
-        SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
         fs::path filePath (vm["input-file"].as< vector<string> >().at(0));
         if(fs::exists(filePath) && fs::is_regular_file(filePath)) {
+        	// Reads the graph from the specified text file
+        	SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
         	SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
 			if(debug) {
 				g->printGraph();
 			}
-			// Triggers the execution of the GRASP algorithm
+
+			// Creates the output file (with the results of the execution)
 			if(not fs::exists(fs::path("./output"))) {
 				fs::create_directories(fs::path("./output"));
 			}
@@ -156,6 +157,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			// Writes the parameters to the output file
 			// Format: alpha,l,numberOfIterations
 			os << std::setprecision(2) << fixed << alpha << "," << l << "," << numberOfIterations << "\n";
+
+			// Triggers the execution of the GRASP algorithm
 			Grasp resolution;
 			CCProblem problem = CCProblem();
 			ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, problem, os);
