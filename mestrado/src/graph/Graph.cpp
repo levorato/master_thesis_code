@@ -39,7 +39,6 @@ SignedGraph::~SignedGraph() {
 
 
 int SignedGraph::getN() {
-	cout << "Graph n is " << n << endl;
 	return n;
 }
 

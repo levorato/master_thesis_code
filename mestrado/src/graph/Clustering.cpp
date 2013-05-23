@@ -47,7 +47,7 @@ void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 	// any other cluster and add it to the newly created cluster
 	int numberOfClusters = this->getNumberOfClusters();
 	for(unsigned int i = 0; i < arraySize; i++) {
-		std::cout << "Adding vertex " << vertexList[i] << " to cluster " << numberOfClusters << std::endl;
+		// std::cout << "Adding vertex " << vertexList[i] << " to cluster " << numberOfClusters << std::endl;
 		int vertex = vertexList[i];
 		for(int k = 0; k < numberOfClusters; k++) {
 			(*clusterList.at(k))[vertex] = false;
@@ -63,7 +63,7 @@ BoolArray* Clustering::getCluster(int clusterNumber) {
 }
 
 void Clustering::addNodeToCluster(int i, int k) {
-	std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
+	// std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
 	BoolArray* cluster = this->getCluster(k);
 	(*cluster)[i] = true;
 	this->numberOfNodes++;

@@ -36,9 +36,11 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
+	float bestValue = problem.objectiveFunction(g, CStar.get());
 
 	for (int i = 0; i < iter; i++) {
 		cout << "GRASP iteration " << i << endl;
+		cout << "Best solution so far: I(P) = " << bestValue << endl;
 		// 1. Construct the clustering
 		ClusteringPtr Cc = constructClustering(g, alpha, ramdomSeed);
 		// 2. Execute local search algorithm
@@ -50,6 +52,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 			cout << "A better solution was found." << endl;
 			CStar.reset();
 			CStar = Cl;
+			bestValue = newValue;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue == 0)  break;
 		}
