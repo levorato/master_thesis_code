@@ -15,6 +15,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/timer/timer.hpp>
 
 using namespace problem;
 using namespace boost;
@@ -42,6 +43,12 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	for (int i = 0; i < iter; i++, previousCc.reset(), previousCc = Cc) {
 		cout << "GRASP iteration " << i << endl;
 		cout << "Best solution so far: I(P) = " << bestValue << endl;
+
+		// 0. Triggers processing time calculation
+		boost::timer::cpu_timer timer;
+		timer.start();
+		boost::timer::cpu_times start_time = timer.elapsed();
+
 		// 1. Construct the clustering
 		Cc = constructClustering(g, alpha, ramdomSeed);
 		Cc->printClustering();
@@ -51,11 +58,16 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 		// if Q(Cl) > Q(Cstar)
 		float newValue = problem.objectiveFunction(g, Cl.get());
 
+		// 4. Stops the timer and stores the elapsed time
+		timer.stop();
+		boost::timer::cpu_times end_time = timer.elapsed();
+
 		// TODO consertar metodo equals
 		bool same = (previousCc->equals(*Cc.get()));
 		// 4. Write the results into ostream os, using csv format
-		// Format: objectiveFunctionValue,boolean
-		os << newValue << "," << same << "\n";
+		// Format: iterationNumber,objectiveFunctionValue,time(ms),boolean
+		// TODO melhorar formatacao do tempo
+		os << i << "," << newValue << "," << (end_time.wall - start_time.wall) / 1000000 << "," << same << "\n";
 
 		if(newValue < problem.objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;

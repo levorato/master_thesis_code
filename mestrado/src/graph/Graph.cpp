@@ -51,7 +51,7 @@ void SignedGraph::addEdge(int a, int b, Edge edge) {
 }
 
 float SignedGraph::getEdge(const int &a, const int &b) {
-	return ((Edge)graph.get_edge(a, b).second).weight;
+	return graph.get_edge(a, b).second.weight;
 }
 
 int SignedGraph::getDegree(const int &a) {
