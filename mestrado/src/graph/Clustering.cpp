@@ -22,7 +22,7 @@ Clustering::Clustering(const Clustering& clustering, int n) : numberOfNodes(n),
 	// deep copy of the clusterlist data
 	for(unsigned int i = 0; i < clustering.clusterList.size(); i++) {
 		BoolArray* boolArray = clustering.clusterList.at(i).get();
-		BoolArrayPtr newArray(new BoolArray(MAX_NODES, boolArray->to_ulong()));
+		BoolArrayPtr newArray(new BoolArray(*boolArray));
 		this->clusterList.push_back(newArray);
 	}
 }

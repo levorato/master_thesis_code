@@ -43,7 +43,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 
 	vector< string > vec;
 	string line;
-	cout << "Reading input file..." << endl;
+	cout << "Reading input file: '" << filepath << "' ..." << endl;
 
 	// captura a primeira linha do arquivo contendo as informacoes
 	// de numero de vertices e arestas do grafo

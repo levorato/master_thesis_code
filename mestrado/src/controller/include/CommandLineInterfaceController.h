@@ -11,8 +11,10 @@
 #define COMMANDLINEINTERFACECONTROLLER_H_
 
 #include <string>
+#include <boost/filesystem.hpp>
 
 using namespace std;
+namespace fs = boost::filesystem;
 
 namespace controller {
 
@@ -24,6 +26,10 @@ public:
 	enum StategyName {GRASP, GRASP_PR};
 	static string getTimeAndDateAsString();
 	static int processArgumentsAndExecute(int argc, char *argv[]);
+
+private:
+	static void processInputFile(fs::path filePath, bool debug, float alpha, int l,
+			int numberOfIterations);
 };
 } /* namespace controller */
 

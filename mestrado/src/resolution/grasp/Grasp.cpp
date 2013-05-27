@@ -51,7 +51,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 
 		// 1. Construct the clustering
 		Cc = constructClustering(g, alpha, ramdomSeed);
-		Cc->printClustering();
+
 		// 2. Execute local search algorithm
 		ClusteringPtr Cl = localSearch(g, *Cc, l, problem);
 		// 3. Select the best clustring so far
