@@ -47,7 +47,7 @@ int VertexSet::chooseRandomVertex(int x) {
 	generator.seed(boost::random::random_device()());
 
 	// Generates a random number between 1 and x
-	// boost::random::mt19937 generator;  TODO Adaptar para o modo deug
+	// boost::random::mt19937 generator;  TODO Adaptar para o modo debug
 	// distribution that maps to 1..x
 	if(x - 1 < 0) {
 		x++;

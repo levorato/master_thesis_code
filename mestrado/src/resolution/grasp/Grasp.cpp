@@ -7,7 +7,7 @@
 
 #include "include/Grasp.h"
 #include "include/VertexSet.h"
-#include "../../graph/include/Neighborhood.h"
+#include "../../graph/include/SequentialNeighborhoodGen.h"
 #include "../../problem/include/ClusteringProblem.h"
 #include "../../problem/include/CCProblem.h"
 
@@ -19,6 +19,7 @@
 
 using namespace problem;
 using namespace boost;
+using namespace clusteringgraph;
 
 namespace resolution {
 namespace grasp {
@@ -39,7 +40,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
 	ClusteringPtr previousCc = CStar, Cc;
 	float bestValue = problem.objectiveFunction(g, CStar.get());
+	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
+	SequentialNeighborhoodGenerator neig(g->getN());
 
+	// TODO: Parallelize here! Divide iterations by n processors with MPI.
 	for (int i = 0; i < iter; i++, previousCc.reset(), previousCc = Cc) {
 		cout << "GRASP iteration " << i << endl;
 		cout << "Best solution so far: I(P) = " << bestValue << endl;
@@ -53,7 +57,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 		Cc = constructClustering(g, alpha, ramdomSeed);
 
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl = localSearch(g, *Cc, l, problem);
+		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, neig);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		float newValue = problem.objectiveFunction(g, Cl.get());
@@ -125,8 +129,8 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, float alpha, unsigned i
 	return Cc;
 }
 
-ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int l,
-		ClusteringProblem& problem) {
+ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int &l,
+		ClusteringProblem& problem, NeighborhoodListGenerator &neig) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
@@ -137,8 +141,8 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int l,
 		// cout << "Local search iteration " << iteration << endl;
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood
-		NeighborhoodList neig(g->getN());
 
+		// TODO Parellelize here!
 		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
 		// cout << "Comparing local solution value." << endl;
 		if(Cl.get() != NULL && CStar != NULL) {

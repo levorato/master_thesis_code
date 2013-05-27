@@ -11,6 +11,7 @@
 #include <vector>
 #include <boost/config.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 #include "Graph.h"
 #include "Clustering.h"
@@ -23,18 +24,20 @@ using namespace problem;
 namespace clusteringgraph {
 
 // Defines the neighborhood list
-class NeighborhoodList {
+class NeighborhoodListGenerator {
 public:
-	NeighborhoodList(int n);
+	NeighborhoodListGenerator(int n) : numberOfNodes(n) {
+
+	}
 
 	/**
 	 * Generates a l-neighborhood for this clustering.
 	 * @return NeighborhoodList*
 	 */
-	ClusteringPtr generateNeighborhood(int l, SignedGraph* g,
-			Clustering* clustering, const ClusteringProblem& problem);
+	virtual ClusteringPtr generateNeighborhood(int l, SignedGraph* g,
+			Clustering* clustering, const ClusteringProblem& problem) = 0;
 
-private:
+protected:
 	int numberOfNodes;
 
 	/**
@@ -46,9 +49,34 @@ private:
 	 * If parameter k4 == -1, inserts node j in a new cluster (anlone).
 	 */
 	ClusteringPtr process2optCombination(Clustering* clustering, int k1, int k2,
-			int k3, int k4, int n, int i, int j);
+			int k3, int k4, int n, int i, int j) {
+
+		ClusteringPtr cTemp = make_shared < Clustering > (*clustering, n);
+		// removes node i from cluster1 and inserts in cluster3
+		// TODO check if the removal of node i destroys cluster1
+		cTemp->removeNodeFromCluster(i, k1);
+		if (k3 >= 0) {
+			// inserts i in existing cluster k3
+			cTemp->addNodeToCluster(i, k3);
+		} else {
+			// inserts i in a new cluster (alone)
+			int nodeArray[1] = { i };
+			cTemp->addCluster(nodeArray, 1);
+		}
+		// removes node j from cluster2 and inserts in cluster4
+		cTemp->removeNodeFromCluster(j, k2);
+		if (k4 >= 0) {
+			// inserts j in existing cluster k4
+			cTemp->addNodeToCluster(j, k4);
+		} else {
+			// inserts j in a new cluster (alone)
+			int nodeArray[1] = { j };
+			cTemp->addCluster(nodeArray, 1);
+		}
+
+		return cTemp;
+	}
 };
-typedef shared_ptr<NeighborhoodList> NeighborhoodListPtr;
 
 } /* namespace clusteringgraph */
 #endif /* NEIGHBORHOOD_H_ */

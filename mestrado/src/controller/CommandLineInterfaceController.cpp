@@ -117,6 +117,9 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 }
 
 int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[]) {
+
+	// TODO incluir tratamento para a execucao em paralelo com MPI
+
     cout << "Correlation clustering problem solver" << endl << endl;
 
 	try {

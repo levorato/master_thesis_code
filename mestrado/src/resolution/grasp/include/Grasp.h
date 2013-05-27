@@ -12,6 +12,7 @@
 #include "../../../graph/include/Graph.h"
 #include "../../../graph/include/Clustering.h"
 #include "../../../problem/include/ClusteringProblem.h"
+#include "../../../graph/include/Neighborhood.h"
 
 using namespace clusteringgraph;
 using namespace problem;
@@ -64,8 +65,8 @@ private:
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, int l,
-			ClusteringProblem& problem);
+	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, int &l,
+			ClusteringProblem& problem, NeighborhoodListGenerator &neig);
 
 };
 
