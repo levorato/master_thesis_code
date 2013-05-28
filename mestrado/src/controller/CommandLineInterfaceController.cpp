@@ -24,6 +24,8 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 using namespace boost::posix_time;
 
+#include <mpi.h>
+
 #include <iostream>
 #include <sstream>
 #include <algorithm>
