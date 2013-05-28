@@ -68,15 +68,8 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 	// TODO Auto-generated destructor stub
 }
 
-string CommandLineInterfaceController::getTimeAndDateAsString() {
-	ptime now = second_clock::universal_time();
-
-	std::wstring ws(util::TimeDateUtil::FormatTime(now));
-	return string ( ws.begin(), ws.end() );;
-}
-
 void CommandLineInterfaceController::processInputFile(fs::path filePath,
-		bool debug, float alpha, int l, int numberOfIterations, int np) {
+		bool debug, float alpha, int l, int numberOfIterations, int np, int myRank) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -84,46 +77,23 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 		if (debug) {
 			g->printGraph();
 		}
-		// Creates the output file (with the results of the execution)
-		if (!fs::exists(fs::path("./output"))) {
-			fs::create_directories(fs::path("./output"));
-		}
-		if (!fs::exists(fs::path("./output/" + filePath.filename().string()))) {
-			fs::create_directories(
-					fs::path("./output/" + filePath.filename().string()));
-		}
-		stringstream filename;
-		filename << "./output/" << filePath.filename().string() << "/"
-				<< "l" << l << "a" << std::setprecision(2) << alpha << "-" << CommandLineInterfaceController::getTimeAndDateAsString()
-				<< ".csv";
-		fs::path newFile(filename.str());
-		ofstream os;
-		os.open(newFile.c_str(), ios::out | ios::trunc);
-		if (!os) {
-			cerr << "Can't open output file!" << endl;
-			return;
-		}
-		// Writes the parameters to the output file
-		// Format: alpha,l,numberOfIterations
-		os << std::setprecision(2) << fixed << alpha << "," << l << ","
-				<< numberOfIterations << "\n";
+
 		// Triggers the execution of the GRASP algorithm
 		CCProblem problem = CCProblem();
 		ClusteringPtr c;
+		string fileId = filePath.filename().string();
 
 		if(np == 1) {	// sequential version of GRASP
 			Grasp resolution;
 			c = resolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, os);
+					alpha, l, problem, fileId);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
-			ParallelGrasp resolution;
-			c = resolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, os, np);
+			ParallelGrasp parallelResolution;
+			c = parallelResolution.executeGRASP(g.get(), numberOfIterations,
+					alpha, l, problem, fileId, np);
 		}
 		c->printClustering();
-		os.flush();
-		os.close();
 	} else {
 		cout << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
 	}

@@ -10,6 +10,7 @@
 #include "../../graph/include/SequentialNeighborhoodGen.h"
 #include "../../problem/include/ClusteringProblem.h"
 #include "../../problem/include/CCProblem.h"
+#include "../../util/include/TimeDateUtil.h"
 
 #include <algorithm>
 #include <boost/math/special_functions/round.hpp>
@@ -20,6 +21,7 @@
 using namespace problem;
 using namespace boost;
 using namespace clusteringgraph;
+using namespace util;
 
 namespace resolution {
 namespace grasp {
@@ -34,7 +36,7 @@ Grasp::~Grasp() {
 }
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-		ClusteringProblem& problem, std::ostream& os) {
+		ClusteringProblem& problem, string& fileId, int& myRank) {
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
@@ -43,6 +45,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	int iterationValue = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
 	SequentialNeighborhoodGenerator neig(g->getN());
+	std::ostream os = generateOutputFile(fileId, myRank, alpha, l, iter);
+
 
 	// TODO: Parallelize here! Divide iterations by n processors with MPI.
 	for (int i = 0; i < iter; i++, previousCc.reset(), previousCc = Cc) {
@@ -86,6 +90,9 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	}
 	os << "Best value: " << bestValue << ", Iteration: " << iterationValue << endl;
 	cout << "GRASP procedure done." << endl;
+	os.flush();
+	os.close();
+
 	return CStar;
 }
 
@@ -167,6 +174,32 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int &l,
 	}
 	std::cout << "GRASP local search done.\n";
 	return CStar;
+}
+
+std::ostream& Grasp::generateOutputFile(string& fileId, int &processNumber, float alpha, int l, int numberOfIterations) {
+	// Creates the output file (with the results of the execution)
+	if (!fs::exists(fs::path("./output"))) {
+		fs::create_directories(fs::path("./output"));
+	}
+	if (!fs::exists(fs::path("./output/" + fileId))) {
+		fs::create_directories(
+				fs::path("./output/" + fileId));
+	}
+	stringstream filename;
+	filename << "./output/" << fileId << "/"
+			<< "l" << l << "a" << std::setprecision(2) << alpha << "-" << TimeDateUtil::getTimeAndDateAsString()
+			<< ".csv";
+	fs::path newFile(filename.str());
+	ofstream os;
+	os.open(newFile.c_str(), ios::out | ios::trunc);
+	if (!os) {
+		cerr << "Can't open output file!" << endl;
+		return NULL;
+	}
+	// Writes the parameters to the output file
+	// Format: alpha,l,numberOfIterations
+	os << std::setprecision(2) << fixed << alpha << "," << l << ","
+			<< numberOfIterations << "\n";
 }
 
 } /* namespace grasp */

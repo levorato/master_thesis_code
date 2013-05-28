@@ -29,7 +29,7 @@ public:
 
 private:
 	static void processInputFile(fs::path filePath, bool debug, float alpha, int l,
-			int numberOfIterations, int np);
+			int numberOfIterations, int np, int myRank);
 };
 } /* namespace controller */
 

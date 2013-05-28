@@ -35,11 +35,11 @@ public:
 	 * @param alpha ramdom seed belonging to the interval (0, 1)
 	 * @param l the size of the neighborhood
 	 * @param problem the ClusteringProblem (objective function) to be used
-	 * @param os the output stream to write the CSV data
+	 * @param fileId string representing the identification of the input graph file
 	 * @return Clustering C(l), the local optinum solution
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-			ClusteringProblem& problem, std::ostream& os);
+			ClusteringProblem& problem, string& fileId, int& myRank);
 
 private:
 	/**
@@ -68,6 +68,11 @@ private:
 	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, int &l,
 			ClusteringProblem& problem, NeighborhoodListGenerator &neig);
 
+	/**
+	 * TODO document this method
+	 */
+	std::ostream& generateOutputFile(string& fileId, int &processNumber,
+			float alpha, int l, int numberOfIterations);
 };
 
 } /* namespace grasp */

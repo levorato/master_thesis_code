@@ -30,4 +30,11 @@ std::wstring TimeDateUtil::FormatTime(boost::posix_time::ptime now)
   return wss.str();
 }
 
+string TimeDateUtil::getTimeAndDateAsString() {
+	ptime now = second_clock::universal_time();
+
+	std::wstring ws(util::TimeDateUtil::FormatTime(now));
+	return string ( ws.begin(), ws.end() );;
+}
+
 } /* namespace util */
