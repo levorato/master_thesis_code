@@ -25,11 +25,11 @@ public:
 
 	enum StategyName {GRASP, GRASP_PR};
 	static string getTimeAndDateAsString();
-	static int processArgumentsAndExecute(int argc, char *argv[]);
+	static int processArgumentsAndExecute(int argc, char *argv[], int &myRank);
 
 private:
 	static void processInputFile(fs::path filePath, bool debug, float alpha, int l,
-			int numberOfIterations);
+			int numberOfIterations, int np);
 };
 } /* namespace controller */
 

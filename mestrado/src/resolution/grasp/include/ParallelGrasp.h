@@ -22,7 +22,7 @@ public:
 	 * Triggers the parallel execution of the GRASP algorithm using MPI.
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-			ClusteringProblem& problem, std::ostream& os);
+			ClusteringProblem& problem, std::ostream& os, int& np);
 };
 
 } /* namespace grasp */

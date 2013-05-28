@@ -9,6 +9,7 @@
 #include "include/SimpleTextGraphFileReader.h"
 #include "../graph/include/Graph.h"
 #include "../resolution/grasp/include/Grasp.h"
+#include "../resolution/grasp/include/ParallelGrasp.h"
 #include "../graph/include/Clustering.h"
 #include "../problem/include/ClusteringProblem.h"
 #include "../problem/include/CCProblem.h"
@@ -73,7 +74,7 @@ string CommandLineInterfaceController::getTimeAndDateAsString() {
 }
 
 void CommandLineInterfaceController::processInputFile(fs::path filePath,
-		bool debug, float alpha, int l, int numberOfIterations) {
+		bool debug, float alpha, int l, int numberOfIterations, int np) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -89,10 +90,11 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 			fs::create_directories(
 					fs::path("./output/" + filePath.filename().string()));
 		}
-		fs::path newFile(
-				"./output/" + filePath.filename().string() + "/"
-						+ CommandLineInterfaceController::getTimeAndDateAsString()
-						+ ".csv");
+		stringstream filename;
+		filename << "./output/" << filePath.filename().string() << "/"
+				<< "l" << l << "a" << std::setprecision(2) << alpha << "-" << CommandLineInterfaceController::getTimeAndDateAsString()
+				<< ".csv";
+		fs::path newFile(filename.str());
 		ofstream os;
 		os.open(newFile.c_str(), ios::out | ios::trunc);
 		if (!os) {
@@ -104,10 +106,19 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 		os << std::setprecision(2) << fixed << alpha << "," << l << ","
 				<< numberOfIterations << "\n";
 		// Triggers the execution of the GRASP algorithm
-		Grasp resolution;
 		CCProblem problem = CCProblem();
-		ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations,
-				alpha, l, problem, os);
+		ClusteringPtr c;
+
+		if(np == 1) {	// sequential version of GRASP
+			Grasp resolution;
+			c = resolution.executeGRASP(g.get(), numberOfIterations,
+					alpha, l, problem, os);
+		} else {  // parallel version
+			// distributes GRASP processing among the processes and summarizes the result
+			ParallelGrasp resolution;
+			c = resolution.executeGRASP(g.get(), numberOfIterations,
+					alpha, l, problem, os, np);
+		}
 		c->printClustering();
 		os.flush();
 		os.close();
@@ -116,94 +127,131 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 	}
 }
 
-int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[]) {
+int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[], int &myRank) {
 
-	// TODO incluir tratamento para a execucao em paralelo com MPI
+	// Get the number of processes
+	int np;
+	MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-    cout << "Correlation clustering problem solver" << endl << endl;
+	// codigo do processor lider
+	if(myRank == 0) {
+		cout << "Correlation clustering problem solver" << endl << endl;
 
-	try {
-        float alpha = 0.5F;
-        int numberOfIterations = 500, k = -1, l = 1;
-        bool debug = false, RCC = false, profile = false;
-        string inputFileDir;
-        CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
+		try {
+			float alpha = 0.5F;
+			int numberOfIterations = 500, k = -1, l = 1;
+			bool debug = false, RCC = false, profile = false;
+			string inputFileDir;
+			CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
-        po::options_description desc("Available options:");
-        desc.add_options()
-            ("help", "show program options")
-            ("alpha,a", po::value<float>(&alpha)->default_value(0.5F),
-                  "alpha - randomness factor")
-            ("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
-                  "number of iterations")
-            ("neighborhood_size,l", po::value<int>(&l)->default_value(1),
-                  "neighborhood size")
-            ("k,k", po::value<int>(&k)->default_value(-1), "k parameter (RCC problem)")
-            ("input-file", po::value< vector<string> >(), "input file")
-            ("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
-            ("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
-            ("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
-            /* TODO Resolver problema com o parametro da descricao
-            ("strategy",
-                         po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
-                         "Resolution strategy to be used. Accepted values: GRASP, GRASP_PR.") */
-        ;
+			po::options_description desc("Available options:");
+			desc.add_options()
+				("help", "show program options")
+				("alpha,a", po::value<float>(&alpha)->default_value(0.5F),
+					  "alpha - randomness factor")
+				("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
+					  "number of iterations")
+				("neighborhood_size,l", po::value<int>(&l)->default_value(1),
+					  "neighborhood size")
+				("k,k", po::value<int>(&k)->default_value(-1), "k parameter (RCC problem)")
+				("input-file", po::value< vector<string> >(), "input file")
+				("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
+				("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
+				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
+				/* TODO Resolver problema com o parametro da descricao
+				("strategy",
+							 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
+							 "Resolution strategy to be used. Accepted values: GRASP, GRASP_PR.") */
+			;
 
-        po::positional_options_description p;
-        p.add("input-file", -1);
+			po::positional_options_description p;
+			p.add("input-file", -1);
 
-        po::variables_map vm;
-        po::store(po::command_line_parser(argc, argv).
-                  options(desc).positional(p).run(), vm);
-        po::notify(vm);
+			po::variables_map vm;
+			po::store(po::command_line_parser(argc, argv).
+					  options(desc).positional(p).run(), vm);
+			po::notify(vm);
 
-        if (vm.count("help")) {
-            cout << "Usage: MestradoMario [options]\n";
-            cout << desc;
-            return 0;
-        }
+			if (vm.count("help")) {
+				cout << "Usage: MestradoMario [options]\n";
+				cout << desc;
+				return 0;
+			}
 
-        if (k != -1) {
-        	cout << "k value is " << k << ". RCC is enabled." << endl;
-        	RCC = true;
-        }
-        cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
-        cout << "Neighborhood size (l) is " << l << "\n";
-        cout << "Number of iterations is " << numberOfIterations << "\n";
-        cout << "Resolution strategy is " << strategy << endl;
+			if (k != -1) {
+				cout << "k value is " << k << ". RCC is enabled." << endl;
+				RCC = true;
+			}
 
-        if (vm.count("input-file"))
-        {
-            cout << "Input files are: "
-                 << vm["input-file"].as< vector<string> >() << "\n";
-            fs::path filePath (vm["input-file"].as< vector<string> >().at(0));
-    		processInputFile(filePath, debug, alpha, l, numberOfIterations);
-        } else if(vm.count("input-file-dir")) {
-        	cout << "Input file dir is: " << inputFileDir << endl;
-        	fs::path inputDir(inputFileDir);
-        	fs::directory_iterator end_iter;
-        	if (!fs::exists(inputDir) || !fs::is_directory(inputDir)) {
-        		cout << "Input file directory not found. Exiting." << endl;
-        		return 1;
-        	}
-        	for( fs::directory_iterator dir_iter(inputDir) ; dir_iter != end_iter ; ++dir_iter) {
-        		if (fs::is_regular_file(dir_iter->status()) ) {
-        			fs::path filePath = *dir_iter;
-        			processInputFile(filePath, debug, alpha, l, numberOfIterations);
+			cout << "Resolution strategy is " << strategy << endl;
+			cout << "Neighborhood size (l) is " << l << "\n";
+			vector<fs::path> fileList;
+
+			if (vm.count("input-file")) {
+				cout << "Input files are: "
+					 << vm["input-file"].as< vector<string> >() << "\n";
+				fs::path filePath (vm["input-file"].as< vector<string> >().at(0));
+				fileList.push_back(filePath);
+			} else if(vm.count("input-file-dir")) {
+				cout << "Input file dir is: " << inputFileDir << endl;
+				fs::path inputDir(inputFileDir);
+				fs::directory_iterator end_iter;
+				if (!fs::exists(inputDir) || !fs::is_directory(inputDir)) {
+					cout << "Input file directory not found. Exiting." << endl;
+					return 1;
+				}
+				for( fs::directory_iterator dir_iter(inputDir) ; dir_iter != end_iter ; ++dir_iter) {
+					if (fs::is_regular_file(dir_iter->status()) ) {
+						fs::path filePath = *dir_iter;
+						fileList.push_back(filePath);
+					}
+				}
+			} else {
+				cout << "Please specify at least one input file.";
+				return 1;
+			}
+
+			for(unsigned int i = 0; i < fileList.size(); i++) {
+				fs::path filePath = fileList.at(i);
+
+				if(not profile) { // default mode: use specified parameters
+					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
+					cout << "Number of iterations is " << numberOfIterations << "\n";
+					processInputFile(filePath, debug, alpha, l, numberOfIterations, np);
+				} else {
+					cout << "Profile mode on." << endl;
+					for(float alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
+						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
+						processInputFile(filePath, debug, alpha2, l, numberOfIterations, np);
+					}
 				}
 			}
-        } else {
-        	cout << "Please specify at least one input file.";
-        	return 1;
-        }
-    }
-    catch(std::exception& e)
-    {
-        cout << "Abnormal program termination. Stracktrace: " << endl;
-    	cout << e.what() << "\n";
-        return 1;
-    }
-    return 0;
+		}
+		catch(std::exception& e)
+		{
+			cout << "Abnormal program termination. Stracktrace: " << endl;
+			cout << e.what() << "\n";
+			return 1;
+		}
+	} else { // processos seguidores
+		try {
+			// TODO complete the MPI code
+			// Receives a message with GRASP parameters and triggers local execution
+			// MPI_Recv(&msg, sizeof(Message), MPI_BYTE, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
+			ParallelGrasp resolution;
+			// ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations,
+			//					alpha, l, problem, os);
+			// Sends the result back to the leader process
+			// MPI_Isend(&msg, sizeof(Message), MPI_BYTE, j, tag, MPI_COMM_WORLD, &flag[j]);
+		}
+		catch(std::exception& e)
+		{
+			cout << "Abnormal program termination. Stracktrace: " << endl;
+			cout << e.what() << "\n";
+			return 1;
+		}
+	}
+	return 0;
 }
 
 } // namespace controller

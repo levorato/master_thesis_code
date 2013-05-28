@@ -40,6 +40,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
 	ClusteringPtr previousCc = CStar, Cc;
 	float bestValue = problem.objectiveFunction(g, CStar.get());
+	int iterationValue = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
 	SequentialNeighborhoodGenerator neig(g->getN());
 
@@ -71,17 +72,19 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 		// 4. Write the results into ostream os, using csv format
 		// Format: iterationNumber,objectiveFunctionValue,time(ms),boolean
 		// TODO melhorar formatacao do tempo
-		os << i << "," << newValue << "," << (end_time.wall - start_time.wall) / 1000000 << "," << same << "\n";
+		os << (i+1) << "," << newValue << "," << (end_time.wall - start_time.wall) / 1000000 << "," << same << "\n";
 
 		if(newValue < problem.objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;
 			CStar.reset();
 			CStar = Cl;
 			bestValue = newValue;
+			iterationValue = i + 1;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue == 0)  break;
 		}
 	}
+	os << "Best value: " << bestValue << ", Iteration: " << iterationValue << endl;
 	cout << "GRASP procedure done." << endl;
 	return CStar;
 }
