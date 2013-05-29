@@ -77,7 +77,15 @@ void remove(vector<T>* vec, size_t pos) {
 }
 
 void Clustering::removeCluster(int k) {
+	// Swaps the k-th and the last element, to avoid linear-time removal
+	//swap (clusterList[k], clusterList[clusterList.size() - 1]);
+	//clusterList.erase(clusterList.end() - 1);
 	remove <BoolArrayPtr> (&clusterList, k);
+}
+
+int Clustering::clusterSize(int k) {
+	BoolArray* cluster = this->getCluster(k);
+	return cluster->count();
 }
 
 // TODO tratar o caso em que o cluster k desaparece
@@ -85,7 +93,9 @@ void Clustering::removeCluster(int k) {
 void Clustering::removeNodeFromCluster(int i, int k) {
 	BoolArray* cluster = this->getCluster(k);
 	// verifica se o cluster eh unitario
-	if(cluster->size() == 1) {
+	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
+	if(clusterSize(k) == 1) {
+		// cout << "Deleting cluster " << k << endl;
 		this->removeCluster(k);
 	} else {
 		(*cluster)[i] = false;
@@ -129,11 +139,16 @@ void Clustering::printClustering() {
 	print(std::cout, clusterList);
 }
 
+void Clustering::printClustering(ostream& os) {
+	os << "Clustering configuration: " << std::endl;
+	print(os, clusterList);
+}
+
 void Clustering::print(std::ostream& os, ClusterList& l)
 {
 	int numberOfClusters = l.size();
 	for(int k = 0; k < numberOfClusters; k++) {
-    	os << " Partition " << k << ": [ ";
+    	os << " Partition " << k << " (" << clusterSize(k) <<  "): [ ";
     	BoolArrayPtr arrayPtr = l.at(k);
     	for(int i = 0; i < MAX_NODES; i++) {
     		if((*arrayPtr)[i]) {

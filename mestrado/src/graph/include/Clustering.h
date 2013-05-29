@@ -84,6 +84,11 @@ public:
 	void printClustering();
 
 	/**
+	 * Prints the clustering config on the ostream os.
+	 */
+	void printClustering(ostream& os);
+
+	/**
 	 * Returns the number of nodes in the graph.
 	 */
 	int getNumberOfNodes();
@@ -97,6 +102,11 @@ public:
 	 * Removes the k-th cluster.
 	 */
 	void removeCluster(int k);
+
+	/**
+	 * Calculates the size of the k-th cluster.
+	 */
+	int clusterSize(int k);
 
 	/**
 	 * Returns the gain of a given vertex (based on the modularity matrix)

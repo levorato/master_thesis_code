@@ -5,6 +5,8 @@
  *      Author: czt0
  */
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <string>
 #include "include/TimeDateUtil.h"
 
 namespace util {
@@ -30,11 +32,12 @@ std::wstring TimeDateUtil::FormatTime(boost::posix_time::ptime now)
   return wss.str();
 }
 
-string TimeDateUtil::getTimeAndDateAsString() {
-	ptime now = second_clock::universal_time();
+std::string TimeDateUtil::getTimeAndDateAsString() {
+	using namespace boost::posix_time;
+	ptime now = second_clock::local_time();
 
-	std::wstring ws(util::TimeDateUtil::FormatTime(now));
-	return string ( ws.begin(), ws.end() );;
+	std::wstring ws(TimeDateUtil::FormatTime(now));
+	return std::string ( ws.begin(), ws.end() );;
 }
 
 } /* namespace util */

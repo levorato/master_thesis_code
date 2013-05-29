@@ -22,9 +22,12 @@
 using namespace boost;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
-using namespace boost::posix_time;
 
 #include <mpi.h>
+
+#include <cstdlib>
+#include <stdexcept>
+#include <execinfo.h>
 
 #include <iostream>
 #include <sstream>
@@ -86,12 +89,12 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 		if(np == 1) {	// sequential version of GRASP
 			Grasp resolution;
 			c = resolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, fileId);
+					alpha, l, problem, fileId, myRank);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
 			ParallelGrasp parallelResolution;
 			c = parallelResolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, fileId, np);
+					alpha, l, problem, fileId, np, myRank);
 		}
 		c->printClustering();
 	} else {
@@ -104,6 +107,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	// Get the number of processes
 	int np;
 	MPI_Comm_size(MPI_COMM_WORLD, &np);
+	std::set_terminate( handler );
 
 	// codigo do processor lider
 	if(myRank == 0) {
@@ -189,12 +193,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					cout << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, debug, alpha, l, numberOfIterations, np);
+					processInputFile(filePath, debug, alpha, l, numberOfIterations, np, myRank);
 				} else {
 					cout << "Profile mode on." << endl;
 					for(float alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, debug, alpha2, l, numberOfIterations, np);
+						processInputFile(filePath, debug, alpha2, l, numberOfIterations, np, myRank);
 					}
 				}
 			}
@@ -203,6 +207,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		{
 			cout << "Abnormal program termination. Stracktrace: " << endl;
 			cout << e.what() << "\n";
+			if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
+				std::cout << stack << endl;
+			}
+			std::cerr << diagnostic_information(e);
 			return 1;
 		}
 	} else { // processos seguidores
@@ -220,10 +228,26 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		{
 			cout << "Abnormal program termination. Stracktrace: " << endl;
 			cout << e.what() << "\n";
+			if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
+				std::cout << stack << endl;
+			}
+			std::cerr << diagnostic_information(e);
 			return 1;
 		}
 	}
 	return 0;
+}
+
+void CommandLineInterfaceController::handler()
+{
+    void *trace_elems[20];
+    int trace_elem_count(backtrace( trace_elems, 20 ));
+    char **stack_syms(backtrace_symbols( trace_elems, trace_elem_count ));
+    for ( int i = 0 ; i < trace_elem_count ; ++i )
+    {
+        std::cout << stack_syms[i] << "\n";
+    }
+    free( stack_syms );
 }
 
 } // namespace controller

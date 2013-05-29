@@ -13,10 +13,13 @@
 #include "../../util/include/TimeDateUtil.h"
 
 #include <algorithm>
+#include <iostream>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/timer/timer.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 using namespace problem;
 using namespace boost;
@@ -45,8 +48,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	int iterationValue = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
 	SequentialNeighborhoodGenerator neig(g->getN());
-	std::ostream os = generateOutputFile(fileId, myRank, alpha, l, iter);
-
+	stringstream ss;
 
 	// TODO: Parallelize here! Divide iterations by n processors with MPI.
 	for (int i = 0; i < iter; i++, previousCc.reset(), previousCc = Cc) {
@@ -76,7 +78,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 		// 4. Write the results into ostream os, using csv format
 		// Format: iterationNumber,objectiveFunctionValue,time(ms),boolean
 		// TODO melhorar formatacao do tempo
-		os << (i+1) << "," << newValue << "," << (end_time.wall - start_time.wall) / 1000000 << "," << same << "\n";
+		ss << (i+1) << "," << newValue << "," << (end_time.wall - start_time.wall) / 1000000 << "," << same << "\n";
 
 		if(newValue < problem.objectiveFunction(g, CStar.get())) {
 			cout << "A better solution was found." << endl;
@@ -88,10 +90,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 			if(newValue == 0)  break;
 		}
 	}
-	os << "Best value: " << bestValue << ", Iteration: " << iterationValue << endl;
+	ss << "Best value: " << bestValue << ", Iteration: " << iterationValue << endl;
 	cout << "GRASP procedure done." << endl;
-	os.flush();
-	os.close();
+	CStar->printClustering(ss);
+	generateOutputFile(ss, fileId, myRank, alpha, l, iter);
 
 	return CStar;
 }
@@ -176,7 +178,8 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int &l,
 	return CStar;
 }
 
-std::ostream& Grasp::generateOutputFile(string& fileId, int &processNumber, float alpha, int l, int numberOfIterations) {
+void Grasp::generateOutputFile(stringstream& fileContents, string& fileId, int &processNumber, float alpha, int l, int numberOfIterations) {
+	namespace fs = boost::filesystem;
 	// Creates the output file (with the results of the execution)
 	if (!fs::exists(fs::path("./output"))) {
 		fs::create_directories(fs::path("./output"));
@@ -194,12 +197,16 @@ std::ostream& Grasp::generateOutputFile(string& fileId, int &processNumber, floa
 	os.open(newFile.c_str(), ios::out | ios::trunc);
 	if (!os) {
 		cerr << "Can't open output file!" << endl;
-		return NULL;
+		throw "Cannot open output file.";
 	}
 	// Writes the parameters to the output file
 	// Format: alpha,l,numberOfIterations
 	os << std::setprecision(2) << fixed << alpha << "," << l << ","
 			<< numberOfIterations << "\n";
+	// Writes file contents to the output file
+	os << fileContents.str();
+
+	os.close();
 }
 
 } /* namespace grasp */

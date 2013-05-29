@@ -71,8 +71,8 @@ private:
 	/**
 	 * TODO document this method
 	 */
-	std::ostream& generateOutputFile(string& fileId, int &processNumber,
-			float alpha, int l, int numberOfIterations);
+	void generateOutputFile(stringstream& fileContents, string& fileId,
+			int &processNumber,	float alpha, int l, int numberOfIterations);
 };
 
 } /* namespace grasp */

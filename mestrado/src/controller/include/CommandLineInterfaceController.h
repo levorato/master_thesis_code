@@ -12,11 +12,14 @@
 
 #include <string>
 #include <boost/filesystem.hpp>
+#include <boost/exception/all.hpp>
 
 using namespace std;
 namespace fs = boost::filesystem;
 
 namespace controller {
+
+typedef boost::error_info<struct tag_stack_str,std::string> stack_info;
 
 class CommandLineInterfaceController {
 public:
@@ -30,6 +33,8 @@ public:
 private:
 	static void processInputFile(fs::path filePath, bool debug, float alpha, int l,
 			int numberOfIterations, int np, int myRank);
+
+	static void handler();
 };
 } /* namespace controller */
 
