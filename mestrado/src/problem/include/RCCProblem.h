@@ -18,6 +18,8 @@ public:
 	virtual ~RCCProblem();
 
 	virtual float objectiveFunction(SignedGraph* g, Clustering *c) const;
+
+	virtual int getType() const;
 };
 
 } /* namespace problem */

@@ -16,10 +16,14 @@ namespace problem {
 
 class ClusteringProblem {
 public:
+	static const int CC_PROBLEM = 0, RCC_PROBLEM = 1;
+
 	ClusteringProblem();
 	virtual ~ClusteringProblem();
 
 	virtual float objectiveFunction(SignedGraph* g, Clustering* c) const = 0;
+
+	virtual int getType() const = 0;
 
 	int getNumberOfIterations() const {
 		return numberOfIterations;
@@ -28,6 +32,7 @@ public:
 	void setNumberOfIterations(int numberOfIterations) {
 		this->numberOfIterations = numberOfIterations;
 	}
+
 
 private:
 	int numberOfIterations;

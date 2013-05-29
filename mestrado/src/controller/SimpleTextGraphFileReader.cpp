@@ -43,15 +43,17 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 
 	vector< string > vec;
 	string line;
+	stringstream graphAsText;
 	cout << "Reading input file: '" << filepath << "' ..." << endl;
 
 	// captura a primeira linha do arquivo contendo as informacoes
 	// de numero de vertices e arestas do grafo
 	getline(in,line);
+	graphAsText << line << endl;
 	char_separator<char> sep(" \r\n");
 	tokenizer< char_separator<char> > tokens(line, sep);
 	vec.assign(tokens.begin(),tokens.end());
-	std::cout << line << std::endl;
+	// std::cout << line << std::endl;
 	try {
 	    n = boost::lexical_cast<int>(vec.at(0));
 	    e = boost::lexical_cast<int>(vec.at(1));
@@ -65,6 +67,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 	// captura as arestas do grafo com seus valores
 	while (getline(in,line))
 	{
+		graphAsText << line << endl;
 		char_separator<char> sep(" \r\n");
 		tokenizer< char_separator<char> > tokens(line, sep);
 		vec.assign(tokens.begin(),tokens.end());
@@ -82,6 +85,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(string filepath) {
 			std::cerr << "Error: input string was not valid" << std::endl;
 		}
 	}
+	g->setGraphAsText(graphAsText.str());
 
 	return g;
 }

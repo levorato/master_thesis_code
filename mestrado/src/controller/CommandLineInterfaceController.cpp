@@ -217,12 +217,18 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		try {
 			// TODO complete the MPI code
 			// Receives a message with GRASP parameters and triggers local execution
-			// MPI_Recv(&msg, sizeof(Message), MPI_BYTE, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
+			InputMessage imsg;
+			MPI_Status status;
+
+			MPI_Recv(&imsg, sizeof(InputMessage), MPI_BYTE, MPI_ANY_SOURCE, InputMessage::TAG, MPI_COMM_WORLD, &status);
+			cout << "Process " << myRank << ": Received message." << endl;
 			ParallelGrasp resolution;
 			// ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations,
 			//					alpha, l, problem, os);
 			// Sends the result back to the leader process
-			// MPI_Isend(&msg, sizeof(Message), MPI_BYTE, j, tag, MPI_COMM_WORLD, &flag[j]);
+			OutputMessage omsg;
+			MPI_Send(&omsg, sizeof(OutputMessage), MPI_BYTE, ParallelGrasp::LEADER_ID, OutputMessage::TAG, MPI_COMM_WORLD);
+			cout << "Process " << myRank << ": Message sent to leader." << endl;
 		}
 		catch(std::exception& e)
 		{

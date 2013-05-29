@@ -18,6 +18,7 @@
 #define MAX_NODES 1000
 
 using namespace boost;
+using namespace std;
 
 namespace clusteringgraph {
 
@@ -69,6 +70,10 @@ public:
 
 	void printGraph();
 
+	string getGraphAsText();
+
+	void setGraphAsText(string txt);
+
 private:
 	UndirectedGraph graph;
 	/** the modularity matrix */
@@ -76,6 +81,11 @@ private:
 	bool modularityMatrixCalculated;
 	/* the number of nodes of the graph */
 	int n;
+
+	/**
+	 * The text representation of the graph (for use on MPI messages).
+	 */
+	string graphAsText;
 };
 
 typedef boost::shared_ptr<SignedGraph> SignedGraphPtr;

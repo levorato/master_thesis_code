@@ -101,4 +101,12 @@ void SignedGraph::printGraph() {
 	cout << std::endl;
 }
 
+void SignedGraph::setGraphAsText(string txt) {
+	graphAsText = txt;
+}
+
+string SignedGraph::getGraphAsText() {
+	return graphAsText;
+}
+
 } /* namespace graph */

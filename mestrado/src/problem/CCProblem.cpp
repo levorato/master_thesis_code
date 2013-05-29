@@ -20,6 +20,10 @@ CCProblem::~CCProblem() {
 	// TODO Auto-generated destructor stub
 }
 
+int CCProblem::getType() const {
+	return ClusteringProblem::CC_PROBLEM;
+}
+
 /**
  * The Imbalance of a partition P (I(P)) is defined as the total
  * weight of negative uncut arcs and positive cut arcs.
