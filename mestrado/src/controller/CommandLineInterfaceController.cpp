@@ -220,12 +220,21 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			InputMessage imsg;
 			MPI_Status status;
 
-			MPI_Recv(&imsg, sizeof(InputMessage), MPI_BYTE, MPI_ANY_SOURCE, InputMessage::TAG, MPI_COMM_WORLD, &status);
+			// TODO unmarshall the message with boost
+			MPI_Recv(&imsg, sizeof(InputMessage), MPI_BYTE, MPI_ANY_SOURCE, 50, MPI_COMM_WORLD, &status);
+			cout << status.MPI_ERROR << "; " << status.MPI_SOURCE << "; " << status.MPI_TAG << endl;
 			cout << "Process " << myRank << ": Received message." << endl;
+			cout << "Input Message Received: " << imsg.iter << endl << endl;
 			ParallelGrasp resolution;
+			// reconstructs the graph from its text representation
+
+			// trigggers the local GRASP routine
+
+
 			// ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations,
 			//					alpha, l, problem, os);
 			// Sends the result back to the leader process
+			// TODO marshall the results with boost library
 			OutputMessage omsg;
 			MPI_Send(&omsg, sizeof(OutputMessage), MPI_BYTE, ParallelGrasp::LEADER_ID, OutputMessage::TAG, MPI_COMM_WORLD);
 			cout << "Process " << myRank << ": Message sent to leader." << endl;

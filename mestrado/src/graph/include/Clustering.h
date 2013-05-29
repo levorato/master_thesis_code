@@ -116,6 +116,13 @@ public:
 	GainCalculation gain(SignedGraph& graph, const int &a);
 
 	/**
+	 * Returns the value of the objective function corresponding to this cluster.
+	 */
+	float getObjectiveFunctionValue();
+
+	void setObjectiveFunctionValue(float f);
+
+	/**
 	 * Verifies if this clustering object equals another clustering object.
 	 * @return bool
 	 */
@@ -126,6 +133,8 @@ private:
 	int numberOfNodes;
 	/** the cluster list, with dimensions k x n */
 	ClusterList clusterList;
+	/** the value of the objective function corresponding to this cluster */
+	float objectiveFunctionValue;
 
 	void print(std::ostream& os, ClusterList& l);
 };

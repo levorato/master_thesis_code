@@ -17,8 +17,8 @@ using namespace problem;
 namespace resolution {
 namespace grasp {
 
-class InputMessage {
-public:
+struct InputMessage {
+
 	static const int TAG = 50;
 	string graphInputFileContents;
 	float alpha;
@@ -32,10 +32,17 @@ public:
 
 	}
 
-	InputMessage(string graphContents, float a, int neigh, int it,
+	InputMessage(string graphContents, int it, float a, int neigh,
 			int pType, string id) : graphInputFileContents(graphContents),
 					alpha(a), l(neigh), iter(it), problemType(pType), fileId(id) {
 
+	}
+
+	string toString() {
+		stringstream ss;
+		ss << "Alpha: " << alpha << "; l = " << l << "; iter = " << iter << "; fileId = " <<
+				fileId << "; " << graphInputFileContents << "\n\n";
+		return ss.str();
 	}
 };
 
@@ -45,7 +52,7 @@ public:
 	string clusteringAsText;
 	float objectiveFunctionValue;
 
-	OutputMessage() : clusteringAsText(), objectiveFunctionValue(0.0F) {
+	OutputMessage() : clusteringAsText("No clustering data available."), objectiveFunctionValue(0.0F) {
 
 	}
 

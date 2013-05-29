@@ -159,6 +159,14 @@ void Clustering::print(std::ostream& os, ClusterList& l)
     }
 }
 
+float Clustering::getObjectiveFunctionValue() {
+	return objectiveFunctionValue;
+}
+
+void Clustering::setObjectiveFunctionValue(float f) {
+	objectiveFunctionValue = f;
+}
+
 // TODO verificar se essa igualdade funciona
 bool Clustering::equals(Clustering& c) {
 	if(std::equal(&this->clusterList, &this->clusterList +

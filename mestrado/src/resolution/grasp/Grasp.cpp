@@ -80,7 +80,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 		// TODO melhorar formatacao do tempo
 		ss << (i+1) << "," << newValue << "," << (end_time.wall - start_time.wall) / 1000000 << "," << same << "\n";
 
-		if(newValue < problem.objectiveFunction(g, CStar.get())) {
+		if(newValue < bestValue) {
 			cout << "A better solution was found." << endl;
 			CStar.reset();
 			CStar = Cl;
@@ -94,6 +94,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 	cout << "GRASP procedure done." << endl;
 	CStar->printClustering(ss);
 	generateOutputFile(ss, fileId, myRank, alpha, l, iter);
+	CStar->setObjectiveFunctionValue(bestValue);
 
 	return CStar;
 }

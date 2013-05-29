@@ -27,24 +27,32 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, int iter, float alpha,
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	for(int i = 1; i < np; i++) {
-		InputMessage imsg(g->getGraphAsText(), iter, alpha, l, problem.getType(), fileId);
+		// TODO realizar marshalling da mensagem atraves da boost
+		InputMessage imsg; // (g->getGraphAsText(), myIter, alpha, l, problem.getType(), fileId);
+		imsg.iter = myIter;
 		// processMessage(matrixPtr.get(), &msg, i, partitionSize, TO_MESSAGE);
-		MPI_Send(&imsg, sizeof(InputMessage), MPI_BYTE, i, InputMessage::TAG, MPI_COMM_WORLD);
+		MPI_Send(&imsg, sizeof(InputMessage), MPI_BYTE, i, 50, MPI_COMM_WORLD);
 		cout << "Message sent to process " << i << endl;
 	}
 	// o resto da divisao vai pro processo 0
-	Grasp::executeGRASP(g, myIter + resto, alpha, l, problem, fileId, myRank);
+	ClusteringPtr bestClustering = Grasp::executeGRASP(g, myIter + resto, alpha, l, problem, fileId, myRank);
+
 	// receives the processing results
 	for(int i = 1; i < np; i++) {
 		OutputMessage omsg;
 		MPI_Status status;
+		// TODO realizar unmarshalling da mensagem pela boost
 		MPI_Recv(&omsg, sizeof(OutputMessage), MPI_BYTE, MPI_ANY_SOURCE, OutputMessage::TAG, MPI_COMM_WORLD, &status);
-		cout << "Message received from process " << i << "\n";
+		// TODO colocar numero do processo (obter do MPI)
+		cout << "Message received from process " << i << ": " << omsg.clusteringAsText << "\n";
 		// reune os resultados da execucao do processo i
 		// processMessage(newmatrix, &msg, origem - 1, partitionSize, TO_MATRIX);
+		if(clustering->getObjectiveFunctionValue() < bestClustering->getObjectiveFunctionValue()) {
+			bestClustering = clustering;
+		}
 	}
-
-	// return ;
+	// retorna o melhor clustering dentre todos os processos
+	return bestClustering;
 }
 
 } /* namespace grasp */
