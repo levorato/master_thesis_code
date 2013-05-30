@@ -234,8 +234,10 @@
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_timer"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_program_options"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_random"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="mpi_cxx"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_serialization"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_mpi"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="mpi"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="mpi_cxx"/>
 								</option>
 								<option id="gnu.cpp.link.option.paths.398328067" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="/usr/lib64/openmpi/lib"/>
@@ -248,7 +250,7 @@
 								</inputType>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.412335955" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug">
-								<option id="gnu.both.asm.option.include.paths.1941276060" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath"/>
+								<option id="gnu.both.asm.option.include.paths.1941276060" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1296273515" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>

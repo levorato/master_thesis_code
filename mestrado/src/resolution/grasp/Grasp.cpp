@@ -38,13 +38,13 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-		ClusteringProblem& problem, string& fileId, int& myRank) {
+ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
+		ClusteringProblem* problem, string& fileId, const int& myRank) {
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
 	ClusteringPtr previousCc = CStar, Cc;
-	float bestValue = problem.objectiveFunction(g, CStar.get());
+	float bestValue = problem->objectiveFunction(g, CStar.get());
 	int iterationValue = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
 	SequentialNeighborhoodGenerator neig(g->getN());
@@ -64,10 +64,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
 		Cc = constructClustering(g, alpha, ramdomSeed);
 
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, neig);
+		ClusteringPtr Cl = localSearch(g, *Cc, l, *problem, neig);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
-		float newValue = problem.objectiveFunction(g, Cl.get());
+		float newValue = problem->objectiveFunction(g, Cl.get());
 
 		// 4. Stops the timer and stores the elapsed time
 		timer.stop();
@@ -142,8 +142,8 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, float alpha, unsigned i
 	return Cc;
 }
 
-ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int &l,
-		ClusteringProblem& problem, NeighborhoodListGenerator &neig) {
+ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
+		const ClusteringProblem& problem, NeighborhoodListGenerator &neig) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
@@ -179,7 +179,8 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, int &l,
 	return CStar;
 }
 
-void Grasp::generateOutputFile(stringstream& fileContents, string& fileId, int &processNumber, float alpha, int l, int numberOfIterations) {
+void Grasp::generateOutputFile(stringstream& fileContents, string& fileId, const int &processNumber,
+		const float& alpha, const int& l, const int& numberOfIterations) {
 	namespace fs = boost::filesystem;
 	// Creates the output file (with the results of the execution)
 	if (!fs::exists(fs::path("./output"))) {

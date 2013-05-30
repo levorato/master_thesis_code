@@ -14,16 +14,19 @@
 #include "../problem/include/ClusteringProblem.h"
 #include "../problem/include/CCProblem.h"
 #include "../util/include/TimeDateUtil.h"
+#include "../util/include/MPIMessage.h"
+#include "../problem/include/ClusteringProblemFactory.h"
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
-
-#include <mpi.h>
+using namespace boost::mpi;
 
 #include <cstdlib>
 #include <stdexcept>
@@ -38,6 +41,7 @@ using namespace std;
 using namespace clusteringgraph;
 using namespace resolution::grasp;
 using namespace problem;
+using namespace util;
 
 namespace controller {
 
@@ -82,14 +86,14 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 		}
 
 		// Triggers the execution of the GRASP algorithm
-		CCProblem problem = CCProblem();
+		CCProblem problem;
 		ClusteringPtr c;
 		string fileId = filePath.filename().string();
 
 		if(np == 1) {	// sequential version of GRASP
 			Grasp resolution;
 			c = resolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, fileId, myRank);
+					alpha, l, &problem, fileId, myRank);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
 			ParallelGrasp parallelResolution;
@@ -98,15 +102,14 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 		}
 		c->printClustering();
 	} else {
-		cout << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
+		cerr << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
 	}
 }
 
-int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[], int &myRank) {
+int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[],
+		const int &myRank, const int &np) {
 
-	// Get the number of processes
-	int np;
-	MPI_Comm_size(MPI_COMM_WORLD, &np);
+	// used for debugging purpose
 	std::set_terminate( handler );
 
 	// codigo do processor lider
@@ -215,28 +218,25 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		}
 	} else { // processos seguidores
 		try {
-			// TODO complete the MPI code
 			// Receives a message with GRASP parameters and triggers local execution
 			InputMessage imsg;
-			MPI_Status status;
+			mpi::communicator world;
+			mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::INPUT_MSG_TAG, imsg);
 
-			// TODO unmarshall the message with boost
-			MPI_Recv(&imsg, sizeof(InputMessage), MPI_BYTE, MPI_ANY_SOURCE, 50, MPI_COMM_WORLD, &status);
-			cout << status.MPI_ERROR << "; " << status.MPI_SOURCE << "; " << status.MPI_TAG << endl;
-			cout << "Process " << myRank << ": Received message." << endl;
-			cout << "Input Message Received: " << imsg.iter << endl << endl;
-			ParallelGrasp resolution;
+			cout << "Process " << myRank << ": Received message from leader." << endl;
 			// reconstructs the graph from its text representation
+			SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
+			SignedGraphPtr g = reader.readGraphFromString(imsg.graphInputFileContents);
 
 			// trigggers the local GRASP routine
+			ClusteringProblemFactory factory;
+			Grasp resolution;
+			ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
+						imsg.l, factory.build(imsg.problemType), imsg.fileId, myRank);
 
-
-			// ClusteringPtr c = resolution.executeGRASP(g.get(), numberOfIterations,
-			//					alpha, l, problem, os);
 			// Sends the result back to the leader process
-			// TODO marshall the results with boost library
-			OutputMessage omsg;
-			MPI_Send(&omsg, sizeof(OutputMessage), MPI_BYTE, ParallelGrasp::LEADER_ID, OutputMessage::TAG, MPI_COMM_WORLD);
+			OutputMessage omsg("blank", bestClustering->getObjectiveFunctionValue());
+			world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_TAG, omsg);
 			cout << "Process " << myRank << ": Message sent to leader." << endl;
 		}
 		catch(std::exception& e)

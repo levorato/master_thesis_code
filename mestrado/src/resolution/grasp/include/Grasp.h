@@ -38,8 +38,8 @@ public:
 	 * @param fileId string representing the identification of the input graph file
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	ClusteringPtr executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-			ClusteringProblem& problem, string& fileId, int& myRank);
+	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
+			ClusteringProblem* problem, string& fileId, const int& myRank);
 
 private:
 	/**
@@ -65,14 +65,14 @@ private:
 	 * @param l the size of the neighborhood
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, int &l,
-			ClusteringProblem& problem, NeighborhoodListGenerator &neig);
+	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l,
+			const ClusteringProblem& problem, NeighborhoodListGenerator &neig);
 
 	/**
 	 * TODO document this method
 	 */
 	void generateOutputFile(stringstream& fileContents, string& fileId,
-			int &processNumber,	float alpha, int l, int numberOfIterations);
+			const int &processNumber, const float& alpha, const int& l, const int& numberOfIterations);
 };
 
 } /* namespace grasp */

@@ -28,7 +28,8 @@ public:
 
 	enum StategyName {GRASP, GRASP_PR};
 	static string getTimeAndDateAsString();
-	static int processArgumentsAndExecute(int argc, char *argv[], int &myRank);
+	static int processArgumentsAndExecute(int argc, char *argv[],
+			const int &myRank, const int &np);
 
 private:
 	static void processInputFile(fs::path filePath, bool debug, float alpha, int l,

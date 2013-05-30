@@ -8,7 +8,10 @@
 
 #include "controller/include/CommandLineInterfaceController.h"
 
-#include <mpi.h>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+
+namespace mpi = boost::mpi;
 
 int main(int ac, char* av[])
 {
@@ -16,13 +19,11 @@ int main(int ac, char* av[])
 	int myRank;
 
 	// Inicializacao do MPI
-	MPI_Init(&ac, &av);
-	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+	mpi::environment env(ac, av);
+	mpi::communicator world;
 
-	int return_value = controller::CommandLineInterfaceController::processArgumentsAndExecute(ac, av, myRank);
-
-	// Finalizacao do MPI
-	MPI_Finalize();
+	int return_value = controller::CommandLineInterfaceController::
+			processArgumentsAndExecute(ac, av, world.rank(), world.size());
 
 	return return_value;
 }

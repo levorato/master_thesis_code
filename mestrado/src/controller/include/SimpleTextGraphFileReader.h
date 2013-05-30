@@ -20,7 +20,9 @@ public:
 	SimpleTextGraphFileReader();
 	virtual ~SimpleTextGraphFileReader();
 
-	SignedGraphPtr readGraphFromFile(std::string filepath);
+	SignedGraphPtr readGraphFromFile(const std::string &filepath);
+
+	SignedGraphPtr readGraphFromString(const std::string &graphContents);
 };
 
 } /* namespace controller */
