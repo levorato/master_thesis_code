@@ -27,10 +27,10 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 	if (l == 1) {  // 1-opt
 		for (int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
-			BoolArray* cluster1 = clustering->getCluster(k1);
+			BoolArray cluster1 = clustering->getCluster(k1);
 			// For each node i in cluster(k1)
 			for (int i = 0; i < n; i++) {
-				if ((*cluster1)[i]) {
+				if (cluster1[i]) {
 					// Option 1: node i is moved to another existing cluster k2
 					for (int k2 = 0; k2 < nc; k2++) {
 						if (k1 != k2) {
@@ -80,16 +80,16 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 	} else {  // 2-opt
 		for (int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
-			BoolArray* cluster1 = clustering->getCluster(k1);
+			BoolArray cluster1 = clustering->getCluster(k1);
 			for (int k2 = k1 + 1; k2 < nc; k2++) {
 				// cluster(k2)
-				BoolArray* cluster2 = clustering->getCluster(k2);
+				BoolArray cluster2 = clustering->getCluster(k2);
 				// For each node i in cluster(k1)
 				for (int i = 0; i < n; i++) {
-					if ((*cluster1)[i]) {
+					if (cluster1[i]) {
 						// For each node j in cluster(k2)
 						for (int j = 0; j < n; j++) {
-							if ((*cluster2)[j]) {
+							if (cluster2[j]) {
 								// Option 1: node i is moved to another existing cluster k3
 								for (int k3 = 0; k3 < nc; k3++) {
 									if (k1 != k3) {

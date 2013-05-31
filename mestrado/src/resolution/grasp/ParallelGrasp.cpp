@@ -25,9 +25,8 @@ ParallelGrasp::~ParallelGrasp() {
 	// TODO Auto-generated destructor stub
 }
 
-// TODO complete the MPI code
 ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-			ClusteringProblem& problem, string& fileId, int &np, int &myRank) {
+			ClusteringProblem& problem, string& timestamp, string& fileId, int &np, int &myRank) {
 	int myIter = iter / np;
 	int resto = iter - (myIter * np);
 	mpi::communicator world;
@@ -40,22 +39,25 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, int iter, float alpha,
 	}
 	// o resto da divisao vai pro processo 0
 	ClusteringPtr bestClustering = Grasp::executeGRASP(g, myIter + resto, alpha,
-			l, &problem, fileId, myRank);
+			l, &problem, timestamp, fileId, myRank);
 
 	// receives the processing results
+	OutputMessage omsg;
 	for(int i = 1; i < np; i++) {
-		OutputMessage omsg;
 		mpi::status stat = world.recv(mpi::any_source, OUTPUT_MSG_TAG, omsg);
-		cout << "Message received from process " << stat.source() << ": " << omsg.clusteringAsText << "\n";
+		cout << "Message received from process " << stat.source() << ": " <<
+				omsg.clustering.getObjectiveFunctionValue() << endl << omsg.clustering.toString()  << "\n";
 		// processa o resultado da execucao do processo i
-		if(omsg.objectiveFunctionValue < bestClustering->getObjectiveFunctionValue()) {
-			// bestClustering.reset();
-			// bestClustering = clustering;
-			cout << "*** Encontrado melhor valor para a FO: " << omsg.objectiveFunctionValue << endl;
+		if(omsg.clustering.getObjectiveFunctionValue() < bestClustering->getObjectiveFunctionValue()) {
+			ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
+			bestClustering.reset();
+			bestClustering = clustering;
+			cout << "*** Encontrado melhor valor para a FO: " <<
+					omsg.clustering.getObjectiveFunctionValue() << endl;
 		}
-
 	}
-	// retorna o melhor clustering dentre todos os processos
+	cout << "Best solution found: I(P) = " << bestClustering->getObjectiveFunctionValue() << endl;
+	bestClustering->printClustering();
 	return bestClustering;
 }
 

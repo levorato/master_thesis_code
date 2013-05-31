@@ -10,7 +10,6 @@
 #include "../../graph/include/SequentialNeighborhoodGen.h"
 #include "../../problem/include/ClusteringProblem.h"
 #include "../../problem/include/CCProblem.h"
-#include "../../util/include/TimeDateUtil.h"
 
 #include <algorithm>
 #include <iostream>
@@ -24,7 +23,6 @@
 using namespace problem;
 using namespace boost;
 using namespace clusteringgraph;
-using namespace util;
 
 namespace resolution {
 namespace grasp {
@@ -39,7 +37,7 @@ Grasp::~Grasp() {
 }
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
-		ClusteringProblem* problem, string& fileId, const int& myRank) {
+		ClusteringProblem* problem, string& timestamp, string& fileId, const int& myRank) {
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
@@ -92,15 +90,16 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 	}
 	ss << "Best value: " << bestValue << ", Iteration: " << iterationValue << endl;
 	cout << "GRASP procedure done." << endl;
+	CStar->printClustering();
 	CStar->printClustering(ss);
-	generateOutputFile(ss, fileId, myRank, alpha, l, iter);
+	generateOutputFile(ss, fileId, timestamp, myRank, alpha, l, iter);
 	CStar->setObjectiveFunctionValue(bestValue);
 
 	return CStar;
 }
 
 ClusteringPtr Grasp::constructClustering(SignedGraph *g, float alpha, unsigned int ramdomSeed) {
-	ClusteringPtr Cc = make_shared<Clustering>(g->getN()); // Cc = empty
+	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(g->getN()); // L(Cc) = V(G)
 	std::cout << "GRASP construct clustering...\n";
 
@@ -179,7 +178,8 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	return CStar;
 }
 
-void Grasp::generateOutputFile(stringstream& fileContents, string& fileId, const int &processNumber,
+void Grasp::generateOutputFile(stringstream& fileContents, string& fileId,
+		string& timestamp, const int &processNumber,
 		const float& alpha, const int& l, const int& numberOfIterations) {
 	namespace fs = boost::filesystem;
 	// Creates the output file (with the results of the execution)
@@ -190,10 +190,13 @@ void Grasp::generateOutputFile(stringstream& fileContents, string& fileId, const
 		fs::create_directories(
 				fs::path("./output/" + fileId));
 	}
+	if (!fs::exists(fs::path("./output/" + fileId + "/" + timestamp))) {
+		fs::create_directories(
+				fs::path("./output/" + fileId + "/" + timestamp));
+	}
 	stringstream filename;
-	filename << "./output/" << fileId << "/"
-			<< "l" << l << "a" << std::setprecision(2) << alpha << "-" << TimeDateUtil::getTimeAndDateAsString()
-			<< ".csv";
+	filename << "./output/" << fileId << "/" << timestamp << "/"
+			<< "Node" << processNumber << "-l" << l << "a" << std::setprecision(2) << alpha	<< ".csv";
 	fs::path newFile(filename.str());
 	ofstream os;
 	os.open(newFile.c_str(), ios::out | ios::trunc);

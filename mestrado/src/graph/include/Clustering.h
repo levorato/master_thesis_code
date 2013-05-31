@@ -12,7 +12,10 @@
 #include <boost/config.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
 
+#include "../../util/serialization/dynamic_bitset.hpp"
 #include "Graph.h"
 
 using namespace boost;
@@ -20,15 +23,15 @@ using namespace std;
 
 namespace clusteringgraph {
 
-// uses dynamic_bitset for bool array, a high performance and space saving structure
-// based on real bits
-// the following array is initially empty and needs to be dynamically intialized
-typedef boost::dynamic_bitset<> BoolArray;
-typedef shared_ptr<BoolArray> BoolArrayPtr;
-// Defines the cluster list and its pointer
+/**
+ *  uses dynamic_bitset for bool array, a high performance and space saving structure
+ *  based on real bits
+ *  the following array is initially empty and needs to be dynamically intialized.
+ */
+typedef dynamic_bitset<> BoolArray;
+// Defines the cluster list
 // the list is made of boolean arrays, indicating that node i is in the cluster
-// TODO verificar se eh necessario armazenar o ponteiro para o array ao inves do array em si
-typedef vector<BoolArrayPtr> ClusterList;
+typedef vector<BoolArray> ClusterList;
 typedef struct {
 	float value;
 	int clusterNumber;
@@ -43,18 +46,12 @@ class Clustering {
 public:
 	static const int NEW_CLUSTER = -1;
 
-	/**
-	 * Creates a Clustering object with n nodes and no clusters.
-	 */
-	Clustering(int n);
+	Clustering();
+;
 	/**
 	 * Creates a Clustering object with n nodes based on the clusterList.
 	 */
 	Clustering(const Clustering& clustering, int n);
-	/**
-	 * Creates a Clustering object based on the clusterList.
-	 */
-	Clustering(ClusterList& clusterList);
 
 	virtual ~Clustering();
 
@@ -66,7 +63,7 @@ public:
 	/**
 	 * Returns the n-th cluster of the list.
 	 */
-	BoolArray* getCluster(int clusterNumber);
+	BoolArray& getCluster(int clusterNumber);
 
 	/**
 	 * Adds a node i in cluster k.
@@ -128,6 +125,8 @@ public:
 	 */
 	bool equals(Clustering& c);
 
+	string toString();
+
 private:
 	/** number of nodes in the graph (n) */
 	int numberOfNodes;
@@ -137,6 +136,16 @@ private:
 	float objectiveFunctionValue;
 
 	void print(std::ostream& os, ClusterList& l);
+
+	// serialization-specific code
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & numberOfNodes;
+		ar & clusterList;
+		ar & objectiveFunctionValue;
+	}
 };
 
 // TODO implement the gain function according to the gain function

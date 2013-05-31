@@ -75,7 +75,7 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 	// TODO Auto-generated destructor stub
 }
 
-void CommandLineInterfaceController::processInputFile(fs::path filePath,
+void CommandLineInterfaceController::processInputFile(fs::path filePath, string& timestamp,
 		bool debug, float alpha, int l, int numberOfIterations, int np, int myRank) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
@@ -92,15 +92,14 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath,
 
 		if(np == 1) {	// sequential version of GRASP
 			Grasp resolution;
-			c = resolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, &problem, fileId, myRank);
+			resolution.executeGRASP(g.get(), numberOfIterations,
+					alpha, l, &problem, timestamp, fileId, myRank);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
 			ParallelGrasp parallelResolution;
-			c = parallelResolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, fileId, np, myRank);
+			parallelResolution.executeGRASP(g.get(), numberOfIterations,
+					alpha, l, problem, timestamp, fileId, np, myRank);
 		}
-		c->printClustering();
 	} else {
 		cerr << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
 	}
@@ -111,6 +110,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 	// used for debugging purpose
 	std::set_terminate( handler );
+	// timestamp used for output files
+	string timestamp = TimeDateUtil::getTimeAndDateAsString();
 
 	// codigo do processor lider
 	if(myRank == 0) {
@@ -196,12 +197,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					cout << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, debug, alpha, l, numberOfIterations, np, myRank);
+					processInputFile(filePath, timestamp, debug, alpha, l, numberOfIterations, np, myRank);
 				} else {
 					cout << "Profile mode on." << endl;
 					for(float alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, debug, alpha2, l, numberOfIterations, np, myRank);
+						processInputFile(filePath, timestamp, debug, alpha2, l, numberOfIterations, np, myRank);
 					}
 				}
 			}
@@ -232,10 +233,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			ClusteringProblemFactory factory;
 			Grasp resolution;
 			ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
-						imsg.l, factory.build(imsg.problemType), imsg.fileId, myRank);
+						imsg.l, factory.build(imsg.problemType), timestamp, imsg.fileId, myRank);
 
 			// Sends the result back to the leader process
-			OutputMessage omsg("blank", bestClustering->getObjectiveFunctionValue());
+			OutputMessage omsg(*bestClustering);
 			world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_TAG, omsg);
 			cout << "Process " << myRank << ": Message sent to leader." << endl;
 		}

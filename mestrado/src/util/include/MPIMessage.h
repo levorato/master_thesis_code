@@ -12,8 +12,12 @@
 #include <sstream>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
+
+#include "../../graph/include/Clustering.h"
 
 using namespace std;
+using namespace clusteringgraph;
 
 namespace util {
 
@@ -63,15 +67,13 @@ private:
 class OutputMessage {
 public:
 	static const int TAG = 60;
-	string clusteringAsText;
-	float objectiveFunctionValue;
+	Clustering clustering;
 
-	OutputMessage() : clusteringAsText("No clustering data available."), objectiveFunctionValue(0.0F) {
+	OutputMessage() : clustering() {
 
 	}
 
-	OutputMessage(string cluster, float of) : clusteringAsText(cluster),
-			objectiveFunctionValue(of) {
+	OutputMessage(Clustering &c) : clustering(c) {
 
 	}
 
@@ -81,8 +83,7 @@ private:
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		ar & clusteringAsText;
-		ar & objectiveFunctionValue;
+		ar & clustering;
 	}
 };
 

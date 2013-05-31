@@ -12,18 +12,18 @@ using namespace std;
 
 namespace clusteringgraph {
 
-Clustering::Clustering(int n) : numberOfNodes(n), clusterList() {
+Clustering::Clustering() : numberOfNodes(0), clusterList(),
+		objectiveFunctionValue(0.0F) {
 
 }
 
 // TODO test dimension attribution
 Clustering::Clustering(const Clustering& clustering, int n) : numberOfNodes(n),
-		clusterList() {
+		clusterList(), objectiveFunctionValue(0.0F) {
 	// deep copy of the clusterlist data
 	for(unsigned int i = 0; i < clustering.clusterList.size(); i++) {
-		BoolArray* boolArray = clustering.clusterList.at(i).get();
-		BoolArrayPtr newArray(new BoolArray(*boolArray));
-		this->clusterList.push_back(newArray);
+		BoolArray boolArray = clustering.clusterList.at(i);
+		this->clusterList.push_back(BoolArray(boolArray));
 	}
 }
 
@@ -41,31 +41,28 @@ int Clustering::getNumberOfClusters() {
 
 void Clustering::addCluster(int vertexList[], unsigned int arraySize) {
 	// 1. Create a new cluster in the list
-	BoolArrayPtr array(new BoolArray(MAX_NODES));
+	BoolArray array(MAX_NODES);
 
-	// 2. For every vertex in the list, remove the vertex from
-	// any other cluster and add it to the newly created cluster
-	int numberOfClusters = this->getNumberOfClusters();
+	// 2. For every vertex in the list, add it to the newly created cluster
 	for(unsigned int i = 0; i < arraySize; i++) {
 		// std::cout << "Adding vertex " << vertexList[i] << " to cluster " << numberOfClusters << std::endl;
 		int vertex = vertexList[i];
-		for(int k = 0; k < numberOfClusters; k++) {
-			(*clusterList.at(k))[vertex] = false;
-		}
-		(*array)[vertex] = true;
+		array[vertex] = true;
 	}
 	this->clusterList.push_back(array);
 	this->numberOfNodes += arraySize;
 }
 
-BoolArray* Clustering::getCluster(int clusterNumber) {
-	return clusterList.at(clusterNumber).get();
+BoolArray& Clustering::getCluster(int clusterNumber) {
+	return clusterList.at(clusterNumber);
 }
 
 void Clustering::addNodeToCluster(int i, int k) {
 	// std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
-	BoolArray* cluster = this->getCluster(k);
-	(*cluster)[i] = true;
+	BoolArray cluster = this->getCluster(k);
+	cluster[i] = true;
+	this->removeCluster(k);
+	this->clusterList.push_back(cluster);
 	this->numberOfNodes++;
 }
 
@@ -80,25 +77,23 @@ void Clustering::removeCluster(int k) {
 	// Swaps the k-th and the last element, to avoid linear-time removal
 	//swap (clusterList[k], clusterList[clusterList.size() - 1]);
 	//clusterList.erase(clusterList.end() - 1);
-	remove <BoolArrayPtr> (&clusterList, k);
+	remove <BoolArray> (&clusterList, k);
 }
 
 int Clustering::clusterSize(int k) {
-	BoolArray* cluster = this->getCluster(k);
-	return cluster->count();
+	BoolArray cluster = this->getCluster(k);
+	return cluster.count();
 }
 
-// TODO tratar o caso em que o cluster k desaparece
-// Ainda esta mantendo o cluster vazio na lista de clusters
 void Clustering::removeNodeFromCluster(int i, int k) {
-	BoolArray* cluster = this->getCluster(k);
+	BoolArray cluster = this->getCluster(k);
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
 	if(clusterSize(k) == 1) {
 		// cout << "Deleting cluster " << k << endl;
 		this->removeCluster(k);
 	} else {
-		(*cluster)[i] = false;
+		cluster[i] = false;
 	}
 	this->numberOfNodes--;
 	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
@@ -116,7 +111,7 @@ GainCalculation Clustering::gain(SignedGraph& graph, const int &a) {
 	for(int k = 0; k < nc; k++) {
 		int sum = 0;
 		// Cluster(k)
-		BoolArray cluster = *(this->clusterList.at(k));
+		BoolArray cluster = this->clusterList.at(k);
 		// j in Cluster(k)
 		for(int j = 0; j < this->numberOfNodes; j++) {
 			if(cluster[j]) {
@@ -149,14 +144,20 @@ void Clustering::print(std::ostream& os, ClusterList& l)
 	int numberOfClusters = l.size();
 	for(int k = 0; k < numberOfClusters; k++) {
     	os << " Partition " << k << " (" << clusterSize(k) <<  "): [ ";
-    	BoolArrayPtr arrayPtr = l.at(k);
+    	BoolArray array = l.at(k);
     	for(int i = 0; i < MAX_NODES; i++) {
-    		if((*arrayPtr)[i]) {
+    		if(array[i]) {
     			os << i << " ";
     		}
     	}
     	os << "] \n";
     }
+}
+
+string Clustering::toString() {
+	stringstream ss;
+	printClustering(ss);
+	return ss.str();
 }
 
 float Clustering::getObjectiveFunctionValue() {

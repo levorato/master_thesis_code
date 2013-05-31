@@ -36,10 +36,9 @@ public:
 	 * @param l the size of the neighborhood
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param fileId string representing the identification of the input graph file
-	 * @return Clustering C(l), the local optinum solution
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
-			ClusteringProblem* problem, string& fileId, const int& myRank);
+			ClusteringProblem* problem, string& timestamp, string& fileId, const int& myRank);
 
 private:
 	/**
@@ -71,7 +70,7 @@ private:
 	/**
 	 * TODO document this method
 	 */
-	void generateOutputFile(stringstream& fileContents, string& fileId,
+	void generateOutputFile(stringstream& fileContents, string& fileId, string& timestamp,
 			const int &processNumber, const float& alpha, const int& l, const int& numberOfIterations);
 };
 

@@ -32,7 +32,8 @@ public:
 			const int &myRank, const int &np);
 
 private:
-	static void processInputFile(fs::path filePath, bool debug, float alpha, int l,
+	static void processInputFile(fs::path filePath, string& timestamp,
+			bool debug, float alpha, int l,
 			int numberOfIterations, int np, int myRank);
 
 	static void handler();
