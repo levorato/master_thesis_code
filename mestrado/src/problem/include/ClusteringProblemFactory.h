@@ -21,12 +21,11 @@ public:
 	ClusteringProblemFactory();
 	virtual ~ClusteringProblemFactory();
 
-	ClusteringProblem* build(int problemType) {
-		ClusteringProblem* problem;
+	ClusteringProblem& build(int problemType) {
 		if(problemType == ClusteringProblem::CC_PROBLEM) {
-			return &ccProblem;
+			return ccProblem;
 		} else {
-			return &rccProblem;
+			return rccProblem;
 		}
 	}
 };

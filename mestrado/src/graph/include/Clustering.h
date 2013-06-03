@@ -47,7 +47,7 @@ public:
 	static const int NEW_CLUSTER = -1;
 
 	Clustering();
-;
+
 	/**
 	 * Creates a Clustering object with n nodes based on the clusterList.
 	 */
@@ -56,9 +56,11 @@ public:
 	virtual ~Clustering();
 
 	/**
-	 * Adds a new cluster to the clustering configuration.
+	 * Adds i to a new cluster to the clustering configuration.
+	 * Recalculates the objective function associated with
+	 * the clustering, based on the modification.
 	 */
-	void addCluster(int vertexList[], unsigned int arraySize);
+	void addCluster(SignedGraph& g, const int& i);
 
 	/**
 	 * Returns the n-th cluster of the list.
@@ -66,14 +68,18 @@ public:
 	BoolArray& getCluster(int clusterNumber);
 
 	/**
-	 * Adds a node i in cluster k.
+	 * Adds a node i in cluster k. Recalculates the objective
+	 * function associated with the clustering, based on the
+	 * modification.
 	 */
-	void addNodeToCluster(int i, int k);
+	void addNodeToCluster(SignedGraph& g, int i, int k);
 
 	/**
-	 * Removes a node i from cluster k.
+	 * Removes a node i from cluster k. Recalculates the objective
+	 * function associated with the clustering, based on the
+	 * modification.
 	 */
-	void removeNodeFromCluster(int i, int k);
+	void removeNodeFromCluster(SignedGraph& g, int i, int k);
 
 	/**
 	 * Prints the clustering config on the screen.
@@ -96,9 +102,11 @@ public:
 	int getNumberOfClusters();
 
 	/**
-	 * Removes the k-th cluster.
+	 * Removes the k-th cluster. Attention!!! This method DOES NOT
+	 * recalculate the objective function associated with the clustering,
+	 * based on the modification.
 	 */
-	void removeCluster(int k);
+	void removeCluster(SignedGraph& g, int k);
 
 	/**
 	 * Calculates the size of the k-th cluster.
@@ -118,6 +126,12 @@ public:
 	float getObjectiveFunctionValue();
 
 	void setObjectiveFunctionValue(float f);
+
+	/**
+	 * Calculates the delta of the objective function caused by the
+	 * insertion of node i in cluster k.
+	 */
+	int calculateDeltaObjectiveFunction(SignedGraph& g, const int& k, const int& i);
 
 	/**
 	 * Verifies if this clustering object equals another clustering object.

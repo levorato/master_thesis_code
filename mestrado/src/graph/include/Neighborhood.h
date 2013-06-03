@@ -48,14 +48,14 @@ protected:
 	 * If parameter k3 == -1, inserts node i in a new cluster (alone).
 	 * If parameter k4 == -1, inserts node j in a new cluster (anlone).
 	 */
-	ClusteringPtr process2optCombination(Clustering* clustering, int k1, int k2,
+	ClusteringPtr process2optCombination(SignedGraph& g, Clustering* clustering, int k1, int k2,
 			int k3, int k4, int n, int i, int j) {
 
 		ClusteringPtr cTemp = make_shared < Clustering > (*clustering, n);
 		int nc = cTemp->getNumberOfClusters();
 		// removes node i from cluster1 and inserts in cluster3
 		// TODO check if the removal of node i destroys cluster1
-		cTemp->removeNodeFromCluster(i, k1);
+		cTemp->removeNodeFromCluster(g, i, k1);
 		// recalculates the number of clusters, as one of them may have been removed
 		int newnc1 = cTemp->getNumberOfClusters();
 		if (k3 >= 0) {
@@ -63,17 +63,16 @@ protected:
 			if(newnc1 < nc && k3 > k1) {
 				// cluster k1 has been removed
 				// cluster k3 is in fact (k3 - 1)
-				cTemp->addNodeToCluster(i, k3 - 1);
+				cTemp->addNodeToCluster(g, i, k3 - 1);
 			} else {
-				cTemp->addNodeToCluster(i, k3);
+				cTemp->addNodeToCluster(g, i, k3);
 			}
 		} else {
 			// inserts i in a new cluster (alone)
-			int nodeArray[1] = { i };
-			cTemp->addCluster(nodeArray, 1);
+			cTemp->addCluster(g, i);
 		}
 		// removes node j from cluster2 and inserts in cluster4
-		cTemp->removeNodeFromCluster(j, k2);
+		cTemp->removeNodeFromCluster(g, j, k2);
 		if (k4 >= 0) {
 			// inserts j in existing cluster k4
 			// recalculates the number of clusters, as one or two of them may have been removed
@@ -82,27 +81,26 @@ protected:
 				if((newnc2 < newnc1) && (k4 > k2)) {
 					// clusters k1 and k2 have been removed
 					// cluster k4 is in fact (k4 - 2)
-					cTemp->addNodeToCluster(i, k4 - 2);
+					cTemp->addNodeToCluster(g, i, k4 - 2);
 				} else {
 					// only cluster k1 has been removed
 					// cluster k4 is in fact (k4 - 1)
-					cTemp->addNodeToCluster(i, k4 - 1);
+					cTemp->addNodeToCluster(g, i, k4 - 1);
 				}
 			} else {
 				if((newnc2 < nc) && (k4 > k2)) {
 					// only cluster k2 has been removed
 					// cluster k4 is in fact (k4 - 1)
-					cTemp->addNodeToCluster(i, k4 - 1);
+					cTemp->addNodeToCluster(g, i, k4 - 1);
 				} else {
 					// no cluster has been removed
 					// cluster k4 is in fact k4
-					cTemp->addNodeToCluster(i, k4);
+					cTemp->addNodeToCluster(g, i, k4);
 				}
 			}
 		} else {
 			// inserts j in a new cluster (alone)
-			int nodeArray[1] = { j };
-			cTemp->addCluster(nodeArray, 1);
+			cTemp->addCluster(g, j);
 		}
 
 		return cTemp;

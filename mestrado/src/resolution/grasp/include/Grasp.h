@@ -38,7 +38,7 @@ public:
 	 * @param fileId string representing the identification of the input graph file
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
-			ClusteringProblem* problem, string& timestamp, string& fileId, const int& myRank);
+			const ClusteringProblem& problem, string& timestamp, string& fileId, const int& myRank);
 
 private:
 	/**
@@ -46,11 +46,13 @@ private:
 	 * starting from the empty set.
 	 * This is the first phase of the GRASP algorithm.
 	 * @param g graph to be used as the base
+	 * @param problem the ClusteringProblem object for the objective function calculation
 	 * @param alpha ramdom seed belonging to the interval (0, 1)
+	 * @param ramdomSeed seed to be used in ramdom number generation
 	 * @return Clustering C(c)
 	 */
-	ClusteringPtr constructClustering(SignedGraph *g, float alpha,
-			unsigned int ramdomSeed);
+	ClusteringPtr constructClustering(SignedGraph *g, const ClusteringProblem& problem,
+			float alpha, unsigned int ramdomSeed);
 
 	/**
 	 * Executes the local search algorithm. Repeatedly derives
@@ -62,6 +64,7 @@ private:
 	 * @param Cc the clustering given by the construct clustering
 	 * phase of GRASP.
 	 * @param l the size of the neighborhood
+	 * @param problem the ClusteringProblem object for the objective function calculation
 	 * @return Clustering C(l), the local optinum solution
 	 */
 	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l,

@@ -39,7 +39,7 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, int iter, float alpha,
 	}
 	// o resto da divisao vai pro processo 0
 	ClusteringPtr bestClustering = Grasp::executeGRASP(g, myIter + resto, alpha,
-			l, &problem, timestamp, fileId, myRank);
+			l, problem, timestamp, fileId, myRank);
 
 	// receives the processing results
 	OutputMessage omsg;

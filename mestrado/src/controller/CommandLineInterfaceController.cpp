@@ -93,7 +93,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		if(np == 1) {	// sequential version of GRASP
 			Grasp resolution;
 			resolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, &problem, timestamp, fileId, myRank);
+					alpha, l, problem, timestamp, fileId, myRank);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
 			ParallelGrasp parallelResolution;

@@ -37,12 +37,12 @@ Grasp::~Grasp() {
 }
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
-		ClusteringProblem* problem, string& timestamp, string& fileId, const int& myRank) {
+		const ClusteringProblem& problem, string& timestamp, string& fileId, const int& myRank) {
 	std::cout << "Initializing GRASP procedure...\n";
 	unsigned int ramdomSeed = 0;
-	ClusteringPtr CStar = constructClustering(g, alpha, ramdomSeed);
+	ClusteringPtr CStar = constructClustering(g, problem, alpha, ramdomSeed);
 	ClusteringPtr previousCc = CStar, Cc;
-	float bestValue = problem->objectiveFunction(g, CStar.get());
+	float bestValue = CStar->getObjectiveFunctionValue();
 	int iterationValue = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
 	SequentialNeighborhoodGenerator neig(g->getN());
@@ -59,24 +59,22 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 		boost::timer::cpu_times start_time = timer.elapsed();
 
 		// 1. Construct the clustering
-		Cc = constructClustering(g, alpha, ramdomSeed);
+		Cc = constructClustering(g, problem, alpha, ramdomSeed);
 
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl = localSearch(g, *Cc, l, *problem, neig);
+		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, neig);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
-		float newValue = problem->objectiveFunction(g, Cl.get());
+		float newValue = Cl->getObjectiveFunctionValue();
 
 		// 4. Stops the timer and stores the elapsed time
 		timer.stop();
 		boost::timer::cpu_times end_time = timer.elapsed();
 
-		// TODO consertar metodo equals
-		bool same = (previousCc->equals(*Cc.get()));
 		// 4. Write the results into ostream os, using csv format
 		// Format: iterationNumber,objectiveFunctionValue,time(ms),boolean
 		// TODO melhorar formatacao do tempo
-		ss << (i+1) << "," << newValue << "," << (end_time.wall - start_time.wall) / 1000000 << "," << same << "\n";
+		ss << (i+1) << "," << newValue << "," << (end_time.wall - start_time.wall) / 1000000 << "\n";
 
 		if(newValue < bestValue) {
 			cout << "A better solution was found." << endl;
@@ -93,12 +91,12 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 	CStar->printClustering();
 	CStar->printClustering(ss);
 	generateOutputFile(ss, fileId, timestamp, myRank, alpha, l, iter);
-	CStar->setObjectiveFunctionValue(bestValue);
 
 	return CStar;
 }
 
-ClusteringPtr Grasp::constructClustering(SignedGraph *g, float alpha, unsigned int ramdomSeed) {
+ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem& problem,
+		float alpha, unsigned int ramdomSeed) {
 	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(g->getN()); // L(Cc) = V(G)
 	std::cout << "GRASP construct clustering...\n";
@@ -123,11 +121,10 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, float alpha, unsigned i
 		GainCalculation gainCalculation = Cc->gain(*g, i);
 		if(gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
-			int vertexList[1] = {i};
-			Cc->addCluster(vertexList, 1);
+			Cc->addCluster(*g, i);
 		} else {
 			// inserts i into existing cluster
-			Cc->addNodeToCluster(i, gainCalculation.clusterNumber);
+			Cc->addNodeToCluster(*g, i, gainCalculation.clusterNumber);
 		}
 
 		// 4. lc = lc - {i}
@@ -137,6 +134,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, float alpha, unsigned i
 		// Cc->printClustering();
 	}
 	std::cout << "\nInitial clustering completed.\n";
+	Cc->setObjectiveFunctionValue(problem.objectiveFunction(g, Cc.get()));
 	Cc->printClustering();
 	return Cc;
 }
@@ -150,16 +148,20 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	cout << "Current neighborhood is " << k << endl;
 
 	while(k <= l) {
-		// cout << "Local search iteration " << iteration << endl;
+		 cout << "Local search iteration " << iteration << endl;
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood
 
 		// TODO Parellelize here!
 		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
+		if(Cl->getObjectiveFunctionValue() <= 0) {
+			cerr << "Objective function below zero. Error." << endl;
+			break;
+		}
 		// cout << "Comparing local solution value." << endl;
-		if(Cl.get() != NULL && CStar != NULL) {
-			if(problem.objectiveFunction(g, Cl.get()) < problem.objectiveFunction(g, CStar.get())) {
-				// cout << "New local solution found." << endl;
+		if(Cl.get() != CStar.get()) {
+			if(Cl->getObjectiveFunctionValue() < CStar->getObjectiveFunctionValue()) {
+				cout << "New local solution found: " << Cl->getObjectiveFunctionValue() << endl;
 				// Cl->printClustering();
 				CStar.reset();
 				CStar = Cl;

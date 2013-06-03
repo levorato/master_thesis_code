@@ -41,19 +41,20 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 									> (*clustering, n);
 							// TODO check if the removal of node i destroys cluster1
 							// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
-							cTemp->removeNodeFromCluster(i, k1);
+							cTemp->removeNodeFromCluster(*g, i, k1);
 							// recalculates the number of clusters, as one of them may have been removed
 							int newnc = cTemp->getNumberOfClusters();
 							if(newnc < nc && k2 > k1) {
 								// cluster k1 has been removed
 								// cluster k2 is in fact (k2 - 1)
-								cTemp->addNodeToCluster(i, k2 - 1);
+								cTemp->addNodeToCluster(*g, i, k2 - 1);
 							} else {
-								cTemp->addNodeToCluster(i, k2);
+								cTemp->addNodeToCluster(*g, i, k2);
 							}
 							// cTemp->printClustering();
-							float objective = problem.objectiveFunction(g,
-									cTemp.get());
+							float objective = problem.objectiveFunction(g, cTemp.get());
+							cTemp->setObjectiveFunctionValue(objective);
+
 							if (objective < bestValue) {
 								// cout << "Better solution found in 1-neighborhood." << endl;
 								return cTemp;
@@ -65,11 +66,13 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 					// cout << "New clustering combination generated." << endl;
 					ClusteringPtr cTemp = make_shared < Clustering
 							> (*clustering, n);
-					cTemp->removeNodeFromCluster(i, k1);
-					int nodeArray[1] = { i };
-					cTemp->addCluster(nodeArray, 1);
+					cTemp->removeNodeFromCluster(*g, i, k1);
+					cTemp->addCluster(*g, i);
 					// cTemp->printClustering();
+					// float objective = cTemp->getObjectiveFunctionValue();
+					// TROCAR AQUI
 					float objective = problem.objectiveFunction(g, cTemp.get());
+					cTemp->setObjectiveFunctionValue(objective);
 					if (objective < bestValue) {
 						// cout << "Better solution found in 1-neighborhood." << endl;
 						return cTemp;
@@ -100,14 +103,12 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 											if (k2 != k4) {
 												// cluster(k4)
 												ClusteringPtr cTemp =
-														process2optCombination(
+														process2optCombination(*g,
 																clustering, k1,
 																k2, k3, k4, n,
 																i, j);
 												// cTemp->printClustering();
-												float objective =
-														problem.objectiveFunction(
-																g, cTemp.get());
+												float objective = cTemp->getObjectiveFunctionValue();
 												if (objective < bestValue) {
 													// cout << "Better solution found in 2-neighborhood." << endl;
 													return cTemp;
@@ -116,14 +117,12 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 										}
 										// Option 2: node j is moved to a new cluster, alone
 										ClusteringPtr cTemp =
-												process2optCombination(
+												process2optCombination(*g,
 														clustering, k1, k2, k3,
 														Clustering::NEW_CLUSTER,
 														n, i, j);
 										// cTemp->printClustering();
-										float objective =
-												problem.objectiveFunction(g,
-														cTemp.get());
+										float objective = cTemp->getObjectiveFunctionValue();
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -136,14 +135,12 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 									if (k2 != k4) {
 										// cluster(k4)
 										ClusteringPtr cTemp =
-												process2optCombination(
+												process2optCombination(*g,
 														clustering, k1, k2,
 														Clustering::NEW_CLUSTER,
 														k4, n, i, j);
 										// cTemp->printClustering();
-										float objective =
-												problem.objectiveFunction(g,
-														cTemp.get());
+										float objective = cTemp->getObjectiveFunctionValue();
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -151,13 +148,12 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 									}
 								}
 								// Option 4: nodes i and j are moved to new clusters, and left alone
-								ClusteringPtr cTemp = process2optCombination(
+								ClusteringPtr cTemp = process2optCombination(*g,
 										clustering, k1, k2,
 										Clustering::NEW_CLUSTER,
 										Clustering::NEW_CLUSTER, n, i, j);
 								// cTemp->printClustering();
-								float objective = problem.objectiveFunction(g,
-										cTemp.get());
+								float objective = cTemp->getObjectiveFunctionValue();
 								if (objective < bestValue) {
 									// cout << "Better solution found in 2-neighborhood." << endl;
 									return cTemp;
@@ -169,7 +165,8 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 			}
 		}
 	}
-	return ClusteringPtr();
+	ClusteringPtr cTemp = make_shared < Clustering > (*clustering, n);
+	return ClusteringPtr(cTemp);
 }
 
 } /* namespace clusteringgraph */
