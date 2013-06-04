@@ -154,6 +154,8 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 
 		// TODO Parellelize here!
 		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
+		cout << "Generated neig of size l = " << k << endl;
+		cout << Cl->getObjectiveFunctionValue() << endl;
 		if(Cl->getObjectiveFunctionValue() <= 0) {
 			cerr << "Objective function below zero. Error." << endl;
 			break;

@@ -12,6 +12,7 @@
 #include <boost/config.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <cassert>
 
 #include "Graph.h"
 #include "Clustering.h"
@@ -51,58 +52,47 @@ protected:
 	ClusteringPtr process2optCombination(SignedGraph& g, Clustering* clustering, int k1, int k2,
 			int k3, int k4, int n, int i, int j) {
 
+		// cout << "2-opt-comb: " << k1 << ", " << k2 << ", " << k3 << ", " << k4 << ", " << i << ", " << j << endl;
+		clustering->printClustering();
 		ClusteringPtr cTemp = make_shared < Clustering > (*clustering, n);
 		int nc = cTemp->getNumberOfClusters();
+		// the offset caused by cluster deletions
 		// removes node i from cluster1 and inserts in cluster3
 		// TODO check if the removal of node i destroys cluster1
+		// cout << "k3" << endl;
 		cTemp->removeNodeFromCluster(g, i, k1);
 		// recalculates the number of clusters, as one of them may have been removed
 		int newnc1 = cTemp->getNumberOfClusters();
+		if(newnc1 < nc) {
+			// cluster k1 has been removed
+			if(k2 > k1) { k2--; assert(k2 >= 0); }
+			if(k3 > k1) { k3--; assert(k3 >= 0); }
+			if(k4 > k1) { k4--; assert(k4 >= 0); }
+		}
 		if (k3 >= 0) {
 			// inserts i in existing cluster k3
-			if(newnc1 < nc && k3 > k1) {
-				// cluster k1 has been removed
-				// cluster k3 is in fact (k3 - 1)
-				cTemp->addNodeToCluster(g, i, k3 - 1);
-			} else {
-				cTemp->addNodeToCluster(g, i, k3);
-			}
+			cTemp->addNodeToCluster(g, i, k3);
 		} else {
 			// inserts i in a new cluster (alone)
 			cTemp->addCluster(g, i);
 		}
+		// cout << "k4" << endl;
 		// removes node j from cluster2 and inserts in cluster4
 		cTemp->removeNodeFromCluster(g, j, k2);
+		int newnc2 = cTemp->getNumberOfClusters();
+		if(newnc2 < newnc1) {
+			// cluster k2 has been removed
+			if(k4 > k2) { k4--; assert(k4 >= 0); }
+		}
+		// cout << "Node removed" << endl;
 		if (k4 >= 0) {
 			// inserts j in existing cluster k4
-			// recalculates the number of clusters, as one or two of them may have been removed
-			int newnc2 = cTemp->getNumberOfClusters();
-			if((newnc1 < nc) && (k4 > k1)) {
-				if((newnc2 < newnc1) && (k4 > k2)) {
-					// clusters k1 and k2 have been removed
-					// cluster k4 is in fact (k4 - 2)
-					cTemp->addNodeToCluster(g, i, k4 - 2);
-				} else {
-					// only cluster k1 has been removed
-					// cluster k4 is in fact (k4 - 1)
-					cTemp->addNodeToCluster(g, i, k4 - 1);
-				}
-			} else {
-				if((newnc2 < nc) && (k4 > k2)) {
-					// only cluster k2 has been removed
-					// cluster k4 is in fact (k4 - 1)
-					cTemp->addNodeToCluster(g, i, k4 - 1);
-				} else {
-					// no cluster has been removed
-					// cluster k4 is in fact k4
-					cTemp->addNodeToCluster(g, i, k4);
-				}
-			}
+			cTemp->addNodeToCluster(g, j, k4);
 		} else {
 			// inserts j in a new cluster (alone)
 			cTemp->addCluster(g, j);
 		}
-
+		// cout << "Return" << endl;
 		return cTemp;
 	}
 };

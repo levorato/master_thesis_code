@@ -21,7 +21,7 @@ SequentialNeighborhoodGenerator::SequentialNeighborhoodGenerator(int n) :
 ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, const ClusteringProblem& problem) {
 	int nc = clustering->getNumberOfClusters();
-	int n = clustering->getNumberOfNodes();
+	int n = g->getN();
 	float bestValue = problem.objectiveFunction(g, clustering);
 
 	if (l == 1) {  // 1-opt
@@ -81,6 +81,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 			}
 		}
 	} else {  // 2-opt
+		// cout << "Generating 2-opt neighborhood..." << endl;
 		for (int k1 = 0; k1 < nc; k1++) {
 			// cluster(k1)
 			BoolArray cluster1 = clustering->getCluster(k1);
@@ -92,6 +93,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 					if (cluster1[i]) {
 						// For each node j in cluster(k2)
 						for (int j = 0; j < n; j++) {
+							if(j == i)  continue;
 							if (cluster2[j]) {
 								// Option 1: node i is moved to another existing cluster k3
 								for (int k3 = 0; k3 < nc; k3++) {
@@ -99,6 +101,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 										// cluster(k3)
 										// Option 1: node i is moved to another existing cluster k3 and
 										//           node j is moved to another existing cluster k4
+										// cout << "Option 1" << endl;
 										for (int k4 = k3 + 1; k4 < nc; k4++) {
 											if (k2 != k4) {
 												// cluster(k4)
@@ -108,7 +111,8 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 																k2, k3, k4, n,
 																i, j);
 												// cTemp->printClustering();
-												float objective = cTemp->getObjectiveFunctionValue();
+												float objective = problem.objectiveFunction(g, cTemp.get());
+												cTemp->setObjectiveFunctionValue(objective);
 												if (objective < bestValue) {
 													// cout << "Better solution found in 2-neighborhood." << endl;
 													return cTemp;
@@ -116,13 +120,15 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 											}
 										}
 										// Option 2: node j is moved to a new cluster, alone
+										// cout << "Option 2" << endl;
 										ClusteringPtr cTemp =
 												process2optCombination(*g,
 														clustering, k1, k2, k3,
 														Clustering::NEW_CLUSTER,
 														n, i, j);
 										// cTemp->printClustering();
-										float objective = cTemp->getObjectiveFunctionValue();
+										float objective = problem.objectiveFunction(g, cTemp.get());
+										cTemp->setObjectiveFunctionValue(objective);
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -131,6 +137,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 								}
 								// Option 3: node i is moved to a new cluster, alone, and
 								//           node j is moved to another existing cluster k4
+								// cout << "Option 3" << endl;
 								for (int k4 = 0; k4 < nc; k4++) {
 									if (k2 != k4) {
 										// cluster(k4)
@@ -140,7 +147,8 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 														Clustering::NEW_CLUSTER,
 														k4, n, i, j);
 										// cTemp->printClustering();
-										float objective = cTemp->getObjectiveFunctionValue();
+										float objective = problem.objectiveFunction(g, cTemp.get());
+										cTemp->setObjectiveFunctionValue(objective);
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -148,12 +156,14 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 									}
 								}
 								// Option 4: nodes i and j are moved to new clusters, and left alone
+								// cout << "Option 4" << endl;
 								ClusteringPtr cTemp = process2optCombination(*g,
 										clustering, k1, k2,
 										Clustering::NEW_CLUSTER,
 										Clustering::NEW_CLUSTER, n, i, j);
 								// cTemp->printClustering();
-								float objective = cTemp->getObjectiveFunctionValue();
+								float objective = problem.objectiveFunction(g, cTemp.get());
+								cTemp->setObjectiveFunctionValue(objective);
 								if (objective < bestValue) {
 									// cout << "Better solution found in 2-neighborhood." << endl;
 									return cTemp;

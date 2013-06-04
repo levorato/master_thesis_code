@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+<?fileVersion 4.0.0?>
+
+<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="cdt.managedbuild.config.gnu.exe.debug.1204997122">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.exe.debug.1204997122" moduleId="org.eclipse.cdt.core.settings" name="Debug">
@@ -21,14 +23,17 @@
 							<builder buildPath="${workspace_loc:/MestradoMario}/Debug" id="cdt.managedbuild.target.gnu.builder.exe.debug.2034434904" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.2041697826" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.20555997" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug">
-								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.890009047" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.890009047" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.more" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.1811230085" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1419724915" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/include/mpich2-x86_64"/>
+									<listOptionValue builtIn="false" value="/usr/lib64/mpich2/lib"/>
+									<listOptionValue builtIn="false" value="/usr/lib64/mpich2/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/include"/>
-									<listOptionValue builtIn="false" value="/usr/lib/openmpi/include"/>
-									<listOptionValue builtIn="false" value="/usr/include/openmpi-x86_64"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.other.other.256169086" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -pthread -m64" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.other.other.256169086" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -pthread -m64 -Wl,-z,noexecstack -Wl,-rpath -Wl,/usr/lib64/mpich2/lib" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.warnings.extrawarn.2043019048" name="Extra warnings (-Wextra)" superClass="gnu.cpp.compiler.option.warnings.extrawarn" value="false" valueType="boolean"/>
+								<option id="gnu.cpp.compiler.option.other.pic.1386922713" name="Position Independent Code (-fPIC)" superClass="gnu.cpp.compiler.option.other.pic" value="true" valueType="boolean"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.23768844" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.729881774" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug">
@@ -38,7 +43,7 @@
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.518601022" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.712331934" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug"/>
-							<tool commandLinePattern="${COMMAND} -pthread -m64 ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.400991307" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug">
+							<tool commandLinePattern="${COMMAND} -pthread -m64 -O2 -fPIC -Wl,-z,noexecstack -Wl,-rpath -Wl,/usr/lib64/mpich2/lib ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.400991307" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug">
 								<option id="gnu.cpp.link.option.libs.2014172648" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="dl"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_system"/>
@@ -46,12 +51,17 @@
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_timer"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_program_options"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_random"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="mpi_cxx"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="opa"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="pthread"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="rt"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="mpich"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="mpichcxx"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_mpi"/>
 								</option>
 								<option id="gnu.cpp.link.option.paths.1662183048" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="/usr/lib64/openmpi/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib"/>
+									<listOptionValue builtIn="false" value="/usr/lib64/mpich2/lib"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1683564480" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -285,9 +295,6 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1465600709;cdt.managedbuild.config.gnu.exe.release.1465600709.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1012958012;cdt.managedbuild.tool.gnu.c.compiler.input.2007584183">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210;cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1277756560;cdt.managedbuild.tool.gnu.cpp.compiler.input.49957582">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1465600709;cdt.managedbuild.config.gnu.exe.release.1465600709.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.2071950963;cdt.managedbuild.tool.gnu.cpp.compiler.input.428589514">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
@@ -295,9 +302,6 @@
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1204997122;cdt.managedbuild.config.gnu.exe.debug.1204997122.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.20555997;cdt.managedbuild.tool.gnu.cpp.compiler.input.23768844">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210;cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.1964566376;cdt.managedbuild.tool.gnu.c.compiler.input.1737999371">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
