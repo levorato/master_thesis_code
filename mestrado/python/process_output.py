@@ -31,17 +31,18 @@ def main(argv):
          count = len(file_list) - 1
          
          text_file = open(root + "/summary.txt", "w")
-         filename = root[root.rfind("file"):root.rfind("/")]
+         filename = (root[:root.rfind("/")])
+         filename = filename[filename.rfind("/")+1:]
          text_file.write("Summary for graph file: %s\n"%filename)
+         best_value = 1000000L
+         best_iteration = 0L
+         best_time = 0L
+         best_param = ''
 
          while count >= 0:
             with open(file_list[count], 'r') as content_file:
                content = content_file.read()
             reader = csv.reader(StringIO.StringIO(content), delimiter=',')
-            best_value = long(1000000)
-            best_iteration = long(0)
-            best_time = long(0)
-            best_param = ''
             for row in reader:
                linestring = ''.join(row)
                if linestring.startswith( 'Best value' ):
