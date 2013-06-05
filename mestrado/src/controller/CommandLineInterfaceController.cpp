@@ -182,7 +182,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					return 1;
 				}
 				for( fs::directory_iterator dir_iter(inputDir) ; dir_iter != end_iter ; ++dir_iter) {
-					if (fs::is_regular_file(dir_iter->status()) && dir_iter->path().extension() == ".g") {
+					if (fs::is_regular_file(dir_iter->status()) &&
+							(dir_iter->path().extension() == ".g" || dir_iter->path().extension() == ".net")) {
 						fs::path filePath = *dir_iter;
 						fileList.push_back(filePath);
 					}

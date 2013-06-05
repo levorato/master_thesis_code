@@ -72,14 +72,25 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			lines.erase(lines.begin());
 			lines.push_back(firstLine.substr(firstLine.find("[") + 2));
 			formatType = 0;
-		} else {
+		} else if(line.find("Vertices") != string::npos) {
 			cout << "Format type is 1" << endl;
+			string number = line.substr(line.find("Vertices") + 8);
+			trim(number);
+			n = boost::lexical_cast<int>(number);
+			cout << "n value is " << n << endl;
+			while(lines.at(0).find("Arcs") == string::npos) {
+				lines.erase(lines.begin());
+			}
+			lines.erase(lines.begin());
+			formatType = 1;
+		} else {
+			cout << "Format type is 2" << endl;
 			tokenizer< char_separator<char> > tokens2(line, sep2);
 			vector<string> vec;
 			vec.assign(tokens2.begin(),tokens2.end());
 			n = boost::lexical_cast<int>(vec.at(0));
 			e = boost::lexical_cast<int>(vec.at(1));
-			formatType = 1;
+			formatType = 2;
 		}
 	} catch( boost::bad_lexical_cast const& ) {
 	    std::cerr << "Error: input string was not valid" << std::endl;
@@ -89,7 +100,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	std::cout << "Successfully created signed graph with " << n << " vertices." << std::endl;
 
 	// captura as arestas do grafo com seus valores
-	if(formatType == 1) {
+	if(formatType == 2 || formatType == 1) {
 		while (not lines.empty())
 		{
 			string line = lines.back();
