@@ -53,38 +53,19 @@ protected:
 			int k3, int k4, int n, int i, int j) {
 
 		// cout << "2-opt-comb: " << k1 << ", " << k2 << ", " << k3 << ", " << k4 << ", " << i << ", " << j << endl;
-		clustering->printClustering();
+		// clustering->printClustering();
 		ClusteringPtr cTemp = make_shared < Clustering > (*clustering, n);
 		int nc = cTemp->getNumberOfClusters();
-		// the offset caused by cluster deletions
-		// removes node i from cluster1 and inserts in cluster3
-		// TODO check if the removal of node i destroys cluster1
-		// cout << "k3" << endl;
-		cTemp->removeNodeFromCluster(g, i, k1);
-		// recalculates the number of clusters, as one of them may have been removed
-		int newnc1 = cTemp->getNumberOfClusters();
-		if(newnc1 < nc) {
-			// cluster k1 has been removed
-			if(k2 > k1) { k2--; assert(k2 >= 0); }
-			if(k3 > k1) { k3--; assert(k3 >= 0); }
-			if(k4 > k1) { k4--; assert(k4 >= 0); }
-		}
+
+		// 1st step: insertion of nodes i and j into other clusters
 		if (k3 >= 0) {
 			// inserts i in existing cluster k3
 			cTemp->addNodeToCluster(g, i, k3);
+			assert(cTemp->getCluster(k3)[i]);
 		} else {
 			// inserts i in a new cluster (alone)
 			cTemp->addCluster(g, i);
 		}
-		// cout << "k4" << endl;
-		// removes node j from cluster2 and inserts in cluster4
-		cTemp->removeNodeFromCluster(g, j, k2);
-		int newnc2 = cTemp->getNumberOfClusters();
-		if(newnc2 < newnc1) {
-			// cluster k2 has been removed
-			if(k4 > k2) { k4--; assert(k4 >= 0); }
-		}
-		// cout << "Node removed" << endl;
 		if (k4 >= 0) {
 			// inserts j in existing cluster k4
 			cTemp->addNodeToCluster(g, j, k4);
@@ -92,7 +73,16 @@ protected:
 			// inserts j in a new cluster (alone)
 			cTemp->addCluster(g, j);
 		}
-		// cout << "Return" << endl;
+		// 2nd step: removal of nodes i and j from previous clusters (k1 and k2)
+		// attention: in reverse order, to avoid out of range!
+		if(k2 > k1) {
+			cTemp->removeNodeFromCluster(g, j, k2);
+			cTemp->removeNodeFromCluster(g, i, k1);
+		} else {
+			cTemp->removeNodeFromCluster(g, j, k1);
+			cTemp->removeNodeFromCluster(g, i, k2);
+		}
+
 		return cTemp;
 	}
 };

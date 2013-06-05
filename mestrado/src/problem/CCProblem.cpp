@@ -33,7 +33,7 @@ int CCProblem::getType() const {
 float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 	float positiveSum = 0, negativeSum = 0;
 	int nc = c->getNumberOfClusters();
-	int n = c->getNumberOfNodes();
+	int n = g->getN();
 
 	// cout << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
 	// c->printClustering();
@@ -43,7 +43,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 		BoolArray isInClusterI = c->getCluster(i);
 		for(int a = 0; a < n; a++) {
 			if(isInClusterI[a]) {
-				for(int b = a + 1; b < n; b++) {
+				for(int b = 0 /*a+1*/; b < n; b++) {
 					if(isInClusterI[b]) {
 						// nodes a and b are in the same cluster
 						// calculates the sum of internal negative edges (within the same cluster)
@@ -53,14 +53,16 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 					}
 				}
 				// For each cluster j != i
-				for(int j = i + 1; j < nc; j++) {
-					BoolArray isInClusterJ = c->getCluster(j);
-					for(int b = 0; b < n; b++) {
-						if(isInClusterJ[b]) {
-							// nodes a and b are in different clusters
-							// calculates the sum of external positive edges (within different clusters)
-							if(g->getEdge(a, b) > 0) {
-								positiveSum += g->getEdge(a, b);
+				for(int j = 0 /* i + 1 */; j < nc; j++) {
+					if(i != j) {
+						BoolArray isInClusterJ = c->getCluster(j);
+						for(int b = 0; b < n; b++) {
+							if(isInClusterJ[b]) {
+								// nodes a and b are in different clusters
+								// calculates the sum of external positive edges (within different clusters)
+								if(g->getEdge(a, b) > 0) {
+									positiveSum += g->getEdge(a, b);
+								}
 							}
 						}
 					}

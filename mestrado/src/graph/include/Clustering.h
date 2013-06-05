@@ -92,11 +92,6 @@ public:
 	void printClustering(ostream& os);
 
 	/**
-	 * Returns the number of nodes in the graph.
-	 */
-	int getNumberOfNodes();
-
-	/**
 	 * Returns the number of clusters in this clustering configuration.
 	 */
 	int getNumberOfClusters();
@@ -142,8 +137,6 @@ public:
 	string toString();
 
 private:
-	/** number of nodes in the graph (n) */
-	int numberOfNodes;
 	/** the cluster list, with dimensions k x n */
 	ClusterList clusterList;
 	/** the value of the objective function corresponding to this cluster */
@@ -156,7 +149,6 @@ private:
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		ar & numberOfNodes;
 		ar & clusterList;
 		ar & objectiveFunctionValue;
 	}

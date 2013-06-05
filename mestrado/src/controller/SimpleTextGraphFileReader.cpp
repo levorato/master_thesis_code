@@ -70,7 +70,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			// removes the Mrel: [  from the first graph file line
 			string firstLine = lines.at(0);
 			lines.erase(lines.begin());
-			lines.push_back(firstLine.substr(firstLine.find("[") + 2));
+			lines.push_back(firstLine.substr(firstLine.find("[") + 1));
 			formatType = 0;
 		} else if(line.find("Vertices") != string::npos) {
 			cout << "Format type is 1" << endl;
@@ -118,8 +118,13 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				int a = boost::lexical_cast<int>(vec.at(0));
 				int b = boost::lexical_cast<int>(vec.at(1));
 				int value = boost::lexical_cast<int>(vec.at(2));
-				// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
-				g->addEdge(a, b, value);
+				if(formatType == 2) {
+					g->addEdge(a, b, value);
+					// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
+				} else {
+					g->addEdge(a - 1, b - 1, value);
+					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+				}
 			} catch( boost::bad_lexical_cast const& ) {
 				std::cerr << "Error: input string was not valid" << std::endl;
 			}
@@ -144,14 +149,14 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				int a = boost::lexical_cast<int>(vec.at(0));
 				int b = boost::lexical_cast<int>(vec.at(1));
 				int value = boost::lexical_cast<int>(vec.at(2));
-				// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
-				g->addEdge(a, b, value);
+				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+				g->addEdge(a - 1, b - 1, value);
 			} catch( boost::bad_lexical_cast const& ) {
 				std::cerr << "Error: input string was not valid" << std::endl;
 			}
 		}
 	}
-
+	g->printGraph();
 	g->setGraphAsText(graphContents);
 
 	return g;

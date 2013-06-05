@@ -27,7 +27,7 @@ struct Edge {
     Edge() : weight(0) { }
     Edge(float w) : weight(w) { }
 };
-typedef adjacency_matrix<undirectedS, no_property, Edge > UndirectedGraph;
+typedef adjacency_matrix<directedS, no_property, Edge > DirectedGraph;
 // the modularity matrix: a matrix of float
 typedef multi_array<float, 2> ModularityMatrix;
 
@@ -75,7 +75,7 @@ public:
 	void setGraphAsText(string txt);
 
 private:
-	UndirectedGraph graph;
+	DirectedGraph graph;
 	/** the modularity matrix */
 	ModularityMatrix modularityMatrix;
 	bool modularityMatrixCalculated;

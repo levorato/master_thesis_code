@@ -36,7 +36,7 @@ def main(argv):
          text_file.write("Summary for graph file: %s\n"%filename)
          best_value = 1000000L
          best_iteration = 0L
-         best_time = 0L
+         best_time = 0
          best_param = ''
 
          while count >= 0:
@@ -50,7 +50,7 @@ def main(argv):
                   text_file.write(filepath[filepath.rfind("/")+1:] + ' ' + linestring + '\n')
                   value = long(linestring[linestring.find(":")+2:linestring.find("Iteration")-1])
                   iteration = long(linestring[linestring.find("Iteration:")+11:linestring.rfind("Time")-1]) 
-                  time = long(linestring[linestring.rfind(":")+2:])
+                  time = float(linestring[linestring.rfind(":")+2:])
                   if value < best_value :
                      best_value = value
                      best_iteration = iteration

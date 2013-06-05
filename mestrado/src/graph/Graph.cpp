@@ -83,22 +83,12 @@ ModularityMatrix& SignedGraph::getModularityMatrix() {
 }
 
 void SignedGraph::printGraph() {
-	const char* name = "ABCDEF";
-
-	int numberOfInEdges = boost::in_degree(1, graph);
-	std::cout << "numberOfInEdges: " << numberOfInEdges << std::endl;
-
-	cout << "vertex set: ";
-	print_vertices(graph, name);
-	cout << std::endl;
-
-	cout << "edge set: ";
-	print_edges(graph, name);
-	cout << std::endl;
-
-	cout << "out-edges: " << std::endl;
-	print_graph(graph, name);
-	cout << std::endl;
+	for(int i = 0; i < this->getN(); i++) {
+		for(int j = 0; j < this->getN(); j++) {
+			cout << this->getEdge(i, j) << "  ";
+		}
+		cout << endl;
+	}
 }
 
 void SignedGraph::setGraphAsText(string txt) {

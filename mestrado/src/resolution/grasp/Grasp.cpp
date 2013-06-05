@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -44,8 +45,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 	ClusteringPtr previousCc = CStar, Cc;
 	float bestValue = CStar->getObjectiveFunctionValue();
 	int iterationValue = 0;
-	long timeSpentSoFar = 0;
-	long timeSpentOnBestSolution = 0;
+	double timeSpentSoFar = 0;
+	double timeSpentOnBestSolution = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
 	SequentialNeighborhoodGenerator neig(g->getN());
 	stringstream ss;
@@ -53,7 +54,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 	// TODO: Parallelize here! Divide iterations by n processors with MPI.
 	for (int i = 0; i < iter; i++, previousCc.reset(), previousCc = Cc) {
 		cout << "GRASP iteration " << i << endl;
-		cout << "Best solution so far: I(P) = " << bestValue << endl;
+		cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue << endl;
 
 		// 0. Triggers processing time calculation
 		boost::timer::cpu_timer timer;
@@ -76,11 +77,11 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 		// 4. Write the results into ostream os, using csv format
 		// Format: iterationNumber,objectiveFunctionValue,time(ns),boolean
 		// TODO melhorar formatacao do tempo
-		ss << (i+1) << "," << newValue << "," << (end_time.wall - start_time.wall) << "\n";
-		timeSpentSoFar += (end_time.wall - start_time.wall);
+		timeSpentSoFar += (end_time.wall - start_time.wall) / double(1000000000);
+		ss << (i+1) << "," << newValue << "," << fixed << setprecision(4) << timeSpentSoFar << "\n";
 
 		if(newValue < bestValue) {
-			cout << "A better solution was found." << endl;
+			// cout << "A better solution was found." << endl;
 			CStar.reset();
 			CStar = Cl;
 			bestValue = newValue;
@@ -90,7 +91,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 			if(newValue == 0)  break;
 		}
 	}
-	ss << "Best value: " << bestValue << ", Iteration: " << iterationValue << ", Time Spent (ns): " << timeSpentOnBestSolution << endl;
+	ss << "Best value: " << setprecision(0) << bestValue << ", Iteration: " << iterationValue << ", Time Spent (s): " <<
+			fixed << setprecision(4) << timeSpentOnBestSolution << endl;
 	cout << "GRASP procedure done." << endl;
 	CStar->printClustering();
 	CStar->printClustering(ss);
@@ -139,7 +141,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 	}
 	std::cout << "\nInitial clustering completed.\n";
 	Cc->setObjectiveFunctionValue(problem.objectiveFunction(g, Cc.get()));
-	Cc->printClustering();
+	// Cc->printClustering();
 	return Cc;
 }
 
@@ -158,8 +160,6 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 
 		// TODO Parellelize here!
 		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
-		cout << "Generated neig of size l = " << k << endl;
-		cout << Cl->getObjectiveFunctionValue() << endl;
 		if(Cl->getObjectiveFunctionValue() <= 0) {
 			cerr << "Objective function below zero. Error." << endl;
 			break;
@@ -167,7 +167,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// cout << "Comparing local solution value." << endl;
 		if(Cl.get() != CStar.get()) {
 			if(Cl->getObjectiveFunctionValue() < CStar->getObjectiveFunctionValue()) {
-				cout << "New local solution found: " << Cl->getObjectiveFunctionValue() << endl;
+				cout << "New local solution found: " << setprecision(2) << Cl->getObjectiveFunctionValue() << endl;
 				// Cl->printClustering();
 				CStar.reset();
 				CStar = Cl;
@@ -214,7 +214,7 @@ void Grasp::generateOutputFile(stringstream& fileContents, string& fileId,
 	}
 	// Writes the parameters to the output file
 	// Format: alpha,l,numberOfIterations
-	os << std::setprecision(2) << fixed << alpha << "," << l << ","
+	os << std::setprecision(2) << alpha << "," << l << ","
 			<< numberOfIterations << "\n";
 	// Writes file contents to the output file
 	os << fileContents.str();
