@@ -18,6 +18,7 @@
 #include "../problem/include/ClusteringProblemFactory.h"
 
 #include <boost/program_options.hpp>
+#include <boost/regex.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/mpi/environment.hpp>
@@ -181,7 +182,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					return 1;
 				}
 				for( fs::directory_iterator dir_iter(inputDir) ; dir_iter != end_iter ; ++dir_iter) {
-					if (fs::is_regular_file(dir_iter->status()) ) {
+					if (fs::is_regular_file(dir_iter->status()) && dir_iter->path().extension() == ".g") {
 						fs::path filePath = *dir_iter;
 						fileList.push_back(filePath);
 					}

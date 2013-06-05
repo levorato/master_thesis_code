@@ -23,6 +23,9 @@ public:
 	SignedGraphPtr readGraphFromFile(const std::string &filepath);
 
 	SignedGraphPtr readGraphFromString(const std::string &graphContents);
+
+private:
+	std::string get_file_contents(const char *filename);
 };
 
 } /* namespace controller */

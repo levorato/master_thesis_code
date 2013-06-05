@@ -14,7 +14,9 @@
 #include <algorithm>    // copy
 #include <iterator>     // ostream_operator
 #include <streambuf>
+#include <cerrno>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/smart_ptr.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
@@ -22,6 +24,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace boost::algorithm;
 
 namespace controller {
 
@@ -37,6 +40,8 @@ SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& graphContents) {
 	typedef tokenizer< escaped_list_separator<char> > Tokenizer;
 	int n = 0, e = 0;
+	// defines the format of the input file
+	int formatType = 0;
 	vector< string > lines;
 
 	// captura a primeira linha do arquivo contendo as informacoes
@@ -47,14 +52,35 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	lines.assign(tokens.begin(),tokens.end());
 
 	try {
-		string line = lines.back();
-		lines.pop_back();
-		tokenizer< char_separator<char> > tokens2(line, sep2);
-		vector<string> vec;
-		vec.assign(tokens2.begin(),tokens2.end());
+		string line = lines.at(0);
+		lines.erase(lines.begin());
+		trim(line);
+		cout << "Line: " << line << endl;
 
-	    n = boost::lexical_cast<int>(vec.at(0));
-	    e = boost::lexical_cast<int>(vec.at(1));
+		if(line.find("people") != string::npos) {
+			cout << "Format type is 0" << endl;
+			string number = line.substr(line.find(":") + 1);
+			trim(number);
+			n = boost::lexical_cast<int>(number);
+			cout << "n value is " << n << endl;
+			// ignore the next 2 lines of the file
+			lines.erase(lines.begin());
+			lines.erase(lines.begin());
+			// reads the first line
+			// removes the Mrel: [  from the first graph file line
+			string firstLine = lines.at(0);
+			lines.erase(lines.begin());
+			lines.push_back(firstLine.substr(firstLine.find("[") + 2));
+			formatType = 0;
+		} else {
+			cout << "Format type is 1" << endl;
+			tokenizer< char_separator<char> > tokens2(line, sep2);
+			vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
+			n = boost::lexical_cast<int>(vec.at(0));
+			e = boost::lexical_cast<int>(vec.at(1));
+			formatType = 1;
+		}
 	} catch( boost::bad_lexical_cast const& ) {
 	    std::cerr << "Error: input string was not valid" << std::endl;
 	}
@@ -63,28 +89,58 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	std::cout << "Successfully created signed graph with " << n << " vertices." << std::endl;
 
 	// captura as arestas do grafo com seus valores
-	while (not lines.empty())
-	{
-		string line = lines.back();
-		lines.pop_back();
-		tokenizer< char_separator<char> > tokens2(line, sep2);
-		vector<string> vec;
-		vec.assign(tokens2.begin(),tokens2.end());
+	if(formatType == 1) {
+		while (not lines.empty())
+		{
+			string line = lines.back();
+			trim(line);
+			lines.pop_back();
+			tokenizer< char_separator<char> > tokens2(line, sep2);
+			vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
 
-		if (vec.size() < 3) continue;
-		if(vec.at(2).rfind('\n') != string::npos)
-			std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+			if (vec.size() < 3) continue;
+			if(vec.at(2).rfind('\n') != string::npos)
+				std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
-		try {
-			int a = boost::lexical_cast<int>(vec.at(0));
-			int b = boost::lexical_cast<int>(vec.at(1));
-			int value = boost::lexical_cast<int>(vec.at(2));
-			// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
-			g->addEdge(a, b, value);
-		} catch( boost::bad_lexical_cast const& ) {
-			std::cerr << "Error: input string was not valid" << std::endl;
+			try {
+				int a = boost::lexical_cast<int>(vec.at(0));
+				int b = boost::lexical_cast<int>(vec.at(1));
+				int value = boost::lexical_cast<int>(vec.at(2));
+				// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
+				g->addEdge(a, b, value);
+			} catch( boost::bad_lexical_cast const& ) {
+				std::cerr << "Error: input string was not valid" << std::endl;
+			}
+		}
+	} else if(formatType == 0) {
+		char_separator<char> sep3(" (),");
+		while (not lines.empty()) {
+			string line = lines.back();
+			trim(line);
+			lines.pop_back();
+			if(line.find("]") != string::npos)  continue;
+			tokenizer< char_separator<char> > tokens2(line, sep3);
+			vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
+			// cout << "Line is: " << line << " vec.size = " << vec.size() << endl;
+
+			if (vec.size() < 3) continue;
+			if(vec.at(2).rfind('\n') != string::npos)
+				std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+
+			try {
+				int a = boost::lexical_cast<int>(vec.at(0));
+				int b = boost::lexical_cast<int>(vec.at(1));
+				int value = boost::lexical_cast<int>(vec.at(2));
+				// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
+				g->addEdge(a, b, value);
+			} catch( boost::bad_lexical_cast const& ) {
+				std::cerr << "Error: input string was not valid" << std::endl;
+			}
 		}
 	}
+
 	g->setGraphAsText(graphContents);
 
 	return g;
@@ -92,11 +148,20 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(const string& filepath) {
 	cout << "Reading input file: '" << filepath << "' ..." << endl;
-	ifstream in(filepath.c_str());
-	if (!in.is_open()) throw "Cannot open file " + filepath;
-	std::string str((std::istreambuf_iterator<char>(in)),
-	                 std::istreambuf_iterator<char>());
-	return readGraphFromString(str);
+	return readGraphFromString(get_file_contents(filepath.c_str()));
+}
+
+std::string SimpleTextGraphFileReader::get_file_contents(const char *filename)
+{
+  std::ifstream in(filename, std::ios::in | std::ios::binary);
+  if (in)
+  {
+    std::ostringstream contents;
+    contents << in.rdbuf();
+    in.close();
+    return(contents.str());
+  }
+  throw(errno);
 }
 
 } /* namespace controller */
