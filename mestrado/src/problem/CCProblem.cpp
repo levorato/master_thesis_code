@@ -53,7 +53,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 					}
 				}
 				// For each cluster j != i
-				for(int j = 0 /* i + 1 */; j < nc; j++) {
+				for(int j = i + 1; j < nc; j++) {
 					if(i != j) {
 						BoolArray isInClusterJ = c->getCluster(j);
 						for(int b = 0; b < n; b++) {
