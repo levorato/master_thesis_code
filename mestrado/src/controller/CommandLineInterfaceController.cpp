@@ -185,8 +185,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				for( fs::directory_iterator dir_iter(inputDir) ; dir_iter != end_iter ; ++dir_iter) {
 					string ext = dir_iter->path().extension().string();
 					boost::algorithm::to_lower(ext);
-					if (fs::is_regular_file(dir_iter->status()) &&
-							(ext == ".g" || ext == ".net")) {
+					if ((fs::is_regular_file(dir_iter->status())) &&
+							(ext == ".g" || ext == ".net") || ext == ".dat") {
 						fs::path filePath = *dir_iter;
 						fileList.push_back(filePath);
 					}

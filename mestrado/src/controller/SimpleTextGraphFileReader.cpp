@@ -84,13 +84,18 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			lines.erase(lines.begin());
 			formatType = 1;
 		} else {
-			cout << "Format type is 2" << endl;
 			tokenizer< char_separator<char> > tokens2(line, sep2);
 			vector<string> vec;
 			vec.assign(tokens2.begin(),tokens2.end());
 			n = boost::lexical_cast<int>(vec.at(0));
-			e = boost::lexical_cast<int>(vec.at(1));
-			formatType = 2;
+			if(vec.size() == 1) {
+				cout << "Format type is 3" << endl;
+				formatType = 3;
+			} else {
+				cout << "Format type is 2" << endl;
+				e = boost::lexical_cast<int>(vec.at(1));
+				formatType = 2;
+			}
 		}
 	} catch( boost::bad_lexical_cast const& ) {
 	    std::cerr << "Error: input string was not valid" << std::endl;
@@ -154,6 +159,29 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			} catch( boost::bad_lexical_cast const& ) {
 				std::cerr << "Error: input string was not valid" << std::endl;
 			}
+		}
+	} else {  // formatType == 3, .dat files
+		char_separator<char> sep3(" ");
+		int a = 0;
+		while (not lines.empty()) {
+			string line = lines.back();
+			trim(line);
+			lines.pop_back();
+			tokenizer< char_separator<char> > tokens2(line, sep3);
+			vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
+			// cout << "Line is: " << line << " vec.size = " << vec.size() << endl;
+
+			for(unsigned int b = 0; b < vec.size(); b++) {
+				try {
+					int value = boost::lexical_cast<int>(vec.at(b));
+					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+					g->addEdge(a, b, value);
+				} catch( boost::bad_lexical_cast const& ) {
+					std::cerr << "Error: input string was not valid" << std::endl;
+				}
+			}
+			a++;
 		}
 	}
 	g->printGraph();
