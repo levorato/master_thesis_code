@@ -23,6 +23,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -182,8 +183,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					return 1;
 				}
 				for( fs::directory_iterator dir_iter(inputDir) ; dir_iter != end_iter ; ++dir_iter) {
+					string ext = dir_iter->path().extension().string();
+					boost::algorithm::to_lower(ext);
 					if (fs::is_regular_file(dir_iter->status()) &&
-							(dir_iter->path().extension() == ".g" || dir_iter->path().extension() == ".net")) {
+							(ext == ".g" || ext == ".net")) {
 						fs::path filePath = *dir_iter;
 						fileList.push_back(filePath);
 					}

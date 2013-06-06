@@ -78,7 +78,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			trim(number);
 			n = boost::lexical_cast<int>(number);
 			cout << "n value is " << n << endl;
-			while(lines.at(0).find("Arcs") == string::npos) {
+			while(lines.at(0).find("Arcs") == string::npos && lines.at(0).find("Edges") == string::npos) {
 				lines.erase(lines.begin());
 			}
 			lines.erase(lines.begin());
