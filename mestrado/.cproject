@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?fileVersion 4.0.0?>
-
-<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="cdt.managedbuild.config.gnu.exe.debug.1204997122">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.exe.debug.1204997122" moduleId="org.eclipse.cdt.core.settings" name="Debug">
@@ -28,8 +26,9 @@
 								<option id="gnu.cpp.compiler.option.include.paths.1419724915" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include/mpich2-x86_64"/>
 									<listOptionValue builtIn="false" value="/usr/lib64/mpich2/lib"/>
-									<listOptionValue builtIn="false" value="/usr/lib64/mpich2/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/mpi"/>
+									<listOptionValue builtIn="false" value="/usr/include"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.256169086" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -pthread -m64 -Wl,-z,noexecstack -Wl,-rpath -Wl,/usr/lib64/mpich2/lib" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.warnings.extrawarn.2043019048" name="Extra warnings (-Wextra)" superClass="gnu.cpp.compiler.option.warnings.extrawarn" value="false" valueType="boolean"/>
@@ -292,6 +291,9 @@
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210;cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1277756560;cdt.managedbuild.tool.gnu.cpp.compiler.input.49957582">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1465600709;cdt.managedbuild.config.gnu.exe.release.1465600709.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1012958012;cdt.managedbuild.tool.gnu.c.compiler.input.2007584183">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
@@ -302,6 +304,9 @@
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1204997122;cdt.managedbuild.config.gnu.exe.debug.1204997122.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.20555997;cdt.managedbuild.tool.gnu.cpp.compiler.input.23768844">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210;cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.1964566376;cdt.managedbuild.tool.gnu.c.compiler.input.1737999371">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
