@@ -35,6 +35,7 @@ def main(argv):
          filename = filename[filename.rfind("/")+1:]
          text_file.write("Summary for graph file: %s\n"%filename)
          best_value = 1000000L
+         best_K = 0
          best_iteration = 0L
          best_time = 0
          best_param = ''
@@ -48,22 +49,25 @@ def main(argv):
                if linestring.startswith( 'Best value' ):
                   filepath = ''.join(file_list[count])
                   text_file.write(filepath[filepath.rfind("/")+1:] + ' ' + linestring + '\n')
-                  value = long(linestring[linestring.find(":")+2:linestring.find("Iteration")-1])
+                  value = long(linestring[linestring.find(":")+2:linestring.find("K")-1])
+                  K = long(linestring[linestring.find("K:")+3:linestring.rfind("Iteration:")-1])
                   iteration = long(linestring[linestring.find("Iteration:")+11:linestring.rfind("Time")-1]) 
                   time = float(linestring[linestring.rfind(":")+2:])
                   if value < best_value :
                      best_value = value
+                     best_K = K
                      best_iteration = iteration
                      best_time = time
                      best_param = filepath[filepath.rfind("/")+1:]
                   elif value == best_value and iteration < best_iteration :
+                     best_K = K
                      best_iteration = iteration
                      best_time = time
                      best_param = filepath[filepath.rfind("/")+1:]
             count = count - 1
 
          text_file.close()
-         all_files_summary[filename] = (str(best_value), str(iteration), str(best_time), best_param)
+         all_files_summary[filename] = ("I(P): "+str(best_value), "K: "+str(best_K), "Iter: "+str(iteration), str(best_time)+"s", best_param)
 
    result_file = open(folder + "/summary.txt", "w")
    for key in sorted(all_files_summary.iterkeys()):

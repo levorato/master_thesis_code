@@ -78,7 +78,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 		// Format: iterationNumber,objectiveFunctionValue,time(ns),boolean
 		// TODO melhorar formatacao do tempo
 		timeSpentSoFar += (end_time.wall - start_time.wall) / double(1000000000);
-		ss << (i+1) << "," << newValue << "," << fixed << setprecision(4) << timeSpentSoFar << "\n";
+		ss << (i+1) << "," << newValue << "," << CStar->getNumberOfClusters() << "," << fixed << setprecision(4) << timeSpentSoFar << "\n";
 
 		if(newValue < bestValue) {
 			// cout << "A better solution was found." << endl;
@@ -91,7 +91,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 			if(newValue == 0)  break;
 		}
 	}
-	ss << "Best value: " << setprecision(0) << bestValue << ", Iteration: " << iterationValue << ", Time Spent (s): " <<
+	ss << "Best value: " << setprecision(0) << bestValue << ", K: " << CStar->getNumberOfClusters() <<
+			", Iteration: " << iterationValue << ", Time Spent (s): " <<
 			fixed << setprecision(4) << timeSpentOnBestSolution << endl;
 	cout << "GRASP procedure done." << endl;
 	CStar->printClustering();
