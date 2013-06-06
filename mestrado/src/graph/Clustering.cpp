@@ -45,7 +45,7 @@ void Clustering::addCluster(SignedGraph& g, const int& i) {
 	// std::cout << "Adding vertex " << i << " to a new cluster."<< std::endl;
 	array[i] = true;
 	this->clusterList.push_back(array);
-	this->objectiveFunctionValue += calculateDeltaObjectiveFunction(g, clusterList.size() - 1, i);
+	this->objectiveFunctionValue += calculateDeltaObjectiveFunction(g, array, i);
 }
 
 BoolArray& Clustering::getCluster(int clusterNumber) {
@@ -55,7 +55,7 @@ BoolArray& Clustering::getCluster(int clusterNumber) {
 void Clustering::addNodeToCluster(SignedGraph& g, int i, int k) {
 	// std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
 	this->getCluster(k)[i] = true;
-	this->objectiveFunctionValue += calculateDeltaObjectiveFunction(g, k, i);
+	this->objectiveFunctionValue += calculateDeltaObjectiveFunction(g, this->getCluster(k), i);
 }
 
 void Clustering::removeCluster(SignedGraph& g, int k) {
@@ -72,7 +72,7 @@ int Clustering::clusterSize(int k) {
 void Clustering::removeNodeFromCluster(SignedGraph& g, int i, int k) {
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
-	this->objectiveFunctionValue -= calculateDeltaObjectiveFunction(g, k, i);
+	this->objectiveFunctionValue -= calculateDeltaObjectiveFunction(g, this->getCluster(k), i);
 	if(clusterSize(k) == 1) {
 		// cout << "Deleting cluster " << k << endl;
 		this->removeCluster(g, k);
@@ -162,10 +162,9 @@ bool Clustering::equals(Clustering& c) {
 }
 
 // Calculates the delta of the objective function
-int Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, const int& k, const int& i) {
-	int negativeSum = 0, positiveSum = 0;
+float Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster, const int& i) {
+	float negativeSum = 0, positiveSum = 0;
 	int n = g.getN();
-	BoolArray cluster = getCluster(k);
 	for(int b = 0; b < n; b++) {
 		if(b != i) {
 			if(cluster[b]) {
@@ -173,7 +172,7 @@ int Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, const int& k, co
 				// 1. calculates the change in the sum of internal
 				//    negative edges (within the same cluster)
 				if(g.getEdge(i, b) < 0) {
-					negativeSum += (g.getEdge(i, b) * (-1));
+					negativeSum += abs(g.getEdge(i, b));
 				}
 			} else {
 				// nodes i and b are in different clusters

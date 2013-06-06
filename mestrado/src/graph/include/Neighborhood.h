@@ -55,7 +55,6 @@ protected:
 		// cout << "2-opt-comb: " << k1 << ", " << k2 << ", " << k3 << ", " << k4 << ", " << i << ", " << j << endl;
 		// clustering->printClustering();
 		ClusteringPtr cTemp = make_shared < Clustering > (*clustering, n);
-		int nc = cTemp->getNumberOfClusters();
 
 		// 1st step: insertion of nodes i and j into other clusters
 		if (k3 >= 0) {

@@ -48,18 +48,13 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 							// cout << "New clustering combination generated." << endl;
 							ClusteringPtr cTemp = make_shared < Clustering
 									> (*clustering, n);
+
+
 							// TODO check if the removal of node i destroys cluster1
 							// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
+							cTemp->addNodeToCluster(*g, i, k2);
 							cTemp->removeNodeFromCluster(*g, i, k1);
-							// recalculates the number of clusters, as one of them may have been removed
-							int newnc = cTemp->getNumberOfClusters();
-							if(newnc < nc && k2 > k1) {
-								// cluster k1 has been removed
-								// cluster k2 is in fact (k2 - 1)
-								cTemp->addNodeToCluster(*g, i, k2 - 1);
-							} else {
-								cTemp->addNodeToCluster(*g, i, k2);
-							}
+
 							// cTemp->printClustering();
 							float objective = cTemp->getObjectiveFunctionValue();
 							// float objective2 = problem.objectiveFunction(g, cTemp.get());

@@ -126,7 +126,7 @@ public:
 	 * Calculates the delta of the objective function caused by the
 	 * insertion of node i in cluster k.
 	 */
-	int calculateDeltaObjectiveFunction(SignedGraph& g, const int& k, const int& i);
+	float calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster, const int& i);
 
 	/**
 	 * Verifies if this clustering object equals another clustering object.

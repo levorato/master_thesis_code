@@ -106,8 +106,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 	// captura as arestas do grafo com seus valores
 	if(formatType == 2 || formatType == 1) {
-		while (not lines.empty())
-		{
+		while (not lines.empty()) {
 			string line = lines.back();
 			trim(line);
 			lines.pop_back();
