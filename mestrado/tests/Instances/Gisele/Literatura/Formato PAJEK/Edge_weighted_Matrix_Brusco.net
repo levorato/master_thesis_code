@@ -10,33 +10,28 @@
       9 "I"
      10 "J"
 *Arcs
-    1   2    	1    c Black	
-    1   7    	1    c Black	
-    1   9    	-1   c  Red
-    2   3    	-1   c  Red	
-    2   9    	-1   c  Red	
-    2   10    	1    c Black
-    3   2    	-1   c  Red	
-    3   4    	1    c Black
-    3   10    	-1   c  Red
-    4   5    	-1   c  Red	
-    4   6    	1    c Black	
-    5   7    	-1   c  Red	
-    5   9    	1    c Black
-    6   4    	1    c Black
-    6   8    	-1   c  Red
-    7   1    	1    c Black	
-    7   2    	1    c Black
-    8   1    	1    c Black
-    8   6    	-1   c  Red
-    8   10    	1    c Black
-    9   2    	-1   c  Red
-    9   5    	1    c Black
-    9   7    	-1   c  Red
-    10   2    	1    c Black
-    10   8    	1    c Black
-
-
-
-
-
+    1   2    	1    	
+    1   7    	1    	
+    1   9    	-1   
+    2   3    	-1   	
+    2   9    	-1   	
+    2   10    	1    
+    3   2    	-1   	
+    3   4    	1    
+    3   10    	-1   
+    4   5    	-1   	
+    4   6    	1    	
+    5   7    	-1   	
+    5   9    	1    
+    6   4    	1    
+    6   8    	-1   
+    7   1    	1    	
+    7   2    	1    
+    8   1    	1    
+    8   6    	-1   
+    8   10    	1    
+    9   2    	-1   
+    9   5    	1    
+    9   7    	-1   
+    10   2    	1    
+    10   8    	1    
