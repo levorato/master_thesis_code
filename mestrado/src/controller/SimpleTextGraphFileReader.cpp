@@ -47,7 +47,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	// captura a primeira linha do arquivo contendo as informacoes
 	// de numero de vertices e arestas do grafo
 	char_separator<char> sep("\r\n");
-	char_separator<char> sep2(" ");
+	char_separator<char> sep2(" \t");
 	tokenizer< char_separator<char> > tokens(graphContents, sep);
 	lines.assign(tokens.begin(),tokens.end());
 
@@ -134,7 +134,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			}
 		}
 	} else if(formatType == 0) {
-		char_separator<char> sep3(" (),");
+		char_separator<char> sep3(" (),\t");
 		while (not lines.empty()) {
 			string line = lines.back();
 			trim(line);
@@ -161,7 +161,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			}
 		}
 	} else {  // formatType == 3, .dat files
-		char_separator<char> sep3(" ");
+		char_separator<char> sep3(" \t");
 		int a = 0;
 		while (not lines.empty()) {
 			string line = lines.back();
