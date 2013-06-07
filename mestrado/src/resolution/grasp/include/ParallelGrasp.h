@@ -20,6 +20,7 @@ class ParallelGrasp : resolution::grasp::Grasp {
 public:
 	static const int INPUT_MSG_TAG = 50;
 	static const int OUTPUT_MSG_TAG = 60;
+	static const int TERMINATE_MSG_TAG = 70;
 	static const int LEADER_ID = 0;
 
 	ParallelGrasp();

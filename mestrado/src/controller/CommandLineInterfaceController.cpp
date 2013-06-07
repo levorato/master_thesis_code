@@ -211,6 +211,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 				}
 			}
+			if(np > 1) {
+				mpi::communicator world;
+				for(int i = 1; i < np; i++) {
+					InputMessage imsg;
+					world.send(i, ParallelGrasp::TERMINATE_MSG_TAG, imsg);
+					cout << "Terminate message sent to process " << i << endl;
+				}
+			}
 		}
 		catch(std::exception& e)
 		{
@@ -223,37 +231,43 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			return 1;
 		}
 	} else { // processos seguidores
-		try {
-			// Receives a message with GRASP parameters and triggers local execution
-			InputMessage imsg;
-			mpi::communicator world;
-			mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::INPUT_MSG_TAG, imsg);
+		while(true) {
+			try {
+				// Receives a message with GRASP parameters and triggers local execution
+				InputMessage imsg;
+				mpi::communicator world;
+				mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsg);
+				if(stat.tag() == ParallelGrasp::INPUT_MSG_TAG) {
+					cout << "Process " << myRank << ": Received message from leader." << endl;
+					// reconstructs the graph from its text representation
+					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
+					SignedGraphPtr g = reader.readGraphFromString(imsg.graphInputFileContents);
 
-			cout << "Process " << myRank << ": Received message from leader." << endl;
-			// reconstructs the graph from its text representation
-			SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-			SignedGraphPtr g = reader.readGraphFromString(imsg.graphInputFileContents);
+					// trigggers the local GRASP routine
+					ClusteringProblemFactory factory;
+					Grasp resolution;
+					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
+								imsg.l, factory.build(imsg.problemType), timestamp, imsg.fileId, myRank);
 
-			// trigggers the local GRASP routine
-			ClusteringProblemFactory factory;
-			Grasp resolution;
-			ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
-						imsg.l, factory.build(imsg.problemType), timestamp, imsg.fileId, myRank);
-
-			// Sends the result back to the leader process
-			OutputMessage omsg(*bestClustering);
-			world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_TAG, omsg);
-			cout << "Process " << myRank << ": Message sent to leader." << endl;
-		}
-		catch(std::exception& e)
-		{
-			cout << "Abnormal program termination. Stracktrace: " << endl;
-			cout << e.what() << "\n";
-			if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
-				std::cout << stack << endl;
+					// Sends the result back to the leader process
+					OutputMessage omsg(*bestClustering);
+					world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_TAG, omsg);
+					cout << "Process " << myRank << ": Message sent to leader." << endl;
+				} else {
+					// terminate message
+					return 0;
+				}
 			}
-			std::cerr << diagnostic_information(e);
-			return 1;
+			catch(std::exception& e)
+			{
+				cout << "Abnormal program termination. Stracktrace: " << endl;
+				cout << e.what() << "\n";
+				if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
+					std::cout << stack << endl;
+				}
+				std::cerr << diagnostic_information(e);
+				return 1;
+			}
 		}
 	}
 	return 0;
