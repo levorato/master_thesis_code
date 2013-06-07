@@ -113,7 +113,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 										// Option 1: node i is moved to another existing cluster k3 and
 										//           node j is moved to another existing cluster k4
 										// cout << "Option 1" << endl;
-										// TODO colocar aleatorio aqui!
+										// TODO colocar laço aleatorio aqui! Verificar com o Yuri
 										for (int k4 = k3 + 1; k4 < nc; k4++) {
 											if (k2 != k4) {
 												// cluster(k4)

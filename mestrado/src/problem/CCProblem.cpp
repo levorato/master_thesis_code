@@ -82,6 +82,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 					BoolArray cluster = c->getCluster(k);
 					if(cluster[i] && cluster[j]) {
 						sameCluster = true;
+						break;
 					}
 				}
 				if((g->getEdge(i, j) > 0) && (not sameCluster)) {
