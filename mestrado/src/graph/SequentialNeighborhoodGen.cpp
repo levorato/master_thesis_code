@@ -57,6 +57,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 
 							// cTemp->printClustering();
 							float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+							cTemp->setObjectiveFunctionValue(objective);
 							// float objective2 = problem.objectiveFunction(g, cTemp.get());
 							// if(objective != objective2)  cerr << "OFs do not match!!!" << objective << "; " << objective2  << "\n";
 							if (objective < bestValue) {
@@ -75,6 +76,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 					cTemp->addCluster(*g, i);
 					// cTemp->printClustering();
 					float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+					cTemp->setObjectiveFunctionValue(objective);
 					// float objective2 = problem.objectiveFunction(g, cTemp.get());
 					// if(objective != objective2)  cerr << "OFs do not match!!!" << objective << "; " << objective2  << "\n";
 					// TROCAR AQUI
@@ -120,6 +122,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 																i, j);
 												// cTemp->printClustering();
 												float objective = problem.objectiveFunction(g, cTemp.get());// cTemp->getObjectiveFunctionValue();
+												cTemp->setObjectiveFunctionValue(objective);
 												if (objective < bestValue) {
 													// cout << "Better solution found in 2-neighborhood." << endl;
 													return cTemp;
@@ -135,6 +138,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 														n, i, j);
 										// cTemp->printClustering();
 										float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+										cTemp->setObjectiveFunctionValue(objective);
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -154,6 +158,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 														k4, n, i, j);
 										// cTemp->printClustering();
 										float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+										cTemp->setObjectiveFunctionValue(objective);
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -168,6 +173,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 										Clustering::NEW_CLUSTER, n, i, j);
 								// cTemp->printClustering();
 								float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+								cTemp->setObjectiveFunctionValue(objective);
 								if (objective < bestValue) {
 									// cout << "Better solution found in 2-neighborhood." << endl;
 									return cTemp;
