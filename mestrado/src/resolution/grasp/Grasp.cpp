@@ -112,8 +112,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		// cout << "Vertex list size is " << lc.size() << endl;
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-		// It is important to calculate the modularity matrix first (used by vertex sorting)
-		g->calculateModularityMatrix();
+		// according to
 		lc.sort(g, Cc.get());
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc

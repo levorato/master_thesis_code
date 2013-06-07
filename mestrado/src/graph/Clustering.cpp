@@ -82,7 +82,11 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, int i, int k) {
 	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
 }
 
-// TODO test this method
+/**
+ * TODO For a giver vertex a, calculates the minimum value of imbalance (I(P))
+ * of inserting 'a' into a new or an existing clustering k. Returns the minimum imbalance
+ * and the cluster corresponding to it.
+ */
 GainCalculation Clustering::gain(SignedGraph& graph, const int &a) {
 	GainCalculation gainCalculation;
 	ModularityMatrix& modularityMatrix = graph.getModularityMatrix();
