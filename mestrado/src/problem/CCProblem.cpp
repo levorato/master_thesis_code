@@ -37,7 +37,6 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 
 	// cout << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
 	// c->printClustering();
-	/*
 	float total = 0;
 	for(int k = 0; k < nc; k++) {
 		float soma = 0, soma2 = 0;
@@ -49,7 +48,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
     	}
     	for(int x = 0; x < cluster.size(); x++) {
     		int i = cluster.at(x);
-    		for(int y = x + 1; y < cluster.size(); y++) {
+    		for(int y = 0; y < cluster.size(); y++) {
     			int j = cluster.at(y);
     			if(g->getEdge(i, j) < 0) {
     				soma += abs(g->getEdge(i, j));
@@ -57,24 +56,27 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
     		}
     		for(int a = 0; a < n; a++) {
     			if((!c->getCluster(k)[a]) && (g->getEdge(i, a) > 0)) {
-    				soma2 += g->getEdge(i, a) > 0;
+    				soma2 += g->getEdge(i, a);
     			}
+    			if((!c->getCluster(k)[a]) && (g->getEdge(a, i) > 0)) {
+					soma2 += g->getEdge(i, a) > 0;
+				}
     		}
     	}
-    	cout << "Internal negative sum of cluster " << k << ": " << soma << endl;
-    	cout << "External positive sum of cluster " << k << ": " << soma2 << endl;
+    	// cout << "Internal negative sum of cluster " << k << ": " << soma << endl;
+    	// cout << "External positive sum of cluster " << k << ": " << soma2 << endl;
     	total += soma + soma2;
     }
-    cout << "Calculated I(P) = " << total << endl;
-    c->printClustering();
-    */
-
+    // cout << "Calculated I(P) = " << total << endl;
+    //c->printClustering();
+	return total;
+	/*
 	// For each cluster i
 	for(int i = 0; i < nc; i++) {
 		BoolArray isInClusterI = c->getCluster(i);
 		for(int a = 0; a < n; a++) {
 			if(isInClusterI[a]) {
-				for(int b = a + 1; b < n; b++) {
+				for(int b = 0; b < n; b++) {
 					if(isInClusterI[b]) {
 						// nodes a and b are in the same cluster
 						// calculates the sum of internal negative edges (within the same cluster)
@@ -103,6 +105,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 	}
 	// cout << "Valor calculado: " << (positiveSum + negativeSum) << endl;
 	return (positiveSum + negativeSum);
+	*/
 }
 
 } /* namespace problem */
