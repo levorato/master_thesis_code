@@ -174,12 +174,18 @@ float Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& clu
 				if(g.getEdge(i, b) < 0) {
 					negativeSum += abs(g.getEdge(i, b));
 				}
+				if(g.getEdge(b, i) < 0) {
+					negativeSum += abs(g.getEdge(b, i));
+				}
 			} else {
 				// nodes i and b are in different clusters
 				// 2. calculates the change in the sum of external
 				//    positive edges (within different clusters)
 				if(g.getEdge(i, b) > 0) {
 					positiveSum += g.getEdge(i, b);
+				}
+				if(g.getEdge(b, i) > 0) {
+					positiveSum += g.getEdge(b, i);
 				}
 			}
 		}
