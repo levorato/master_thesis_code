@@ -56,8 +56,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 							cTemp->removeNodeFromCluster(*g, i, k1);
 
 							// cTemp->printClustering();
-							float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
-							cTemp->setObjectiveFunctionValue(objective);
+							// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+							// cTemp->setObjectiveFunctionValue(objective);
+							float objective = cTemp->getObjectiveFunctionValue();
 							// float objective2 = problem.objectiveFunction(g, cTemp.get());
 							// if(objective != objective2)  cerr << "OFs do not match!!!" << objective << "; " << objective2  << "\n";
 							if (objective < bestValue) {
@@ -75,8 +76,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 					cTemp->removeNodeFromCluster(*g, i, k1);
 					cTemp->addCluster(*g, i);
 					// cTemp->printClustering();
-					float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
-					cTemp->setObjectiveFunctionValue(objective);
+					// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+					// cTemp->setObjectiveFunctionValue(objective);
+					float objective = cTemp->getObjectiveFunctionValue();
 					// float objective2 = problem.objectiveFunction(g, cTemp.get());
 					// if(objective != objective2)  cerr << "OFs do not match!!!" << objective << "; " << objective2  << "\n";
 					// TROCAR AQUI
@@ -121,8 +123,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 																k2, k3, k4, n,
 																i, j);
 												// cTemp->printClustering();
-												float objective = problem.objectiveFunction(g, cTemp.get());// cTemp->getObjectiveFunctionValue();
-												cTemp->setObjectiveFunctionValue(objective);
+												// float objective = problem.objectiveFunction(g, cTemp.get());
+												// cTemp->setObjectiveFunctionValue(objective);
+												float objective = cTemp->getObjectiveFunctionValue();
 												if (objective < bestValue) {
 													// cout << "Better solution found in 2-neighborhood." << endl;
 													return cTemp;
@@ -137,8 +140,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 														Clustering::NEW_CLUSTER,
 														n, i, j);
 										// cTemp->printClustering();
-										float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
-										cTemp->setObjectiveFunctionValue(objective);
+										// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+										// cTemp->setObjectiveFunctionValue(objective);
+										float objective = cTemp->getObjectiveFunctionValue();
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -157,8 +161,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 														Clustering::NEW_CLUSTER,
 														k4, n, i, j);
 										// cTemp->printClustering();
-										float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
-										cTemp->setObjectiveFunctionValue(objective);
+										// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+										// cTemp->setObjectiveFunctionValue(objective);
+										float objective = cTemp->getObjectiveFunctionValue();
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -172,8 +177,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 										Clustering::NEW_CLUSTER,
 										Clustering::NEW_CLUSTER, n, i, j);
 								// cTemp->printClustering();
-								float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
-								cTemp->setObjectiveFunctionValue(objective);
+								// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+								// cTemp->setObjectiveFunctionValue(objective);
+								float objective = cTemp->getObjectiveFunctionValue();
 								if (objective < bestValue) {
 									// cout << "Better solution found in 2-neighborhood." << endl;
 									return cTemp;

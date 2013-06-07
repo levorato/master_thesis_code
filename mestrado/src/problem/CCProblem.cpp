@@ -37,6 +37,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 
 	// cout << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
 	// c->printClustering();
+	/*
 	float total = 0;
 	for(int k = 0; k < nc; k++) {
 		float soma = 0, soma2 = 0;
@@ -59,7 +60,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
     				soma2 += g->getEdge(i, a);
     			}
     			if((!c->getCluster(k)[a]) && (g->getEdge(a, i) > 0)) {
-					// soma2 += g->getEdge(a, i);
+					soma2 += g->getEdge(a, i);
 				}
     		}
     	}
@@ -70,42 +71,29 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
     // cout << "Calculated I(P) = " << total << endl;
     //c->printClustering();
 	return total;
-	/*
-	// For each cluster i
-	for(int i = 0; i < nc; i++) {
-		BoolArray isInClusterI = c->getCluster(i);
-		for(int a = 0; a < n; a++) {
-			if(isInClusterI[a]) {
-				for(int b = 0; b < n; b++) {
-					if(isInClusterI[b]) {
-						// nodes a and b are in the same cluster
-						// calculates the sum of internal negative edges (within the same cluster)
-						if(g->getEdge(a, b) < 0) {
-							negativeSum += abs(g->getEdge(a, b));
-						}
+	*/
+	// For each vertex i
+	for(int i = 0; i < n; i++) {
+		// For each vertex j
+		for(int j = 0; j < n; j++) {
+			if(i != j) {
+				bool sameCluster = false;
+				for(int k = 0; k < nc; k++) {
+					BoolArray cluster = c->getCluster(k);
+					if(cluster[i] && cluster[j]) {
+						sameCluster = true;
 					}
 				}
-				// For each cluster j != i
-				for(int j = i + 1; j < nc; j++) {
-					if(i != j) {
-						BoolArray isInClusterJ = c->getCluster(j);
-						for(int b = 0; b < n; b++) {
-							if(isInClusterJ[b]) {
-								// nodes a and b are in different clusters
-								// calculates the sum of external positive edges (within different clusters)
-								if(g->getEdge(a, b) > 0) {
-									positiveSum += g->getEdge(a, b);
-								}
-							}
-						}
-					}
+				if((g->getEdge(i, j) > 0) && (not sameCluster)) {
+					positiveSum += g->getEdge(i, j);
+				} else if((g->getEdge(i, j) < 0) && sameCluster) {
+					negativeSum += abs(g->getEdge(i, j));
 				}
 			}
 		}
 	}
 	// cout << "Valor calculado: " << (positiveSum + negativeSum) << endl;
 	return (positiveSum + negativeSum);
-	*/
 }
 
 } /* namespace problem */

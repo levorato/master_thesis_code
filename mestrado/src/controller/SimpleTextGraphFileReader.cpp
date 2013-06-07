@@ -155,6 +155,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				int value = boost::lexical_cast<int>(vec.at(2));
 				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 				g->addEdge(a - 1, b - 1, value);
+				g->addEdge(b - 1, a - 1, value);
 			} catch( boost::bad_lexical_cast const& ) {
 				std::cerr << "Error: input string was not valid" << std::endl;
 			}
