@@ -59,7 +59,7 @@ float CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
     				soma2 += g->getEdge(i, a);
     			}
     			if((!c->getCluster(k)[a]) && (g->getEdge(a, i) > 0)) {
-					soma2 += g->getEdge(i, a) > 0;
+					soma2 += g->getEdge(i, a);
 				}
     		}
     	}
