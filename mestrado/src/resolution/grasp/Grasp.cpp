@@ -52,7 +52,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 	stringstream ss;
 
 	// TODO: Parallelize here! Divide iterations by n processors with MPI.
-	for (int i = 0; i < iter; i++, previousCc.reset(), previousCc = Cc) {
+	for (int i = 0, totalIter = 0; i < iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
 		cout << "GRASP iteration " << i << endl;
 		cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue << endl;
 
@@ -85,8 +85,9 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 			CStar.reset();
 			CStar = Cl;
 			bestValue = newValue;
-			iterationValue = i + 1;
+			iterationValue = totalIter + 1;
 			timeSpentOnBestSolution = timeSpentSoFar;
+			i = 0;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue == 0)  break;
 		}
@@ -112,7 +113,8 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		// cout << "Vertex list size is " << lc.size() << endl;
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-		// according to
+		// according to the minimum increase in imbalance (I(P))
+		Cc->calculateGainList(*g, lc.getVertexList());
 		lc.sort(g, Cc.get());
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc

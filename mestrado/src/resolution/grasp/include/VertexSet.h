@@ -49,6 +49,8 @@ public:
 	 * and the SignedGraph g.
 	 */
 	void sort(SignedGraph* g, Clustering* c);
+
+	list<int>& getVertexList();
 private:
 	GainFunctionVertexSetPtr vertexSetPtr;
 };

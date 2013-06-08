@@ -9,6 +9,7 @@
 #define CLUSTERING_H_
 
 #include <vector>
+#include <map>
 #include <boost/config.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/shared_ptr.hpp>
@@ -113,7 +114,7 @@ public:
 	 * and the number of the cluster where the insertion of the vertex
 	 * brings the best gain possible (return type is GainCalculation).
 	 */
-	GainCalculation gain(SignedGraph& graph, const int &a);
+	GainCalculation& gain(SignedGraph& graph, const int &a);
 
 	/**
 	 * Returns the value of the objective function corresponding to this cluster.
@@ -128,6 +129,8 @@ public:
 	 */
 	float calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster, const int& i);
 
+	void calculateGainList(SignedGraph &g, list<int>& nodeList);
+
 	/**
 	 * Verifies if this clustering object equals another clustering object.
 	 * @return bool
@@ -141,6 +144,8 @@ private:
 	ClusterList clusterList;
 	/** the value of the objective function corresponding to this cluster */
 	float objectiveFunctionValue;
+	/** the map of nodes gain value */
+	map<int, GainCalculation> gainMap;
 
 	void print(std::ostream& os, ClusterList& l);
 
@@ -154,8 +159,6 @@ private:
 	}
 };
 
-// TODO implement the gain function according to the gain function
-// gc(i) specified in the article.
 // See Class ClusteringProblem.
 class GainFunctionComparison
 {

@@ -82,38 +82,50 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, int i, int k) {
 	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
 }
 
+void Clustering::calculateGainList(SignedGraph &g, list<int>& nodeList) {
+	gainMap.clear();
+	list<int, allocator<int> >::const_iterator pos;
+	// cout << "Calculating gain list..." << endl;
+	unsigned int i = 0;
+	for(i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
+		int a = *pos;
+		// cout << "Vertex " << a << endl;
+		GainCalculation gainCalculation;
+		float min = std::numeric_limits<float>::max();
+		gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
+
+		// For each cluster k...
+		int nc = this->getNumberOfClusters();
+		for(int k = 0; k < nc; k++) {
+			// cout << "Cluster " << k << endl;
+			float delta = this->calculateDeltaObjectiveFunction(g, this->getCluster(k), a);
+			if(delta < min) {
+				min = delta;
+				gainCalculation.clusterNumber = k;
+			}
+		}
+		// For a new cluster k+1
+		// cout << "New cluster" << endl;
+		BoolArray newCluster(MAX_NODES);
+		newCluster[a] = true;
+		float delta = this->calculateDeltaObjectiveFunction(g, newCluster, a);
+		if(delta < min) {
+			min = delta;
+			gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
+		}
+		gainCalculation.value = min;
+		// cout << "gain(a) = " << min << endl;
+		gainMap[a] = gainCalculation;
+	}
+}
+
 /**
- * TODO For a giver vertex a, calculates the minimum value of imbalance (I(P))
+ * TODO For a given vertex a, calculates the minimum value of imbalance (I(P))
  * of inserting 'a' into a new or an existing clustering k. Returns the minimum imbalance
  * and the cluster corresponding to it.
  */
-GainCalculation Clustering::gain(SignedGraph& graph, const int &a) {
-	GainCalculation gainCalculation;
-	ModularityMatrix& modularityMatrix = graph.getModularityMatrix();
-	float max = modularityMatrix[a][a];
-	gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
-
-	// For each cluster k...
-	int nc = this->getNumberOfClusters();
-	for(int k = 0; k < nc; k++) {
-		int sum = 0;
-		// Cluster(k)
-		BoolArray cluster = this->clusterList.at(k);
-		// j in Cluster(k)
-		for(int j = 0; j < graph.getN(); j++) {
-			if(cluster[j]) {
-				sum += 2 * modularityMatrix[a][j];
-			}
-		}
-		sum += modularityMatrix[a][a];
-		if(sum > max) {
-			max = sum;
-			gainCalculation.clusterNumber = k;
-		}
-	}
-
-	gainCalculation.value = max;
-	return gainCalculation;
+GainCalculation& Clustering::gain(SignedGraph& graph, const int &a) {
+	return gainMap[a];
 }
 
 void Clustering::printClustering() {
