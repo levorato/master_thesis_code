@@ -184,7 +184,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			a++;
 		}
 	}
-	g->printGraph();
+	// g->printGraph();
 	g->setGraphAsText(graphContents);
 
 	return g;

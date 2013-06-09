@@ -39,7 +39,7 @@ Grasp::~Grasp() {
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
 		const ClusteringProblem& problem, string& timestamp, string& fileId, const int& myRank) {
-	std::cout << "Initializing GRASP procedure...\n";
+	std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, problem, alpha, ramdomSeed);
 	ClusteringPtr previousCc = CStar, Cc;
@@ -53,8 +53,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 
 	// TODO: Parallelize here! Divide iterations by n processors with MPI.
 	for (int i = 0, totalIter = 0; i < iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
-		cout << "GRASP iteration " << i << endl;
-		cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue << endl;
+		// cout << "GRASP iteration " << i << endl;
+		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue << endl;
 
 		// 0. Triggers processing time calculation
 		boost::timer::cpu_timer timer;
@@ -107,7 +107,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		float alpha, unsigned int ramdomSeed) {
 	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(g->getN()); // L(Cc) = V(G)
-	std::cout << "GRASP construct clustering...\n";
+	// std::cout << "GRASP construct clustering...\n";
 
 	while(lc.size() > 0) { // lc != empty
 		// cout << "Vertex list size is " << lc.size() << endl;
@@ -141,7 +141,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 
 		// Cc->printClustering();
 	}
-	std::cout << "\nInitial clustering completed.\n";
+	// std::cout << "\nInitial clustering completed.\n";
 	Cc->setObjectiveFunctionValue(problem.objectiveFunction(g, Cc.get()));
 	// Cc->printClustering();
 	return Cc;
@@ -152,11 +152,11 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
-	std::cout << "GRASP local search...\n";
-	cout << "Current neighborhood is " << k << endl;
+	// std::cout << "GRASP local search...\n";
+	// cout << "Current neighborhood is " << k << endl;
 
 	while(k <= l) {
-		 cout << "Local search iteration " << iteration << endl;
+		 // cout << "Local search iteration " << iteration << endl;
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood
 
@@ -169,22 +169,22 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// cout << "Comparing local solution value." << endl;
 		if(Cl.get() != CStar.get()) {
 			if(Cl->getObjectiveFunctionValue() < CStar->getObjectiveFunctionValue()) {
-				cout << "New local solution found: " << setprecision(2) << Cl->getObjectiveFunctionValue() << endl;
+				// cout << "New local solution found: " << setprecision(2) << Cl->getObjectiveFunctionValue() << endl;
 				// Cl->printClustering();
 				CStar.reset();
 				CStar = Cl;
 				k = 1;
 			} else {
 				k++;
-				cout << "Changed to neighborhood size l = " << k << endl;
+				// cout << "Changed to neighborhood size l = " << k << endl;
 			}
 		} else {  // no better result found in neighborhood
 			k++;
-			cout << "Changed to neighborhood size l = " << k << endl;
+			// cout << "Changed to neighborhood size l = " << k << endl;
 		}
 		iteration++;
 	}
-	std::cout << "GRASP local search done.\n";
+	// std::cout << "GRASP local search done.\n";
 	return CStar;
 }
 
