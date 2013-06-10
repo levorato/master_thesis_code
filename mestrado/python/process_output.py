@@ -7,19 +7,22 @@ import os
 def main(argv):
 
    folder = ''
-   outputfile = ''
+   filter = ''
    try:
-      opts, args = getopt.getopt(argv,"hi:o:",["folder=","ofile="])
+      opts, args = getopt.getopt(argv,"hi:o:",["folder=","filter="])
    except getopt.GetoptError:
-      print 'process_output.py -i <folder>'
+      print 'process_output.py -i <folder> -f <filter>'
       sys.exit(2)
    for opt, arg in opts:
       if opt == '-h':
-         print 'process_output.py -i <folder>'
+         print 'process_output.py -i <folder> -f <filter>'
          sys.exit()
       elif opt in ("-i", "--folder"):
          folder = arg
+      if opt in ("-f", "--filter"):
+         filter = arg
    print 'Input dir is ', folder
+   print 'File filter is ', filter
 
    all_files_summary = dict()
    all_files_summary["aheader"] = "I(P), K, Iter, Time(s), Params"
@@ -28,7 +31,7 @@ def main(argv):
       print "Processing folder " + ''.join(root)
       if(len(files) and ''.join(root) != folder):
          file_list = []
-         file_list.extend(glob.glob(root + "/*.csv"))
+         file_list.extend(glob.glob(root + "/" + filter))
          count = len(file_list) - 1
          
          text_file = open(root + "/summary.txt", "w")
@@ -45,6 +48,7 @@ def main(argv):
          while count >= 0:
             with open(file_list[count], 'r') as content_file:
                content = content_file.read()
+
             reader = csv.reader(StringIO.StringIO(content), delimiter=',')
             for row in reader:
                linestring = ''.join(row)
