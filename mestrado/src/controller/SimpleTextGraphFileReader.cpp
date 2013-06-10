@@ -88,7 +88,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			vector<string> vec;
 			vec.assign(tokens2.begin(),tokens2.end());
 			n = boost::lexical_cast<int>(vec.at(0));
-			if(vec.size() == 1) {
+			if(vec.size() == 1) { // .dat files
 				cout << "Format type is 3" << endl;
 				formatType = 3;
 			} else {
@@ -176,7 +176,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				try {
 					int value = boost::lexical_cast<int>(vec.at(b));
 					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
-					g->addEdge(a, b, value);
+					// the following is to avoid duplicate couting of arcs in the objective function
+					if(b <= a)	g->addEdge(a, b, value);
 				} catch( boost::bad_lexical_cast const& ) {
 					std::cerr << "Error: input string was not valid" << std::endl;
 				}

@@ -48,12 +48,15 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 							// cout << "New clustering combination generated." << endl;
 							ClusteringPtr cTemp = make_shared < Clustering
 									> (*clustering, n);
-
+							BoolArray cluster2 = cTemp->getCluster(k2);
 
 							// TODO check if the removal of node i destroys cluster1
 							// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
+							float value = cTemp->getObjectiveFunctionValue();
 							cTemp->addNodeToCluster(*g, i, k2);
+							// cTemp->setObjectiveFunctionValue( value + cTemp->calculateDeltaObjectiveFunction(*g, cluster2, i) );
 							cTemp->removeNodeFromCluster(*g, i, k1);
+							// cTemp->setObjectiveFunctionValue( value - cTemp->calculateDeltaObjectiveFunction(*g, cluster1, i) );
 
 							// cTemp->printClustering();
 							// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
@@ -73,8 +76,11 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 					ClusteringPtr cTemp = make_shared < Clustering
 							> (*clustering, n);
 					// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
+					float value = cTemp->getObjectiveFunctionValue();
 					cTemp->removeNodeFromCluster(*g, i, k1);
-					cTemp->addCluster(*g, i);
+					// cTemp->setObjectiveFunctionValue( value - cTemp->calculateDeltaObjectiveFunction(*g, cluster1, i) );
+					BoolArray cluster2 = cTemp->addCluster(*g, i);
+					// cTemp->setObjectiveFunctionValue( value + cTemp->calculateDeltaObjectiveFunction(*g, cluster2, i) );
 					// cTemp->printClustering();
 					// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
 					// cTemp->setObjectiveFunctionValue(objective);

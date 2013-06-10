@@ -52,8 +52,8 @@ def main(argv):
                   filepath = ''.join(file_list[count])
                   text_file.write(filepath[filepath.rfind("/")+1:] + ' ' + linestring + '\n')
                   value = long(linestring[linestring.find(":")+2:linestring.find("K")-1])
-                  K = long(linestring[linestring.find("K:")+3:linestring.rfind("Iteration:")-1])
-                  iteration = long(linestring[linestring.find("Iteration:")+11:linestring.rfind("Time")-1]) 
+                  K = long(linestring[linestring.find("K:")+3:linestring.find("Iteration:")-1])
+                  iteration = long(linestring[linestring.find("Iteration:")+11:linestring.find("Time")-1]) 
                   time = float(linestring[linestring.rfind(":")+2:])
                   if value < best_value :
                      best_value = value

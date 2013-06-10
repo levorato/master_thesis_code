@@ -61,7 +61,7 @@ public:
 	 * Recalculates the objective function associated with
 	 * the clustering, based on the modification.
 	 */
-	void addCluster(SignedGraph& g, const int& i);
+	BoolArray addCluster(SignedGraph& g, const int& i);
 
 	/**
 	 * Returns the n-th cluster of the list.
@@ -127,7 +127,11 @@ public:
 	 * Calculates the delta of the objective function caused by the
 	 * insertion of node i in cluster k.
 	 */
-	float calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster, const int& i);
+	float calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster,
+			const int& i);
+
+	float calculateDeltaObjectiveFunction2opt(SignedGraph& g, Clustering& c, const int& k1, const int& k2,
+			const int& i, const int& j);
 
 	void calculateGainList(SignedGraph &g, list<int>& nodeList);
 

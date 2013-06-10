@@ -37,7 +37,7 @@ int Clustering::getNumberOfClusters() {
 	return this->clusterList.size();
 }
 
-void Clustering::addCluster(SignedGraph& g, const int& i) {
+BoolArray Clustering::addCluster(SignedGraph& g, const int& i) {
 	// 1. Create a new cluster in the list
 	BoolArray array(MAX_NODES);
 
@@ -46,6 +46,7 @@ void Clustering::addCluster(SignedGraph& g, const int& i) {
 	array[i] = true;
 	this->clusterList.push_back(array);
 	this->objectiveFunctionValue += calculateDeltaObjectiveFunction(g, array, i);
+	return array;
 }
 
 BoolArray& Clustering::getCluster(int clusterNumber) {
@@ -72,6 +73,7 @@ int Clustering::clusterSize(int k) {
 void Clustering::removeNodeFromCluster(SignedGraph& g, int i, int k) {
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
+	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
 	this->objectiveFunctionValue -= calculateDeltaObjectiveFunction(g, this->getCluster(k), i);
 	if(clusterSize(k) == 1) {
 		// cout << "Deleting cluster " << k << endl;
@@ -79,7 +81,6 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, int i, int k) {
 	} else {
 		this->getCluster(k)[i] = false;
 	}
-	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
 }
 
 void Clustering::calculateGainList(SignedGraph &g, list<int>& nodeList) {
@@ -206,6 +207,80 @@ float Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& clu
 			}
 		}
 	}
+
+	return negativeSum + positiveSum;
+}
+
+float Clustering::calculateDeltaObjectiveFunction2opt(SignedGraph& g, Clustering& c, const int& k1, const int& k2,
+		const int& i, const int& j) {
+	float negativeSum = 0, positiveSum = 0;
+	int n = g.getN();
+	BoolArray cluster1 = c.getCluster(k1);
+	BoolArray cluster2 = c.getCluster(k2);
+	for(int b = 0; b < n; b++) {
+		// if(b != i && b != j) {
+			if(cluster1[b]) {
+				// nodes i and b are in the same cluster
+				// 1. calculates the change in the sum of internal
+				//    negative edges (within the same cluster)
+				if(g.getEdge(i, b) < 0) {
+					negativeSum += abs(g.getEdge(i, b));
+				}
+				if(g.getEdge(b, i) < 0) {
+					negativeSum += abs(g.getEdge(b, i));
+				}
+			} else {
+				// nodes i and b are in different clusters
+				// 2. calculates the change in the sum of external
+				//    positive edges (within different clusters)
+				if(g.getEdge(i, b) > 0) {
+					positiveSum += g.getEdge(i, b);
+				}
+				if(g.getEdge(b, i) > 0) {
+					positiveSum += g.getEdge(b, i);
+				}
+			}
+			if(cluster2[b]) {
+				// nodes j and b are in the same cluster
+				// 1. calculates the change in the sum of internal
+				//    negative edges (within the same cluster)
+				if(g.getEdge(j, b) < 0) {
+					negativeSum += abs(g.getEdge(j, b));
+				}
+				if(g.getEdge(b, j) < 0) {
+					negativeSum += abs(g.getEdge(b, j));
+				}
+			} else {
+				// nodes j and b are in different clusters
+				// 2. calculates the change in the sum of external
+				//    positive edges (within different clusters)
+				if(g.getEdge(j, b) > 0) {
+					positiveSum += g.getEdge(j, b);
+				}
+				if(g.getEdge(b, j) > 0) {
+					positiveSum += g.getEdge(b, j);
+				}
+			}
+		// }
+	}
+	// trata o caso entre os nos i e j do 2-opt
+	/*
+	if(k1 == k2) {  // same cluster
+		if(g.getEdge(i, j) < 0) {
+			negativeSum += abs(g.getEdge(i, j));
+		}
+		if(g.getEdge(j, i) < 0) {
+			negativeSum += abs(g.getEdge(j, i));
+		}
+	} else {  // diff clusters
+		if(g.getEdge(i, j) > 0) {
+			positiveSum += g.getEdge(i, j);
+		}
+		if(g.getEdge(j, i) > 0) {
+			positiveSum += g.getEdge(j, i);
+		}
+	}
+	*/
 
 	return negativeSum + positiveSum;
 }
