@@ -206,6 +206,7 @@ float Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& clu
 			}
 		}
 	}
+
 	return negativeSum + positiveSum;
 }
 

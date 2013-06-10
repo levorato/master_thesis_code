@@ -156,7 +156,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	// cout << "Current neighborhood is " << k << endl;
 
 	while(k <= l) {
-		 // cout << "Local search iteration " << iteration << endl;
+		// cout << "Local search iteration " << iteration << endl;
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood
 

@@ -17,6 +17,7 @@
 #include "Graph.h"
 #include "Clustering.h"
 #include "../../problem/include/ClusteringProblem.h"
+#include "../../problem/include/CCProblem.h"
 
 using namespace boost;
 using namespace std;
@@ -78,9 +79,13 @@ protected:
 			cTemp->removeNodeFromCluster(g, j, k2);
 			cTemp->removeNodeFromCluster(g, i, k1);
 		} else {
-			cTemp->removeNodeFromCluster(g, j, k1);
-			cTemp->removeNodeFromCluster(g, i, k2);
+			cTemp->removeNodeFromCluster(g, i, k1);
+			cTemp->removeNodeFromCluster(g, j, k2);
 		}
+		// CCProblem problem;
+		// TODO Correct bug here
+		// cout << cTemp->getObjectiveFunctionValue() << " versus " << problem.objectiveFunction(&g, cTemp.get()) << endl;
+		// cTemp->setObjectiveFunctionValue(problem.objectiveFunction(&g, cTemp.get()));
 
 		return cTemp;
 	}
