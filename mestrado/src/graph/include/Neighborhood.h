@@ -84,7 +84,8 @@ protected:
 		}
 		// CCProblem problem;
 		// TODO Correct bug here
-		// cout << cTemp->getObjectiveFunctionValue() << " versus " << problem.objectiveFunction(&g, cTemp.get()) << endl;
+		// Teste
+		cout << cTemp->getObjectiveFunctionValue() << " versus " << problem.objectiveFunction(&g, cTemp.get()) << endl;
 		// cTemp->setObjectiveFunctionValue(problem.objectiveFunction(&g, cTemp.get()));
 
 		return cTemp;
