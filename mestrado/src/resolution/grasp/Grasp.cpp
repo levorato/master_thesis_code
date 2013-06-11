@@ -52,7 +52,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 	stringstream ss;
 
 	// TODO: Parallelize here! Divide iterations by n processors with MPI.
-	for (int i = 0, totalIter = 0; i < iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
+	for (int i = 0, totalIter = 0; i <= iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
 		// cout << "GRASP iteration " << i << endl;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue << endl;
 
