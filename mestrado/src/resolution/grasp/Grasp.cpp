@@ -91,6 +91,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue == 0)  break;
 		}
+		// if elapsed time is bigger than 1 hour (3600 seconds), break
+		if(timeSpentSoFar >= 3600) {
+			break;
+		}
 	}
 	ss << "Best value: " << setprecision(0) << bestValue << ", K: " << CStar->getNumberOfClusters() <<
 			", Iteration: " << iterationValue << ", Time Spent (s): " <<
