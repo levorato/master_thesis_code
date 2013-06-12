@@ -50,7 +50,7 @@ all: MestradoMario
 MestradoMario: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -pthread -m64 -O2 -fPIC -Wl,-z,noexecstack -Wl,-rpath -Wl,/usr/lib64/mpich2/lib -L/usr/local/lib/boost -L/usr/local/lib -L/usr/lib -L/usr/lib64/mpich2/lib -o "MestradoMario" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -pthread -m64 -O2 -fPIC -Wl,-z,noexecstack -Wl,-rpath -Wl,/usr/lib64/mpich2/lib -L/usr/local/lib/boost -L/usr/local/lib -L/usr/lib -L$HOME/lib -L/usr/lib64/mpich2/lib -o "MestradoMario" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
