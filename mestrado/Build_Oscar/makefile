@@ -50,7 +50,7 @@ all: MestradoMario
 MestradoMario: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -pthread -m64 -O2 -fPIC -Wl,-z,noexecstack -Wl,-rpath -DMPIBULL_IGNORE_CXX_SEEK -DHAVE_MPI_CXX -I/opt/mpi/mpibull2-1.3.9-18.s/include -L/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock -L/opt/mpi/mpibull2-1.3.9-18.s/lib -lmpibinding_cxx -lmpi -lrt -ldl -L/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi -lpmi -lpthread -luuid -L/usr/local/lib/boost -L/usr/local/lib -L/usr/lib -L$$HOME/lib -o "MestradoMario" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -pthread -m64 -O2 -fPIC -Wl,-z,noexecstack -Wl,-rpath -DMPIBULL_IGNORE_CXX_SEEK -DHAVE_MPI_CXX -I/opt/mpi/mpibull2-1.3.9-18.s/include -L/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock -L/opt/mpi/mpibull2-1.3.9-18.s/lib -lmpibinding_cxx -lmpi -lrt -ldl -L/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi -lpmi -lpthread -luuid -L/usr/local/lib/boost -L/usr/local/lib -L/usr/lib64 -L$$HOME/lib -o "MestradoMario" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
