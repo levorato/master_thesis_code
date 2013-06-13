@@ -78,7 +78,8 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 }
 
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& timestamp,
-		bool debug, float alpha, int l, int numberOfIterations, int np, int myRank) {
+		const bool& debug, const double& alpha, const int& l, const int& numberOfIterations,
+		const long& timeLimit, const int& np, const int& myRank) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -95,12 +96,12 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		if(np == 1) {	// sequential version of GRASP
 			Grasp resolution;
 			resolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, timestamp, fileId, myRank);
+					alpha, l, problem, timestamp, fileId, timeLimit, myRank);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
 			ParallelGrasp parallelResolution;
 			parallelResolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, timestamp, fileId, np, myRank);
+					alpha, l, problem, timestamp, fileId, timeLimit, np, myRank);
 		}
 	} else {
 		cerr << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
@@ -120,16 +121,17 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		cout << "Correlation clustering problem solver" << endl << endl;
 
 		try {
-			float alpha = 0.5F;
+			double alpha = 0.5F;
 			int numberOfIterations = 500, k = -1, l = 1;
 			bool debug = false, RCC = false, profile = false;
 			string inputFileDir;
+			long timeLimit = 1800;
 			CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
 			po::options_description desc("Available options:");
 			desc.add_options()
 				("help", "show program options")
-				("alpha,a", po::value<float>(&alpha)->default_value(0.5F),
+				("alpha,a", po::value<double>(&alpha)->default_value(0.5F),
 					  "alpha - randomness factor")
 				("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
 					  "number of iterations")
@@ -140,6 +142,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
 				("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
+				("time-limit", po::value<long>(&timeLimit)->default_value(1800), "maximum execution time")
 				/* TODO Resolver problema com o parametro da descricao
 				("strategy",
 							 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
@@ -202,12 +205,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					cout << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, timestamp, debug, alpha, l, numberOfIterations, np, myRank);
+					processInputFile(filePath, timestamp, debug, alpha, l, numberOfIterations, timeLimit, np, myRank);
 				} else {
 					cout << "Profile mode on." << endl;
-					for(float alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
+					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, timestamp, debug, alpha2, l, numberOfIterations, np, myRank);
+						processInputFile(filePath, timestamp, debug, alpha2, l, numberOfIterations, timeLimit, np, myRank);
 					}
 				}
 			}
@@ -247,7 +250,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					ClusteringProblemFactory factory;
 					Grasp resolution;
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
-								imsg.l, factory.build(imsg.problemType), timestamp, imsg.fileId, myRank);
+								imsg.l, factory.build(imsg.problemType), timestamp, imsg.fileId,
+								imsg.timeLimit, myRank);
 
 					// Sends the result back to the leader process
 					OutputMessage omsg(*bestClustering);

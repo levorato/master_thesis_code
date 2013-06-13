@@ -29,8 +29,9 @@ public:
 	/**
 	 * Triggers the parallel execution of the GRASP algorithm using MPI.
 	 */
-	ClusteringPtr executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-			ClusteringProblem& problem, string& timestamp, string& fileId, int& np, int& myRank);
+	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha,
+			const int& l, ClusteringProblem& problem, string& timestamp, string& fileId,
+			const long& timeLimit, const int& np, const int& myRank);
 };
 
 } /* namespace grasp */

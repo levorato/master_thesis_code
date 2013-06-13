@@ -9,6 +9,7 @@
 #define CLUSTERINGPROBLEM_H_
 
 #include "../../graph/include/Clustering.h"
+#include "../../graph/include/Imbalance.h"
 
 using namespace clusteringgraph;
 
@@ -21,7 +22,7 @@ public:
 	ClusteringProblem();
 	virtual ~ClusteringProblem();
 
-	virtual float objectiveFunction(SignedGraph* g, Clustering* c) const = 0;
+	virtual Imbalance objectiveFunction(SignedGraph* g, Clustering* c) const = 0;
 
 	virtual int getType() const = 0;
 

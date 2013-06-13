@@ -36,9 +36,12 @@ public:
 	 * @param l the size of the neighborhood
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param fileId string representing the identification of the input graph file
+	 * @param timeLimit Maximum processing time in seconds
+	 * @param myRank processor rank (when running with MPI)
 	 */
-	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
-			const ClusteringProblem& problem, string& timestamp, string& fileId, const int& myRank);
+	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
+			const ClusteringProblem& problem, string& timestamp, string& fileId, const long& timeLimit,
+			const int& myRank);
 
 private:
 	/**
@@ -52,7 +55,7 @@ private:
 	 * @return Clustering C(c)
 	 */
 	ClusteringPtr constructClustering(SignedGraph *g, const ClusteringProblem& problem,
-			float alpha, unsigned int ramdomSeed);
+			double alpha, unsigned int ramdomSeed);
 
 	/**
 	 * Executes the local search algorithm. Repeatedly derives
@@ -65,21 +68,18 @@ private:
 	 * phase of GRASP.
 	 * @param l the size of the neighborhood
 	 * @param problem the ClusteringProblem object for the objective function calculation
+	 * @param timeLimit Maximum processing time in seconds.
 	 * @return Clustering C(l), the local optinum solution
 	 */
 	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-			const ClusteringProblem& problem, NeighborhoodListGenerator &neig);
+			const ClusteringProblem& problem, NeighborhoodListGenerator &neig,
+			const long& timeLimit);
 
 	/**
 	 * TODO document this method
 	 */
 	void generateOutputFile(stringstream& fileContents, string& fileId, string& timestamp,
-			const int &processNumber, const float& alpha, const int& l, const int& numberOfIterations);
-
-	/**
-	 * Maximum processing time in seconds.
-	 */
-	static const double timeLimit = 1800.0;
+			const int &processNumber, const double& alpha, const int& l, const int& numberOfIterations);
 
 	/**
 	 * Time spent so far in the GRASP.

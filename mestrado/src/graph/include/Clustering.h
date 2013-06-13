@@ -18,6 +18,7 @@
 
 #include "../../util/serialization/dynamic_bitset.hpp"
 #include "Graph.h"
+#include "Imbalance.h"
 
 using namespace boost;
 using namespace std;
@@ -34,7 +35,7 @@ typedef dynamic_bitset<> BoolArray;
 // the list is made of boolean arrays, indicating that node i is in the cluster
 typedef vector<BoolArray> ClusterList;
 typedef struct {
-	float value;
+	double value;
 	int clusterNumber;
 } GainCalculation;
 
@@ -116,22 +117,16 @@ public:
 	 */
 	GainCalculation& gain(SignedGraph& graph, const int &a);
 
-	/**
-	 * Returns the value of the objective function corresponding to this cluster.
-	 */
-	float getObjectiveFunctionValue();
+	Imbalance getObjectiveFunctionValue();
 
-	void setObjectiveFunctionValue(float f);
+	void setObjectiveFunctionValue(Imbalance f);
 
 	/**
 	 * Calculates the delta of the objective function caused by the
 	 * insertion of node i in cluster k.
 	 */
-	float calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster,
+	Imbalance calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster,
 			const int& i);
-
-	float calculateDeltaObjectiveFunction2opt(SignedGraph& g, Clustering& c, const int& k1, const int& k2,
-			const int& i, const int& j);
 
 	void calculateGainList(SignedGraph &g, list<int>& nodeList);
 
@@ -143,11 +138,22 @@ public:
 
 	string toString();
 
+	/**
+	 * Returns the value of the objective function corresponding to this cluster.
+	 */
+	const Imbalance& getImbalance() const {
+		return imbalance;
+	}
+
+	void setImbalance(const Imbalance& imbalance) {
+		this->imbalance = imbalance;
+	}
+
 private:
 	/** the cluster list, with dimensions k x n */
 	ClusterList clusterList;
 	/** the value of the objective function corresponding to this cluster */
-	float objectiveFunctionValue;
+	Imbalance imbalance;
 	/** the map of nodes gain value */
 	map<int, GainCalculation> gainMap;
 
@@ -159,7 +165,7 @@ private:
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & clusterList;
-		ar & objectiveFunctionValue;
+		ar & imbalance;
 	}
 };
 

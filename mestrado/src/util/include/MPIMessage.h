@@ -25,20 +25,22 @@ class InputMessage {
 public:
 	static const int TAG = 50;
 	string graphInputFileContents;
-	float alpha;
+	double alpha;
 	int l;
 	int iter;
 	int problemType;
 	string fileId;
+	long timeLimit;
 
 	InputMessage() : graphInputFileContents(),
-			alpha(0.0F), l(1), iter(500), problemType(0), fileId("noId") {
+			alpha(0.0F), l(1), iter(500), problemType(0), fileId("noId"), timeLimit(1800) {
 
 	}
 
-	InputMessage(string graphContents, int it, float a, int neigh,
-			int pType, string id) : graphInputFileContents(graphContents),
-					alpha(a), l(neigh), iter(it), problemType(pType), fileId(id) {
+	InputMessage(string graphContents, int it, double a, int neigh,
+			int pType, string id, long t) : graphInputFileContents(graphContents),
+					alpha(a), l(neigh), iter(it), problemType(pType), fileId(id),
+					timeLimit(t) {
 
 	}
 
@@ -61,6 +63,7 @@ private:
 		ar & iter;
 		ar & problemType;
 		ar & fileId;
+		ar & timeLimit;
 	}
 };
 

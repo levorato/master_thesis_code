@@ -26,8 +26,8 @@ int RCCProblem::getType() const {
 /**
  * Returns he Relaxed Imbalance of a partition P (RI(P)).
  */
-float RCCProblem::objectiveFunction(SignedGraph* g, Clustering *c) const {
-	return 0.0;
+Imbalance RCCProblem::objectiveFunction(SignedGraph* g, Clustering *c) const {
+	return Imbalance(0, 0);
 }
 
 } /* namespace problem */

@@ -37,13 +37,14 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& alpha, const int& l,
-		const ClusteringProblem& problem, string& timestamp, string& fileId, const int& myRank) {
+ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
+		const ClusteringProblem& problem, string& timestamp, string& fileId, const long& timeLimit,
+		const int& myRank) {
 	std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, problem, alpha, ramdomSeed);
 	ClusteringPtr previousCc = CStar, Cc;
-	float bestValue = CStar->getObjectiveFunctionValue();
+	Imbalance bestValue = CStar->getImbalance();
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
@@ -64,20 +65,22 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 		Cc = constructClustering(g, problem, alpha, ramdomSeed);
 
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, neig);
+		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, neig, timeLimit);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
-		float newValue = Cl->getObjectiveFunctionValue();
+		Imbalance newValue = Cl->getImbalance();
 
 		// 4. Stops the timer and stores the elapsed time
 		timer.stop();
 		boost::timer::cpu_times end_time = timer.elapsed();
 
 		// 4. Write the results into ostream os, using csv format
-		// Format: iterationNumber,objectiveFunctionValue,time(ns),boolean
+		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(ns),boolean
 		// TODO melhorar formatacao do tempo
 		timeSpentSoFar += (end_time.wall - start_time.wall) / double(1000000000);
-		ss << (i+1) << "," << newValue << "," << CStar->getNumberOfClusters() << "," << fixed << setprecision(4) << timeSpentSoFar << "\n";
+		ss << (i+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
+				<< "," << newValue.getNegativeValue() << "," << CStar->getNumberOfClusters()
+				<< "," << fixed << setprecision(4) << timeSpentSoFar << "\n";
 
 		if(newValue < bestValue) {
 			// cout << "A better solution was found." << endl;
@@ -88,7 +91,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 			timeSpentOnBestSolution = timeSpentSoFar;
 			i = 0;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
-			if(newValue == 0)  break;
+			if(newValue.getValue() == 0)  break;
 		}
 		// if elapsed time is bigger than timeLimit, break
 		if(timeSpentSoFar >= timeLimit) {
@@ -96,9 +99,13 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 			break;
 		}
 	}
-	ss << "Best value: " << setprecision(0) << bestValue << ", K: " << CStar->getNumberOfClusters() <<
-			", Iteration: " << iterationValue << ", Time Spent (s): " <<
-			fixed << setprecision(4) << timeSpentOnBestSolution << endl;
+	ss << "Best value," << setprecision(0) << bestValue.getValue()
+			<< "," << bestValue.getPositiveValue()
+			<< "," << bestValue.getNegativeValue()
+			<< "," << CStar->getNumberOfClusters()
+			<< "," << iterationValue
+			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution << endl;
+
 	cout << "GRASP procedure done." << endl;
 	CStar->printClustering();
 	CStar->printClustering(ss);
@@ -108,7 +115,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 }
 
 ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem& problem,
-		float alpha, unsigned int ramdomSeed) {
+		double alpha, unsigned int ramdomSeed) {
 	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(g->getN()); // L(Cc) = V(G)
 	// std::cout << "GRASP construct clustering...\n";
@@ -146,13 +153,13 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		// Cc->printClustering();
 	}
 	// std::cout << "\nInitial clustering completed.\n";
-	Cc->setObjectiveFunctionValue(problem.objectiveFunction(g, Cc.get()));
+	Cc->setImbalance(problem.objectiveFunction(g, Cc.get()));
 	// Cc->printClustering();
 	return Cc;
 }
 
 ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const ClusteringProblem& problem, NeighborhoodListGenerator &neig) {
+		const ClusteringProblem& problem, NeighborhoodListGenerator &neig, const long& timeLimit) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
@@ -172,13 +179,15 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 
 		// TODO Parellelize here!
 		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
-		if(Cl->getObjectiveFunctionValue() < 0) {
+		if(Cl->getImbalance().getValue() < 0.0) {
 			cerr << "Objective function below zero. Error." << endl;
 			break;
 		}
 		// cout << "Comparing local solution value." << endl;
 		if(Cl.get() != CStar.get()) {
-			if(Cl->getObjectiveFunctionValue() < CStar->getObjectiveFunctionValue()) {
+			Imbalance il = Cl->getImbalance();
+			Imbalance ic = CStar->getImbalance();
+			if(il < ic) {
 				// cout << "New local solution found: " << setprecision(2) << Cl->getObjectiveFunctionValue() << endl;
 				// Cl->printClustering();
 				CStar.reset();
@@ -205,7 +214,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 
 void Grasp::generateOutputFile(stringstream& fileContents, string& fileId,
 		string& timestamp, const int &processNumber,
-		const float& alpha, const int& l, const int& numberOfIterations) {
+		const double& alpha, const int& l, const int& numberOfIterations) {
 	namespace fs = boost::filesystem;
 	// Creates the output file (with the results of the execution)
 	if (!fs::exists(fs::path("./output"))) {

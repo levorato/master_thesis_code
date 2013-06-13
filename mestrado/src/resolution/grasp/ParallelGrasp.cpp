@@ -25,36 +25,38 @@ ParallelGrasp::~ParallelGrasp() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, int iter, float alpha, int l,
-			ClusteringProblem& problem, string& timestamp, string& fileId, int &np, int &myRank) {
+ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
+		const double& alpha, const int& l, ClusteringProblem& problem,
+		string& timestamp, string& fileId, const long& timeLimit,
+		const int &np, const int &myRank) {
 	mpi::communicator world;
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	for(int i = 1; i < np; i++) {
-		InputMessage imsg(g->getGraphAsText(), iter, alpha, l, problem.getType(), fileId);
+		InputMessage imsg(g->getGraphAsText(), iter, alpha, l, problem.getType(), fileId, timeLimit);
 		world.send(i, INPUT_MSG_TAG, imsg);
 		cout << "Message sent to process " << i << endl;
 	}
 	// the leader does its part of the work
 	ClusteringPtr bestClustering = Grasp::executeGRASP(g, iter, alpha,
-			l, problem, timestamp, fileId, myRank);
+			l, problem, timestamp, fileId, timeLimit, myRank);
 
 	// the leader receives the processing results
 	OutputMessage omsg;
 	for(int i = 1; i < np; i++) {
 		mpi::status stat = world.recv(mpi::any_source, OUTPUT_MSG_TAG, omsg);
 		cout << "Message received from process " << stat.source() << ": " <<
-				omsg.clustering.getObjectiveFunctionValue() << endl << omsg.clustering.toString()  << "\n";
+				omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString()  << "\n";
 		// process the result of the execution of process i
-		if(omsg.clustering.getObjectiveFunctionValue() < bestClustering->getObjectiveFunctionValue()) {
+		if(omsg.clustering.getImbalance().getValue() < bestClustering->getImbalance().getValue()) {
 			ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
 			bestClustering.reset();
 			bestClustering = clustering;
 			cout << "*** Better value found for object function in node " << stat.source() << ": " <<
-					omsg.clustering.getObjectiveFunctionValue() << endl;
+					omsg.clustering.getImbalance().getValue() << endl;
 		}
 	}
-	cout << "Best solution found: I(P) = " << bestClustering->getObjectiveFunctionValue() << endl;
+	cout << "Best solution found: I(P) = " << bestClustering->getImbalance().getValue() << endl;
 	bestClustering->printClustering();
 	return bestClustering;
 }

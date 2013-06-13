@@ -11,8 +11,10 @@ src/controller/CommandLineInterfaceController.d \
  ../src/controller/../resolution/grasp/include/../../../graph/include/Clustering.h \
  ../src/controller/../resolution/grasp/include/../../../graph/include/../../util/serialization/dynamic_bitset.hpp \
  ../src/controller/../resolution/grasp/include/../../../graph/include/Graph.h \
+ ../src/controller/../resolution/grasp/include/../../../graph/include/Imbalance.h \
  ../src/controller/../resolution/grasp/include/../../../problem/include/ClusteringProblem.h \
  ../src/controller/../resolution/grasp/include/../../../problem/include/../../graph/include/Clustering.h \
+ ../src/controller/../resolution/grasp/include/../../../problem/include/../../graph/include/Imbalance.h \
  ../src/controller/../resolution/grasp/include/../../../graph/include/Neighborhood.h \
  ../src/controller/../resolution/grasp/include/../../../graph/include/Clustering.h \
  ../src/controller/../resolution/grasp/include/../../../graph/include/../../problem/include/ClusteringProblem.h \
@@ -24,6 +26,7 @@ src/controller/CommandLineInterfaceController.d \
  ../src/controller/../problem/include/ClusteringProblem.h \
  ../src/controller/../problem/include/CCProblem.h \
  ../src/controller/../problem/include/ClusteringProblem.h \
+ ../src/controller/../problem/include/../../graph/include/Imbalance.h \
  ../src/controller/../util/include/TimeDateUtil.h \
  ../src/controller/../util/include/MPIMessage.h \
  ../src/controller/../util/include/../../graph/include/Clustering.h \
@@ -51,9 +54,13 @@ src/controller/CommandLineInterfaceController.d \
 
 ../src/controller/../resolution/grasp/include/../../../graph/include/Graph.h:
 
+../src/controller/../resolution/grasp/include/../../../graph/include/Imbalance.h:
+
 ../src/controller/../resolution/grasp/include/../../../problem/include/ClusteringProblem.h:
 
 ../src/controller/../resolution/grasp/include/../../../problem/include/../../graph/include/Clustering.h:
+
+../src/controller/../resolution/grasp/include/../../../problem/include/../../graph/include/Imbalance.h:
 
 ../src/controller/../resolution/grasp/include/../../../graph/include/Neighborhood.h:
 
@@ -80,6 +87,8 @@ src/controller/CommandLineInterfaceController.d \
 ../src/controller/../problem/include/CCProblem.h:
 
 ../src/controller/../problem/include/ClusteringProblem.h:
+
+../src/controller/../problem/include/../../graph/include/Imbalance.h:
 
 ../src/controller/../util/include/TimeDateUtil.h:
 

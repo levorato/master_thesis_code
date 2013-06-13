@@ -15,9 +15,6 @@ namespace mpi = boost::mpi;
 
 int main(int ac, char* av[])
 {
-	MPI_Status status;
-	int myRank;
-
 	// Inicializacao do MPI
 	mpi::environment env(ac, av);
 	mpi::communicator world;

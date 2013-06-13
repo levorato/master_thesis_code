@@ -23,13 +23,13 @@ using namespace std;
 namespace clusteringgraph {
 
 struct Edge {
-    float weight;
+    double weight;
     Edge() : weight(0) { }
-    Edge(float w) : weight(w) { }
+    Edge(double w) : weight(w) { }
 };
 typedef adjacency_matrix<directedS, no_property, Edge > DirectedGraph;
-// the modularity matrix: a matrix of float
-typedef multi_array<float, 2> ModularityMatrix;
+// the modularity matrix: a matrix of double
+typedef multi_array<double, 2> ModularityMatrix;
 
 class SignedGraph {
 public:
@@ -54,7 +54,7 @@ public:
 	/**
 	 * Returns the value of the corresponding edge.
 	 */
-	float getEdge(const int &a, const int &b);
+	double getEdge(const int &a, const int &b);
 
 	/**
 	 * Returns the degree of vertex a.

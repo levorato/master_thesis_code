@@ -27,7 +27,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 		Clustering* clustering, const ClusteringProblem& problem) {
 	int nc = clustering->getNumberOfClusters();
 	int n = g->getN();
-	float bestValue = problem.objectiveFunction(g, clustering);
+	Imbalance bestValue = problem.objectiveFunction(g, clustering);
 	boost::minstd_rand generator(1234u);
 	generator.seed(boost::random::random_device()());
 	boost::random::uniform_int_distribution<> distnc(0,nc-1);
@@ -52,17 +52,17 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 
 							// TODO check if the removal of node i destroys cluster1
 							// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
-							float value = cTemp->getObjectiveFunctionValue();
+							Imbalance value = cTemp->getImbalance();
 							cTemp->addNodeToCluster(*g, i, k2);
 							// cTemp->setObjectiveFunctionValue( value + cTemp->calculateDeltaObjectiveFunction(*g, cluster2, i) );
 							cTemp->removeNodeFromCluster(*g, i, k1);
 							// cTemp->setObjectiveFunctionValue( value - cTemp->calculateDeltaObjectiveFunction(*g, cluster1, i) );
 
 							// cTemp->printClustering();
-							// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+							// double objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
 							// cTemp->setObjectiveFunctionValue(objective);
-							float objective = cTemp->getObjectiveFunctionValue();
-							// float objective2 = problem.objectiveFunction(g, cTemp.get());
+							Imbalance objective = cTemp->getImbalance();
+							// double objective2 = problem.objectiveFunction(g, cTemp.get());
 							// if(objective != objective2)  cerr << "OFs do not match!!!" << objective << "; " << objective2  << "\n";
 							if (objective < bestValue) {
 								// cout << "Better solution found in 1-neighborhood: " << setprecision(2) << objective << "\n";
@@ -76,19 +76,19 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 					ClusteringPtr cTemp = make_shared < Clustering
 							> (*clustering, n);
 					// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
-					float value = cTemp->getObjectiveFunctionValue();
+					Imbalance value = cTemp->getImbalance();
 					cTemp->removeNodeFromCluster(*g, i, k1);
 					// cTemp->setObjectiveFunctionValue( value - cTemp->calculateDeltaObjectiveFunction(*g, cluster1, i) );
 					BoolArray cluster2 = cTemp->addCluster(*g, i);
 					// cTemp->setObjectiveFunctionValue( value + cTemp->calculateDeltaObjectiveFunction(*g, cluster2, i) );
 					// cTemp->printClustering();
-					// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+					// double objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
 					// cTemp->setObjectiveFunctionValue(objective);
-					float objective = cTemp->getObjectiveFunctionValue();
-					// float objective2 = problem.objectiveFunction(g, cTemp.get());
+					Imbalance objective = cTemp->getImbalance();
+					// double objective2 = problem.objectiveFunction(g, cTemp.get());
 					// if(objective != objective2)  cerr << "OFs do not match!!!" << objective << "; " << objective2  << "\n";
 					// TROCAR AQUI
-					// float objective = problem.objectiveFunction(g, cTemp.get());
+					// double objective = problem.objectiveFunction(g, cTemp.get());
 					// cTemp->setObjectiveFunctionValue(objective);
 					if (objective < bestValue) {
 						// cout << "Better solution found in 1-neighborhood: " << setprecision(2) << objective << "\n";
@@ -129,9 +129,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 																k2, k3, k4, n,
 																i, j);
 												// cTemp->printClustering();
-												// float objective = problem.objectiveFunction(g, cTemp.get());
+												// double objective = problem.objectiveFunction(g, cTemp.get());
 												// cTemp->setObjectiveFunctionValue(objective);
-												float objective = cTemp->getObjectiveFunctionValue();
+												Imbalance objective = cTemp->getImbalance();
 												if (objective < bestValue) {
 													// cout << "Better solution found in 2-neighborhood." << endl;
 													return cTemp;
@@ -146,9 +146,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 														Clustering::NEW_CLUSTER,
 														n, i, j);
 										// cTemp->printClustering();
-										// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+										// double objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
 										// cTemp->setObjectiveFunctionValue(objective);
-										float objective = cTemp->getObjectiveFunctionValue();
+										Imbalance objective = cTemp->getImbalance();
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -167,9 +167,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 														Clustering::NEW_CLUSTER,
 														k4, n, i, j);
 										// cTemp->printClustering();
-										// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+										// double objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
 										// cTemp->setObjectiveFunctionValue(objective);
-										float objective = cTemp->getObjectiveFunctionValue();
+										Imbalance objective = cTemp->getImbalance();
 										if (objective < bestValue) {
 											// cout << "Better solution found in 2-neighborhood." << endl;
 											return cTemp;
@@ -183,9 +183,9 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 										Clustering::NEW_CLUSTER,
 										Clustering::NEW_CLUSTER, n, i, j);
 								// cTemp->printClustering();
-								// float objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
+								// double objective = problem.objectiveFunction(g, cTemp.get());//cTemp->getObjectiveFunctionValue();
 								// cTemp->setObjectiveFunctionValue(objective);
-								float objective = cTemp->getObjectiveFunctionValue();
+								Imbalance objective = cTemp->getImbalance();
 								if (objective < bestValue) {
 									// cout << "Better solution found in 2-neighborhood." << endl;
 									return cTemp;

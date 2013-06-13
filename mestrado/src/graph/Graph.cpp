@@ -50,7 +50,7 @@ void SignedGraph::addEdge(int a, int b, Edge edge) {
 	add_edge(a, b, edge, graph);
 }
 
-float SignedGraph::getEdge(const int &a, const int &b) {
+double SignedGraph::getEdge(const int &a, const int &b) {
 	return graph.get_edge(a, b).second.weight;
 }
 
