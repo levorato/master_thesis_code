@@ -28,7 +28,7 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace grasp {
 
-Grasp::Grasp() {
+Grasp::Grasp() : timeSpentSoFar(0.0) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -45,7 +45,6 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 	ClusteringPtr previousCc = CStar, Cc;
 	float bestValue = CStar->getObjectiveFunctionValue();
 	int iterationValue = 0;
-	double timeSpentSoFar = 0;
 	double timeSpentOnBestSolution = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
 	SequentialNeighborhoodGenerator neig(g->getN());
@@ -56,7 +55,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 		// cout << "GRASP iteration " << i << endl;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue << endl;
 
-		// 0. Triggers processing time calculation
+		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
@@ -91,8 +90,9 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const float& 
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue == 0)  break;
 		}
-		// if elapsed time is bigger than 1 hour (3600 seconds), break
-		if(timeSpentSoFar >= 3600) {
+		// if elapsed time is bigger than timeLimit, break
+		if(timeSpentSoFar >= timeLimit) {
+			cout << "Time limit exceeded." << endl;
 			break;
 		}
 	}
@@ -156,11 +156,17 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
+	double localTimeSpent = 0.0;
 	// std::cout << "GRASP local search...\n";
 	// cout << "Current neighborhood is " << k << endl;
 
-	while(k <= l) {
+	while(k <= l && (timeSpentSoFar + localTimeSpent < timeLimit)) {
 		// cout << "Local search iteration " << iteration << endl;
+		// 0. Triggers local processing time calculation
+		boost::timer::cpu_timer timer;
+		timer.start();
+		boost::timer::cpu_times start_time = timer.elapsed();
+
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood
 
@@ -187,6 +193,11 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 			// cout << "Changed to neighborhood size l = " << k << endl;
 		}
 		iteration++;
+
+		// => Finally: Stops the timer and stores the elapsed time
+		timer.stop();
+		boost::timer::cpu_times end_time = timer.elapsed();
+		localTimeSpent += (end_time.wall - start_time.wall) / double(1000000000);
 	}
 	// std::cout << "GRASP local search done.\n";
 	return CStar;

@@ -75,6 +75,16 @@ private:
 	 */
 	void generateOutputFile(stringstream& fileContents, string& fileId, string& timestamp,
 			const int &processNumber, const float& alpha, const int& l, const int& numberOfIterations);
+
+	/**
+	 * Maximum processing time in seconds.
+	 */
+	static const double timeLimit = 1800.0;
+
+	/**
+	 * Time spent so far in the GRASP.
+	 */
+	double timeSpentSoFar;
 };
 
 } /* namespace grasp */
