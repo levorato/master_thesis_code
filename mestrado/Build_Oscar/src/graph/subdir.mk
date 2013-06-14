@@ -6,16 +6,19 @@
 CPP_SRCS += \
 ../src/graph/Clustering.cpp \
 ../src/graph/Graph.cpp \
+../src/graph/Imbalance.cpp \
 ../src/graph/SequentialNeighborhoodGen.cpp 
 
 OBJS += \
 ./src/graph/Clustering.o \
 ./src/graph/Graph.o \
+./src/graph/Imbalance.o \
 ./src/graph/SequentialNeighborhoodGen.o 
 
 CPP_DEPS += \
 ./src/graph/Clustering.d \
 ./src/graph/Graph.d \
+./src/graph/Imbalance.d \
 ./src/graph/SequentialNeighborhoodGen.d 
 
 

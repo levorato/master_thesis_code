@@ -30,6 +30,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 using namespace boost::mpi;
 
+#include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
 #include <execinfo.h>
@@ -121,28 +122,29 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		cout << "Correlation clustering problem solver" << endl << endl;
 
 		try {
-			double alpha = 0.5F;
+			string s_alpha;
 			int numberOfIterations = 500, k = -1, l = 1;
 			bool debug = false, RCC = false, profile = false;
 			string inputFileDir;
-			long timeLimit = 1800;
+			int timeLimit = 1800;
 			CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
 			po::options_description desc("Available options:");
 			desc.add_options()
 				("help", "show program options")
-				("alpha,a", po::value<double>(&alpha)->default_value(0.5F),
+				("alpha,a", po::value<string>(&s_alpha),
 					  "alpha - randomness factor")
 				("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
 					  "number of iterations")
 				("neighborhood_size,l", po::value<int>(&l)->default_value(1),
 					  "neighborhood size")
 				("k,k", po::value<int>(&k)->default_value(-1), "k parameter (RCC problem)")
+				("time-limit", po::value<int>(&timeLimit)->default_value(1800), "maximum execution time")
 				("input-file", po::value< vector<string> >(), "input file")
 				("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
 				("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
-				("time-limit", po::value<long>(&timeLimit)->default_value(1800), "maximum execution time")
+				
 				/* TODO Resolver problema com o parametro da descricao
 				("strategy",
 							 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
@@ -166,6 +168,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			if (k != -1) {
 				cout << "k value is " << k << ". RCC is enabled." << endl;
 				RCC = true;
+			}
+
+			float alpha = 0.0;
+			if(vm.count("alpha")) {
+				// std::istringstream i(s_alpha);
+				// if (!(i >> alpha))
+				//     throw BadConversion("convertToDouble(\"" + s + "\")");
+				sscanf(s_alpha.c_str(), "%f", &alpha);				
 			}
 
 			cout << "Resolution strategy is " << strategy << endl;
