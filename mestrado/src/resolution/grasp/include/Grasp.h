@@ -40,8 +40,8 @@ public:
 	 * @param myRank processor rank (when running with MPI)
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
-			const ClusteringProblem& problem, string& timestamp, string& fileId, const long& timeLimit,
-			const int& myRank);
+			const ClusteringProblem& problem, string& timestamp, string& fileId, 
+			string& outputFolder, const long& timeLimit, const int& myRank);
 
 private:
 	/**
@@ -78,7 +78,7 @@ private:
 	/**
 	 * TODO document this method
 	 */
-	void generateOutputFile(stringstream& fileContents, string& fileId, string& timestamp,
+	void generateOutputFile(stringstream& fileContents, string& outputFolder, string& fileId, string& timestamp,
 			const int &processNumber, const double& alpha, const int& l, const int& numberOfIterations);
 
 	/**

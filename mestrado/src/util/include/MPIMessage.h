@@ -30,17 +30,18 @@ public:
 	int iter;
 	int problemType;
 	string fileId;
+	string outputFolder;
 	long timeLimit;
 
 	InputMessage() : graphInputFileContents(),
-			alpha(0.0F), l(1), iter(500), problemType(0), fileId("noId"), timeLimit(1800) {
+			alpha(0.0F), l(1), iter(500), problemType(0), fileId("noId"), outputFolder(""), timeLimit(1800) {
 
 	}
 
 	InputMessage(string graphContents, int it, double a, int neigh,
-			int pType, string id, long t) : graphInputFileContents(graphContents),
+			int pType, string id, string folder, long t) : graphInputFileContents(graphContents),
 					alpha(a), l(neigh), iter(it), problemType(pType), fileId(id),
-					timeLimit(t) {
+					outputFolder(folder), timeLimit(t) {
 
 	}
 
@@ -63,6 +64,7 @@ private:
 		ar & iter;
 		ar & problemType;
 		ar & fileId;
+		ar & outputFolder;
 		ar & timeLimit;
 	}
 };
@@ -71,6 +73,7 @@ class OutputMessage {
 public:
 	static const int TAG = 60;
 	Clustering clustering;
+
 
 	OutputMessage() : clustering() {
 

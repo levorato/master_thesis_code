@@ -15,6 +15,7 @@
 #include <iterator>     // ostream_operator
 #include <streambuf>
 #include <cerrno>
+#include <cstdio>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/smart_ptr.hpp>
@@ -121,7 +122,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			try {
 				int a = boost::lexical_cast<int>(vec.at(0));
 				int b = boost::lexical_cast<int>(vec.at(1));
-				int value = boost::lexical_cast<int>(vec.at(2));
+				double value = 0.0;
+				sscanf(vec.at(2).c_str(), "%lf", &value);
 				if(formatType == 2) {
 					g->addEdge(a, b, value);
 					// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
@@ -152,7 +154,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			try {
 				int a = boost::lexical_cast<int>(vec.at(0));
 				int b = boost::lexical_cast<int>(vec.at(1));
-				int value = boost::lexical_cast<int>(vec.at(2));
+				double value = 0.0;
+                                sscanf(vec.at(2).c_str(), "%lf", &value);
 				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 				g->addEdge(a - 1, b - 1, value);
 				// g->addEdge(b - 1, a - 1, value);
@@ -174,7 +177,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 			for(unsigned int b = 0; b < vec.size(); b++) {
 				try {
-					int value = boost::lexical_cast<int>(vec.at(b));
+					double value = 0.0;
+	                                sscanf(vec.at(b).c_str(), "%lf", &value);
 					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 					// the following is to avoid duplicate couting of arcs in the objective function
 					if(b <= a)	g->addEdge(a, b, value);

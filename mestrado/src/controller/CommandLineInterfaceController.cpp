@@ -11,6 +11,7 @@
 #include "../resolution/grasp/include/Grasp.h"
 #include "../resolution/grasp/include/ParallelGrasp.h"
 #include "../graph/include/Clustering.h"
+#include "../graph/include/Imbalance.h"
 #include "../problem/include/ClusteringProblem.h"
 #include "../problem/include/CCProblem.h"
 #include "../util/include/TimeDateUtil.h"
@@ -24,6 +25,7 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/timer/timer.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -36,6 +38,7 @@ using namespace boost::mpi;
 #include <execinfo.h>
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <algorithm>
 #include <iterator>
@@ -78,7 +81,7 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 	// TODO Auto-generated destructor stub
 }
 
-void CommandLineInterfaceController::processInputFile(fs::path filePath, string& timestamp,
+void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
 		const bool& debug, const double& alpha, const int& l, const int& numberOfIterations,
 		const long& timeLimit, const int& np, const int& myRank) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
@@ -93,17 +96,44 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		CCProblem problem;
 		ClusteringPtr c;
 		string fileId = filePath.filename().string();
+		// medicao de tempo
+
+		boost::timer::cpu_timer timer;
+                timer.start();
+                boost::timer::cpu_times start_time = timer.elapsed();
 
 		if(np == 1) {	// sequential version of GRASP
 			Grasp resolution;
-			resolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, timestamp, fileId, timeLimit, myRank);
+			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, problem, 
+					timestamp, fileId, outputFolder, timeLimit, myRank);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
 			ParallelGrasp parallelResolution;
-			parallelResolution.executeGRASP(g.get(), numberOfIterations,
-					alpha, l, problem, timestamp, fileId, timeLimit, np, myRank);
+			c = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, 
+					problem, timestamp, fileId, outputFolder, timeLimit, np, myRank);
 		}
+
+		 // Stops the timer and stores the elapsed time
+  
+                timer.stop();
+                boost::timer::cpu_times end_time = timer.elapsed();
+		double timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+		// Saves elapsed time and best solution to output file
+		string filename = outputFolder + fileId + "/" + timestamp + "/result.txt";
+		ofstream out(filename.c_str(), ios::out | ios::trunc); 
+		if(!out) { 
+		    cerr << "Cannot open output summary file.\n"; 
+		    // TODO tratar excecao 
+  		} 
+
+		out << "Global time spent: " << timeSpent << endl;
+		Imbalance imb = c->getImbalance();
+		out << "I(P) = " << imb.getValue() << endl;
+		stringstream ss;
+		c->printClustering(ss);
+		out << ss.str();
+ 		out.close();
+
 	} else {
 		cerr << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
 	}
@@ -125,7 +155,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			string s_alpha;
 			int numberOfIterations = 500, k = -1, l = 1;
 			bool debug = false, RCC = false, profile = false;
-			string inputFileDir;
+			string inputFileDir, outputFolder;
 			int timeLimit = 1800;
 			CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
@@ -144,6 +174,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
 				("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
+				("output-folder", po::value<string>(&outputFolder), "output folder for results files")
 				
 				/* TODO Resolver problema com o parametro da descricao
 				("strategy",
@@ -215,12 +246,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					cout << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, timestamp, debug, alpha, l, numberOfIterations, timeLimit, np, myRank);
+					processInputFile(filePath, outputFolder, timestamp, debug, alpha, l, numberOfIterations, timeLimit, np, myRank);
 				} else {
 					cout << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, timestamp, debug, alpha2, l, numberOfIterations, timeLimit, np, myRank);
+						processInputFile(filePath, outputFolder, timestamp, debug, alpha2, l, numberOfIterations, timeLimit, np, myRank);
 					}
 				}
 			}
@@ -261,7 +292,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					Grasp resolution;
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
 								imsg.l, factory.build(imsg.problemType), timestamp, imsg.fileId,
-								imsg.timeLimit, myRank);
+								imsg.outputFolder, imsg.timeLimit, myRank);
 
 					// Sends the result back to the leader process
 					OutputMessage omsg(*bestClustering);

@@ -27,19 +27,19 @@ ParallelGrasp::~ParallelGrasp() {
 
 ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		const double& alpha, const int& l, ClusteringProblem& problem,
-		string& timestamp, string& fileId, const long& timeLimit,
-		const int &np, const int &myRank) {
+		string& timestamp, string& fileId, string& outputFolder, 
+		const long& timeLimit, const int &np, const int &myRank) {
 	mpi::communicator world;
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	for(int i = 1; i < np; i++) {
-		InputMessage imsg(g->getGraphAsText(), iter, alpha, l, problem.getType(), fileId, timeLimit);
+		InputMessage imsg(g->getGraphAsText(), iter, alpha, l, problem.getType(), fileId, outputFolder, timeLimit);
 		world.send(i, INPUT_MSG_TAG, imsg);
 		cout << "Message sent to process " << i << endl;
 	}
 	// the leader does its part of the work
 	ClusteringPtr bestClustering = Grasp::executeGRASP(g, iter, alpha,
-			l, problem, timestamp, fileId, timeLimit, myRank);
+			l, problem, timestamp, fileId, outputFolder, timeLimit, myRank);
 
 	// the leader receives the processing results
 	OutputMessage omsg;

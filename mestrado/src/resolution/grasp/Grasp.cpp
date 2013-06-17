@@ -38,8 +38,8 @@ Grasp::~Grasp() {
 }
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
-		const ClusteringProblem& problem, string& timestamp, string& fileId, const long& timeLimit,
-		const int& myRank) {
+		const ClusteringProblem& problem, string& timestamp, string& fileId, string& outputFolder,
+		const long& timeLimit, const int& myRank) {
 	std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, problem, alpha, ramdomSeed);
@@ -99,9 +99,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			break;
 		}
 	}
-	ss << "Best value," << setprecision(0) << bestValue.getValue()
+	ss << "Best value," << fixed << setprecision(4) << bestValue.getValue()
 			<< "," << bestValue.getPositiveValue()
 			<< "," << bestValue.getNegativeValue()
+			<< setprecision(0)
 			<< "," << CStar->getNumberOfClusters()
 			<< "," << iterationValue
 			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution << endl;
@@ -109,7 +110,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	cout << "GRASP procedure done." << endl;
 	CStar->printClustering();
 	CStar->printClustering(ss);
-	generateOutputFile(ss, fileId, timestamp, myRank, alpha, l, iter);
+	generateOutputFile(ss, outputFolder, fileId, timestamp, myRank, alpha, l, iter);
 
 	return CStar;
 }
@@ -212,24 +213,25 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	return CStar;
 }
 
-void Grasp::generateOutputFile(stringstream& fileContents, string& fileId,
-		string& timestamp, const int &processNumber,
+void Grasp::generateOutputFile(stringstream& fileContents, string& outputFolder, 
+		string& fileId, string& timestamp, const int &processNumber,
 		const double& alpha, const int& l, const int& numberOfIterations) {
 	namespace fs = boost::filesystem;
 	// Creates the output file (with the results of the execution)
-	if (!fs::exists(fs::path("./output"))) {
-		fs::create_directories(fs::path("./output"));
+	if (!fs::exists(fs::path(outputFolder))) {
+		fs::create_directories(outputFolder);
 	}
-	if (!fs::exists(fs::path("./output/" + fileId))) {
+	outputFolder += "/";
+	if (!fs::exists(fs::path(outputFolder + fileId))) {
 		fs::create_directories(
-				fs::path("./output/" + fileId));
+				fs::path(outputFolder + fileId));
 	}
-	if (!fs::exists(fs::path("./output/" + fileId + "/" + timestamp))) {
+	if (!fs::exists(fs::path(outputFolder + fileId + "/" + timestamp))) {
 		fs::create_directories(
-				fs::path("./output/" + fileId + "/" + timestamp));
+				fs::path(outputFolder + fileId + "/" + timestamp));
 	}
 	stringstream filename;
-	filename << "./output/" << fileId << "/" << timestamp << "/"
+	filename << outputFolder << fileId << "/" << timestamp << "/"
 			<< "Node" << processNumber << "-l" << l << "a" << std::setprecision(2) << alpha	<< ".csv";
 	fs::path newFile(filename.str());
 	ofstream os;

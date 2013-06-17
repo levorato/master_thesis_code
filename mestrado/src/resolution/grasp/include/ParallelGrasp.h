@@ -31,7 +31,7 @@ public:
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha,
 			const int& l, ClusteringProblem& problem, string& timestamp, string& fileId,
-			const long& timeLimit, const int& np, const int& myRank);
+			string& outputFolder, const long& timeLimit, const int& np, const int& myRank);
 };
 
 } /* namespace grasp */

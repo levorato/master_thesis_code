@@ -7,6 +7,7 @@
 
 #include "include/CCProblem.h"
 #include "../graph/include/Clustering.h"
+#include <cmath>
 
 namespace problem {
 
@@ -50,10 +51,13 @@ Imbalance CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 						break;
 					}
 				}
-				if((g->getEdge(i, j) > 0) && (not sameCluster)) {
+				// cout <<  g->getEdge(i, j) << " " << sameCluster << " ";
+				if((g->isPositiveEdge(i, j)) && (not sameCluster)) {
+					// cout <<  g->getEdge(i, j) << " is pos edge.\n";
 					positiveSum += g->getEdge(i, j);
-				} else if((g->getEdge(i, j) < 0) && sameCluster) {
-					negativeSum += abs(g->getEdge(i, j));
+				} else if((g->isNegativeEdge(i, j)) && sameCluster) {
+					// cout <<  g->getEdge(i, j) << " is neg edge.\n";
+					negativeSum += fabs(g->getEdge(i, j));
 				}
 			}
 		}

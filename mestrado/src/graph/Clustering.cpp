@@ -9,6 +9,7 @@
 #include <limits>
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 
 using namespace std;
 
@@ -180,20 +181,20 @@ Imbalance Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray&
 				// nodes i and b are in the same cluster
 				// 1. calculates the change in the sum of internal
 				//    negative edges (within the same cluster)
-				if(g.getEdge(i, b) < 0) {
-					negativeSum += abs(g.getEdge(i, b));
+				if(g.isNegativeEdge(i, b)) {
+					negativeSum += fabs(g.getEdge(i, b));
 				}
-				if(g.getEdge(b, i) < 0) {
-					negativeSum += abs(g.getEdge(b, i));
+				if(g.isNegativeEdge(b, i)) {
+					negativeSum += fabs(g.getEdge(b, i));
 				}
 			} else {
 				// nodes i and b are in different clusters
 				// 2. calculates the change in the sum of external
 				//    positive edges (within different clusters)
-				if(g.getEdge(i, b) > 0) {
+				if(g.isPositiveEdge(i, b)) {
 					positiveSum += g.getEdge(i, b);
 				}
-				if(g.getEdge(b, i) > 0) {
+				if(g.isPositiveEdge(b, i)) {
 					positiveSum += g.getEdge(b, i);
 				}
 			}

@@ -11,6 +11,7 @@
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <cassert>
+#include <limits>
 
 /*
  * Defines the boost::graph_traits class template.
@@ -52,6 +53,16 @@ void SignedGraph::addEdge(int a, int b, Edge edge) {
 
 double SignedGraph::getEdge(const int &a, const int &b) {
 	return graph.get_edge(a, b).second.weight;
+}
+
+bool SignedGraph::isPositiveEdge(const int &a, const int &b) {
+	double value = getEdge(a, b);
+	return (value > 2 * std::numeric_limits<double>::epsilon());
+}
+
+bool SignedGraph::isNegativeEdge(const int &a, const int &b) {
+	 double value = getEdge(a, b);
+        return (value < (-2) * std::numeric_limits<double>::epsilon());
 }
 
 int SignedGraph::getDegree(const int &a) {

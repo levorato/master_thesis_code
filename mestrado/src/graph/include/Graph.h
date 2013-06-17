@@ -56,6 +56,10 @@ public:
 	 */
 	double getEdge(const int &a, const int &b);
 
+	bool isPositiveEdge(const int &a, const int &b);
+
+	bool isNegativeEdge(const int &a, const int &b);
+
 	/**
 	 * Returns the degree of vertex a.
 	 */
