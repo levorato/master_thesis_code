@@ -202,6 +202,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				return 0;
 			}
 
+			if(not vm.count("output-folder")) {
+				cout << "Please specify the output folder." << endl;
+				return 1;
+			}
+
 			if (k != -1) {
 				cout << "k value is " << k << ". RCC is enabled." << endl;
 				problemType = ClusteringProblem::RCC_PROBLEM;
