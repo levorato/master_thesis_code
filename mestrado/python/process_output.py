@@ -25,8 +25,19 @@ def main(argv):
    print 'File filter is ', filter
 
    all_files_summary = dict()
+   best_file_summary = dict()
+   avg_file_summary = dict()
+   previous_filename = ""
+   avg_value = 0
+   avg_k = 0
+   avg_time = 0
+   avg_count = 0
 
    for root, subFolders, files in os.walk(folder):
+      # sort dirs and files
+      subFolders.sort()
+      files.sort()      
+
       print "Processing folder " + ''.join(root)
       if(len(files) and ''.join(root) != folder):
          file_list = []
@@ -55,7 +66,7 @@ def main(argv):
          best_iteration = 0
          best_time = 0
          best_param = ''
-
+         
          while count >= 0:
             
            content_file = open(file_list[count], 'r')
@@ -98,7 +109,35 @@ def main(argv):
             content_file.close()
          text_file.close()
          all_files_summary[filename+"/"+datetime] = str(best_value)+", "+str(pos_value)+", "+str(neg_value)+", "+str(best_K)+", "+str(iteration)+", "+str(best_time)+", "+str(global_time)+", "+best_param
+         # armazena os valores de todas as execucoes de um mesmo grafo para calculo da media
+         if filename == previous_filename:
+            avg_value = avg_value + best_value
+            avg_k = avg_k + best_K
+            avg_time = avg_time + global_time
+            avg_count = avg_count + 1
+         else:
+            if avg_count > 0:
+               print "storing " + previous_filename
+               avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)
+            avg_value = best_value
+            avg_k = best_K
+            avg_time = global_time
+            avg_count = 1      
 
+         # captura o melhor resultado dadas todas as execucoes de um mesmo grafo
+         if best_file_summary.has_key(filename):
+            element = best_file_summary[filename]
+            value = float(element[0:element.find(',')-1])
+            if(best_value < value):
+               best_file_summary[filename] = str(all_files_summary[filename+"/"+datetime])
+         else:
+            best_file_summary[filename] = str(all_files_summary[filename+"/"+datetime])
+
+         previous_filename = filename
+
+   print "storing " + previous_filename
+   avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)
+   
    result_file = open(folder + "/summary.txt", "w")
    print "Filename, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params"
    result_file.write("Filename, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params\n")
@@ -106,6 +145,13 @@ def main(argv):
       print "%s, %s" % (key, all_files_summary[key])
       result_file.write("%s, %s\n" % (key, all_files_summary[key]))
    result_file.close()
+   print "------ Best results:"
+   for key in sorted(best_file_summary.iterkeys()):
+      print "%s, %s" % (key, best_file_summary[key])
+   print "------ Average results:"
+   for key in sorted(avg_file_summary.iterkeys()):
+      print "%s, %s" % (key, avg_file_summary[key])
+
 
 if __name__ == "__main__":
    main(sys.argv[1:])
