@@ -11,6 +11,7 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 
+#include "GainFunction.h"
 #include "../../../graph/include/Clustering.h"
 
 namespace resolution {
@@ -45,10 +46,9 @@ public:
 	int chooseRandomVertex(int x);
 
 	/**
-	 * Sorts the list according to the partial clustering c
-	 * and the SignedGraph g.
+	 * Sorts the list according to the gain function.
 	 */
-	void sort(SignedGraph* g, Clustering* c);
+	void sort(GainFunction* function);
 
 	list<int>& getVertexList();
 private:

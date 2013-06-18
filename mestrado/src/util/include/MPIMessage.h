@@ -28,19 +28,23 @@ public:
 	double alpha;
 	int l;
 	int iter;
+	int gainFunctionType;
 	int problemType;
 	string fileId;
 	string outputFolder;
 	long timeLimit;
 
 	InputMessage() : graphInputFileContents(),
-			alpha(0.0F), l(1), iter(500), problemType(0), fileId("noId"), outputFolder(""), timeLimit(1800) {
+			alpha(0.0F), l(1), iter(500), gainFunctionType(0), problemType(0),
+			fileId("noId"), outputFolder(""), timeLimit(1800) {
 
 	}
 
 	InputMessage(string graphContents, int it, double a, int neigh,
-			int pType, string id, string folder, long t) : graphInputFileContents(graphContents),
-					alpha(a), l(neigh), iter(it), problemType(pType), fileId(id),
+			int pType, int gfType, string id, string folder, long t) :
+				graphInputFileContents(graphContents),
+					alpha(a), l(neigh), iter(it), gainFunctionType(gfType),
+					problemType(pType), fileId(id),
 					outputFolder(folder), timeLimit(t) {
 
 	}
@@ -62,6 +66,7 @@ private:
 		ar & alpha;
 		ar & l;
 		ar & iter;
+		ar & gainFunctionType;
 		ar & problemType;
 		ar & fileId;
 		ar & outputFolder;

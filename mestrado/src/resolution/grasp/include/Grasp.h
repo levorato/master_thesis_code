@@ -8,6 +8,7 @@
 #ifndef GRASP_H_
 #define GRASP_H_
 
+#include "GainFunction.h"
 #include "../../include/ResolutionStrategy.h"
 #include "../../../graph/include/Graph.h"
 #include "../../../graph/include/Clustering.h"
@@ -22,7 +23,7 @@ namespace grasp {
 
 class Grasp: public ResolutionStrategy {
 public:
-	Grasp();
+	Grasp(GainFunction* f);
 	virtual ~Grasp();
 
 	/**
@@ -43,7 +44,7 @@ public:
 			const ClusteringProblem& problem, string& timestamp, string& fileId, 
 			string& outputFolder, const long& timeLimit, const int& myRank);
 
-private:
+protected:
 	/**
 	 * Constructs a clustering in a greedy ramdomized fashion,
 	 * starting from the empty set.
@@ -85,6 +86,11 @@ private:
 	 * Time spent so far in the GRASP.
 	 */
 	double timeSpentSoFar;
+
+	/**
+	 * The gain function to be used in the construction phase.
+	 */
+	GainFunction* gainFunction;
 };
 
 } /* namespace grasp */

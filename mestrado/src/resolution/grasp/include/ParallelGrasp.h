@@ -23,7 +23,7 @@ public:
 	static const int TERMINATE_MSG_TAG = 70;
 	static const int LEADER_ID = 0;
 
-	ParallelGrasp();
+	ParallelGrasp(GainFunction* f);
 	virtual ~ParallelGrasp();
 
 	/**

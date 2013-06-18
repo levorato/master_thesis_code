@@ -16,9 +16,8 @@ namespace grasp {
 using namespace util;
 namespace mpi = boost::mpi;
 
-ParallelGrasp::ParallelGrasp() {
+ParallelGrasp::ParallelGrasp(GainFunction* f) : Grasp(f) {
 	// TODO Auto-generated constructor stub
-
 }
 
 ParallelGrasp::~ParallelGrasp() {
@@ -33,7 +32,8 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	for(int i = 1; i < np; i++) {
-		InputMessage imsg(g->getGraphAsText(), iter, alpha, l, problem.getType(), fileId, outputFolder, timeLimit);
+		InputMessage imsg(g->getGraphAsText(), iter, alpha, l, gainFunction->getType(),
+				problem.getType(), fileId, outputFolder, timeLimit);
 		world.send(i, INPUT_MSG_TAG, imsg);
 		cout << "Message sent to process " << i << endl;
 	}

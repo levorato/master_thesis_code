@@ -34,10 +34,6 @@ typedef dynamic_bitset<> BoolArray;
 // Defines the cluster list
 // the list is made of boolean arrays, indicating that node i is in the cluster
 typedef vector<BoolArray> ClusterList;
-typedef struct {
-	double value;
-	int clusterNumber;
-} GainCalculation;
 
 /**
  * This class models a set of clusters of a graph. Its main data structure is
@@ -110,13 +106,6 @@ public:
 	 */
 	int clusterSize(int k);
 
-	/**
-	 * Returns the gain of a given vertex (based on the modularity matrix)
-	 * and the number of the cluster where the insertion of the vertex
-	 * brings the best gain possible (return type is GainCalculation).
-	 */
-	GainCalculation& gain(SignedGraph& graph, const int &a);
-
 	Imbalance getObjectiveFunctionValue();
 
 	void setObjectiveFunctionValue(Imbalance f);
@@ -127,8 +116,6 @@ public:
 	 */
 	Imbalance calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster,
 			const int& i);
-
-	void calculateGainList(SignedGraph &g, list<int>& nodeList);
 
 	/**
 	 * Verifies if this clustering object equals another clustering object.
@@ -154,8 +141,6 @@ private:
 	ClusterList clusterList;
 	/** the value of the objective function corresponding to this cluster */
 	Imbalance imbalance;
-	/** the map of nodes gain value */
-	map<int, GainCalculation> gainMap;
 
 	void print(std::ostream& os, ClusterList& l);
 
@@ -167,20 +152,6 @@ private:
 		ar & clusterList;
 		ar & imbalance;
 	}
-};
-
-// See Class ClusteringProblem.
-class GainFunctionComparison
-{
-	SignedGraph* graph;
-	Clustering* clustering;
-public:
-  GainFunctionComparison(SignedGraph *g, Clustering* c)
-    { graph = g;	clustering = c; }
-    bool operator () ( const int& a, const int& b ) const
-    {
-      return clustering->gain(*graph, a).value < clustering->gain(*graph, b).value;
-    }
 };
 
 typedef shared_ptr<Clustering> ClusteringPtr;

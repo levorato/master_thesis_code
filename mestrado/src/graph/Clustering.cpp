@@ -84,52 +84,6 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, int i, int k) {
 	}
 }
 
-void Clustering::calculateGainList(SignedGraph &g, list<int>& nodeList) {
-	gainMap.clear();
-	list<int, allocator<int> >::const_iterator pos;
-	// cout << "Calculating gain list..." << endl;
-	unsigned int i = 0;
-	for(i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
-		int a = *pos;
-		// cout << "Vertex " << a << endl;
-		GainCalculation gainCalculation;
-		Imbalance min(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-		gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
-
-		// For each cluster k...
-		int nc = this->getNumberOfClusters();
-		for(int k = 0; k < nc; k++) {
-			// cout << "Cluster " << k << endl;
-			Imbalance delta = this->calculateDeltaObjectiveFunction(g, this->getCluster(k), a);
-			if(delta < min) {
-				min = delta;
-				gainCalculation.clusterNumber = k;
-			}
-		}
-		// For a new cluster k+1
-		// cout << "New cluster" << endl;
-		BoolArray newCluster(MAX_NODES);
-		newCluster[a] = true;
-		Imbalance delta = this->calculateDeltaObjectiveFunction(g, newCluster, a);
-		if(delta < min) {
-			min = delta;
-			gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
-		}
-		gainCalculation.value = min.getValue();
-		// cout << "gain(a) = " << min << endl;
-		gainMap[a] = gainCalculation;
-	}
-}
-
-/**
- * TODO For a given vertex a, calculates the minimum value of imbalance (I(P))
- * of inserting 'a' into a new or an existing clustering k. Returns the minimum imbalance
- * and the cluster corresponding to it.
- */
-GainCalculation& Clustering::gain(SignedGraph& graph, const int &a) {
-	return gainMap[a];
-}
-
 void Clustering::printClustering() {
 	std::cout << "Clustering configuration: I(P) = " << fixed << setprecision(2)
 			<< this->imbalance.getValue() << "\n";

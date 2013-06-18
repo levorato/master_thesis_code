@@ -69,8 +69,8 @@ int VertexSet::chooseRandomVertex(int x) {
 	return selectedVertex;
 }
 
-void VertexSet::sort(SignedGraph* g, Clustering* c) {
-	vertexSetPtr->sort(GainFunctionComparison(g, c));
+void VertexSet::sort(GainFunction *function) {
+	vertexSetPtr->sort(function->getComparator());
 	// cout << "Vertex set sorting:" << vertexSetPtr->front() << ", " << c->gain(*g, vertexSetPtr->front()).value << endl;
 	// cout << "Vertex set sorting:" << vertexSetPtr->back() << ", " << c->gain(*g, vertexSetPtr->back()).value << endl;
 }

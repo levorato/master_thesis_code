@@ -89,7 +89,9 @@ void SignedGraph::calculateModularityMatrix() {
 }
 
 ModularityMatrix& SignedGraph::getModularityMatrix() {
-	assert(modularityMatrixCalculated);
+	if(not modularityMatrixCalculated) {
+		calculateModularityMatrix();
+	}
 	return modularityMatrix;
 }
 

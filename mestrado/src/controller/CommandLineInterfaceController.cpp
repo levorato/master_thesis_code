@@ -17,6 +17,8 @@
 #include "../util/include/TimeDateUtil.h"
 #include "../util/include/MPIMessage.h"
 #include "../problem/include/ClusteringProblemFactory.h"
+#include "../resolution/grasp/include/GainFunctionFactory.h"
+#include "../resolution/grasp/include/GainFunction.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -81,9 +83,10 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 	// TODO Auto-generated destructor stub
 }
 
-void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
-		const bool& debug, const double& alpha, const int& l, const int& numberOfIterations,
-		const long& timeLimit, const int& np, const int& myRank) {
+void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
+		string& timestamp, const bool& debug, const double& alpha, const int& l,
+		const int& numberOfIterations, const long& timeLimit, const int& np, const int& myRank,
+		const int& problemType, const int& functionType) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -93,30 +96,31 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		}
 
 		// Triggers the execution of the GRASP algorithm
-		CCProblem problem;
 		ClusteringPtr c;
 		string fileId = filePath.filename().string();
+		ClusteringProblemFactory problemFactory;
+		GainFunctionFactory functionFactory;
 		// medicao de tempo
-
 		boost::timer::cpu_timer timer;
-                timer.start();
-                boost::timer::cpu_times start_time = timer.elapsed();
+		timer.start();
+		boost::timer::cpu_times start_time = timer.elapsed();
 
 		if(np == 1) {	// sequential version of GRASP
-			Grasp resolution;
-			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, problem, 
+			Grasp resolution(&functionFactory.build(functionType));
+			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l,
+					problemFactory.build(problemType),
 					timestamp, fileId, outputFolder, timeLimit, myRank);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
-			ParallelGrasp parallelResolution;
+			ParallelGrasp parallelResolution(&functionFactory.build(functionType));
 			c = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, 
-					problem, timestamp, fileId, outputFolder, timeLimit, np, myRank);
+					problemFactory.build(problemType), timestamp, fileId, outputFolder, timeLimit, np, myRank);
 		}
 
 		 // Stops the timer and stores the elapsed time
   
-                timer.stop();
-                boost::timer::cpu_times end_time = timer.elapsed();
+		timer.stop();
+		boost::timer::cpu_times end_time = timer.elapsed();
 		double timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 		// Saves elapsed time and best solution to output file
 		string filename = outputFolder + fileId + "/" + timestamp + "/result.txt";
@@ -154,9 +158,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		try {
 			string s_alpha;
 			int numberOfIterations = 500, k = -1, l = 1;
-			bool debug = false, RCC = false, profile = false;
+			bool debug = false, profile = false;
 			string inputFileDir, outputFolder;
 			int timeLimit = 1800;
+			int problemType = ClusteringProblem::CC_PROBLEM, functionType = GainFunction::IMBALANCE;
 			CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
 			po::options_description desc("Available options:");
@@ -175,7 +180,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
 				("output-folder", po::value<string>(&outputFolder), "output folder for results files")
-				
+				("gain-function-type", po::value<int>(&functionType),
+						"0 for imbalance, 1 for modularity gain function")
 				/* TODO Resolver problema com o parametro da descricao
 				("strategy",
 							 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
@@ -198,7 +204,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 			if (k != -1) {
 				cout << "k value is " << k << ". RCC is enabled." << endl;
-				RCC = true;
+				problemType = ClusteringProblem::RCC_PROBLEM;
 			}
 
 			float alpha = 0.0;
@@ -230,7 +236,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					string ext = dir_iter->path().extension().string();
 					boost::algorithm::to_lower(ext);
 					if ((fs::is_regular_file(dir_iter->status())) &&
-							(ext == ".g" || ext == ".net") || ext == ".dat") {
+							((ext == ".g") || (ext == ".net") || (ext == ".dat"))) {
 						fs::path filePath = *dir_iter;
 						fileList.push_back(filePath);
 					}
@@ -246,12 +252,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					cout << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, outputFolder, timestamp, debug, alpha, l, numberOfIterations, timeLimit, np, myRank);
+					processInputFile(filePath, outputFolder, timestamp, debug, alpha, l,
+							numberOfIterations, timeLimit, np, myRank, problemType, functionType);
 				} else {
 					cout << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, outputFolder, timestamp, debug, alpha2, l, numberOfIterations, timeLimit, np, myRank);
+						processInputFile(filePath, outputFolder, timestamp, debug, alpha2, l,
+								numberOfIterations, timeLimit, np, myRank, problemType, functionType);
 					}
 				}
 			}
@@ -288,10 +296,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					SignedGraphPtr g = reader.readGraphFromString(imsg.graphInputFileContents);
 
 					// trigggers the local GRASP routine
-					ClusteringProblemFactory factory;
-					Grasp resolution;
+					ClusteringProblemFactory problemFactory;
+					GainFunctionFactory functionFactory;
+					Grasp resolution(&functionFactory.build(imsg.gainFunctionType));
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
-								imsg.l, factory.build(imsg.problemType), timestamp, imsg.fileId,
+								imsg.l, problemFactory.build(imsg.problemType), timestamp, imsg.fileId,
 								imsg.outputFolder, imsg.timeLimit, myRank);
 
 					// Sends the result back to the leader process

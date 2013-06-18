@@ -28,7 +28,7 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace grasp {
 
-Grasp::Grasp() : timeSpentSoFar(0.0) {
+Grasp::Grasp(GainFunction* f) : timeSpentSoFar(0.0), gainFunction(f) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -125,20 +125,20 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		// cout << "Vertex list size is " << lc.size() << endl;
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-		// according to the minimum increase in imbalance (I(P))
-		Cc->calculateGainList(*g, lc.getVertexList());
-		lc.sort(g, Cc.get());
+		// according to the value of the gain function
+		gainFunction->calculateGainList(*g, *(Cc.get()), lc.getVertexList());
+		lc.sort(gainFunction);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
 		int i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
-		// std::cout << "Random vertex is " << i << std::endl;
+		// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
 
 		// 3. Cc = C union {i}
 		// Adds the vertex i to the partial clustering C, in a way so defined by
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
-		GainCalculation gainCalculation = Cc->gain(*g, i);
+		GainCalculation gainCalculation = gainFunction->gain(i);
 		if(gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
 			Cc->addCluster(*g, i);
