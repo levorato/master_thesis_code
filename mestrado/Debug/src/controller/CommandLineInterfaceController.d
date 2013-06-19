@@ -6,12 +6,13 @@ src/controller/CommandLineInterfaceController.d \
  ../src/controller/include/../../graph/include/Graph.h \
  ../src/controller/../graph/include/Graph.h \
  ../src/controller/../resolution/grasp/include/Grasp.h \
- ../src/controller/../resolution/grasp/include/../../include/ResolutionStrategy.h \
+ ../src/controller/../resolution/grasp/include/GainFunction.h \
  ../src/controller/../resolution/grasp/include/../../../graph/include/Graph.h \
  ../src/controller/../resolution/grasp/include/../../../graph/include/Clustering.h \
  ../src/controller/../resolution/grasp/include/../../../graph/include/../../util/serialization/dynamic_bitset.hpp \
  ../src/controller/../resolution/grasp/include/../../../graph/include/Graph.h \
  ../src/controller/../resolution/grasp/include/../../../graph/include/Imbalance.h \
+ ../src/controller/../resolution/grasp/include/../../include/ResolutionStrategy.h \
  ../src/controller/../resolution/grasp/include/../../../problem/include/ClusteringProblem.h \
  ../src/controller/../resolution/grasp/include/../../../problem/include/../../graph/include/Clustering.h \
  ../src/controller/../resolution/grasp/include/../../../problem/include/../../graph/include/Imbalance.h \
@@ -23,6 +24,7 @@ src/controller/CommandLineInterfaceController.d \
  /usr/include/mpich2-x86_64/mpi.h /usr/include/mpich2-x86_64/mpio.h \
  /usr/include/mpich2-x86_64/mpi.h /usr/include/mpich2-x86_64/mpicxx.h \
  ../src/controller/../graph/include/Clustering.h \
+ ../src/controller/../graph/include/Imbalance.h \
  ../src/controller/../problem/include/ClusteringProblem.h \
  ../src/controller/../problem/include/CCProblem.h \
  ../src/controller/../problem/include/ClusteringProblem.h \
@@ -32,7 +34,11 @@ src/controller/CommandLineInterfaceController.d \
  ../src/controller/../util/include/../../graph/include/Clustering.h \
  ../src/controller/../problem/include/ClusteringProblemFactory.h \
  ../src/controller/../problem/include/CCProblem.h \
- ../src/controller/../problem/include/RCCProblem.h
+ ../src/controller/../problem/include/RCCProblem.h \
+ ../src/controller/../resolution/grasp/include/GainFunctionFactory.h \
+ ../src/controller/../resolution/grasp/include/ImbalanceGainFunction.h \
+ ../src/controller/../resolution/grasp/include/ModularityGainFunction.h \
+ ../src/controller/../resolution/grasp/include/GainFunction.h
 
 ../src/controller/include/CommandLineInterfaceController.h:
 
@@ -44,7 +50,7 @@ src/controller/CommandLineInterfaceController.d \
 
 ../src/controller/../resolution/grasp/include/Grasp.h:
 
-../src/controller/../resolution/grasp/include/../../include/ResolutionStrategy.h:
+../src/controller/../resolution/grasp/include/GainFunction.h:
 
 ../src/controller/../resolution/grasp/include/../../../graph/include/Graph.h:
 
@@ -55,6 +61,8 @@ src/controller/CommandLineInterfaceController.d \
 ../src/controller/../resolution/grasp/include/../../../graph/include/Graph.h:
 
 ../src/controller/../resolution/grasp/include/../../../graph/include/Imbalance.h:
+
+../src/controller/../resolution/grasp/include/../../include/ResolutionStrategy.h:
 
 ../src/controller/../resolution/grasp/include/../../../problem/include/ClusteringProblem.h:
 
@@ -82,6 +90,8 @@ src/controller/CommandLineInterfaceController.d \
 
 ../src/controller/../graph/include/Clustering.h:
 
+../src/controller/../graph/include/Imbalance.h:
+
 ../src/controller/../problem/include/ClusteringProblem.h:
 
 ../src/controller/../problem/include/CCProblem.h:
@@ -101,3 +111,11 @@ src/controller/CommandLineInterfaceController.d \
 ../src/controller/../problem/include/CCProblem.h:
 
 ../src/controller/../problem/include/RCCProblem.h:
+
+../src/controller/../resolution/grasp/include/GainFunctionFactory.h:
+
+../src/controller/../resolution/grasp/include/ImbalanceGainFunction.h:
+
+../src/controller/../resolution/grasp/include/ModularityGainFunction.h:
+
+../src/controller/../resolution/grasp/include/GainFunction.h:

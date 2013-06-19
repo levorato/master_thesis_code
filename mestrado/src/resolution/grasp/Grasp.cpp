@@ -185,19 +185,14 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 			break;
 		}
 		// cout << "Comparing local solution value." << endl;
-		if(Cl.get() != CStar.get()) {
-			Imbalance il = Cl->getImbalance();
-			Imbalance ic = CStar->getImbalance();
-			if(il < ic) {
-				// cout << "New local solution found: " << setprecision(2) << Cl->getObjectiveFunctionValue() << endl;
-				// Cl->printClustering();
-				CStar.reset();
-				CStar = Cl;
-				k = 1;
-			} else {
-				k++;
-				// cout << "Changed to neighborhood size l = " << k << endl;
-			}
+		Imbalance il = Cl->getImbalance();
+		Imbalance ic = CStar->getImbalance();
+		if(il < ic) {
+			// cout << "New local solution found: " << setprecision(2) << Cl->getObjectiveFunctionValue() << endl;
+			// Cl->printClustering();
+			CStar.reset();
+			CStar = Cl;
+			k = 1;
 		} else {  // no better result found in neighborhood
 			k++;
 			// cout << "Changed to neighborhood size l = " << k << endl;
