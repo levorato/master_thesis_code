@@ -222,6 +222,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 			cout << "Resolution strategy is " << strategy << endl;
 			cout << "Neighborhood size (l) is " << l << "\n";
+			string ft = (functionType == GainFunction::MODULARITY) ? "max modularity" : "min imbalance";
+			cout << "Gain function type is " << ft << endl;
 			vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {

@@ -74,5 +74,9 @@ int ModularityGainFunction::getType() {
 	return GainFunction::MODULARITY;
 }
 
+GainFunction::GainFunctionComparison ModularityGainFunction::getComparator() {
+	return GainFunctionComparison(this, false);
+}
+
 } /* namespace grasp */
 } /* namespace resolution */

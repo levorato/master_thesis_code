@@ -74,5 +74,9 @@ int ImbalanceGainFunction::getType() {
 	return GainFunction::IMBALANCE;
 }
 
+GainFunction::GainFunctionComparison ImbalanceGainFunction::getComparator() {
+	return GainFunctionComparison(this, true);
+}
+
 } /* namespace grasp */
 } /* namespace resolution */

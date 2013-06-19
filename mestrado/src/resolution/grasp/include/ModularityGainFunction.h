@@ -31,6 +31,8 @@ public:
 
 	virtual int getType();
 
+	virtual GainFunction::GainFunctionComparison getComparator();
+
 };
 
 } /* namespace grasp */

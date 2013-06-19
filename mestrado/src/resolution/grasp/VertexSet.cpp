@@ -71,8 +71,8 @@ int VertexSet::chooseRandomVertex(int x) {
 
 void VertexSet::sort(GainFunction *function) {
 	vertexSetPtr->sort(function->getComparator());
-	// cout << "Vertex set sorting:" << vertexSetPtr->front() << ", " << c->gain(*g, vertexSetPtr->front()).value << endl;
-	// cout << "Vertex set sorting:" << vertexSetPtr->back() << ", " << c->gain(*g, vertexSetPtr->back()).value << endl;
+	// cout << "Vertex set sorting:" << vertexSetPtr->front() << ", " << function->gain(vertexSetPtr->front()).value << endl;
+	// cout << "Vertex set sorting:" << vertexSetPtr->back() << ", " << function->gain(vertexSetPtr->back()).value << endl;
 }
 
 list<int>& VertexSet::getVertexList() {

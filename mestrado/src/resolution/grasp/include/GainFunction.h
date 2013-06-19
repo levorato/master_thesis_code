@@ -23,22 +23,28 @@ typedef struct {
 
 class GainFunction {
 public:
-	static const int MODULARITY = 0, IMBALANCE = 1;
+	static const int IMBALANCE = 0, MODULARITY = 1;
 
 	GainFunction();
 	virtual ~GainFunction();
 
 	class GainFunctionComparison
 	{
+	private:
 	        GainFunction* function;
+	        bool ascendingOrder;
 	public:
-	  GainFunctionComparison(GainFunction *f) : function(f)
-	  {   }
+			GainFunctionComparison(GainFunction *f, bool ascending) :
+			  function(f), ascendingOrder(ascending)
+			{   }
 
-	    bool operator () ( const int& a, const int& b ) const
-	    {
-	      return function->gain(a).value < function->gain(b).value;
-	    }
+			bool operator () ( const int& a, const int& b ) const {
+				if(ascendingOrder) {
+					return function->gain(a).value < function->gain(b).value;
+				} else {
+					return function->gain(a).value > function->gain(b).value;
+				}
+			}
 	};
 
 	/**
@@ -51,8 +57,8 @@ public:
 	virtual void calculateGainList(SignedGraph &g, Clustering &c,
 			list<int>& nodeList) = 0;
 
-	GainFunctionComparison getComparator() {
-		return GainFunctionComparison(this);
+	virtual GainFunctionComparison getComparator() {
+		return GainFunctionComparison(this, true);
 	}
 
 	virtual int getType() = 0;
