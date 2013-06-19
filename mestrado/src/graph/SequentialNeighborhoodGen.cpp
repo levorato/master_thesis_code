@@ -60,9 +60,10 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 							Imbalance bestImbalance = cBest->getImbalance();
 							if (newImbalance < bestImbalance) {
 								// cout << "Better solution found in 1-neighborhood: " << setprecision(2) << objective << "\n";
-								// Best improvement for 1-opt neighborhood
+								// First improvement for 1-opt neighborhood
 								cBest.reset();
 								cBest = cTemp;
+								return cBest;
 							}
 						}
 					}
@@ -79,9 +80,10 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 					Imbalance bestImbalance = cBest->getImbalance();
 					if (newImbalance < bestImbalance) {
 						// cout << "Better solution found in 1-neighborhood: " << setprecision(2) << objective << "\n";
-						// Best improvement for 1-opt neighborhood
+						// First improvement for 1-opt neighborhood
 						cBest.reset();
 						cBest = cTemp;
+						return cBest;
 					}
 				}
 			}
