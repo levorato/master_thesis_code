@@ -10,7 +10,10 @@
 namespace resolution {
 namespace grasp {
 
-ModularityGainFunction::ModularityGainFunction() {
+ModularityGainFunction::ModularityGainFunction(SignedGraph* g) :
+		GainFunction::GainFunction(g),
+		modularityMatrix(boost::extents[g->getN()][g->getN()]),
+		modularityMatrixCalculated(false) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -19,11 +22,36 @@ ModularityGainFunction::~ModularityGainFunction() {
 	// TODO Auto-generated destructor stub
 }
 
-void ModularityGainFunction::calculateGainList(SignedGraph &g, Clustering &c,
-		list<int>& nodeList) {
+// TODO calculate the modularity matrix of weighed graphs
+void ModularityGainFunction::calculateModularityMatrix() {
+	int m = graph->getM();
+	int numberOfNodes = graph->getN();
+	int degree[numberOfNodes];
+	// Prestore the degrees for optimezed lookup
+	for(int i = 0; i < numberOfNodes; i++) {
+		degree[i] = graph->getDegree(i);
+	}
+
+	for(int i = 0; i < numberOfNodes; i++) {
+		for(int j = 0; j < numberOfNodes; j++) {
+			int a = (graph->getEdge(i, j) != 0) ? 1 : 0;
+			modularityMatrix[i][j] = a - ( (degree[i] * degree[j]) / (2 * m) );
+		}
+	}
+	modularityMatrixCalculated = true;
+}
+
+ModularityMatrix& ModularityGainFunction::getModularityMatrix() {
+	if(not modularityMatrixCalculated) {
+		calculateModularityMatrix();
+	}
+	return modularityMatrix;
+}
+
+void ModularityGainFunction::calculateGainList(Clustering &c, list<int>& nodeList) {
 	gainMap.clear();
-	ModularityMatrix& modularityMatrix = g.getModularityMatrix();
-	int n = g.getN();
+	ModularityMatrix& modularityMatrix = getModularityMatrix();
+	int n = graph->getN();
 	list<int, allocator<int> >::const_iterator pos;
 	// cout << "Calculating gain list..." << endl;
 	// For each vertex a

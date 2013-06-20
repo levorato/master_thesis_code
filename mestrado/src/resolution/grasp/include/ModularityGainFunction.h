@@ -10,12 +10,17 @@
 
 #include "GainFunction.h"
 
+#include <boost/multi_array.hpp>
+
 namespace resolution {
 namespace grasp {
 
+// the modularity matrix: a matrix of double
+typedef multi_array<double, 2> ModularityMatrix;
+
 class ModularityGainFunction: public resolution::grasp::GainFunction {
 public:
-	ModularityGainFunction();
+	ModularityGainFunction(SignedGraph* g);
 	virtual ~ModularityGainFunction();
 
 	virtual GainCalculation& gain(const int &a);
@@ -24,14 +29,20 @@ public:
 	 * Calculates the vertex gain list based on the modularity matrix
 	 * of the graph.
 	 */
-	virtual void calculateGainList(SignedGraph &g, Clustering &c,
-				list<int>& nodeList);
+	virtual void calculateGainList(Clustering &c, list<int>& nodeList);
 
 	virtual bool operator () ( const int& a, const int& b );
 
 	virtual int getType();
 
 	virtual GainFunction::GainFunctionComparison getComparator();
+
+protected:
+	bool modularityMatrixCalculated;
+	ModularityMatrix modularityMatrix;
+
+	virtual void calculateModularityMatrix();
+	ModularityMatrix& getModularityMatrix();
 
 };
 

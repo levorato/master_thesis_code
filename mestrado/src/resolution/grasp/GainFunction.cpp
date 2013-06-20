@@ -10,7 +10,7 @@
 namespace resolution {
 namespace grasp {
 
-GainFunction::GainFunction() {
+GainFunction::GainFunction(SignedGraph* g) : graph(g) {
 	// TODO Auto-generated constructor stub
 
 }

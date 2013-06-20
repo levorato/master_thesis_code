@@ -15,13 +15,12 @@ namespace grasp {
 
 class ImbalanceGainFunction: public resolution::grasp::GainFunction {
 public:
-	ImbalanceGainFunction();
+	ImbalanceGainFunction(SignedGraph* g);
 	virtual ~ImbalanceGainFunction();
 
 	virtual GainCalculation& gain(const int &a);
 
-	virtual void calculateGainList(SignedGraph &g, Clustering &c,
-				list<int>& nodeList);
+	virtual void calculateGainList(Clustering &c, list<int>& nodeList);
 
 	virtual bool operator () ( const int& a, const int& b );
 

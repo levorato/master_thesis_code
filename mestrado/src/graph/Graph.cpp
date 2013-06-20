@@ -29,8 +29,7 @@ using namespace boost;
 namespace clusteringgraph {
 
 SignedGraph::SignedGraph(const int &numberOfNodes) : graph(numberOfNodes),
-		modularityMatrix(boost::extents[numberOfNodes][numberOfNodes]),
-		modularityMatrixCalculated(false), n(numberOfNodes) {
+		n(numberOfNodes) {
 
 }
 
@@ -69,30 +68,18 @@ int SignedGraph::getDegree(const int &a) {
 	return in_degree(a, graph);
 }
 
-// TODO calculate the modularity matrix of weighed graphs
-void SignedGraph::calculateModularityMatrix() {
-	int m = this->getM();
-	int numberOfNodes = this->getN();
-	int degree[numberOfNodes];
-	// Prestore the degrees for optimezed lookup
-	for(int i = 0; i < numberOfNodes; i++) {
-		degree[i] = this->getDegree(i);
-	}
-
-	for(int i = 0; i < numberOfNodes; i++) {
-		for(int j = 0; j < numberOfNodes; j++) {
-			int a = (this->getEdge(i, j) != 0) ? 1 : 0;
-			modularityMatrix[i][j] = a - ( (degree[i] * degree[j]) / (2 * m) );
+int SignedGraph::getNegativeDegree(const int &a) {
+	int sum = 0;
+	// O(n)
+	typename adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
+	for (boost::tie(f, l) = in_edges(a, graph); f != l; ++f) {
+		if(((Edge*)f->get_property())->weight < 0) {
+			++sum;
 		}
 	}
-	modularityMatrixCalculated = true;
-}
-
-ModularityMatrix& SignedGraph::getModularityMatrix() {
-	if(not modularityMatrixCalculated) {
-		calculateModularityMatrix();
-	}
-	return modularityMatrix;
+	// cout << "Negative degree of vertex " << a << " is " << sum << endl;
+	// cout << "Positive degree of vertex " << a << " is " << getDegree(a) << endl;
+	return sum;
 }
 
 void SignedGraph::printGraph() {

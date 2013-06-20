@@ -11,7 +11,6 @@
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_utility.hpp>
-#include <boost/multi_array.hpp>
 #include <boost/shared_ptr.hpp>
 
 // Maximum number of nodes in a graph
@@ -28,8 +27,6 @@ struct Edge {
     Edge(double w) : weight(w) { }
 };
 typedef adjacency_matrix<directedS, no_property, Edge > DirectedGraph;
-// the modularity matrix: a matrix of double
-typedef multi_array<double, 2> ModularityMatrix;
 
 class SignedGraph {
 public:
@@ -66,11 +63,10 @@ public:
 	int getDegree(const int &a);
 
 	/**
-	 * Calculates the modularity matrix for this graph.
+	 * Returns the negative degree of vertex a, that is, the sum of
+	 * negative incoming edges.
 	 */
-	void calculateModularityMatrix();
-
-	ModularityMatrix& getModularityMatrix();
+	int getNegativeDegree(const int &a);
 
 	void printGraph();
 
@@ -80,9 +76,7 @@ public:
 
 private:
 	DirectedGraph graph;
-	/** the modularity matrix */
-	ModularityMatrix modularityMatrix;
-	bool modularityMatrixCalculated;
+
 	/* the number of nodes of the graph */
 	int n;
 

@@ -23,9 +23,9 @@ typedef struct {
 
 class GainFunction {
 public:
-	static const int IMBALANCE = 0, MODULARITY = 1;
+	static const int IMBALANCE = 0, MODULARITY = 1, NEGATIVE_MODULARITY = 2;
 
-	GainFunction();
+	GainFunction(SignedGraph* g);
 	virtual ~GainFunction();
 
 	class GainFunctionComparison
@@ -54,8 +54,7 @@ public:
 	 */
 	virtual GainCalculation& gain(const int &a) = 0;
 
-	virtual void calculateGainList(SignedGraph &g, Clustering &c,
-			list<int>& nodeList) = 0;
+	virtual void calculateGainList(Clustering &c, list<int>& nodeList) = 0;
 
 	virtual GainFunctionComparison getComparator() {
 		return GainFunctionComparison(this, true);
@@ -64,6 +63,8 @@ public:
 	virtual int getType() = 0;
 
 protected:
+	/** the graph this gain function refers to */
+	SignedGraph* graph;
 	/** the map of nodes' gain value */
 	map<int, GainCalculation> gainMap;
 };

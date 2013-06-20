@@ -99,7 +99,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		ClusteringPtr c;
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
-		GainFunctionFactory functionFactory;
+		GainFunctionFactory functionFactory(g.get());
 		// medicao de tempo
 		boost::timer::cpu_timer timer;
 		timer.start();
@@ -181,7 +181,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
 				("output-folder", po::value<string>(&outputFolder), "output folder for results files")
 				("gain-function-type", po::value<int>(&functionType),
-						"0 for imbalance, 1 for modularity gain function")
+						"0 for imbalance, 1 for modularity gain function, 2 for negative modularity gain function")
 				/* TODO Resolver problema com o parametro da descricao
 				("strategy",
 							 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
@@ -222,8 +222,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 			cout << "Resolution strategy is " << strategy << endl;
 			cout << "Neighborhood size (l) is " << l << "\n";
-			string ft = (functionType == GainFunction::MODULARITY) ? "max modularity" : "min imbalance";
-			cout << "Gain function type is " << ft << endl;
+			cout << "Gain function type is ";
+			if(functionType == GainFunction::MODULARITY) {
+				cout << "max modularity\n";
+			} else if(functionType == GainFunction::NEGATIVE_MODULARITY) {
+				cout << "max negative modularity\n";
+			} else {
+				cout << "min imbalance\n";
+			}
 			vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
@@ -304,7 +310,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 					// trigggers the local GRASP routine
 					ClusteringProblemFactory problemFactory;
-					GainFunctionFactory functionFactory;
+					GainFunctionFactory functionFactory(g.get());
 					Grasp resolution(&functionFactory.build(imsg.gainFunctionType));
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
 								imsg.l, problemFactory.build(imsg.problemType), timestamp, imsg.fileId,

@@ -126,7 +126,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 		// according to the value of the gain function
-		gainFunction->calculateGainList(*g, *(Cc.get()), lc.getVertexList());
+		gainFunction->calculateGainList(*(Cc.get()), lc.getVertexList());
 		lc.sort(gainFunction);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc

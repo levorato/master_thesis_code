@@ -10,7 +10,8 @@
 namespace resolution {
 namespace grasp {
 
-GainFunctionFactory::GainFunctionFactory() {
+GainFunctionFactory::GainFunctionFactory(SignedGraph* g) :
+		imbalanceFunction(g), modularityFunction(g), negativeModularityGainFunction(g) {
 	// TODO Auto-generated constructor stub
 
 }
