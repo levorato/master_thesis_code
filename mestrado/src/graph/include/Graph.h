@@ -68,6 +68,8 @@ public:
 	 */
 	int getNegativeDegree(const int &a);
 
+	int getPositiveDegree(const int &a);
+
 	void printGraph();
 
 	string getGraphAsText();

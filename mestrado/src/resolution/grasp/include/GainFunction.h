@@ -24,6 +24,7 @@ typedef struct {
 class GainFunction {
 public:
 	static const int IMBALANCE = 0, MODULARITY = 1, NEGATIVE_MODULARITY = 2;
+	static const int POSITIVE_NEGATIVE_MODULARITY = 3;
 
 	GainFunction(SignedGraph* g);
 	virtual ~GainFunction();

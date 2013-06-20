@@ -26,7 +26,7 @@ ModularityGainFunction::~ModularityGainFunction() {
 void ModularityGainFunction::calculateModularityMatrix() {
 	int m = graph->getM();
 	int numberOfNodes = graph->getN();
-	int degree[numberOfNodes];
+	double degree[numberOfNodes];
 	// Prestore the degrees for optimezed lookup
 	for(int i = 0; i < numberOfNodes; i++) {
 		degree[i] = graph->getDegree(i);
@@ -34,8 +34,8 @@ void ModularityGainFunction::calculateModularityMatrix() {
 
 	for(int i = 0; i < numberOfNodes; i++) {
 		for(int j = 0; j < numberOfNodes; j++) {
-			int a = (graph->getEdge(i, j) != 0) ? 1 : 0;
-			modularityMatrix[i][j] = a - ( (degree[i] * degree[j]) / (2 * m) );
+			double a = (graph->getEdge(i, j) != 0) ? 1.0 : 0.0;
+			modularityMatrix[i][j] = a - ( (degree[i] * degree[j]) / (2.0 * m) );
 		}
 	}
 	modularityMatrixCalculated = true;

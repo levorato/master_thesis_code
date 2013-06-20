@@ -77,8 +77,18 @@ int SignedGraph::getNegativeDegree(const int &a) {
 			++sum;
 		}
 	}
-	// cout << "Negative degree of vertex " << a << " is " << sum << endl;
-	// cout << "Positive degree of vertex " << a << " is " << getDegree(a) << endl;
+	return sum;
+}
+
+int SignedGraph::getPositiveDegree(const int &a) {
+	int sum = 0;
+	// O(n)
+	typename adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
+	for (boost::tie(f, l) = in_edges(a, graph); f != l; ++f) {
+		if(((Edge*)f->get_property())->weight > 0) {
+			++sum;
+		}
+	}
 	return sum;
 }
 

@@ -181,7 +181,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
 				("output-folder", po::value<string>(&outputFolder), "output folder for results files")
 				("gain-function-type", po::value<int>(&functionType),
-						"0 for imbalance, 1 for modularity gain function, 2 for negative modularity gain function")
+						"0 for imbalance, 1 for modularity gain function, 2 for negative modularity gain function, 3 for positive-negative modularity gain function")
 				/* TODO Resolver problema com o parametro da descricao
 				("strategy",
 							 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
@@ -227,6 +227,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				cout << "max modularity\n";
 			} else if(functionType == GainFunction::NEGATIVE_MODULARITY) {
 				cout << "max negative modularity\n";
+			} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY) {
+				cout << "max positive-negative modularity\n";
 			} else {
 				cout << "min imbalance\n";
 			}

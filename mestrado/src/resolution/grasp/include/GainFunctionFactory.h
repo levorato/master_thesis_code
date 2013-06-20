@@ -11,6 +11,7 @@
 #include "ImbalanceGainFunction.h"
 #include "ModularityGainFunction.h"
 #include "NegativeModularityGainFunction.h"
+#include "PositiveNegativeModularityGainFunction.h"
 #include "GainFunction.h"
 
 namespace resolution {
@@ -21,6 +22,7 @@ public:
 	ImbalanceGainFunction imbalanceFunction;
 	ModularityGainFunction modularityFunction;
 	NegativeModularityGainFunction negativeModularityGainFunction;
+	PositiveNegativeModularityGainFunction positiveNegativeModularityGainFunction;
 
 	GainFunctionFactory(SignedGraph* graph);
 	virtual ~GainFunctionFactory();
@@ -30,6 +32,8 @@ public:
 			return modularityFunction;
 		} else if(functionType == GainFunction::IMBALANCE) {
 			return imbalanceFunction;
+		} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY) {
+			return positiveNegativeModularityGainFunction;
 		} else {
 			return negativeModularityGainFunction;
 		}
