@@ -43,7 +43,7 @@ void ImbalanceGainFunction::calculateGainList(Clustering &c, list<int>& nodeList
 		}
 		// For a new cluster k+1
 		// cout << "New cluster" << endl;
-		BoolArray newCluster(MAX_NODES);
+		BoolArray newCluster(graph->getN());
 		newCluster[a] = true;
 		Imbalance delta = c.calculateDeltaObjectiveFunction(*graph, newCluster, a);
 		if(delta.getValue() < min) {

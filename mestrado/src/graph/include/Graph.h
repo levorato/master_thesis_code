@@ -14,7 +14,7 @@
 #include <boost/shared_ptr.hpp>
 
 // Maximum number of nodes in a graph
-#define MAX_NODES 1000
+// #define MAX_NODES 200000
 
 using namespace boost;
 using namespace std;

@@ -40,7 +40,7 @@ int Clustering::getNumberOfClusters() {
 
 BoolArray Clustering::addCluster(SignedGraph& g, const int& i) {
 	// 1. Create a new cluster in the list
-	BoolArray array(MAX_NODES);
+	BoolArray array(g.getN());
 
 	// Add i to the newly created cluster
 	// std::cout << "Adding vertex " << i << " to a new cluster."<< std::endl;
@@ -101,7 +101,7 @@ void Clustering::print(std::ostream& os, ClusterList& l)
 	for(int k = 0; k < numberOfClusters; k++) {
     	os << " Partition " << k << " (" << clusterSize(k) <<  "): [ ";
     	BoolArray array = l.at(k);
-    	for(int i = 0; i < MAX_NODES; i++) {
+    	for(int i = 0; i < array.size(); i++) {
     		if(array[i]) {
     			os << i << " ";
     		}
