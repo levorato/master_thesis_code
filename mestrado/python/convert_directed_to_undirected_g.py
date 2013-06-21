@@ -33,6 +33,7 @@ def main(argv):
    value = 0
    vertex_count = 0
    edge_count = 0
+   graph = {}
    out_matrix = {}
    additions = list()
    
@@ -41,33 +42,60 @@ def main(argv):
          line = ''.join(row)
          pos = line.find("Nodes:")
          if pos > 0:
-            vertex_count = long(line[pos+6:line.find("Edges")-1].strip())
+            vertex_count = int(line[pos+6:line.find("Edges")-1].strip())
             print "Vertex count is " + str(vertex_count)
-            matrix = array('i',(0,)*vertex_count*vertex_count)
+      elif len(row) == 1:  # file header with num of vertices and edges
+         x = row[0]
+         vertex_count = int(x[:x.find(" ")])
       else:
-         vertex_a = long(row[0])
-         vertex_b = long(row[1])
-         value = long(row[2])
-         matrix[vertex_a+vertex_b*vertex_count] = value
-   
-   # for each pair os nodes, processes edges in both directions
-   for i in range(0,vertex_count):
-      for j in range(0 ,i-1):
-         edge_in = matrix[i+j*vertex_count]
-         edge_out = matrix[j+i*vertex_count]
-         if edge_in == edge_out:
-            if edge_in != None:
-               out_matrix[(i,j)] = edge_in
+         vertex_a = int(row[0])
+         vertex_b = int(row[1])
+         value = int(row[2])
+         key = (vertex_a,vertex_b)
+         if not graph.has_key(key):
+            graph[key] = value
          else:
-            additions.append(str(i)+"\t"+str(j)+"\t"+"*")
+            if graph[key] != value:
+               print "WARNING: duplicated directed edge with different value!"
+         rkey = (vertex_b,vertex_a)
+         value2 = graph.get(rkey)
+         if value2 != None:
+            if key != rkey:  # ignore self-relationships
+               if value == value2:
+                  if vertex_a < vertex_b:
+                     out_matrix[key] = value
+                  else:
+                     out_matrix[rkey] = value
+               else:
+                  additions.append(str(vertex_a)+"\t"+str(vertex_b)+"\t"+"*\n")
+               del graph[key]
+               del graph[rkey]
+               edge_count = edge_count + 1
+            else:
+               del graph[key]
 
-   for key in sorted(out_matrix.iterkeys()):
-      skey = ''.join(key)
+   edge_count = edge_count + len(graph)
+   
+   # prints file header
+   g_file.write(str(vertex_count)+" "+str(edge_count)+"\n")
+   # for each remaining edges...
+   for key in sorted(graph.iterkeys()):
+      skey = ''.join(str(key))
       v_a = skey[1:skey.find(",")]
       v_b = skey[skey.find(",")+2:skey.find(")")]
-      g_file.write("%s\t%s\t%s\n" % (v_a, v_b, str(out_matrix[key])))
-   #for item in line_list:
-   #   g_file.write(item)
+      g_file.write("%s\t%s\t%s\n" % (str(v_a).rstrip("L"), str(v_b).rstrip("L"), str(graph[key])))
+      print "%s\t%s\t%s" % (str(v_a).rstrip("L"), str(v_b).rstrip("L"), str(graph[key]))
+
+   for key in sorted(out_matrix.iterkeys()):
+      skey = ''.join(str(key))
+      v_a = skey[1:skey.find(",")]
+      v_b = skey[skey.find(",")+2:skey.find(")")]
+      g_file.write("%s\t%s\t%s\n" % (str(v_a).rstrip("L"), str(v_b).rstrip("L"), str(out_matrix[key])))
+      print "%s\t%s\t%s" % (str(v_a).rstrip("L"), str(v_b).rstrip("L"), str(out_matrix[key]))
+
+   for item in additions:
+      g_file.write(item)
+
    input_file.close
    g_file.close
    print "Output file successfully generated."
