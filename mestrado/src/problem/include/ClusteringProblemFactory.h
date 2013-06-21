@@ -24,9 +24,11 @@ public:
 	ClusteringProblem& build(int problemType) {
 		if(problemType == ClusteringProblem::CC_PROBLEM) {
 			return ccProblem;
-		} else {
+		} else if(problemType == ClusteringProblem::RCC_PROBLEM) {
 			return rccProblem;
 		}
+		cerr << "Unknown problem type to build!!! Returnin CC problem instance.\n";
+		return ccProblem;
 	}
 };
 

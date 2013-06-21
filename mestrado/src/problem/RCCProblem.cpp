@@ -27,6 +27,7 @@ int RCCProblem::getType() const {
  * Returns he Relaxed Imbalance of a partition P (RI(P)).
  */
 Imbalance RCCProblem::objectiveFunction(SignedGraph* g, Clustering *c) const {
+	cerr << "Unimplemented function called!!!n";
 	return Imbalance(0, 0);
 }
 

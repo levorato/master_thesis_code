@@ -62,10 +62,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		boost::timer::cpu_times start_time = timer.elapsed();
 
 		// 1. Construct the clustering
-		Cc = constructClustering(g, problem, alpha, ramdomSeed);
+		Cc = constructClustering(g, problem, alpha, myRank);
 
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, neig, timeLimit);
+		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, neig, timeLimit, myRank);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl->getImbalance();
@@ -116,7 +116,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 }
 
 ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem& problem,
-		double alpha, unsigned int ramdomSeed) {
+		double alpha, int myRank) {
 	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(g->getN()); // L(Cc) = V(G)
 	// std::cout << "GRASP construct clustering...\n";
@@ -153,14 +153,15 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 
 		// Cc->printClustering();
 	}
-	// std::cout << "\nInitial clustering completed.\n";
+	// std::cout << endl << myRank << ": Initial clustering completed.\n";
 	Cc->setImbalance(problem.objectiveFunction(g, Cc.get()));
 	// Cc->printClustering();
 	return Cc;
 }
 
 ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const ClusteringProblem& problem, NeighborhoodListGenerator &neig, const long& timeLimit) {
+		const ClusteringProblem& problem, NeighborhoodListGenerator &neig, const long& timeLimit,
+		const int& myRank) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
@@ -181,14 +182,14 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// TODO Parellelize here!
 		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
 		if(Cl->getImbalance().getValue() < 0.0) {
-			cerr << "Objective function below zero. Error." << endl;
+			cerr << myRank << ": Objective function below zero. Error." << endl;
 			break;
 		}
 		// cout << "Comparing local solution value." << endl;
 		Imbalance il = Cl->getImbalance();
 		Imbalance ic = CStar->getImbalance();
 		if(il < ic) {
-			// cout << "New local solution found: " << setprecision(2) << Cl->getObjectiveFunctionValue() << endl;
+			// cout << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			// Cl->printClustering();
 			CStar.reset();
 			CStar = Cl;

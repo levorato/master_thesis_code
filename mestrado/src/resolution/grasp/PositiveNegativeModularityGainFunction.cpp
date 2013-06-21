@@ -42,7 +42,7 @@ void PositiveNegativeModularityGainFunction::calculateModularityMatrix() {
 }
 
 int PositiveNegativeModularityGainFunction::getType() {
-	return GainFunction::NEGATIVE_MODULARITY;
+	return GainFunction::POSITIVE_NEGATIVE_MODULARITY;
 }
 
 } /* namespace grasp */

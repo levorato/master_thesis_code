@@ -107,6 +107,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 	// captura as arestas do grafo com seus valores
 	if(formatType == 2 || formatType == 1) {
+		long imbalance = 0;
 		while (not lines.empty()) {
 			string line = lines.back();
 			trim(line);
@@ -123,17 +124,22 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				int a = boost::lexical_cast<int>(vec.at(0));
 				int b = boost::lexical_cast<int>(vec.at(1));
 				double value = 0.0;
-				sscanf(vec.at(2).c_str(), "%lf", &value);
-				if(formatType == 2) {
-					g->addEdge(a, b, value);
-					// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
-				} else {
-					g->addEdge(a - 1, b - 1, value);
-					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+				if(vec.at(2) != "*") {
+					sscanf(vec.at(2).c_str(), "%lf", &value);
+					if(formatType == 2) {
+						g->addEdge(a, b, value);
+						// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
+					} else {
+						g->addEdge(a - 1, b - 1, value);
+						// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+					}
+				} else {  // special notation for directed edges (add 1 to imbalance)
+					imbalance++;
 				}
 			} catch( boost::bad_lexical_cast const& ) {
 				std::cerr << "Error: input string was not valid" << std::endl;
 			}
+
 		}
 	} else if(formatType == 0) {
 		char_separator<char> sep3(" (),\t");

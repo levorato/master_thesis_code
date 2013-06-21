@@ -56,7 +56,7 @@ protected:
 	 * @return Clustering C(c)
 	 */
 	ClusteringPtr constructClustering(SignedGraph *g, const ClusteringProblem& problem,
-			double alpha, unsigned int ramdomSeed);
+			double alpha, int myRank);
 
 	/**
 	 * Executes the local search algorithm. Repeatedly derives
@@ -74,7 +74,7 @@ protected:
 	 */
 	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 			const ClusteringProblem& problem, NeighborhoodListGenerator &neig,
-			const long& timeLimit);
+			const long& timeLimit, const int& myRank);
 
 	/**
 	 * TODO document this method
