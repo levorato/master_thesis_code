@@ -23,7 +23,7 @@ namespace grasp {
 
 class Grasp: public ResolutionStrategy {
 public:
-	Grasp(GainFunction* f);
+	Grasp(GainFunction* f, unsigned long seed);
 	virtual ~Grasp();
 
 	/**
@@ -91,6 +91,11 @@ protected:
 	 * The gain function to be used in the construction phase.
 	 */
 	GainFunction* gainFunction;
+
+	/**
+	 * Random seed.
+	 */
+	unsigned long randomSeed;
 };
 
 } /* namespace grasp */

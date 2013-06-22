@@ -12,6 +12,7 @@
 #include <boost/nondet_random.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/linear_congruential.hpp>
+#include <boost/timer/timer.hpp>
 #include <iomanip>
 #include "include/SequentialNeighborhoodGen.h"
 
@@ -24,16 +25,21 @@ SequentialNeighborhoodGenerator::SequentialNeighborhoodGenerator(int n) :
 
 // TODO This method can be parallelized with MPI: neighborhood generation across several processors.
 ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, SignedGraph* g,
-		Clustering* clustering, const ClusteringProblem& problem) {
+		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
+		double timeLimit, unsigned long randomSeed) {
 	int nc = clustering->getNumberOfClusters();
 	int n = g->getN();
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	ClusteringPtr cBest = make_shared<Clustering>(*clustering, g->getN());
 	// random number generators used in loop randomization
-	boost::minstd_rand generator(1234u);
-	generator.seed(boost::random::random_device()());
+	boost::minstd_rand generator(randomSeed);
+	generator.seed(randomSeed);
 	boost::random::uniform_int_distribution<> distnc(0,nc-1);
 	boost::random::uniform_int_distribution<> distN(0,n-1);
+	// 0. Triggers local processing time calculation
+	boost::timer::cpu_timer timer;
+	timer.start();
+	boost::timer::cpu_times start_time = timer.elapsed();
 
 	if (l == 1) {  // 1-opt
 		for (int k1 = distnc(generator), cont1 = 0; cont1 < nc; cont1++, k1 = (k1 + 1) % nc) {
@@ -66,6 +72,10 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 								return cBest;
 							}
 						}
+						// return if time limit is exceeded
+						boost::timer::cpu_times end_time = timer.elapsed();
+						double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+						if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
 					}
 					// Option 2: node i is moved to a new cluster, alone
 					// removes node i from cluster1 and inserts in newCluster
@@ -128,6 +138,10 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 													// cout << "Better solution found in 2-neighborhood." << endl;
 													return cTemp;
 												}
+												// return if time limit is exceeded
+												boost::timer::cpu_times end_time = timer.elapsed();
+												double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+												if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
 											}
 										}
 										// Option 2: node j is moved to a new cluster, alone
@@ -144,6 +158,10 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 											return cTemp;
 										}
 									}
+									// return if time limit is exceeded
+									boost::timer::cpu_times end_time = timer.elapsed();
+									double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+									if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
 								}
 								// Option 3: node i is moved to a new cluster, alone, and
 								//           node j is moved to another existing cluster k4
@@ -163,6 +181,10 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 											return cTemp;
 										}
 									}
+									// return if time limit is exceeded
+									boost::timer::cpu_times end_time = timer.elapsed();
+									double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+									if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
 								}
 								// Option 4: nodes i and j are moved to new clusters, and left alone
 								// cout << "Option 4" << endl;
@@ -176,6 +198,10 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 									// cout << "Better solution found in 2-neighborhood." << endl;
 									return cTemp;
 								}
+								// return if time limit is exceeded
+								boost::timer::cpu_times end_time = timer.elapsed();
+								double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+								if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
 							}
 						}
 					}

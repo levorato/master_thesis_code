@@ -36,7 +36,8 @@ public:
          * @return NeighborhoodList*
          */
         virtual ClusteringPtr generateNeighborhood(int l, SignedGraph* g,
-                        Clustering* clustering, const ClusteringProblem& problem) = 0;
+                        Clustering* clustering, const ClusteringProblem& problem,
+                        double timeSpentSoFar, double timeLimit, unsigned long randomSeed) = 0;
 
 protected:
         int numberOfNodes;

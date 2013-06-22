@@ -38,6 +38,8 @@ using namespace boost::mpi;
 #include <cstdlib>
 #include <stdexcept>
 #include <execinfo.h>
+#include <unistd.h>
+#include <time.h>
 
 #include <iostream>
 #include <fstream>
@@ -86,7 +88,7 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
 		string& timestamp, const bool& debug, const double& alpha, const int& l,
 		const int& numberOfIterations, const long& timeLimit, const int& np, const int& myRank,
-		const int& problemType, const int& functionType) {
+		const int& problemType, const int& functionType, const unsigned long& seed) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -106,13 +108,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		boost::timer::cpu_times start_time = timer.elapsed();
 
 		if(np == 1) {	// sequential version of GRASP
-			Grasp resolution(&functionFactory.build(functionType));
+			Grasp resolution(&functionFactory.build(functionType), seed);
 			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l,
 					problemFactory.build(problemType),
 					timestamp, fileId, outputFolder, timeLimit, myRank);
 		} else {  // parallel version
 			// distributes GRASP processing among the processes and summarizes the result
-			ParallelGrasp parallelResolution(&functionFactory.build(functionType));
+			ParallelGrasp parallelResolution(&functionFactory.build(functionType), seed);
 			c = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, 
 					problemFactory.build(problemType), timestamp, fileId, outputFolder, timeLimit, np, myRank);
 		}
@@ -143,6 +145,21 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 	}
 }
 
+// http://www.concentric.net/~Ttwang/tech/inthash.htm
+unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
+{
+    a=a-b;  a=a-c;  a=a^(c >> 13);
+    b=b-c;  b=b-a;  b=b^(a << 8);
+    c=c-a;  c=c-b;  c=c^(b >> 13);
+    a=a-b;  a=a-c;  a=a^(c >> 12);
+    b=b-c;  b=b-a;  b=b^(a << 16);
+    c=c-a;  c=c-b;  c=c^(b >> 5);
+    a=a-b;  a=a-c;  a=a^(c >> 3);
+    b=b-c;  b=b-a;  b=b^(a << 10);
+    c=c-a;  c=c-b;  c=c^(b >> 15);
+    return c;
+}
+
 int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[],
 		const int &myRank, const int &np) {
 
@@ -150,6 +167,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	std::set_terminate( handler );
 	// timestamp used for output files
 	string timestamp = TimeDateUtil::getTimeAndDateAsString();
+	// random seed used in grasp
+	/*
+	* Caveat: std::time(0) is not a very good truly-random seed.  When
+	* called in rapid succession, it could return the same values, and
+	* thus the same random number sequences could ensue.
+	* Instead, we are using boost::random_device
+	* http://stackoverflow.com/questions/4329284/c-boost-random-numeric-generation-problem
+	* http://stackoverflow.com/questions/322938/recommended-way-to-initialize-srand
+	*/
+	unsigned long seed = mix(clock(), time(NULL), getpid());
 
 	// codigo do processor lider
 	if(myRank == 0) {
@@ -268,13 +295,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					cout << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, timestamp, debug, alpha, l,
-							numberOfIterations, timeLimit, np, myRank, problemType, functionType);
+							numberOfIterations, timeLimit, np, myRank, problemType, functionType, seed);
 				} else {
 					cout << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, timestamp, debug, alpha2, l,
-								numberOfIterations, timeLimit, np, myRank, problemType, functionType);
+								numberOfIterations, timeLimit, np, myRank, problemType, functionType, seed);
 					}
 				}
 			}
@@ -313,7 +340,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// trigggers the local GRASP routine
 					ClusteringProblemFactory problemFactory;
 					GainFunctionFactory functionFactory(g.get());
-					Grasp resolution(&functionFactory.build(imsg.gainFunctionType));
+					Grasp resolution(&functionFactory.build(imsg.gainFunctionType), seed);
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsg.iter, imsg.alpha,
 								imsg.l, problemFactory.build(imsg.problemType), timestamp, imsg.fileId,
 								imsg.outputFolder, imsg.timeLimit, myRank);

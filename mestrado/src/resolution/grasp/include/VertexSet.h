@@ -29,7 +29,7 @@ public:
 	/**
 	 * Creates a vertex set containing nodes 0..n-1.
 	 */
-	VertexSet(int n);
+	VertexSet(unsigned long randomSeed, int n);
 	virtual ~VertexSet();
 
 	/**
@@ -53,6 +53,10 @@ public:
 	list<int>& getVertexList();
 private:
 	GainFunctionVertexSetPtr vertexSetPtr;
+	/**
+	 * The random seed used by random vertex choose.
+	 */
+	unsigned long seed;
 };
 
 } /* namespace grasp */

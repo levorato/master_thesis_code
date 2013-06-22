@@ -18,7 +18,8 @@ public:
 	virtual ~SequentialNeighborhoodGenerator();
 
 	virtual ClusteringPtr generateNeighborhood(int l, SignedGraph* g,
-				Clustering* clustering, const ClusteringProblem& problem);
+				Clustering* clustering, const ClusteringProblem& problem,
+				double timeSpentSoFar, double timeLimit, unsigned long randomSeed);
 };
 
 } /* namespace clusteringgraph */

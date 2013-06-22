@@ -15,7 +15,8 @@
 namespace resolution {
 namespace grasp {
 
-VertexSet::VertexSet(int n) : vertexSetPtr(new GainFunctionVertexSet) {
+VertexSet::VertexSet(unsigned long randomSeed, int n) : seed(randomSeed),
+		vertexSetPtr(new GainFunctionVertexSet) {
 	for(int i = 0; i < n; i++) {
 		vertexSetPtr->push_back(i);
 	}
@@ -35,14 +36,8 @@ void VertexSet::removeVertex(int i) {
 
 // TODO aceitar parametro seed para a geracao do numero aleatorio
 int VertexSet::chooseRandomVertex(int x) {
-	/*
-		* Caveat: std::time(0) is not a very good truly-random seed.  When
-		* called in rapid succession, it could return the same values, and
-		* thus the same random number sequences could ensue.
-		* Instead, we are using boost::random_device
-		* http://stackoverflow.com/questions/4329284/c-boost-random-numeric-generation-problem
-	    */
-	boost::minstd_rand generator(1234u);
+
+	boost::minstd_rand generator(seed);
 	// consider using seed + (long long)getpid() << 32 with more than one process (MPI)
 	generator.seed(boost::random::random_device()());
 

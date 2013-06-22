@@ -35,7 +35,8 @@ private:
 	static void processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
 			const bool& debug, const double& alpha, const int& l,
 			const int& numberOfIterations, const long& timeLimit,
-			const int& np, const int& myRank, const int& problemType, const int& functionType);
+			const int& np, const int& myRank, const int& problemType,
+			const int& functionType, const unsigned long& seed);
 
 	static void handler();
 };

@@ -16,7 +16,7 @@ namespace grasp {
 using namespace util;
 namespace mpi = boost::mpi;
 
-ParallelGrasp::ParallelGrasp(GainFunction* f) : Grasp(f) {
+ParallelGrasp::ParallelGrasp(GainFunction* f, unsigned long seed) : Grasp(f, seed) {
 	// TODO Auto-generated constructor stub
 }
 

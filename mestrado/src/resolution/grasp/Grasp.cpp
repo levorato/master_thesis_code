@@ -28,7 +28,8 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace grasp {
 
-Grasp::Grasp(GainFunction* f) : timeSpentSoFar(0.0), gainFunction(f) {
+Grasp::Grasp(GainFunction* f, unsigned long seed) : timeSpentSoFar(0.0),
+		gainFunction(f), randomSeed(seed) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -40,9 +41,9 @@ Grasp::~Grasp() {
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 		const ClusteringProblem& problem, string& timestamp, string& fileId, string& outputFolder,
 		const long& timeLimit, const int& myRank) {
-	// std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
-	unsigned int ramdomSeed = 0;
-	ClusteringPtr CStar = constructClustering(g, problem, alpha, ramdomSeed);
+	std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
+	std::cout << "Random seed is " << randomSeed << std::endl;
+	ClusteringPtr CStar = constructClustering(g, problem, alpha, myRank);
 	ClusteringPtr previousCc = CStar, Cc;
 	Imbalance bestValue = CStar->getImbalance();
 	int iterationValue = 0;
@@ -50,9 +51,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
 	SequentialNeighborhoodGenerator neig(g->getN());
 	stringstream ss;
+	int i = 0, totalIter = 0;
 
 	// TODO: Parallelize here! Divide iterations by n processors with MPI.
-	for (int i = 0, totalIter = 0; i <= iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
+	for (i = 0, totalIter = 0; i <= iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
 		// cout << "GRASP iteration " << i << endl;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
@@ -75,10 +77,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		boost::timer::cpu_times end_time = timer.elapsed();
 
 		// 4. Write the results into ostream os, using csv format
-		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(ns),boolean
+		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
 		// TODO melhorar formatacao do tempo
 		timeSpentSoFar += (end_time.wall - start_time.wall) / double(1000000000);
-		ss << (i+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
+		ss << (totalIter+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
 				<< "," << newValue.getNegativeValue() << "," << CStar->getNumberOfClusters()
 				<< "," << fixed << setprecision(4) << timeSpentSoFar << "\n";
 
@@ -105,7 +107,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			<< setprecision(0)
 			<< "," << CStar->getNumberOfClusters()
 			<< "," << iterationValue
-			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution << endl;
+			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
+			<< "," << totalIter << endl;
 
 	cout << "GRASP procedure done." << endl;
 	// CStar->printClustering();
@@ -118,7 +121,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem& problem,
 		double alpha, int myRank) {
 	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
-	VertexSet lc(g->getN()); // L(Cc) = V(G)
+	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	// std::cout << "GRASP construct clustering...\n";
 
 	while(lc.size() > 0) { // lc != empty
@@ -180,7 +183,8 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// apply a local search in CStar using the k-neighborhood
 
 		// TODO Parellelize here!
-		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem);
+		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem,
+				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed);
 		if(Cl->getImbalance().getValue() < 0.0) {
 			cerr << myRank << ": Objective function below zero. Error." << endl;
 			break;
