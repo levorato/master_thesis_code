@@ -52,11 +52,13 @@ public:
 
 	list<int>& getVertexList();
 private:
-	GainFunctionVertexSetPtr vertexSetPtr;
 	/**
 	 * The random seed used by random vertex choose.
 	 */
 	unsigned long seed;
+
+	GainFunctionVertexSetPtr vertexSetPtr;
+
 };
 
 } /* namespace grasp */

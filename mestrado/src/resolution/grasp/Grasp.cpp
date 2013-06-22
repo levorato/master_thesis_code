@@ -89,7 +89,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			CStar.reset();
 			CStar = Cl;
 			bestValue = newValue;
-			iterationValue = totalIter + 1;
+			iterationValue = totalIter;
 			timeSpentOnBestSolution = timeSpentSoFar;
 			i = 0;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
@@ -106,9 +106,9 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			<< "," << bestValue.getNegativeValue()
 			<< setprecision(0)
 			<< "," << CStar->getNumberOfClusters()
-			<< "," << iterationValue
+			<< "," << (iterationValue+1)
 			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
-			<< "," << totalIter << endl;
+			<< "," << (totalIter+1) << endl;
 
 	cout << "GRASP procedure done." << endl;
 	// CStar->printClustering();

@@ -6,9 +6,10 @@
  */
 
 #include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
+#include <boost/random/uniform_int.hpp>
 #include <boost/random/linear_congruential.hpp>
 #include <boost/nondet_random.hpp>
+#include <boost/random/variate_generator.hpp>
 
 #include "include/VertexSet.h"
 
@@ -37,18 +38,16 @@ void VertexSet::removeVertex(int i) {
 // TODO aceitar parametro seed para a geracao do numero aleatorio
 int VertexSet::chooseRandomVertex(int x) {
 
-	boost::minstd_rand generator(seed);
-	// consider using seed + (long long)getpid() << 32 with more than one process (MPI)
-	generator.seed(boost::random::random_device()());
-
 	// Generates a random number between 1 and x
 	// boost::random::mt19937 generator;  TODO Adaptar para o modo debug
 	// distribution that maps to 1..x
 	if(x - 1 < 0) {
 		x++;
 	}
-	boost::random::uniform_int_distribution<> dist(0,x-1);
-	unsigned int selectedVertexSetIndex = dist(generator);
+	boost::uniform_int<> dist(0,x-1);
+	boost::minstd_rand generator(seed);
+	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uni(generator, dist);
+	unsigned int selectedVertexSetIndex = uni();
 	int selectedVertex = 0;
 
 	// Returns the Vertex
