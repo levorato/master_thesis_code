@@ -40,7 +40,7 @@ Grasp::~Grasp() {
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 		const ClusteringProblem& problem, string& timestamp, string& fileId, string& outputFolder,
 		const long& timeLimit, const int& myRank) {
-	std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
+	// std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
 	unsigned int ramdomSeed = 0;
 	ClusteringPtr CStar = constructClustering(g, problem, alpha, ramdomSeed);
 	ClusteringPtr previousCc = CStar, Cc;
@@ -54,7 +54,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	// TODO: Parallelize here! Divide iterations by n processors with MPI.
 	for (int i = 0, totalIter = 0; i <= iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
 		// cout << "GRASP iteration " << i << endl;
-		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue << endl;
+		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
 		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
@@ -108,7 +108,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution << endl;
 
 	cout << "GRASP procedure done." << endl;
-	CStar->printClustering();
+	// CStar->printClustering();
 	CStar->printClustering(ss);
 	generateOutputFile(ss, outputFolder, fileId, timestamp, myRank, alpha, l, iter);
 

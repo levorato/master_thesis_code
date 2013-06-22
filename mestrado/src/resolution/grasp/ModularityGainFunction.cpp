@@ -59,13 +59,13 @@ void ModularityGainFunction::calculateGainList(Clustering &c, list<int>& nodeLis
 	for(i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
 		int a = *pos;
 		GainCalculation gainCalculation;
-		float max = modularityMatrix[a][a];
+		double max = modularityMatrix[a][a];
 		gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
 
 		// For each cluster k...
 		int nc = c.getNumberOfClusters();
 		for(int k = 0; k < nc; k++) {
-				int sum = 0;
+				double sum = 0.0;
 				// Cluster(k)
 				BoolArray cluster = c.getCluster(k);
 				// j in Cluster(k)

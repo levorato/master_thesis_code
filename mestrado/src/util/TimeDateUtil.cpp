@@ -8,6 +8,9 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <string>
 #include "include/TimeDateUtil.h"
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace util {
 
@@ -24,11 +27,15 @@ std::wstring TimeDateUtil::FormatTime(boost::posix_time::ptime now)
 {
   using namespace boost::posix_time;
   static std::locale loc(std::wcout.getloc(),
-                         new wtime_facet(L"%Y%m%d_%H%M"));
+                         new wtime_facet(L"%Y%m%d_%H%M%S"));
 
   std::basic_stringstream<wchar_t> wss;
   wss.imbue(loc);
   wss << now;
+
+  boost::uuids::uuid tag = boost::uuids::random_generator()();
+  wss << tag;
+
   return wss.str();
 }
 
