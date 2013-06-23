@@ -46,6 +46,7 @@ int VertexSet::chooseRandomVertex(int x) {
 	}
 	boost::uniform_int<> dist(0,x-1);
 	boost::minstd_rand generator(seed);
+	generator.seed(boost::random::random_device()());
 	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uni(generator, dist);
 	unsigned int selectedVertexSetIndex = uni();
 	int selectedVertex = 0;

@@ -28,6 +28,11 @@
 #include <boost/mpi/communicator.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/timer/timer.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/nondet_random.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/linear_congruential.hpp>
+
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -177,6 +182,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	* http://stackoverflow.com/questions/322938/recommended-way-to-initialize-srand
 	*/
 	unsigned long seed = mix(clock(), time(NULL), getpid());
+	// boost::minstd_rand generator(seed);
 
 	// codigo do processor lider
 	if(myRank == 0) {

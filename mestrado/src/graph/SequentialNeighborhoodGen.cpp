@@ -36,6 +36,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 	boost::uniform_int<> distnc(0,nc-1);
 	boost::uniform_int<> distN(0,n-1);
 	boost::minstd_rand generator(randomSeed);
+	generator.seed(boost::random::random_device()());
 	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uninc(generator, distnc);
 	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uniN(generator, distN);
 
