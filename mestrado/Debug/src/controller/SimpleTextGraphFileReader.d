@@ -1,5 +1,4 @@
-src/controller/SimpleTextGraphFileReader.d \
- src/controller/SimpleTextGraphFileReader.o: \
+src/controller/SimpleTextGraphFileReader.d: \
  ../src/controller/SimpleTextGraphFileReader.cpp \
  ../src/controller/include/SimpleTextGraphFileReader.h \
  ../src/controller/include/../../graph/include/Graph.h \

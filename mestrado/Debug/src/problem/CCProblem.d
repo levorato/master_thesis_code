@@ -1,5 +1,5 @@
-src/problem/CCProblem.d src/problem/CCProblem.o: \
- ../src/problem/CCProblem.cpp ../src/problem/include/CCProblem.h \
+src/problem/CCProblem.d: ../src/problem/CCProblem.cpp \
+ ../src/problem/include/CCProblem.h \
  ../src/problem/include/ClusteringProblem.h \
  ../src/problem/include/../../graph/include/Clustering.h \
  ../src/problem/include/../../graph/include/../../util/serialization/dynamic_bitset.hpp \

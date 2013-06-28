@@ -1,5 +1,4 @@
-src/problem/ClusteringProblemFactory.d \
- src/problem/ClusteringProblemFactory.o: \
+src/problem/ClusteringProblemFactory.d: \
  ../src/problem/ClusteringProblemFactory.cpp \
  ../src/problem/include/ClusteringProblemFactory.h \
  ../src/problem/include/CCProblem.h \

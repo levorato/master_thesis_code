@@ -93,8 +93,9 @@ def main(argv):
       g_file.write("%s\t%s\t%s\n" % (str(v_a).rstrip("L"), str(v_b).rstrip("L"), str(out_matrix[key])))
       print "%s\t%s\t%s" % (str(v_a).rstrip("L"), str(v_b).rstrip("L"), str(out_matrix[key]))
 
-   for item in additions:
-      g_file.write(item)
+   #for item in additions:
+   #   g_file.write(item)
+   print "Add " + str(len(additions))
 
    input_file.close
    g_file.close

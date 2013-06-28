@@ -1,5 +1,4 @@
-src/graph/SequentialNeighborhoodGen.d \
- src/graph/SequentialNeighborhoodGen.o: \
+src/graph/SequentialNeighborhoodGen.d: \
  ../src/graph/SequentialNeighborhoodGen.cpp \
  ../src/graph/include/Neighborhood.h ../src/graph/include/Graph.h \
  ../src/graph/include/Clustering.h \

@@ -1,5 +1,4 @@
-src/controller/CommandLineInterfaceController.d \
- src/controller/CommandLineInterfaceController.o: \
+src/controller/CommandLineInterfaceController.d: \
  ../src/controller/CommandLineInterfaceController.cpp \
  ../src/controller/include/CommandLineInterfaceController.h \
  ../src/controller/include/SimpleTextGraphFileReader.h \
@@ -21,8 +20,8 @@ src/controller/CommandLineInterfaceController.d \
  ../src/controller/../resolution/grasp/include/../../../graph/include/../../problem/include/ClusteringProblem.h \
  ../src/controller/../resolution/grasp/include/ParallelGrasp.h \
  ../src/controller/../resolution/grasp/include/Grasp.h \
- /usr/include/mpich2-x86_64/mpi.h /usr/include/mpich2-x86_64/mpio.h \
- /usr/include/mpich2-x86_64/mpi.h /usr/include/mpich2-x86_64/mpicxx.h \
+ /usr/include/mpi/mpi.h /usr/include/mpi/mpio.h /usr/include/mpi/mpi.h \
+ /usr/include/mpi/mpicxx.h \
  ../src/controller/../graph/include/Clustering.h \
  ../src/controller/../graph/include/Imbalance.h \
  ../src/controller/../problem/include/ClusteringProblem.h \
@@ -38,6 +37,8 @@ src/controller/CommandLineInterfaceController.d \
  ../src/controller/../resolution/grasp/include/GainFunctionFactory.h \
  ../src/controller/../resolution/grasp/include/ImbalanceGainFunction.h \
  ../src/controller/../resolution/grasp/include/ModularityGainFunction.h \
+ ../src/controller/../resolution/grasp/include/NegativeModularityGainFunction.h \
+ ../src/controller/../resolution/grasp/include/PositiveNegativeModularityGainFunction.h \
  ../src/controller/../resolution/grasp/include/GainFunction.h
 
 ../src/controller/include/CommandLineInterfaceController.h:
@@ -80,13 +81,13 @@ src/controller/CommandLineInterfaceController.d \
 
 ../src/controller/../resolution/grasp/include/Grasp.h:
 
-/usr/include/mpich2-x86_64/mpi.h:
+/usr/include/mpi/mpi.h:
 
-/usr/include/mpich2-x86_64/mpio.h:
+/usr/include/mpi/mpio.h:
 
-/usr/include/mpich2-x86_64/mpi.h:
+/usr/include/mpi/mpi.h:
 
-/usr/include/mpich2-x86_64/mpicxx.h:
+/usr/include/mpi/mpicxx.h:
 
 ../src/controller/../graph/include/Clustering.h:
 
@@ -117,5 +118,9 @@ src/controller/CommandLineInterfaceController.d \
 ../src/controller/../resolution/grasp/include/ImbalanceGainFunction.h:
 
 ../src/controller/../resolution/grasp/include/ModularityGainFunction.h:
+
+../src/controller/../resolution/grasp/include/NegativeModularityGainFunction.h:
+
+../src/controller/../resolution/grasp/include/PositiveNegativeModularityGainFunction.h:
 
 ../src/controller/../resolution/grasp/include/GainFunction.h:
