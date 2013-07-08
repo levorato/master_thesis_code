@@ -18,9 +18,13 @@ namespace grasp {
 
 class ParallelGrasp : resolution::grasp::Grasp {
 public:
-	static const int INPUT_MSG_TAG = 50;
-	static const int OUTPUT_MSG_TAG = 60;
-	static const int TERMINATE_MSG_TAG = 70;
+	// Parallel Grasp messa ta
+	static const int INPUT_MSG_PARALLEL_GRASP_TAG = 50;
+	static const int OUTPUT_MSG_PARALLEL_GRASP_TAG = 60;
+	// Parallel VNS messa
+	static const int INPUT_MSG_PARALLEL_VNS_TAG = 70;
+	static const int OUTPUT_MSG_PARALLEL_VNS_TAG = 80;
+	static const int TERMINATE_MSG_TAG = 90;
 	static const int LEADER_ID = 0;
 
 	ParallelGrasp(GainFunction* f, unsigned long seed);

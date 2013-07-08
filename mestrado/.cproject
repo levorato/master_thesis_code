@@ -29,6 +29,7 @@
 									<listOptionValue builtIn="false" value="/usr/local/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/mpi"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="$HOME/include"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.256169086" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -pthread -m64 -Wl,-z,noexecstack -Wl,-rpath -Wl,/usr/lib64/mpich2/lib" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.warnings.extrawarn.2043019048" name="Extra warnings (-Wextra)" superClass="gnu.cpp.compiler.option.warnings.extrawarn" value="false" valueType="boolean"/>
@@ -61,6 +62,7 @@
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib"/>
 									<listOptionValue builtIn="false" value="/usr/lib64/mpich2/lib"/>
+									<listOptionValue builtIn="false" value="../$HOME/lib"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1683564480" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

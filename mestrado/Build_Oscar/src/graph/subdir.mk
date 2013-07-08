@@ -7,20 +7,22 @@ CPP_SRCS += \
 ../src/graph/Clustering.cpp \
 ../src/graph/Graph.cpp \
 ../src/graph/Imbalance.cpp \
-../src/graph/SequentialNeighborhoodGen.cpp 
+../src/graph/SequentialNeighborhoodSearch.cpp 
+../src/graph/ParallelNeighborhoodSearch.cpp 
 
 OBJS += \
 ./src/graph/Clustering.o \
 ./src/graph/Graph.o \
 ./src/graph/Imbalance.o \
-./src/graph/SequentialNeighborhoodGen.o 
+./src/graph/SequentialNeighborhoodSearch.o 
+./src/graph/ParallelNeighborhoodSearch.o
 
 CPP_DEPS += \
 ./src/graph/Clustering.d \
 ./src/graph/Graph.d \
 ./src/graph/Imbalance.d \
-./src/graph/SequentialNeighborhoodGen.d 
-
+./src/graph/SequentialNeighborhoodSearch.d 
+./src/graph/ParallelNeighborhoodSearch.d
 
 # Each subdirectory must supply rules for building sources it contributes
 src/graph/%.o: ../src/graph/%.cpp

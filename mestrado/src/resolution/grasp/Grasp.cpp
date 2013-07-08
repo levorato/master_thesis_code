@@ -49,7 +49,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0;
 	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
-	SequentialNeighborhoodGenerator neig(g->getN());
+	SequentialNeighborhoodSearch neig(g->getN());
 	stringstream ss;
 	int i = 0, totalIter = 0;
 
@@ -163,7 +163,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 }
 
 ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const ClusteringProblem& problem, NeighborhoodListGenerator &neig, const long& timeLimit,
+		const ClusteringProblem& problem, NeighborhoodSearch &neig, const long& timeLimit,
 		const int& myRank) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
@@ -183,7 +183,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// apply a local search in CStar using the k-neighborhood
 
 		// TODO Parellelize here!
-		ClusteringPtr Cl = neig.generateNeighborhood(k, g, CStar.get(), problem,
+		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
 				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed);
 		if(Cl->getImbalance().getValue() < 0.0) {
 			cerr << myRank << ": Objective function below zero. Error." << endl;

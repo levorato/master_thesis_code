@@ -12,12 +12,12 @@
 
 namespace clusteringgraph {
 
-class SequentialNeighborhoodGenerator: public clusteringgraph::NeighborhoodListGenerator {
+class SequentialNeighborhoodSearch: public clusteringgraph::NeighborhoodSearch {
 public:
-	SequentialNeighborhoodGenerator(int n);
-	virtual ~SequentialNeighborhoodGenerator();
+	SequentialNeighborhoodSearch(int n);
+	virtual ~SequentialNeighborhoodSearch();
 
-	virtual ClusteringPtr generateNeighborhood(int l, SignedGraph* g,
+	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
 				Clustering* clustering, const ClusteringProblem& problem,
 				double timeSpentSoFar, double timeLimit, unsigned long randomSeed);
 };

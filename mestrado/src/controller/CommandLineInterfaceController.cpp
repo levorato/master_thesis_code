@@ -337,7 +337,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				InputMessage imsg;
 				mpi::communicator world;
 				mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsg);
-				if(stat.tag() == ParallelGrasp::INPUT_MSG_TAG) {
+				if(stat.tag() == ParallelGrasp::INPUT_MSG_PARALLEL_GRASP_TAG) {
 					cout << "Process " << myRank << ": Received message from leader." << endl;
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -353,7 +353,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 					// Sends the result back to the leader process
 					OutputMessage omsg(*bestClustering);
-					world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_TAG, omsg);
+					world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 					cout << "Process " << myRank << ": Message sent to leader." << endl;
 				} else {
 					// terminate message

@@ -73,7 +73,7 @@ protected:
 	 * @return Clustering C(l), the local optinum solution
 	 */
 	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-			const ClusteringProblem& problem, NeighborhoodListGenerator &neig,
+			const ClusteringProblem& problem, NeighborhoodSearch &neig,
 			const long& timeLimit, const int& myRank);
 
 	/**

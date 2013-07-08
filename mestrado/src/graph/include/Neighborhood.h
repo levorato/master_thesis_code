@@ -25,17 +25,18 @@ using namespace problem;
 namespace clusteringgraph {
 
 // Defines the neighborhood list
-class NeighborhoodListGenerator {
+class NeighborhoodSearch {
 public:
-        NeighborhoodListGenerator(int n) : numberOfNodes(n) {
+        NeighborhoodSearch(int n) : numberOfNodes(n) {
 
         }
 
         /**
-         * Generates a l-neighborhood for this clustering.
+         * Traverses the l-neighborhood for the given clustering, searching
+         * for the best value of objective function.
          * @return NeighborhoodList*
          */
-        virtual ClusteringPtr generateNeighborhood(int l, SignedGraph* g,
+        virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
                         Clustering* clustering, const ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed) = 0;
 

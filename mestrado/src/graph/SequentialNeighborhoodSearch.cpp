@@ -19,13 +19,13 @@
 
 namespace clusteringgraph {
 
-SequentialNeighborhoodGenerator::SequentialNeighborhoodGenerator(int n) :
-		NeighborhoodListGenerator(n) {
+SequentialNeighborhoodSearch::SequentialNeighborhoodSearch(int n) :
+		NeighborhoodSearch(n) {
 
 }
 
 // TODO This method can be parallelized with MPI: neighborhood generation across several processors.
-ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, SignedGraph* g,
+ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed) {
 	int nc = clustering->getNumberOfClusters();
@@ -220,7 +220,7 @@ ClusteringPtr SequentialNeighborhoodGenerator::generateNeighborhood(int l, Signe
 
 namespace clusteringgraph {
 
-SequentialNeighborhoodGenerator::~SequentialNeighborhoodGenerator() {
+SequentialNeighborhoodSearch::~SequentialNeighborhoodSearch() {
 	// TODO Auto-generated destructor stub
 }
 
