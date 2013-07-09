@@ -28,7 +28,7 @@ using namespace boost;
 
 namespace clusteringgraph {
 
-SignedGraph::SignedGraph(const int &numberOfNodes) : graph(numberOfNodes),
+SignedGraph::SignedGraph(const unsigned long &numberOfNodes) : graph(numberOfNodes),
 		n(numberOfNodes) {
 
 }
@@ -38,38 +38,38 @@ SignedGraph::~SignedGraph() {
 }
 
 
-int SignedGraph::getN() {
+unsigned long SignedGraph::getN() {
 	return n;
 }
 
-int SignedGraph::getM() {
+unsigned long SignedGraph::getM() {
 	return graph.m_num_edges;
 }
 
-void SignedGraph::addEdge(int a, int b, Edge edge) {
+void SignedGraph::addEdge(unsigned long a, unsigned long b, Edge edge) {
 	add_edge(a, b, edge, graph);
 }
 
-double SignedGraph::getEdge(const int &a, const int &b) {
+double SignedGraph::getEdge(const unsigned long &a, const unsigned long &b) {
 	return graph.get_edge(a, b).second.weight;
 }
 
-bool SignedGraph::isPositiveEdge(const int &a, const int &b) {
+bool SignedGraph::isPositiveEdge(const unsigned long &a, const unsigned long &b) {
 	double value = getEdge(a, b);
 	return (value > 2 * std::numeric_limits<double>::epsilon());
 }
 
-bool SignedGraph::isNegativeEdge(const int &a, const int &b) {
+bool SignedGraph::isNegativeEdge(const unsigned long &a, const unsigned long &b) {
 	 double value = getEdge(a, b);
         return (value < (-2) * std::numeric_limits<double>::epsilon());
 }
 
-int SignedGraph::getDegree(const int &a) {
+unsigned long SignedGraph::getDegree(const unsigned long &a) {
 	return in_degree(a, graph);
 }
 
-int SignedGraph::getNegativeDegree(const int &a) {
-	int sum = 0;
+unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
+	unsigned long sum = 0;
 	// O(n)
 	typename adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
 	for (boost::tie(f, l) = in_edges(a, graph); f != l; ++f) {
@@ -80,8 +80,8 @@ int SignedGraph::getNegativeDegree(const int &a) {
 	return sum;
 }
 
-int SignedGraph::getPositiveDegree(const int &a) {
-	int sum = 0;
+unsigned long SignedGraph::getPositiveDegree(const unsigned long &a) {
+	unsigned long sum = 0;
 	// O(n)
 	typename adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
 	for (boost::tie(f, l) = in_edges(a, graph); f != l; ++f) {
@@ -93,8 +93,8 @@ int SignedGraph::getPositiveDegree(const int &a) {
 }
 
 void SignedGraph::printGraph() {
-	for(int i = 0; i < this->getN(); i++) {
-		for(int j = 0; j < this->getN(); j++) {
+	for(unsigned long i = 0; i < this->getN(); i++) {
+		for(unsigned long j = 0; j < this->getN(); j++) {
 			cout << this->getEdge(i, j) << "  ";
 		}
 		cout << endl;

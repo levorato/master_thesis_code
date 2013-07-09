@@ -7,7 +7,8 @@
 
 #include "include/Grasp.h"
 #include "include/VertexSet.h"
-#include "../../graph/include/SequentialNeighborhoodGen.h"
+#include "../../graph/include/SequentialNeighborhoodSearch.h"
+#include "../../graph/include/ParallelNeighborhoodSearch.h"
 #include "../../problem/include/ClusteringProblem.h"
 #include "../../problem/include/CCProblem.h"
 
@@ -40,7 +41,7 @@ Grasp::~Grasp() {
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 		const ClusteringProblem& problem, string& timestamp, string& fileId, string& outputFolder,
-		const long& timeLimit, const int& myRank) {
+		const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves) {
 	std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
 	std::cout << "Random seed is " << randomSeed << std::endl;
 	ClusteringPtr CStar = constructClustering(g, problem, alpha, myRank);
@@ -48,8 +49,14 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	Imbalance bestValue = CStar->getImbalance();
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0;
-	// TODO alterar o tipo de gerador de vizinhos, para quem sabe, a versao paralelizada
-	SequentialNeighborhoodSearch neig(g->getN());
+	NeighborhoodSearch* neig;
+	ParallelNeighborhoodSearch pns(numberOfSlaves, numberOfSearchSlaves);
+	SequentialNeighborhoodSearch sns;
+	if(numberOfSearchSlaves > 0) {
+		neig = &pns;
+	} else {
+		neig = &sns;
+	}
 	stringstream ss;
 	int i = 0, totalIter = 0;
 
@@ -67,7 +74,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		Cc = constructClustering(g, problem, alpha, myRank);
 
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, neig, timeLimit, myRank);
+		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, *neig, timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl->getImbalance();
@@ -164,10 +171,10 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 
 ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		const ClusteringProblem& problem, NeighborhoodSearch &neig, const long& timeLimit,
-		const int& myRank) {
+		const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
-	ClusteringPtr CStar = make_shared<Clustering>(Cc, g->getN()); // C* := Cc
+	ClusteringPtr CStar = make_shared<Clustering>(Cc); // C* := Cc
 	double localTimeSpent = 0.0;
 	// std::cout << "GRASP local search...\n";
 	// cout << "Current neighborhood is " << k << endl;
@@ -182,9 +189,8 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood
 
-		// TODO Parellelize here!
 		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
-				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed);
+				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed, numberOfSlaves, myRank, numberOfSearchSlaves);
 		if(Cl->getImbalance().getValue() < 0.0) {
 			cerr << myRank << ": Objective function below zero. Error." << endl;
 			break;

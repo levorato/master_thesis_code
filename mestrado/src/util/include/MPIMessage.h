@@ -22,6 +22,10 @@ using namespace clusteringgraph;
 namespace util {
 
 class InputMessage {
+
+};
+
+class InputMessageParallelGrasp : InputMessage {
 public:
 	static const int TAG = 50;
 	string graphInputFileContents;
@@ -34,13 +38,13 @@ public:
 	string outputFolder;
 	long timeLimit;
 
-	InputMessage() : graphInputFileContents(),
+	InputMessageParallelGrasp() : graphInputFileContents(),
 			alpha(0.0F), l(1), iter(500), gainFunctionType(0), problemType(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800) {
 
 	}
 
-	InputMessage(string graphContents, int it, double a, int neigh,
+	InputMessageParallelGrasp(string graphContents, int it, double a, int neigh,
 			int pType, int gfType, string id, string folder, long t) :
 				graphInputFileContents(graphContents),
 					alpha(a), l(neigh), iter(it), gainFunctionType(gfType),
@@ -71,6 +75,55 @@ private:
 		ar & fileId;
 		ar & outputFolder;
 		ar & timeLimit;
+	}
+};
+
+class InputMessageParallelVNS : InputMessage {
+public:
+	static const int TAG = 70;
+	int l;
+	string graphInputFileContents;
+	Clustering clustering;
+	int problemType;
+	double timeSpentSoFar;
+	double timeLimit;
+	unsigned long initialClusterIndex;
+	unsigned long finalClusterIndex;
+	int numberOfSlaves;
+	int numberOfSearchSlaves;
+
+	InputMessageParallelVNS() : l(1), graphInputFileContents(), clustering(),
+			problemType(0), timeSpentSoFar(0.0), timeLimit(3600.0), initialClusterIndex(0),
+			finalClusterIndex(0), numberOfSlaves(0), numberOfSearchSlaves(0) {
+
+	}
+
+	InputMessageParallelVNS(int neig, string graphContents, Clustering c,
+			int pType, double timeSoFar, double tl, unsigned long startIdx,
+			unsigned long endIdx, int slaves, int searchSlaves) : l(neig),
+			graphInputFileContents(graphContents), clustering(c),
+			problemType(pType), timeSpentSoFar(timeSoFar), timeLimit(tl),
+			initialClusterIndex(startIdx) , finalClusterIndex(endIdx),
+			numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
+
+	}
+
+private:
+	// serialization-specific code
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & l;
+		ar & graphInputFileContents;
+		ar & clustering;
+		ar & problemType;
+		ar & timeSpentSoFar;
+		ar & timeLimit;
+		ar & initialClusterIndex;
+		ar & finalClusterIndex;
+		ar & numberOfSlaves;
+		ar & numberOfSearchSlaves;
 	}
 };
 

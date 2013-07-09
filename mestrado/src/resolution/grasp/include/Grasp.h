@@ -38,11 +38,14 @@ public:
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param fileId string representing the identification of the input graph file
 	 * @param timeLimit Maximum processing time in seconds
+	 * @param numberOfSlaves number of slaves used for parallel GRASP processing
 	 * @param myRank processor rank (when running with MPI)
+	 * @param numberOfSearchSlaves number of slaves used for parallel VNS processing
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 			const ClusteringProblem& problem, string& timestamp, string& fileId, 
-			string& outputFolder, const long& timeLimit, const int& myRank);
+			string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
+			const int& myRank, const int& numberOfSearchSlaves);
 
 protected:
 	/**
@@ -74,7 +77,7 @@ protected:
 	 */
 	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 			const ClusteringProblem& problem, NeighborhoodSearch &neig,
-			const long& timeLimit, const int& myRank);
+			const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
 	/**
 	 * TODO document this method

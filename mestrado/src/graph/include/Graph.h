@@ -30,45 +30,45 @@ typedef adjacency_matrix<directedS, no_property, Edge > DirectedGraph;
 
 class SignedGraph {
 public:
-	SignedGraph(const int &numberOfNodes);
+	SignedGraph(const unsigned long &numberOfNodes);
 	virtual ~SignedGraph();
 
 	/**
 	 * Returns the numbers of vertices of the graph.
 	 */
-	int getN();
+	unsigned long getN();
 
 	/**
 	 * Return the number of edges of the graph
 	 */
-	int getM();
+	unsigned long getM();
 
 	/**
 	 * Add an edge to the graph. Accepts only edges whose weight is
 	 * equal to -1, 0 or 1.
 	 */
-	void addEdge(int a, int b, Edge edge);
+	void addEdge(unsigned long a, unsigned long b, Edge edge);
 	/**
 	 * Returns the value of the corresponding edge.
 	 */
-	double getEdge(const int &a, const int &b);
+	double getEdge(const unsigned long &a, const unsigned long &b);
 
-	bool isPositiveEdge(const int &a, const int &b);
+	bool isPositiveEdge(const unsigned long &a, const unsigned long &b);
 
-	bool isNegativeEdge(const int &a, const int &b);
+	bool isNegativeEdge(const unsigned long &a, const unsigned long &b);
 
 	/**
 	 * Returns the degree of vertex a.
 	 */
-	int getDegree(const int &a);
+	unsigned long getDegree(const unsigned long &a);
 
 	/**
 	 * Returns the negative degree of vertex a, that is, the sum of
 	 * negative incoming edges.
 	 */
-	int getNegativeDegree(const int &a);
+	unsigned long getNegativeDegree(const unsigned long &a);
 
-	int getPositiveDegree(const int &a);
+	unsigned long getPositiveDegree(const unsigned long &a);
 
 	void printGraph();
 
@@ -80,7 +80,7 @@ private:
 	DirectedGraph graph;
 
 	/* the number of nodes of the graph */
-	int n;
+	unsigned long n;
 
 	/**
 	 * The text representation of the graph (for use on MPI messages).

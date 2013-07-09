@@ -15,26 +15,39 @@
 #include <boost/random/linear_congruential.hpp>
 #include <boost/timer/timer.hpp>
 #include <iomanip>
-#include "include/SequentialNeighborhoodGen.h"
+#include <cassert>
+#include "include/SequentialNeighborhoodSearch.h"
 
 namespace clusteringgraph {
 
-SequentialNeighborhoodSearch::SequentialNeighborhoodSearch(int n) :
-		NeighborhoodSearch(n) {
+SequentialNeighborhoodSearch::SequentialNeighborhoodSearch() {
 
 }
 
-// TODO This method can be parallelized with MPI: neighborhood generation across several processors.
 ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
-		double timeLimit, unsigned long randomSeed) {
-	int nc = clustering->getNumberOfClusters();
-	int n = g->getN();
+		double timeLimit, unsigned long randomSeed, unsigned long numberOfSlaves, int myRank,
+		unsigned long numberOfSearchSlaves) {
+	unsigned long nc = clustering->getNumberOfClusters();
+	return SequentialNeighborhoodSearch::searchNeighborhood(l, g, clustering, problem,
+			timeSpentSoFar, timeLimit, randomSeed, 0, nc - 1);
+}
+
+ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
+		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
+		double timeLimit, unsigned long randomSeed, unsigned long initialClusterIndex,
+		unsigned long finalClusterIndex) {
+
+	long n = g->getN();
+	assert(initialClusterIndex < clustering->getNumberOfClusters());
+	assert(finalClusterIndex < clustering->getNumberOfClusters());
+	unsigned long numberOfClustersInInterval = finalClusterIndex - initialClusterIndex;
+	unsigned long totalNumberOfClusters = clustering->getNumberOfClusters();
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
-	ClusteringPtr cBest = make_shared<Clustering>(*clustering, g->getN());
+	ClusteringPtr cBest = make_shared<Clustering>(*clustering);
 	// random number generators used in loop randomization
-	boost::uniform_int<> distnc(0,nc-1);
-	boost::uniform_int<> distN(0,n-1);
+	boost::uniform_int<> distnc(initialClusterIndex, finalClusterIndex);
+	boost::uniform_int<> distN(0, n-1);
 	boost::minstd_rand generator(randomSeed);
 	generator.seed(boost::random::random_device()());
 	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uninc(generator, distnc);
@@ -46,19 +59,19 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 	boost::timer::cpu_times start_time = timer.elapsed();
 
 	if (l == 1) {  // 1-opt
-		for (int k1 = uninc(), cont1 = 0; cont1 < nc; cont1++, k1 = (k1 + 1) % nc) {
+		for (int k1 = uninc(), cont1 = 0; cont1 < numberOfClustersInInterval; cont1++) {
 			// cluster(k1)
 			BoolArray cluster1 = clustering->getCluster(k1);
 			// For each node i in cluster(k1)
 			for (int i = uniN(), cont2 = 0; cont2 < n; cont2++, i = (i + 1) % n) {
 				if (cluster1[i]) {
 					// Option 1: node i is moved to another existing cluster k2
-					for (int k2 = uninc(), cont3 = 0; cont3 < nc; cont3++, k2 = (k2 + 1) % nc) {
+					for (int k2 = uninc(), cont3 = 0; cont3 < numberOfClustersInInterval; cont3++) {
 						if (k1 != k2) {
 							// cluster(k2)
 							// removes node i from cluster1 and inserts in cluster2
 							ClusteringPtr cTemp = make_shared < Clustering
-									> (*clustering, n);
+									> (*clustering);
 							BoolArray cluster2 = cTemp->getCluster(k2);
 
 							// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
@@ -80,12 +93,17 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 						boost::timer::cpu_times end_time = timer.elapsed();
 						double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 						if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
+						// increment rule
+						k2++;
+						if(k2 >= totalNumberOfClusters) {
+							k2 = 0;
+						}
 					}
 					// Option 2: node i is moved to a new cluster, alone
 					// removes node i from cluster1 and inserts in newCluster
 					// cout << "New clustering combination generated." << endl;
 					ClusteringPtr cTemp = make_shared < Clustering
-							> (*clustering, n);
+							> (*clustering);
 					// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
 					cTemp->removeNodeFromCluster(*g, i, k1);
 					BoolArray cluster2 = cTemp->addCluster(*g, i);
@@ -101,16 +119,21 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 					}
 				}
 			}
+			// increment rule
+			k1++;
+			if(k1 > finalClusterIndex) {
+				k1 = initialClusterIndex;
+			}
 		}
 		// returns the best combination found in 1-opt
 		return cBest;
 	} else {  // 2-opt
 		// cout << "Generating 2-opt neighborhood..." << endl;
 		Imbalance bestImbalance = cBest->getImbalance();
-		for (int k1 = uninc(), contk1 = 0; contk1 < nc; contk1++, k1 = (k1 + 1) % nc) {
+		for (int k1 = uninc(), contk1 = 0; contk1 < numberOfClustersInInterval; contk1++) {
 			// cluster(k1)
 			BoolArray cluster1 = clustering->getCluster(k1);
-			for (int k2 = uninc(), contk2 = 0; contk2 < nc; contk2++, k2 = (k2 + 1) % nc) {
+			for (int k2 = uninc(), contk2 = 0; contk2 < numberOfClustersInInterval; contk2++) {
 				// cluster(k2)
 				BoolArray cluster2 = clustering->getCluster(k2);
 				// For each node i in cluster(k1)
@@ -121,14 +144,14 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 							if(j == i)  continue;
 							if (cluster2[j]) {
 								// Option 1: node i is moved to another existing cluster k3
-								for (int k3 = uninc(), contk3 = 0; contk3 < nc; contk3++, k3 = (k3 + 1) % nc) {
+								for (int k3 = uninc(), contk3 = 0; contk3 < numberOfClustersInInterval; contk3++) {
 									if (k1 != k3) {
 										// cluster(k3)
 										// Option 1: node i is moved to another existing cluster k3 and
 										//           node j is moved to another existing cluster k4
 										// cout << "Option 1" << endl;
 										// TODO colocar laço aleatorio aqui! Verificar com o Yuri
-										for (int k4 = k3 + 1; k4 < nc; k4++) {
+										for (int k4 = k3 + 1; k4 < totalNumberOfClusters; k4++) {
 											if (k2 != k4) {
 												// cluster(k4)
 												ClusteringPtr cTemp =
@@ -166,11 +189,16 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 									boost::timer::cpu_times end_time = timer.elapsed();
 									double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 									if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
+									// increment rule
+									k3++;
+									if(k3 >= totalNumberOfClusters) {
+										k3 = 0;
+									}
 								}
 								// Option 3: node i is moved to a new cluster, alone, and
 								//           node j is moved to another existing cluster k4
 								// cout << "Option 3" << endl;
-								for (int k4 = uninc(), contk4 = 0; contk4 < nc; contk4++, k4 = (k4 + 1) % nc) {
+								for (int k4 = uninc(), contk4 = 0; contk4 < numberOfClustersInInterval; contk4++) {
 									if (k2 != k4) {
 										// cluster(k4)
 										ClusteringPtr cTemp =
@@ -189,6 +217,11 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 									boost::timer::cpu_times end_time = timer.elapsed();
 									double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 									if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
+									// increment rule
+									k4++;
+									if(k4 >= totalNumberOfClusters) {
+										k4 = 0;
+									}
 								}
 								// Option 4: nodes i and j are moved to new clusters, and left alone
 								// cout << "Option 4" << endl;
@@ -210,6 +243,16 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 						}
 					}
 				}
+				// increment rule
+				k2++;
+				if(k2 >= totalNumberOfClusters) {
+					k2 = 0;
+				}
+			}
+			// increment rule
+			k1++;
+			if(k1 > finalClusterIndex) {
+				k1 = initialClusterIndex;
 			}
 		}
 	}

@@ -47,9 +47,9 @@ public:
 	Clustering();
 
 	/**
-	 * Creates a Clustering object with n nodes based on the clusterList.
+	 * Creates a Clustering object based on the clusterList.
 	 */
-	Clustering(const Clustering& clustering, int n);
+	Clustering(const Clustering& clustering);
 
 	virtual ~Clustering();
 
@@ -58,26 +58,26 @@ public:
 	 * Recalculates the objective function associated with
 	 * the clustering, based on the modification.
 	 */
-	BoolArray addCluster(SignedGraph& g, const int& i);
+	BoolArray addCluster(SignedGraph& g, const unsigned long& i);
 
 	/**
 	 * Returns the n-th cluster of the list.
 	 */
-	BoolArray& getCluster(int clusterNumber);
+	BoolArray& getCluster(unsigned long clusterNumber);
 
 	/**
 	 * Adds a node i in cluster k. Recalculates the objective
 	 * function associated with the clustering, based on the
 	 * modification.
 	 */
-	void addNodeToCluster(SignedGraph& g, int i, int k);
+	void addNodeToCluster(SignedGraph& g, unsigned long i, unsigned long k);
 
 	/**
 	 * Removes a node i from cluster k. Recalculates the objective
 	 * function associated with the clustering, based on the
 	 * modification.
 	 */
-	void removeNodeFromCluster(SignedGraph& g, int i, int k);
+	void removeNodeFromCluster(SignedGraph& g, unsigned long i, unsigned long k);
 
 	/**
 	 * Prints the clustering config on the screen.
@@ -92,19 +92,19 @@ public:
 	/**
 	 * Returns the number of clusters in this clustering configuration.
 	 */
-	int getNumberOfClusters();
+	unsigned long getNumberOfClusters();
 
 	/**
 	 * Removes the k-th cluster. Attention!!! This method DOES NOT
 	 * recalculate the objective function associated with the clustering,
 	 * based on the modification.
 	 */
-	void removeCluster(SignedGraph& g, int k);
+	void removeCluster(SignedGraph& g, unsigned long k);
 
 	/**
 	 * Calculates the size of the k-th cluster.
 	 */
-	int clusterSize(int k);
+	unsigned long clusterSize(unsigned long k);
 
 	Imbalance getObjectiveFunctionValue();
 
@@ -115,7 +115,7 @@ public:
 	 * insertion of node i in cluster k.
 	 */
 	Imbalance calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster,
-			const int& i);
+			const unsigned long& i);
 
 	/**
 	 * Verifies if this clustering object equals another clustering object.

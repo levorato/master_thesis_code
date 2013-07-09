@@ -27,7 +27,7 @@ namespace clusteringgraph {
 // Defines the neighborhood list
 class NeighborhoodSearch {
 public:
-        NeighborhoodSearch(int n) : numberOfNodes(n) {
+        NeighborhoodSearch() {
 
         }
 
@@ -38,10 +38,10 @@ public:
          */
         virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
                         Clustering* clustering, const ClusteringProblem& problem,
-                        double timeSpentSoFar, double timeLimit, unsigned long randomSeed) = 0;
+                        double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
+                        unsigned long numberOfSlaves, int myRank, unsigned long numberOfSearchSlaves) = 0;
 
 protected:
-        int numberOfNodes;
 
         /**
          * Generates a new cluster by swithcing the node i from cluster k1 to k3, and
@@ -56,7 +56,7 @@ protected:
 
                 // cout << "2-opt-comb: " << k1 << ", " << k2 << ", " << k3 << ", " << k4 << ", " << i << ", " << j << endl;
                 // clustering->printClustering();
-                ClusteringPtr cTemp = make_shared < Clustering > (*clustering, n);
+                ClusteringPtr cTemp = make_shared < Clustering > (*clustering);
                 int nc = cTemp->getNumberOfClusters();
                 // the offset caused by cluster deletions
                 // removes node i from cluster1 and inserts in cluster3

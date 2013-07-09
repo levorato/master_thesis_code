@@ -18,12 +18,13 @@ namespace grasp {
 
 class ParallelGrasp : resolution::grasp::Grasp {
 public:
-	// Parallel Grasp messa ta
+	// Parallel Grasp message tag
 	static const int INPUT_MSG_PARALLEL_GRASP_TAG = 50;
 	static const int OUTPUT_MSG_PARALLEL_GRASP_TAG = 60;
-	// Parallel VNS messa
+	// Parallel VNS message tag
 	static const int INPUT_MSG_PARALLEL_VNS_TAG = 70;
 	static const int OUTPUT_MSG_PARALLEL_VNS_TAG = 80;
+	// Other tags
 	static const int TERMINATE_MSG_TAG = 90;
 	static const int LEADER_ID = 0;
 
@@ -35,7 +36,8 @@ public:
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha,
 			const int& l, ClusteringProblem& problem, string& timestamp, string& fileId,
-			string& outputFolder, const long& timeLimit, const int& np, const int& myRank);
+			string& outputFolder, const long& timeLimit, const int& numberOfSlaves,
+			const int& myRank, const int& numberOfSearchSlaves);
 };
 
 } /* namespace grasp */

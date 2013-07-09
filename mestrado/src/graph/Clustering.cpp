@@ -21,10 +21,10 @@ Clustering::Clustering() : clusterList(),
 }
 
 // TODO test dimension attribution
-Clustering::Clustering(const Clustering& clustering, int n) :
+Clustering::Clustering(const Clustering& clustering) :
 		clusterList(), imbalance(clustering.imbalance) {
 	// deep copy of the clusterlist data
-	for(unsigned int i = 0; i < clustering.clusterList.size(); i++) {
+	for(unsigned long i = 0; i < clustering.clusterList.size(); i++) {
 		BoolArray boolArray = clustering.clusterList.at(i);
 		this->clusterList.push_back(BoolArray(boolArray));
 	}
@@ -34,11 +34,11 @@ Clustering::~Clustering() {
 	// cout << "Freeing memory of Clustering object..." << endl;
 }
 
-int Clustering::getNumberOfClusters() {
+unsigned long Clustering::getNumberOfClusters() {
 	return this->clusterList.size();
 }
 
-BoolArray Clustering::addCluster(SignedGraph& g, const int& i) {
+BoolArray Clustering::addCluster(SignedGraph& g, const unsigned long& i) {
 	// 1. Create a new cluster in the list
 	BoolArray array(g.getN());
 
@@ -50,28 +50,28 @@ BoolArray Clustering::addCluster(SignedGraph& g, const int& i) {
 	return array;
 }
 
-BoolArray& Clustering::getCluster(int clusterNumber) {
+BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
 	return clusterList.at(clusterNumber);
 }
 
-void Clustering::addNodeToCluster(SignedGraph& g, int i, int k) {
+void Clustering::addNodeToCluster(SignedGraph& g, unsigned long i, unsigned long k) {
 	// std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
 	this->getCluster(k)[i] = true;
 	this->imbalance += calculateDeltaObjectiveFunction(g, this->getCluster(k), i);
 }
 
-void Clustering::removeCluster(SignedGraph& g, int k) {
+void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 	// Swaps the k-th and the last element, to avoid linear-time removal
 	//swap (clusterList[k], clusterList[clusterList.size() - 1]);
 	//clusterList.erase(clusterList.end() - 1);
 	clusterList.erase(clusterList.begin()+k);
 }
 
-int Clustering::clusterSize(int k) {
+unsigned long Clustering::clusterSize(unsigned long k) {
 	return this->getCluster(k).count();
 }
 
-void Clustering::removeNodeFromCluster(SignedGraph& g, int i, int k) {
+void Clustering::removeNodeFromCluster(SignedGraph& g, unsigned long i, unsigned long k) {
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
 	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
@@ -97,11 +97,11 @@ void Clustering::printClustering(ostream& os) {
 
 void Clustering::print(std::ostream& os, ClusterList& l)
 {
-	int numberOfClusters = l.size();
-	for(int k = 0; k < numberOfClusters; k++) {
+	unsigned long numberOfClusters = l.size();
+	for(unsigned long k = 0; k < numberOfClusters; k++) {
     	os << " Partition " << k << " (" << clusterSize(k) <<  "): [ ";
     	BoolArray array = l.at(k);
-    	for(int i = 0; i < array.size(); i++) {
+    	for(unsigned long i = 0; i < array.size(); i++) {
     		if(array[i]) {
     			os << i << " ";
     		}
@@ -126,10 +126,10 @@ bool Clustering::equals(Clustering& c) {
 }
 
 // Calculates the delta of the objective function
-Imbalance Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster, const int& i) {
+Imbalance Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster, const unsigned long& i) {
 	double negativeSum = 0, positiveSum = 0;
-	int n = g.getN();
-	for(int b = 0; b < n; b++) {
+	unsigned long n = g.getN();
+	for(unsigned long b = 0; b < n; b++) {
 		if(b != i) {
 			if(cluster[b]) {
 				// nodes i and b are in the same cluster
