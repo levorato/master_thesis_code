@@ -1,4 +1,5 @@
-src/resolution/grasp/ModularityGainFunction.d: \
+src/resolution/grasp/ModularityGainFunction.d \
+ src/resolution/grasp/ModularityGainFunction.o: \
  ../src/resolution/grasp/ModularityGainFunction.cpp \
  ../src/resolution/grasp/include/ModularityGainFunction.h \
  ../src/resolution/grasp/include/GainFunction.h \

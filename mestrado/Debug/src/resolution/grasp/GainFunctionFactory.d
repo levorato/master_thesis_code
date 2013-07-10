@@ -1,4 +1,5 @@
-src/resolution/grasp/GainFunctionFactory.d: \
+src/resolution/grasp/GainFunctionFactory.d \
+ src/resolution/grasp/GainFunctionFactory.o: \
  ../src/resolution/grasp/GainFunctionFactory.cpp \
  ../src/resolution/grasp/include/GainFunctionFactory.h \
  ../src/resolution/grasp/include/ImbalanceGainFunction.h \

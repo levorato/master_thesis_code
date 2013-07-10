@@ -1,4 +1,5 @@
-src/resolution/grasp/PositiveNegativeModularityGainFunction.d: \
+src/resolution/grasp/PositiveNegativeModularityGainFunction.d \
+ src/resolution/grasp/PositiveNegativeModularityGainFunction.o: \
  ../src/resolution/grasp/PositiveNegativeModularityGainFunction.cpp \
  ../src/resolution/grasp/include/PositiveNegativeModularityGainFunction.h \
  ../src/resolution/grasp/include/GainFunction.h \

@@ -18,6 +18,8 @@ namespace grasp {
 
 class ParallelGrasp : resolution::grasp::Grasp {
 public:
+	// Message with the number of grasp slaves
+	static const int INPUT_MSG_NUM_SLAVES_TAG = 40;
 	// Parallel Grasp message tag
 	static const int INPUT_MSG_PARALLEL_GRASP_TAG = 50;
 	static const int OUTPUT_MSG_PARALLEL_GRASP_TAG = 60;

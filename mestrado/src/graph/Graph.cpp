@@ -71,7 +71,7 @@ unsigned long SignedGraph::getDegree(const unsigned long &a) {
 unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
 	unsigned long sum = 0;
 	// O(n)
-	typename adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
+	adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
 	for (boost::tie(f, l) = in_edges(a, graph); f != l; ++f) {
 		if(((Edge*)f->get_property())->weight < 0) {
 			++sum;
@@ -83,7 +83,7 @@ unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
 unsigned long SignedGraph::getPositiveDegree(const unsigned long &a) {
 	unsigned long sum = 0;
 	// O(n)
-	typename adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
+	adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
 	for (boost::tie(f, l) = in_edges(a, graph); f != l; ++f) {
 		if(((Edge*)f->get_property())->weight > 0) {
 			++sum;

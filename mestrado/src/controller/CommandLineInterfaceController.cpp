@@ -29,6 +29,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <boost/mpi.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/timer/timer.hpp>
 #include <boost/random/mersenne_twister.hpp>
@@ -308,6 +309,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				numberOfSearchSlaves = remainingSlaves / numberOfSlaves;
 				cout << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
 			}
+			if(np > 1) {
+				mpi::communicator world;
+				// broadcasts the numberOfSlaves to all processes
+				mpi::broadcast(world, numberOfSlaves, 0);
+			}
 
 			for(unsigned int i = 0; i < fileList.size(); i++) {
 				fs::path filePath = fileList.at(i);
@@ -346,59 +352,77 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			std::cerr << diagnostic_information(e);
 			return 1;
 		}
-	} else { // processos seguidores
-		cout << "Process " << myRank << " ready." << endl;
+	} else { // slave processes
+		mpi::communicator world;
+		// First message received from leader contains the number of GRASP slaves
+		// and is used for a process to discover if it is a GRASP slave or a VNS slave
+		// Grasp slave: 1 < rank < numberOfSlaves; VNS slave: otherwise
+		int numberOfSlaves = 0;
+		mpi::status stat = world.recv(ParallelGrasp::LEADER_ID, mpi::any_tag, numberOfSlaves);
+		cout << "number of slaves received\n";
+
 		while(true) {
 			try {
-				// Receives a message with GRASP parameters and triggers local execution
-				shared_ptr<InputMessage> imsg = make_shared<InputMessage>();
-				mpi::communicator world;
-				mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, *imsg);
-				cout << "Process " << myRank << ": message received." << endl;
-				if(stat.tag() == ParallelGrasp::INPUT_MSG_PARALLEL_GRASP_TAG) {
+				if(myRank <= numberOfSlaves) {  // GRASP slave
+					cout << "Process " << myRank << " ready [GRASP slave process]." << endl;
+					// Receives a message with GRASP parameters and triggers local GRASP execution
+					InputMessageParallelGrasp imsgpg;
+					// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_GRASP_TAG or a terminate msg
+					mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgpg);
+					if(stat.tag() == ParallelGrasp::TERMINATE_MSG_TAG) {
+						cout << "Process " << myRank << ": terminate msg received.\n";
+						return 0;
+					}
 					cout << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
-					// TODO corrigir bug aqui, mensagem esta chegando parcialmente em branco...
-					InputMessageParallelGrasp* imsgpg = dynamic_cast<InputMessageParallelGrasp*>(imsg.get());
-					cout << "test! " << imsgpg->alpha << endl;
+
+					cout << "test! " << imsgpg.alpha << endl;
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-					SignedGraphPtr g = reader.readGraphFromString(imsgpg->graphInputFileContents);
+					SignedGraphPtr g = reader.readGraphFromString(imsgpg.graphInputFileContents);
 
 					// trigggers the local GRASP routine
 					ClusteringProblemFactory problemFactory;
 					GainFunctionFactory functionFactory(g.get());
-					Grasp resolution(&functionFactory.build(imsgpg->gainFunctionType), seed);
-					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg->iter, imsgpg->alpha,
-							imsgpg->l, problemFactory.build(imsgpg->problemType), timestamp, imsgpg->fileId,
-							imsgpg->outputFolder, imsgpg->timeLimit, imsgpg->numberOfSlaves, myRank,
-							imsgpg->numberOfSearchSlaves);
+					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
+					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
+							imsgpg.l, problemFactory.build(imsgpg.problemType), timestamp, imsgpg.fileId,
+							imsgpg.outputFolder, imsgpg.timeLimit, imsgpg.numberOfSlaves, myRank,
+							imsgpg.numberOfSearchSlaves);
 
 					// Sends the result back to the leader process
 					OutputMessage omsg(*bestClustering);
 					world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 					cout << "Process " << myRank << ": GRASP Output Message sent to leader." << endl;
-				} else if(stat.tag() == ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG) {
+				} else {  // VNS slave
+					cout << "Process " << myRank << " ready [VNS slave process]." << endl;
+					// Receives a parallel VNS message with parameters and triggers local VNS execution
+					InputMessageParallelVNS imsgvns;
+					// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG or a terminate msg
+					mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgvns);
+					if(stat.tag() == ParallelGrasp::TERMINATE_MSG_TAG) {
+						cout << "Process " << myRank << ": terminate msg received.\n";
+						return 0;
+					}
 					cout << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
-					InputMessageParallelVNS* imsgvns = dynamic_cast<InputMessageParallelVNS*>(imsg.get());
+
+					cout << "test! " << imsgvns.graphInputFileContents;
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-					SignedGraphPtr g = reader.readGraphFromString(imsgvns->graphInputFileContents);
+					cout << "time limit is " << imsgvns.numberOfSlaves << endl;
+					SignedGraphPtr g = reader.readGraphFromString(imsgvns.graphInputFileContents);
 
 					// triggers the local partial VNS search to be done between initial and final cluster indices
 					ClusteringProblemFactory problemFactory;
 					SequentialNeighborhoodSearch neig;
-					ClusteringPtr bestClustering = neig.searchNeighborhood(imsgvns->l, g.get(), &imsgvns->clustering,
-							problemFactory.build(imsgvns->problemType), imsgvns->timeSpentSoFar, imsgvns->timeLimit, seed,
-							imsgvns->initialClusterIndex, imsgvns->finalClusterIndex);
+					ClusteringPtr bestClustering = neig.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
+							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed,
+							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex);
 
 					// Sends the result back to the leader process
 					int leader = stat.source();
 					OutputMessage omsg(*bestClustering);
 					world.send(leader, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 					cout << "Process " << myRank << ": VNS Output Message sent to grasp leader number " << leader << "." << endl;
-				} else {
-					// terminate message
-					return 0;
 				}
 			}
 			catch(std::exception& e)

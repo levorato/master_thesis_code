@@ -1,4 +1,5 @@
-src/resolution/grasp/Grasp.d: ../src/resolution/grasp/Grasp.cpp \
+src/resolution/grasp/Grasp.d src/resolution/grasp/Grasp.o: \
+ ../src/resolution/grasp/Grasp.cpp \
  ../src/resolution/grasp/include/Grasp.h \
  ../src/resolution/grasp/include/GainFunction.h \
  ../src/resolution/grasp/include/../../../graph/include/Graph.h \

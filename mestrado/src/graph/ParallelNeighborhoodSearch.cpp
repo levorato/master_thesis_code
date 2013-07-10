@@ -57,7 +57,8 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 					timeSpentSoFar, timeLimit, cont * sizeOfChunk, (cont + 1) * sizeOfChunk - 1, numberOfSlaves,
 					numberOfSearchSlaves);
 			world.send(i, ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
-			cout << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk << ", " << (cont + 1) * sizeOfChunk - 1 << "]" << endl;
+			cout << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk << ", "
+					<< (cont + 1) * sizeOfChunk - 1 << "]" << endl;
 		}
 	}
 	// the leader (me) does its part of the work too
@@ -87,7 +88,8 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 				ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
 				bestClustering = clustering;
 				bestValue = omsg.clustering.getImbalance().getValue();
-				cout << "*** [Parallel VNS] Better value found for objective function in node " << stat.source() << ": " <<
+				cout << "*** [Parallel VNS] Better value found for objective function in node "
+						<< stat.source() << ": " <<
 						omsg.clustering.getImbalance().getValue() << endl;
 			}
 		}
