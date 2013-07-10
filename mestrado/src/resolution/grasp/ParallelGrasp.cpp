@@ -17,7 +17,7 @@ using namespace util;
 namespace mpi = boost::mpi;
 
 ParallelGrasp::ParallelGrasp(GainFunction* f, unsigned long seed) : Grasp(f, seed) {
-	// TODO Auto-generated constructor stub
+
 }
 
 ParallelGrasp::~ParallelGrasp() {
@@ -27,14 +27,15 @@ ParallelGrasp::~ParallelGrasp() {
 ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		const double& alpha, const int& l, ClusteringProblem& problem,
 		string& timestamp, string& fileId, string& outputFolder, 
-		const long& timeLimit, const int &numberOfSlaves, const int &myRank,
-		const int& numberOfSearchSlaves) {
+		const long& timeLimit, const int& numberOfSlaves,
+		const int& myRank, const int& numberOfSearchSlaves) {
 	mpi::communicator world;
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	for(int i = 1; i < numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getGraphAsText(), iter, alpha, l,
-				problem.getType(), gainFunction->getType(), fileId, outputFolder, timeLimit);
+				problem.getType(), gainFunction->getType(), fileId, outputFolder, timeLimit,
+				numberOfSlaves, numberOfSearchSlaves);
 		world.send(i, INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		cout << "Message sent to process " << i << endl;
 	}

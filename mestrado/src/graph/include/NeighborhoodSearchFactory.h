@@ -19,17 +19,17 @@ class NeighborhoodSearchFactory {
 public:
 	static const int SEQUENTIAL = 0, PARALLEL = 1;
 
-	NeighborhoodSearchFactory();
+	NeighborhoodSearchFactory(unsigned long numberOfSlaves, unsigned long numberOfSearchSlaves);
 	virtual ~NeighborhoodSearchFactory();
 
 	SequentialNeighborhoodSearch sequentialNeighborhoodSearch;
-	// ParallelNeighborhoodSearch parallelNeighborhoodSearch;
+	ParallelNeighborhoodSearch parallelNeighborhoodSearch;
 
-	NeighborhoodSearch& build(int neighborhoodType) {
+	NeighborhoodSearch* build(int neighborhoodType) {
 		if(neighborhoodType == NeighborhoodSearchFactory::SEQUENTIAL) {
-			return sequentialNeighborhoodSearch;
+			return &sequentialNeighborhoodSearch;
 		} else {
-			// return parallelNeighborhoodSearch;
+			return &parallelNeighborhoodSearch;
 		}
 	}
 };

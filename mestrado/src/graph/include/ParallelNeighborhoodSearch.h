@@ -25,17 +25,17 @@ public:
 	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
 					Clustering* clustering, const ClusteringProblem& problem,
 					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-					unsigned long numberOfSlaves, int myRank, unsigned long numberOfSearchSlaves);
+					int myRank);
 
 private:
 	/**
-	 * Initial process index.
+	 * Number of slave processes that will execute the grasp iterations in parallel.
 	 */
-	unsigned int offset;
+	unsigned int numberOfSlaves;
 	/**
-	 * Number of processes that will execute the parallel search.
+	 * Number of slave processes that will execute the parallel search (parallel VNS).
 	 */
-	unsigned int numberOfProcesses;
+	unsigned int numberOfSearchSlaves;
 };
 
 } /* namespace grasp */

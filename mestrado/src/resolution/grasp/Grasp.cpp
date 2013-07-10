@@ -11,6 +11,7 @@
 #include "../../graph/include/ParallelNeighborhoodSearch.h"
 #include "../../problem/include/ClusteringProblem.h"
 #include "../../problem/include/CCProblem.h"
+#include "../../graph/include/NeighborhoodSearchFactory.h"
 
 #include <algorithm>
 #include <iostream>
@@ -49,18 +50,17 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	Imbalance bestValue = CStar->getImbalance();
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0;
+	// Chooses between the sequential or parallel VNS algorithm
 	NeighborhoodSearch* neig;
-	ParallelNeighborhoodSearch pns(numberOfSlaves, numberOfSearchSlaves);
-	SequentialNeighborhoodSearch sns;
+	NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
 	if(numberOfSearchSlaves > 0) {
-		neig = &pns;
+		neig = nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 	} else {
-		neig = &sns;
+		neig = nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 	}
 	stringstream ss;
 	int i = 0, totalIter = 0;
 
-	// TODO: Parallelize here! Divide iterations by n processors with MPI.
 	for (i = 0, totalIter = 0; i <= iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
 		// cout << "GRASP iteration " << i << endl;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
@@ -190,7 +190,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// apply a local search in CStar using the k-neighborhood
 
 		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
-				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed, numberOfSlaves, myRank, numberOfSearchSlaves);
+				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed, myRank);
 		if(Cl->getImbalance().getValue() < 0.0) {
 			cerr << myRank << ": Objective function below zero. Error." << endl;
 			break;

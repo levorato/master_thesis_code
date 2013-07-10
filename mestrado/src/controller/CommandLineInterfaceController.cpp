@@ -19,6 +19,7 @@
 #include "../problem/include/ClusteringProblemFactory.h"
 #include "../resolution/grasp/include/GainFunctionFactory.h"
 #include "../resolution/grasp/include/GainFunction.h"
+#include "../graph/include/NeighborhoodSearchFactory.h"
 #include "../graph/include/ParallelNeighborhoodSearch.h"
 #include "../graph/include/SequentialNeighborhoodSearch.h"
 
@@ -94,7 +95,7 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
 		string& timestamp, const bool& debug, const double& alpha, const int& l,
-		const int& numberOfIterations, const long& timeLimit, const int& np, const int& numberOfSlaves,
+		const int& numberOfIterations, const long& timeLimit, const int& numberOfSlaves, const int& numberOfSearchSlaves,
 		const int& myRank, const int& problemType, const int& functionType, const unsigned long& seed) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
@@ -113,20 +114,18 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		boost::timer::cpu_timer timer;
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
-		// Number of remaining slaves after using 'numberOfSlaves' processes for parallel GRASP execution
-		int remainingSlaves = np - numberOfSlaves;
 
 		if(numberOfSlaves == 1) {	// sequential version of GRASP
 			Grasp resolution(&functionFactory.build(functionType), seed);
 			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l,
-					problemFactory.build(problemType),
-					timestamp, fileId, outputFolder, timeLimit, numberOfSlaves, myRank, remainingSlaves);
+					problemFactory.build(problemType), timestamp, fileId, outputFolder,
+					timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 		} else {  // parallel version
 			// distributes GRASP processing among numberOfSlaves processes and summarizes the result
 			ParallelGrasp parallelResolution(&functionFactory.build(functionType), seed);
 			c = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, 
 					problemFactory.build(problemType), timestamp, fileId, outputFolder, timeLimit,
-					numberOfSlaves, myRank, remainingSlaves);
+					numberOfSlaves, myRank, numberOfSearchSlaves);
 		}
 
 		// Stops the timer and stores the elapsed time
@@ -271,6 +270,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			} else {
 				cout << "min imbalance\n";
 			}
+			cout << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
 			vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
@@ -300,6 +300,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				return 1;
 			}
 
+			// Number of remaining slaves after using 'numberOfSlaves' processes for parallel GRASP execution
+			int remainingSlaves = np - numberOfSlaves;
+			// Divides the remaining slaves that will be used in parallel VNS processing
+			int numberOfSearchSlaves = remainingSlaves / numberOfSlaves;
+			cout << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
+
 			for(unsigned int i = 0; i < fileList.size(); i++) {
 				fs::path filePath = fileList.at(i);
 
@@ -307,13 +313,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					cout << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, timestamp, debug, alpha, l,
-							numberOfIterations, timeLimit, np, numberOfSlaves, myRank, problemType, functionType, seed);
+							numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
+							myRank, problemType, functionType, seed);
 				} else {
 					cout << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, timestamp, debug, alpha2, l,
-								numberOfIterations, timeLimit, np, numberOfSlaves, myRank, problemType, functionType, seed);
+								numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
+								myRank, problemType, functionType, seed);
 					}
 				}
 			}
@@ -336,6 +344,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			return 1;
 		}
 	} else { // processos seguidores
+		cout << "Process " << myRank << " ready." << endl;
 		while(true) {
 			try {
 				// Receives a message with GRASP parameters and triggers local execution
@@ -344,18 +353,19 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsg);
 				if(stat.tag() == ParallelGrasp::INPUT_MSG_PARALLEL_GRASP_TAG) {
 					cout << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
-					InputMessageParallelGrasp imsgpg = imsg;
+					InputMessageParallelGrasp* imsgpg = (InputMessageParallelGrasp*)&imsg;
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-					SignedGraphPtr g = reader.readGraphFromString(imsgpg.graphInputFileContents);
+					SignedGraphPtr g = reader.readGraphFromString(imsgpg->graphInputFileContents);
 
 					// trigggers the local GRASP routine
 					ClusteringProblemFactory problemFactory;
 					GainFunctionFactory functionFactory(g.get());
-					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
-					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
-							imsgpg.l, problemFactory.build(imsgpg.problemType), timestamp, imsgpg.fileId,
-							imsgpg.outputFolder, imsgpg.timeLimit, numberOfSlaves, myRank, );
+					Grasp resolution(&functionFactory.build(imsgpg->gainFunctionType), seed);
+					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg->iter, imsgpg->alpha,
+							imsgpg->l, problemFactory.build(imsgpg->problemType), timestamp, imsgpg->fileId,
+							imsgpg->outputFolder, imsgpg->timeLimit, imsgpg->numberOfSlaves, myRank,
+							imsgpg->numberOfSearchSlaves);
 
 					// Sends the result back to the leader process
 					OutputMessage omsg(*bestClustering);
@@ -363,28 +373,23 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					cout << "Process " << myRank << ": GRASP Output Message sent to leader." << endl;
 				} else if(stat.tag() == ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG) {
 					cout << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
-					InputMessageParallelVNS imsgvns = imsg;
+					InputMessageParallelVNS* imsgvns = (InputMessageParallelVNS*)&imsg;
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-					SignedGraphPtr g = reader.readGraphFromString(imsgvns.graphInputFileContents);
+					SignedGraphPtr g = reader.readGraphFromString(imsgvns->graphInputFileContents);
 
 					// triggers the local partial VNS search to be done between initial and final cluster indices
 					ClusteringProblemFactory problemFactory;
-					NeighborhoodSearch neig;
-					if(numberOfSearchSlaves > 0) {
-						neig = ParallelNeighborhoodSearch(imsgvns.numberOfSlaves, imsgvns.numberOfSearchSlaves);
-					} else {
-						neig = SequentialNeighborhoodSearch();
-					}
-					ClusteringPtr bestClustering = neig.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
-							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed,
-							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex);
+					SequentialNeighborhoodSearch neig;
+					ClusteringPtr bestClustering = neig.searchNeighborhood(imsgvns->l, g.get(), &imsgvns->clustering,
+							problemFactory.build(imsgvns->problemType), imsgvns->timeSpentSoFar, imsgvns->timeLimit, seed,
+							imsgvns->initialClusterIndex, imsgvns->finalClusterIndex);
 
 					// Sends the result back to the leader process
 					int leader = stat.source();
 					OutputMessage omsg(*bestClustering);
 					world.send(leader, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-					cout << "Process " << myRank << ": VNS Output Message sent to leader number " << leader << "." << endl;
+					cout << "Process " << myRank << ": VNS Output Message sent to grasp leader number " << leader << "." << endl;
 				} else {
 					// terminate message
 					return 0;

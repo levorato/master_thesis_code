@@ -10,8 +10,9 @@
 namespace resolution {
 namespace grasp {
 
-NeighborhoodSearchFactory::NeighborhoodSearchFactory() {
-	// TODO Auto-generated constructor stub
+NeighborhoodSearchFactory::NeighborhoodSearchFactory(unsigned long numberOfSlaves,
+		unsigned long numberOfSearchSlaves) : sequentialNeighborhoodSearch(),
+				parallelNeighborhoodSearch(numberOfSlaves, numberOfSearchSlaves) {
 
 }
 

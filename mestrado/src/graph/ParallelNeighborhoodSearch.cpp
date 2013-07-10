@@ -18,8 +18,7 @@ using namespace boost::mpi;
 using namespace util;
 
 ParallelNeighborhoodSearch::ParallelNeighborhoodSearch(unsigned int offset, unsigned int numproc) :
-		offset(offset), numberOfProcesses(numproc) {
-	// TODO Auto-generated constructor stub
+		numberOfSlaves(offset), numberOfSearchSlaves(numproc) {
 
 }
 
@@ -29,27 +28,33 @@ ParallelNeighborhoodSearch::~ParallelNeighborhoodSearch() {
 
 ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
-		double timeLimit, unsigned long randomSeed, unsigned long numberOfSlaves, int myRank,
-		unsigned long numberOfSearchSlaves) {
+		double timeLimit, unsigned long randomSeed, int myRank) {
 
-	// Splits the processing in (numberOfClusters / numberOfProcesses) chunks,
-	// to be consumed by numberOfProcesses processes
-	unsigned long sizeOfChunk = clustering->getNumberOfClusters() / numberOfProcesses;
-	unsigned long remainingClusters = clustering->getNumberOfClusters() % numberOfProcesses;
+	// Splits the processing in (numberOfClusters / numberOfSearchSlaves) chunks,
+	// to be consumed by numberOfSearchSlaves processes
+	unsigned long sizeOfChunk = clustering->getNumberOfClusters() / numberOfSearchSlaves;
+	unsigned long remainingClusters = clustering->getNumberOfClusters() % numberOfSearchSlaves;
 	mpi::communicator world;
 	// the leader distributes the work across the processors
 	// the leader itself (myRank) does part of the work too
-	int firstSlave = offset + myRank * numberOfProcesses;
-	int lastSlave = offset + (myRank + 1) * numberOfProcesses;
+	// The formulas below determine the first and last search slaves of this grasp slave process
+	// IMPORTANT! Process mapping:
+	// * 0..numberOfSlaves-1 => p(i) GRASP slave processes (execute parellel GRASP iterations with MPI)
+	// * numberOfSlaves..numberOfSearchSlaves-1 => VNS slave processes for p(0) (execute parallel VNS for p(0))
+	// * numberOfSlaves+i*numberOfSearchSlaves..numberOfSlaves+(i+1)*numberOfSearchSlaves-1 => VNS slave processes for p(i)
+	// Here, p(i) is represented by myRank.
+	int firstSlave = numberOfSlaves + myRank * numberOfSearchSlaves;
+	int lastSlave = numberOfSlaves + (myRank + 1) * numberOfSearchSlaves;
 	int i = firstSlave;
+	// Sends the parallel search (VNS) message to the slaves via MPI
 	for(; i < lastSlave; i++) {
 		InputMessageParallelVNS imsgpvns(l, g->getGraphAsText(), *clustering, problem.getType(),
-				timeSpentSoFar, timeLimit, i * sizeOfChunk, (i + 1) * sizeOfChunk - 1, numberOfSlaves, numberOfSearchSlaves);
+				timeSpentSoFar, timeLimit, i * sizeOfChunk, (i + 1) * sizeOfChunk - 1, numberOfSlaves,
+				numberOfSearchSlaves);
 		world.send(i, ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
 		cout << "VNS Message sent to process " << i << endl;
 	}
-	// the leader does its part of the work
-	// ClusteringProblemFactory problemFactory;
+	// the leader (me) does its part of the work too
 	SequentialNeighborhoodSearch neig;
 	ClusteringPtr bestClustering = neig.searchNeighborhood(l, g, clustering,
 			problem, timeSpentSoFar, timeLimit, randomSeed,
@@ -60,7 +65,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 		mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 		cout << "Message received from process " << stat.source() << ": " <<
 				omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString()  << "\n";
-		// process the result of the execution of process i
+		// processes the result of the execution of process p(i)
 		if(omsg.clustering.getImbalance().getValue() < bestClustering->getImbalance().getValue()) {
 			ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
 			bestClustering.reset();

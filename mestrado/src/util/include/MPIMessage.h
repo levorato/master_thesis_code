@@ -13,24 +13,57 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/export.hpp>
 
 #include "../../graph/include/Clustering.h"
 
 using namespace std;
 using namespace clusteringgraph;
+namespace bser = boost::serialization;
 
 namespace util {
 
+/**
+ * Abstract input message class for use with MPI.
+ */
 class InputMessage {
+public:
+	string graphInputFileContents;
+	int l;
+	// the number of grasp slave processes
+	int numberOfSlaves;
+	// the number of vns slave processes
+	int numberOfSearchSlaves;
 
+	InputMessage() : graphInputFileContents(), l(0), numberOfSlaves(0),
+			numberOfSearchSlaves(0) {
+
+	}
+
+	InputMessage(string graphContents, int nl, unsigned long slaves, unsigned long searchSlaves) :
+		graphInputFileContents(graphContents), l(nl), numberOfSlaves(slaves),
+		numberOfSearchSlaves(searchSlaves) {
+
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, unsigned int file_version)
+	{
+		ar & graphInputFileContents;
+		ar & l;
+		ar & numberOfSlaves;
+		ar & numberOfSearchSlaves;
+	}
 };
 
-class InputMessageParallelGrasp : InputMessage {
+BOOST_SERIALIZATION_ASSUME_ABSTRACT( InputMessage );
+
+class InputMessageParallelGrasp : public InputMessage {
 public:
 	static const int TAG = 50;
-	string graphInputFileContents;
 	double alpha;
-	int l;
 	int iter;
 	int gainFunctionType;
 	int problemType;
@@ -38,16 +71,17 @@ public:
 	string outputFolder;
 	long timeLimit;
 
-	InputMessageParallelGrasp() : graphInputFileContents(),
-			alpha(0.0F), l(1), iter(500), gainFunctionType(0), problemType(0),
+	InputMessageParallelGrasp() : InputMessage(),
+			alpha(0.0F), iter(500), gainFunctionType(0), problemType(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800) {
 
 	}
 
 	InputMessageParallelGrasp(string graphContents, int it, double a, int neigh,
-			int pType, int gfType, string id, string folder, long t) :
-				graphInputFileContents(graphContents),
-					alpha(a), l(neigh), iter(it), gainFunctionType(gfType),
+			int pType, int gfType, string id, string folder, long t, unsigned long slaves,
+			unsigned long searchSlaves) :
+				InputMessage(graphContents, neigh, slaves, searchSlaves),
+					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), fileId(id),
 					outputFolder(folder), timeLimit(t) {
 
@@ -60,15 +94,12 @@ public:
 		return ss.str();
 	}
 
-private:
-	// serialization-specific code
-	friend class boost::serialization::access;
-
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		ar & graphInputFileContents;
+		// invoke serialization of the base class
+		ar & boost::serialization::base_object<InputMessage>(*this);
+		// save/load class member variables
 		ar & alpha;
-		ar & l;
 		ar & iter;
 		ar & gainFunctionType;
 		ar & problemType;
@@ -78,54 +109,46 @@ private:
 	}
 };
 
-class InputMessageParallelVNS : InputMessage {
+
+class InputMessageParallelVNS : public InputMessage {
 public:
 	static const int TAG = 70;
-	int l;
-	string graphInputFileContents;
 	Clustering clustering;
 	int problemType;
 	double timeSpentSoFar;
 	double timeLimit;
 	unsigned long initialClusterIndex;
 	unsigned long finalClusterIndex;
-	int numberOfSlaves;
-	int numberOfSearchSlaves;
 
-	InputMessageParallelVNS() : l(1), graphInputFileContents(), clustering(),
+	InputMessageParallelVNS() : InputMessage(), clustering(),
 			problemType(0), timeSpentSoFar(0.0), timeLimit(3600.0), initialClusterIndex(0),
-			finalClusterIndex(0), numberOfSlaves(0), numberOfSearchSlaves(0) {
+			finalClusterIndex(0) {
 
 	}
 
 	InputMessageParallelVNS(int neig, string graphContents, Clustering c,
 			int pType, double timeSoFar, double tl, unsigned long startIdx,
-			unsigned long endIdx, int slaves, int searchSlaves) : l(neig),
-			graphInputFileContents(graphContents), clustering(c),
+			unsigned long endIdx, int slaves, int searchSlaves) :
+			InputMessage(graphContents, neig, slaves, searchSlaves), clustering(c),
 			problemType(pType), timeSpentSoFar(timeSoFar), timeLimit(tl),
-			initialClusterIndex(startIdx) , finalClusterIndex(endIdx),
-			numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
+			initialClusterIndex(startIdx) , finalClusterIndex(endIdx) {
 
 	}
 
-private:
-	// serialization-specific code
-	friend class boost::serialization::access;
-
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		ar & l;
-		ar & graphInputFileContents;
+		// invoke serialization of the base class
+		ar & boost::serialization::base_object<InputMessage>(*this);
+		// save/load class member variables
 		ar & clustering;
 		ar & problemType;
 		ar & timeSpentSoFar;
 		ar & timeLimit;
 		ar & initialClusterIndex;
 		ar & finalClusterIndex;
-		ar & numberOfSlaves;
-		ar & numberOfSearchSlaves;
 	}
 };
+
 
 class OutputMessage {
 public:
@@ -140,10 +163,6 @@ public:
 	OutputMessage(Clustering &c) : clustering(c) {
 
 	}
-
-private:
-	// serialization-specific code
-	friend class boost::serialization::access;
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
