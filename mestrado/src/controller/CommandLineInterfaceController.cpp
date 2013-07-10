@@ -351,13 +351,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		while(true) {
 			try {
 				// Receives a message with GRASP parameters and triggers local execution
-				InputMessage imsg;
+				shared_ptr<InputMessage> imsg = make_shared<InputMessage>();
 				mpi::communicator world;
-				mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsg);
+				mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, *imsg);
 				cout << "Process " << myRank << ": message received." << endl;
 				if(stat.tag() == ParallelGrasp::INPUT_MSG_PARALLEL_GRASP_TAG) {
 					cout << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
-					InputMessageParallelGrasp* imsgpg = (InputMessageParallelGrasp*)&imsg;
+					// TODO corrigir bug aqui, mensagem esta chegando parcialmente em branco...
+					InputMessageParallelGrasp* imsgpg = dynamic_cast<InputMessageParallelGrasp*>(imsg.get());
+					cout << "test! " << imsgpg->alpha << endl;
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 					SignedGraphPtr g = reader.readGraphFromString(imsgpg->graphInputFileContents);
@@ -377,7 +379,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					cout << "Process " << myRank << ": GRASP Output Message sent to leader." << endl;
 				} else if(stat.tag() == ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG) {
 					cout << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
-					InputMessageParallelVNS* imsgvns = (InputMessageParallelVNS*)&imsg;
+					InputMessageParallelVNS* imsgvns = dynamic_cast<InputMessageParallelVNS*>(imsg.get());
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 					SignedGraphPtr g = reader.readGraphFromString(imsgvns->graphInputFileContents);
