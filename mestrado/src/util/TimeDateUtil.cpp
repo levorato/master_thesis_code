@@ -34,7 +34,7 @@ std::wstring TimeDateUtil::FormatTime(boost::posix_time::ptime now)
   wss << now;
 
   boost::uuids::uuid tag = boost::uuids::random_generator()();
-  wss << tag;
+  wss << "_" << tag;
 
   return wss.str();
 }

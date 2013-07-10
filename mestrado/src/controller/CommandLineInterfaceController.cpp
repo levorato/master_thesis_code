@@ -115,7 +115,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
 
-		if(numberOfSlaves == 1) {	// sequential version of GRASP
+		if(numberOfSlaves <= 1) {	// sequential version of GRASP
 			Grasp resolution(&functionFactory.build(functionType), seed);
 			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l,
 					problemFactory.build(problemType), timestamp, fileId, outputFolder,
@@ -300,11 +300,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				return 1;
 			}
 
-			// Number of remaining slaves after using 'numberOfSlaves' processes for parallel GRASP execution
-			int remainingSlaves = np - numberOfSlaves;
-			// Divides the remaining slaves that will be used in parallel VNS processing
-			int numberOfSearchSlaves = remainingSlaves / numberOfSlaves;
-			cout << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
+			int numberOfSearchSlaves = 0;
+			if(numberOfSlaves > 0) {
+				// Number of remaining slaves after using 'numberOfSlaves' processes for parallel GRASP execution
+				int remainingSlaves = np - numberOfSlaves;
+				// Divides the remaining slaves that will be used in parallel VNS processing
+				numberOfSearchSlaves = remainingSlaves / numberOfSlaves;
+				cout << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
+			}
 
 			for(unsigned int i = 0; i < fileList.size(); i++) {
 				fs::path filePath = fileList.at(i);
