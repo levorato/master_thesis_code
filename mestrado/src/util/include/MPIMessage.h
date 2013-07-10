@@ -16,6 +16,7 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/base_object.hpp>
 
 #include "../../graph/include/Clustering.h"
 
@@ -48,6 +49,8 @@ public:
 
 	}
 
+	virtual ~InputMessage(){};
+
 	template<class Archive>
 	void serialize(Archive & ar, unsigned int file_version)
 	{
@@ -58,7 +61,6 @@ public:
 	}
 };
 
-BOOST_SERIALIZATION_ASSUME_ABSTRACT( InputMessage );
 
 class InputMessageParallelGrasp : public InputMessage {
 public:
@@ -96,8 +98,11 @@ public:
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+
+		ar.template register_type< InputMessage >();
+		ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(InputMessage);
 		// invoke serialization of the base class
-		ar & boost::serialization::base_object<InputMessage>(*this);
+		//ar & boost::serialization::base_object<InputMessage>(*this);
 		// save/load class member variables
 		ar & alpha;
 		ar & iter;
@@ -108,7 +113,6 @@ public:
 		ar & timeLimit;
 	}
 };
-
 
 class InputMessageParallelVNS : public InputMessage {
 public:
@@ -137,8 +141,10 @@ public:
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+		ar.template register_type< InputMessage >();
+		ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(InputMessage);
 		// invoke serialization of the base class
-		ar & boost::serialization::base_object<InputMessage>(*this);
+		//ar & boost::serialization::base_object<InputMessage>(*this);
 		// save/load class member variables
 		ar & clustering;
 		ar & problemType;
@@ -148,6 +154,7 @@ public:
 		ar & finalClusterIndex;
 	}
 };
+
 
 
 class OutputMessage {
@@ -177,4 +184,5 @@ public:
 };
 
 } /* namespace util */
+
 #endif /* MPIMESSAGE_H_ */

@@ -354,6 +354,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				InputMessage imsg;
 				mpi::communicator world;
 				mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsg);
+				cout << "Process " << myRank << ": message received." << endl;
 				if(stat.tag() == ParallelGrasp::INPUT_MSG_PARALLEL_GRASP_TAG) {
 					cout << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
 					InputMessageParallelGrasp* imsgpg = (InputMessageParallelGrasp*)&imsg;

@@ -40,15 +40,17 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 	unsigned long n = g->getN();
 	assert(initialClusterIndex < clustering->getNumberOfClusters());
 	assert(finalClusterIndex < clustering->getNumberOfClusters());
-	unsigned long numberOfClustersInInterval = finalClusterIndex - initialClusterIndex;
+	unsigned long numberOfClustersInInterval = finalClusterIndex - initialClusterIndex + 1;
 	unsigned long totalNumberOfClusters = clustering->getNumberOfClusters();
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	ClusteringPtr cBest = make_shared<Clustering>(*clustering);
 	// random number generators used in loop randomization
-	boost::uniform_int<> distnc(initialClusterIndex, finalClusterIndex);
-	boost::uniform_int<> distN(0, n-1);
+	boost::uniform_int<> distn1(initialClusterIndex, finalClusterIndex);
+	boost::uniform_int<> distnc(0, totalNumberOfClusters - 1);
+	boost::uniform_int<> distN(0, n - 1);
 	boost::minstd_rand generator(randomSeed);
 	generator.seed(boost::random::random_device()());
+	boost::variate_generator<minstd_rand&, boost::uniform_int<> > unin1(generator, distn1);
 	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uninc(generator, distnc);
 	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uniN(generator, distN);
 
