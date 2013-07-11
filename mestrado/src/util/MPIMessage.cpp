@@ -21,6 +21,6 @@ MPIMessage::~MPIMessage() {
 } /* namespace util */
 
 // important serialization polymorphic class export
-BOOST_SERIALIZATION_ASSUME_ABSTRACT( util::InputMessage )
-BOOST_CLASS_EXPORT_GUID( util::InputMessageParallelGrasp, "InputMessageParallelGrasp" )
-BOOST_CLASS_EXPORT_GUID( util::InputMessageParallelVNS, "InputMessageParallelVNS" )
+//BOOST_SERIALIZATION_ASSUME_ABSTRACT( util::InputMessage )
+//BOOST_CLASS_EXPORT_GUID( util::InputMessageParallelGrasp, "InputMessageParallelGrasp" )
+//BOOST_CLASS_EXPORT_GUID( util::InputMessageParallelVNS, "InputMessageParallelVNS" )

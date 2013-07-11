@@ -11,6 +11,8 @@
 #include <iomanip>
 #include <cmath>
 
+#include <boost/log/trivial.hpp>
+
 using namespace std;
 
 namespace clusteringgraph {
@@ -85,9 +87,9 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, unsigned long i, unsigned
 }
 
 void Clustering::printClustering() {
-	std::cout << "Clustering configuration: I(P) = " << fixed << setprecision(2)
-			<< this->imbalance.getValue() << "\n";
-	print(std::cout, clusterList);
+	BOOST_LOG_TRIVIAL(trace) << "Clustering configuration: I(P) = " << fixed << setprecision(2)
+			<< this->imbalance.getValue();
+	BOOST_LOG_TRIVIAL(trace) << toString();
 }
 
 void Clustering::printClustering(ostream& os) {

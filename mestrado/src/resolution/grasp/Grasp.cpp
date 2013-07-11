@@ -22,6 +22,7 @@
 #include <boost/timer/timer.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/log/trivial.hpp>
 
 using namespace problem;
 using namespace boost;
@@ -43,8 +44,8 @@ Grasp::~Grasp() {
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 		const ClusteringProblem& problem, string& timestamp, string& fileId, string& outputFolder,
 		const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves) {
-	std::cout << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
-	std::cout << "Random seed is " << randomSeed << std::endl;
+	BOOST_LOG_TRIVIAL(debug) << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
+	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
 	ClusteringPtr CStar = constructClustering(g, problem, alpha, myRank);
 	ClusteringPtr previousCc = CStar, Cc;
 	Imbalance bestValue = CStar->getImbalance();
@@ -104,7 +105,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		}
 		// if elapsed time is bigger than timeLimit, break
 		if(timeSpentSoFar >= timeLimit) {
-			cout << "Time limit exceeded." << endl;
+			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
 	}
@@ -117,7 +118,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
 			<< "," << (totalIter+1) << endl;
 
-	cout << "GRASP procedure done." << endl;
+	BOOST_LOG_TRIVIAL(debug) << "GRASP procedure done." << endl;
 	// CStar->printClustering();
 	CStar->printClustering(ss);
 	generateOutputFile(ss, outputFolder, fileId, timestamp, myRank, alpha, l, iter);
@@ -176,7 +177,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	int k = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc); // C* := Cc
 	double localTimeSpent = 0.0;
-	// std::cout << "GRASP local search...\n";
+	BOOST_LOG_TRIVIAL(trace) << "GRASP local search...\n";
 	// cout << "Current neighborhood is " << k << endl;
 
 	while(k <= l && (timeSpentSoFar + localTimeSpent < timeLimit)) {
@@ -192,7 +193,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
 				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed, myRank);
 		if(Cl->getImbalance().getValue() < 0.0) {
-			cerr << myRank << ": Objective function below zero. Error." << endl;
+			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error." << endl;
 			break;
 		}
 		// cout << "Comparing local solution value." << endl;
@@ -215,7 +216,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		boost::timer::cpu_times end_time = timer.elapsed();
 		localTimeSpent += (end_time.wall - start_time.wall) / double(1000000000);
 	}
-	// std::cout << "GRASP local search done.\n";
+	BOOST_LOG_TRIVIAL(trace) << "GRASP local search done.\n";
 	return CStar;
 }
 
@@ -243,7 +244,7 @@ void Grasp::generateOutputFile(stringstream& fileContents, string& outputFolder,
 	ofstream os;
 	os.open(newFile.c_str(), ios::out | ios::trunc);
 	if (!os) {
-		cerr << "Can't open output file!" << endl;
+		BOOST_LOG_TRIVIAL(fatal) << "Can't open output file!" << endl;
 		throw "Cannot open output file.";
 	}
 	// Writes the parameters to the output file

@@ -38,6 +38,7 @@ private:
 			const int& numberOfSlaves, const int& numberOfSearchSlaves, const int& myRank,
 			const int& problemType, const int& functionType, const unsigned long& seed);
 
+	static void initLogging(int myRank);
 	static void handler();
 };
 } /* namespace controller */

@@ -10,6 +10,7 @@
 #include "../util/include/MPIMessage.h"
 #include "../resolution/grasp/include/ParallelGrasp.h"
 #include <boost/mpi/communicator.hpp>
+#include <boost/log/trivial.hpp>
 
 #include <limits>
 
@@ -57,16 +58,17 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 					timeSpentSoFar, timeLimit, cont * sizeOfChunk, (cont + 1) * sizeOfChunk - 1, numberOfSlaves,
 					numberOfSearchSlaves);
 			world.send(i, ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
-			cout << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk << ", "
-					<< (cont + 1) * sizeOfChunk - 1 << "]" << endl;
+			BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk << ", " << (cont + 1) * sizeOfChunk - 1 << "]" << endl;
 		}
 	}
 	// the leader (me) does its part of the work too
 	SequentialNeighborhoodSearch neig;
-	cout << "Total number os clusters is " << clustering->getNumberOfClusters() << endl;
-	cout << "VNS Parallelization status: " << numberOfSearchSlaves <<
+
+	BOOST_LOG_TRIVIAL(trace) << "Total number of clusters is " << clustering->getNumberOfClusters() << endl;
+	BOOST_LOG_TRIVIAL(trace) << "VNS Parallelization status: " << numberOfSearchSlaves <<
 			" search slaves will process " << sizeOfChunk << " clusters each one." << endl;
-	cout << "RemainingClusters is " << remainingClusters << endl;
+	BOOST_LOG_TRIVIAL(trace) << "RemainingClusters is " << remainingClusters << endl;
+
 	double bestValue = numeric_limits<double>::infinity();
 	ClusteringPtr bestClustering;
 	if(remainingClusters > 0) {
@@ -75,27 +77,27 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 				cont * sizeOfChunk, cont * sizeOfChunk + remainingClusters - 1);
 		bestValue = bestClustering->getImbalance().getValue();
 	}
-	cout << "Waiting for slaves return messages...\n";
+	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
 	// the leader receives the processing results, if any
 	if(sizeOfChunk > 0) {
 		OutputMessage omsg;
 		for(i = firstSlave; i < lastSlave; i++) {
 			mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-			cout << "Message received from process " << stat.source() << ": " <<
+			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ": " <<
 					omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString()  << "\n";
 			// processes the result of the execution of process p(i)
 			if(omsg.clustering.getImbalance().getValue() < bestValue) {
 				ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
 				bestClustering = clustering;
 				bestValue = omsg.clustering.getImbalance().getValue();
-				cout << "*** [Parallel VNS] Better value found for objective function in node "
+				BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] Better value found for objective function in node "
 						<< stat.source() << ": " <<
 						omsg.clustering.getImbalance().getValue() << endl;
 			}
 		}
 	}
-	// cout << "[Parallel VNS] Best solution found: I(P) = " << bestClustering->getImbalance().getValue() << endl;
-	// bestClustering->printClustering();
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel VNS] Best solution found: I(P) = " << bestClustering->getImbalance().getValue() << endl;
+	bestClustering->printClustering();
 	return bestClustering;
 }
 

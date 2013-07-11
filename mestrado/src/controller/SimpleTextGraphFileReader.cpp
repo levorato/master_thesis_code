@@ -22,6 +22,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
+#include <boost/log/trivial.hpp>
 
 using namespace std;
 using namespace boost;
@@ -56,14 +57,14 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 		string line = lines.at(0);
 		lines.erase(lines.begin());
 		trim(line);
-		cout << "Line: " << line << endl;
+		BOOST_LOG_TRIVIAL(trace) << "Line: " << line << endl;
 
 		if(line.find("people") != string::npos) {
-			cout << "Format type is 0" << endl;
+			BOOST_LOG_TRIVIAL(trace) << "Format type is 0" << endl;
 			string number = line.substr(line.find(":") + 1);
 			trim(number);
 			n = boost::lexical_cast<int>(number);
-			cout << "n value is " << n << endl;
+			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
 			// ignore the next 2 lines of the file
 			lines.erase(lines.begin());
 			lines.erase(lines.begin());
@@ -74,11 +75,11 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			lines.push_back(firstLine.substr(firstLine.find("[") + 1));
 			formatType = 0;
 		} else if(line.find("Vertices") != string::npos) {
-			cout << "Format type is 1" << endl;
+			BOOST_LOG_TRIVIAL(trace) << "Format type is 1" << endl;
 			string number = line.substr(line.find("Vertices") + 8);
 			trim(number);
 			n = boost::lexical_cast<int>(number);
-			cout << "n value is " << n << endl;
+			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
 			while(lines.at(0).find("Arcs") == string::npos && lines.at(0).find("Edges") == string::npos) {
 				lines.erase(lines.begin());
 			}
@@ -90,10 +91,10 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			vec.assign(tokens2.begin(),tokens2.end());
 			n = boost::lexical_cast<int>(vec.at(0));
 			if(vec.size() == 1) { // .dat files
-				cout << "Format type is 3" << endl;
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 3" << endl;
 				formatType = 3;
 			} else {
-				cout << "Format type is 2" << endl;
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 2" << endl;
 				e = boost::lexical_cast<int>(vec.at(1));
 				formatType = 2;
 			}
@@ -103,7 +104,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	}
 
 	SignedGraphPtr g = boost::make_shared<SignedGraph>(n);
-	std::cout << "Successfully created signed graph with " << n << " vertices." << std::endl;
+	BOOST_LOG_TRIVIAL(trace) << "Successfully created signed graph with " << n << " vertices." << std::endl;
 
 	// captura as arestas do grafo com seus valores
 	if(formatType == 2 || formatType == 1) {
@@ -118,7 +119,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 			if (vec.size() < 3) continue;
 			if(vec.at(2).rfind('\n') != string::npos)
-				std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+				BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
 			try {
 				int a = boost::lexical_cast<int>(vec.at(0));
@@ -137,7 +138,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 					imbalance++;
 				}
 			} catch( boost::bad_lexical_cast const& ) {
-				std::cerr << "Error: input string was not valid" << std::endl;
+				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 			}
 
 		}
@@ -155,7 +156,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 			if (vec.size() < 3) continue;
 			if(vec.at(2).rfind('\n') != string::npos)
-				std::cout << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+				BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
 			try {
 				int a = boost::lexical_cast<int>(vec.at(0));
@@ -166,7 +167,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				g->addEdge(a - 1, b - 1, value);
 				// g->addEdge(b - 1, a - 1, value);
 			} catch( boost::bad_lexical_cast const& ) {
-				std::cerr << "Error: input string was not valid" << std::endl;
+				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 			}
 		}
 	} else {  // formatType == 3, .dat files
@@ -189,7 +190,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 					// the following is to avoid duplicate couting of arcs in the objective function
 					if(b <= a)	g->addEdge(a, b, value);
 				} catch( boost::bad_lexical_cast const& ) {
-					std::cerr << "Error: input string was not valid" << std::endl;
+					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 				}
 			}
 			a++;
@@ -202,7 +203,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 }
 
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(const string& filepath) {
-	cout << "Reading input file: '" << filepath << "' ..." << endl;
+	BOOST_LOG_TRIVIAL(debug) << "Reading input file: '" << filepath << "' ..." << endl;
 	return readGraphFromString(get_file_contents(filepath.c_str()));
 }
 

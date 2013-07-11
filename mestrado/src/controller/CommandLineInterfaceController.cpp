@@ -36,7 +36,18 @@
 #include <boost/nondet_random.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/linear_congruential.hpp>
-
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -188,9 +199,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	unsigned long seed = mix(clock(), time(NULL), getpid());
 	// boost::minstd_rand generator(seed);
 
+	// initializes the logging subsystem
+	CommandLineInterfaceController::initLogging(myRank);
+
 	// codigo do processor lider
 	if(myRank == 0) {
-		cout << "Correlation clustering problem solver" << endl << endl;
+		cout << "Correlation clustering problem solver" << endl;
 
 		try {
 			string s_alpha;
@@ -247,7 +261,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			}
 
 			if (k != -1) {
-				cout << "k value is " << k << ". RCC is enabled." << endl;
+				BOOST_LOG_TRIVIAL(debug) << "k value is " << k << ". RCC is enabled." << endl;
 				problemType = ClusteringProblem::RCC_PROBLEM;
 			}
 
@@ -259,32 +273,32 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				sscanf(s_alpha.c_str(), "%f", &alpha);				
 			}
 
-			cout << "Resolution strategy is " << strategy << endl;
-			cout << "Neighborhood size (l) is " << l << "\n";
-			cout << "Gain function type is ";
+			BOOST_LOG_TRIVIAL(debug) << "Resolution strategy is " << strategy << endl;
+			BOOST_LOG_TRIVIAL(debug) << "Neighborhood size (l) is " << l << "\n";
+			BOOST_LOG_TRIVIAL(debug) << "Gain function type is ";
 			if(functionType == GainFunction::MODULARITY) {
-				cout << "max modularity\n";
+				BOOST_LOG_TRIVIAL(debug) << "max modularity\n";
 			} else if(functionType == GainFunction::NEGATIVE_MODULARITY) {
-				cout << "max negative modularity\n";
+				BOOST_LOG_TRIVIAL(debug) << "max negative modularity\n";
 			} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY) {
-				cout << "max positive-negative modularity\n";
+				BOOST_LOG_TRIVIAL(debug) << "max positive-negative modularity\n";
 			} else {
-				cout << "min imbalance\n";
+				BOOST_LOG_TRIVIAL(debug) << "min imbalance\n";
 			}
-			cout << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
+			BOOST_LOG_TRIVIAL(debug) << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
 			vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
-				cout << "Input files are: "
-					 << vm["input-file"].as< vector<string> >() << "\n";
 				fs::path filePath (vm["input-file"].as< vector<string> >().at(0));
+				BOOST_LOG_TRIVIAL(debug) << "Input file is: "
+									 << filePath.string() << "\n";
 				fileList.push_back(filePath);
 			} else if(vm.count("input-file-dir")) {
-				cout << "Input file dir is: " << inputFileDir << endl;
+				BOOST_LOG_TRIVIAL(debug) << "Input file dir is: " << inputFileDir << endl;
 				fs::path inputDir(inputFileDir);
 				fs::directory_iterator end_iter;
 				if (!fs::exists(inputDir) || !fs::is_directory(inputDir)) {
-					cout << "Input file directory not found. Exiting." << endl;
+					BOOST_LOG_TRIVIAL(fatal) << "Input file directory not found. Exiting." << endl;
 					return 1;
 				}
 				for( fs::directory_iterator dir_iter(inputDir) ; dir_iter != end_iter ; ++dir_iter) {
@@ -297,7 +311,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 				}
 			} else {
-				cout << "Please specify at least one input file.";
+				BOOST_LOG_TRIVIAL(fatal) << "Please specify at least one input file.";
 				return 1;
 			}
 
@@ -307,27 +321,30 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				int remainingSlaves = np - numberOfSlaves;
 				// Divides the remaining slaves that will be used in parallel VNS processing
 				numberOfSearchSlaves = remainingSlaves / numberOfSlaves;
-				cout << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
+				BOOST_LOG_TRIVIAL(info) << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
 			}
 			if(np > 1) {
 				mpi::communicator world;
 				// broadcasts the numberOfSlaves to all processes
-				mpi::broadcast(world, numberOfSlaves, 0);
+				// mpi::broadcast(world, numberOfSlaves, 0);
+				for(int i = 1; i < np; i++) {
+					world.send(i, ParallelGrasp::INPUT_MSG_NUM_SLAVES_TAG, numberOfSlaves);
+				}
 			}
 
 			for(unsigned int i = 0; i < fileList.size(); i++) {
 				fs::path filePath = fileList.at(i);
 
 				if(not profile) { // default mode: use specified parameters
-					cout << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
-					cout << "Number of iterations is " << numberOfIterations << "\n";
+					BOOST_LOG_TRIVIAL(debug) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
+					BOOST_LOG_TRIVIAL(debug) << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, timestamp, debug, alpha, l,
 							numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
 							myRank, problemType, functionType, seed);
 				} else {
-					cout << "Profile mode on." << endl;
+					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
-						cout << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
+						BOOST_LOG_TRIVIAL(debug) << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, timestamp, debug, alpha2, l,
 								numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
 								myRank, problemType, functionType, seed);
@@ -338,18 +355,18 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				mpi::communicator world;
 				for(int i = 1; i < np; i++) {
 					world.send(i, ParallelGrasp::TERMINATE_MSG_TAG);
-					cout << "Terminate message sent to process " << i << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Terminate message sent to process " << i << endl;
 				}
 			}
 		}
 		catch(std::exception& e)
 		{
-			cout << "Abnormal program termination. Stracktrace: " << endl;
-			cout << e.what() << "\n";
+			BOOST_LOG_TRIVIAL(fatal) << "Abnormal program termination. Stracktrace: " << endl;
+			BOOST_LOG_TRIVIAL(fatal) << e.what() << "\n";
 			if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
-				std::cout << stack << endl;
+				BOOST_LOG_TRIVIAL(fatal) << stack << endl;
 			}
-			std::cerr << diagnostic_information(e);
+			BOOST_LOG_TRIVIAL(fatal) << diagnostic_information(e);
 			return 1;
 		}
 	} else { // slave processes
@@ -358,24 +375,27 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		// and is used for a process to discover if it is a GRASP slave or a VNS slave
 		// Grasp slave: 1 < rank < numberOfSlaves; VNS slave: otherwise
 		int numberOfSlaves = 0;
-		mpi::status stat = world.recv(ParallelGrasp::LEADER_ID, mpi::any_tag, numberOfSlaves);
-		cout << "number of slaves received\n";
+		world.recv(ParallelGrasp::LEADER_ID, mpi::any_tag, numberOfSlaves);
+		BOOST_LOG_TRIVIAL(trace) << "number of slaves received\n";
 
 		while(true) {
 			try {
 				if(myRank <= numberOfSlaves) {  // GRASP slave
-					cout << "Process " << myRank << " ready [GRASP slave process]." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " ready [GRASP slave process]." << endl;
 					// Receives a message with GRASP parameters and triggers local GRASP execution
 					InputMessageParallelGrasp imsgpg;
 					// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_GRASP_TAG or a terminate msg
 					mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgpg);
 					if(stat.tag() == ParallelGrasp::TERMINATE_MSG_TAG) {
-						cout << "Process " << myRank << ": terminate msg received.\n";
+						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": terminate msg received.\n";
 						return 0;
 					}
-					cout << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
 
-					cout << "test! " << imsgpg.alpha << endl;
+					if(imsgpg.l == 0) {
+						BOOST_LOG_TRIVIAL(fatal) << "ERROR: Empty GRASP message received. Terminating.\n";
+						return 1;
+					}
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 					SignedGraphPtr g = reader.readGraphFromString(imsgpg.graphInputFileContents);
@@ -392,23 +412,26 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// Sends the result back to the leader process
 					OutputMessage omsg(*bestClustering);
 					world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-					cout << "Process " << myRank << ": GRASP Output Message sent to leader." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": GRASP Output Message sent to leader." << endl;
 				} else {  // VNS slave
-					cout << "Process " << myRank << " ready [VNS slave process]." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " ready [VNS slave process]." << endl;
 					// Receives a parallel VNS message with parameters and triggers local VNS execution
 					InputMessageParallelVNS imsgvns;
 					// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG or a terminate msg
 					mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgvns);
 					if(stat.tag() == ParallelGrasp::TERMINATE_MSG_TAG) {
-						cout << "Process " << myRank << ": terminate msg received.\n";
+						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": terminate msg received.\n";
 						return 0;
 					}
-					cout << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
 
-					cout << "test! " << imsgvns.graphInputFileContents;
+					if(imsgvns.l == 0) {
+						BOOST_LOG_TRIVIAL(fatal) << "ERROR: Empty VNS message received. Terminating.\n";
+						return 1;
+					}
 					// reconstructs the graph from its text representation
 					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-					cout << "time limit is " << imsgvns.numberOfSlaves << endl;
+					BOOST_LOG_TRIVIAL(trace) << "time limit is " << imsgvns.numberOfSlaves << endl;
 					SignedGraphPtr g = reader.readGraphFromString(imsgvns.graphInputFileContents);
 
 					// triggers the local partial VNS search to be done between initial and final cluster indices
@@ -422,22 +445,58 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					int leader = stat.source();
 					OutputMessage omsg(*bestClustering);
 					world.send(leader, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-					cout << "Process " << myRank << ": VNS Output Message sent to grasp leader number " << leader << "." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VNS Output Message sent to grasp leader number " << leader << "." << endl;
 				}
 			}
 			catch(std::exception& e)
 			{
-				cout << "Abnormal program termination. Stracktrace: " << endl;
-				cout << e.what() << "\n";
+				BOOST_LOG_TRIVIAL(fatal) << "Abnormal program termination. Stracktrace: " << endl;
+				BOOST_LOG_TRIVIAL(fatal) << e.what() << "\n";
 				if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
-					std::cout << stack << endl;
+					BOOST_LOG_TRIVIAL(fatal) << stack << endl;
 				}
-				std::cerr << diagnostic_information(e);
+				BOOST_LOG_TRIVIAL(fatal) << diagnostic_information(e);
 				return 1;
 			}
 		}
 	}
 	return 0;
+}
+
+void CommandLineInterfaceController::initLogging(int myRank) {
+	namespace logging = boost::log;
+	namespace keywords = boost::log::keywords;
+	namespace sinks = boost::log::sinks;
+	namespace expr = boost::log::expressions;
+	string filename = string("Node") + lexical_cast<string>(myRank) + string(".log");
+
+	logging::add_file_log
+	    (
+	        keywords::file_name = filename.c_str(),
+	        keywords::rotation_size = 10 * 1024 * 1024,
+	        keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
+	        keywords::auto_flush = true,
+	        keywords::open_mode = (std::ios::out | std::ios::app),
+	        keywords::format = "%TimeStamp% (%LineID%): %Message%"
+	    );
+	logging::add_common_attributes();
+
+	// This makes the sink to write log records that look like this:
+	// 1: <normal> A normal severity message
+	// 2: <error> An error severity message
+	/*
+	sink->set_formatter
+	(
+		expr::format("%1%: <%2%> %3%")
+			% expr::attr< unsigned int >("TimeStamp")
+			% logging::trivial::severity
+			% expr::smessage
+	);*/
+
+    logging::core::get()->set_filter
+    (
+        logging::trivial::severity >= logging::trivial::trace
+    );
 }
 
 void CommandLineInterfaceController::handler()
@@ -447,7 +506,7 @@ void CommandLineInterfaceController::handler()
     char **stack_syms(backtrace_symbols( trace_elems, trace_elem_count ));
     for ( int i = 0 ; i < trace_elem_count ; ++i )
     {
-        std::cout << stack_syms[i] << "\n";
+    	BOOST_LOG_TRIVIAL(fatal) << stack_syms[i] << "\n";
     }
     free( stack_syms );
 }

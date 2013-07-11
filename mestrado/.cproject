@@ -34,6 +34,9 @@
 								<option id="gnu.cpp.compiler.option.other.other.256169086" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -pthread -m64 -Wl,-z,noexecstack -Wl,-rpath -Wl,/usr/lib64/mpich2/lib" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.warnings.extrawarn.2043019048" name="Extra warnings (-Wextra)" superClass="gnu.cpp.compiler.option.warnings.extrawarn" value="false" valueType="boolean"/>
 								<option id="gnu.cpp.compiler.option.other.pic.1386922713" name="Position Independent Code (-fPIC)" superClass="gnu.cpp.compiler.option.other.pic" value="true" valueType="boolean"/>
+								<option id="gnu.cpp.compiler.option.preprocessor.def.1268304367" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="BOOST_ALL_DYN_LINK"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.23768844" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.729881774" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug">
@@ -58,6 +61,10 @@
 									<listOptionValue builtIn="false" value="mpich"/>
 									<listOptionValue builtIn="false" value="mpichcxx"/>
 									<listOptionValue builtIn="false" value="boost_mpi"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_thread"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_date_time"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_log"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_log_setup"/>
 								</option>
 								<option id="gnu.cpp.link.option.paths.1662183048" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
@@ -294,10 +301,10 @@
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210;cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1277756560;cdt.managedbuild.tool.gnu.cpp.compiler.input.49957582">
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1465600709;cdt.managedbuild.config.gnu.exe.release.1465600709.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1012958012;cdt.managedbuild.tool.gnu.c.compiler.input.2007584183">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1465600709;cdt.managedbuild.config.gnu.exe.release.1465600709.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1012958012;cdt.managedbuild.tool.gnu.c.compiler.input.2007584183">
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210;cdt.managedbuild.config.gnu.exe.debug.1204997122.306701210.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1277756560;cdt.managedbuild.tool.gnu.cpp.compiler.input.49957582">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1465600709;cdt.managedbuild.config.gnu.exe.release.1465600709.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.2071950963;cdt.managedbuild.tool.gnu.cpp.compiler.input.428589514">

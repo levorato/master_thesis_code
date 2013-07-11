@@ -102,12 +102,12 @@ public:
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		// ar.template register_type< InputMessage >();
+		ar.template register_type< InputMessage >();
 		// ar.template register_type< InputMessageParallelGrasp >();
 		//ar.template register_type< InputMessage >();
 		// ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(InputMessage);
 		// invoke serialization of the base class
-		//ar & boost::serialization::base_object<InputMessage>(*this);
+		ar & boost::serialization::base_object<InputMessage>(*this);
 		boost::serialization::void_cast_register<InputMessageParallelGrasp, InputMessage>(
 			static_cast<InputMessageParallelGrasp *>(NULL),
 			static_cast<InputMessage *>(NULL)
@@ -152,11 +152,11 @@ public:
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		// ar.template register_type< InputMessage >();
+		ar.template register_type< InputMessage >();
 		// ar.template register_type< InputMessageParallelVNS >();
 		// ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(InputMessage);
 		// invoke serialization of the base class
-		// ar & boost::serialization::base_object<InputMessage>(*this);
+		ar & boost::serialization::base_object<InputMessage>(*this);
 		boost::serialization::void_cast_register<InputMessageParallelVNS, InputMessage>(
 			static_cast<InputMessageParallelVNS *>(NULL),
 			static_cast<InputMessage *>(NULL)
