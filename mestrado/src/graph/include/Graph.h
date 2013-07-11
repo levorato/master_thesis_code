@@ -39,9 +39,16 @@ public:
 	unsigned long getN();
 
 	/**
-	 * Return the number of edges of the graph
+	 * Returns the number of edges of the graph
 	 */
 	unsigned long getM();
+
+	/**
+	 * Return the id of the graph.
+	 */
+	unsigned int getId();
+
+	void setId(const unsigned int& i);
 
 	/**
 	 * Add an edge to the graph. Accepts only edges whose weight is
@@ -79,8 +86,11 @@ public:
 private:
 	DirectedGraph graph;
 
-	/* the number of nodes of the graph */
+	/** the number of nodes of the graph */
 	unsigned long n;
+
+	/** the identifier of the graph */
+	unsigned int id;
 
 	/**
 	 * The text representation of the graph (for use on MPI messages).

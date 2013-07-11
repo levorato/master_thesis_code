@@ -23,6 +23,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/functional/hash.hpp>
 
 using namespace std;
 using namespace boost;
@@ -198,6 +199,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	}
 	// g->printGraph();
 	g->setGraphAsText(graphContents);
+	boost::hash<std::string> string_hash;
+	g->setId(string_hash(graphContents));
 
 	return g;
 }

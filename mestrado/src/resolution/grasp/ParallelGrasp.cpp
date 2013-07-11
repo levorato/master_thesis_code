@@ -33,7 +33,7 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	for(int i = 1; i < numberOfSlaves; i++) {
-		InputMessageParallelGrasp imsg(g->getGraphAsText(), iter, alpha, l,
+		InputMessageParallelGrasp imsg(g->getId(), g->getGraphAsText(), iter, alpha, l,
 				problem.getType(), gainFunction->getType(), fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves);
 		world.send(i, INPUT_MSG_PARALLEL_GRASP_TAG, imsg);

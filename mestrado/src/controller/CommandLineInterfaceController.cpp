@@ -127,7 +127,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
 
-		if(numberOfSlaves <= 1) {	// sequential version of GRASP
+		if(numberOfSlaves == 0) {	// sequential version of GRASP
 			Grasp resolution(&functionFactory.build(functionType), seed);
 			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l,
 					problemFactory.build(problemType), timestamp, fileId, outputFolder,
@@ -317,8 +317,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 			int numberOfSearchSlaves = 0;
 			if(numberOfSlaves > 0) {
-				// Number of remaining slaves after using 'numberOfSlaves' processes for parallel GRASP execution
-				int remainingSlaves = np - numberOfSlaves;
+				// Number of remaining slaves after using 1 (leader) + 'numberOfSlaves' processes for parallel GRASP execution
+				int remainingSlaves = np - numberOfSlaves - 1;
 				// Divides the remaining slaves that will be used in parallel VNS processing
 				numberOfSearchSlaves = remainingSlaves / numberOfSlaves;
 				BOOST_LOG_TRIVIAL(info) << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
@@ -332,6 +332,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				}
 			}
 
+			// -------------------  F I L E S     P R O C E S S I N G -------------------------
 			for(unsigned int i = 0; i < fileList.size(); i++) {
 				fs::path filePath = fileList.at(i);
 
@@ -351,10 +352,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 				}
 			}
+			// ------------------ M P I    T E R M I N A T I O N ---------------------
 			if(np > 1) {
 				mpi::communicator world;
 				for(int i = 1; i < np; i++) {
-					world.send(i, ParallelGrasp::TERMINATE_MSG_TAG);
+					InputMessage imsg;
+					world.send(i, ParallelGrasp::TERMINATE_MSG_TAG, imsg);
 					BOOST_LOG_TRIVIAL(debug) << "Terminate message sent to process " << i << endl;
 				}
 			}
@@ -374,9 +377,17 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		// First message received from leader contains the number of GRASP slaves
 		// and is used for a process to discover if it is a GRASP slave or a VNS slave
 		// Grasp slave: 1 < rank < numberOfSlaves; VNS slave: otherwise
-		int numberOfSlaves = 0;
+		unsigned int numberOfSlaves = 0;
 		world.recv(ParallelGrasp::LEADER_ID, mpi::any_tag, numberOfSlaves);
 		BOOST_LOG_TRIVIAL(trace) << "number of slaves received\n";
+		// Controls the number of messages received
+		unsigned int messageCount = 0;
+		// common slave variables
+		ClusteringProblemFactory problemFactory;
+		SequentialNeighborhoodSearch seqNSearch;
+		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
+		SignedGraphPtr g;
+		unsigned int previousId = 0;
 
 		while(true) {
 			try {
@@ -391,17 +402,20 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						return 0;
 					}
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
+					messageCount++;
 
 					if(imsgpg.l == 0) {
 						BOOST_LOG_TRIVIAL(fatal) << "ERROR: Empty GRASP message received. Terminating.\n";
 						return 1;
 					}
-					// reconstructs the graph from its text representation
-					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-					SignedGraphPtr g = reader.readGraphFromString(imsgpg.graphInputFileContents);
+					// builds a new graph object only if it has changed (saves time)
+					if(previousId != imsgpg.id) {
+						// reconstructs the graph from its text representation
+						g = reader.readGraphFromString(imsgpg.graphInputFileContents);
+						previousId = imsgpg.id;
+					}
 
 					// trigggers the local GRASP routine
-					ClusteringProblemFactory problemFactory;
 					GainFunctionFactory functionFactory(g.get());
 					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
@@ -413,6 +427,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					OutputMessage omsg(*bestClustering);
 					world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": GRASP Output Message sent to leader." << endl;
+
 				} else {  // VNS slave
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " ready [VNS slave process]." << endl;
 					// Receives a parallel VNS message with parameters and triggers local VNS execution
@@ -424,20 +439,21 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						return 0;
 					}
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
+					messageCount++;
 
 					if(imsgvns.l == 0) {
 						BOOST_LOG_TRIVIAL(fatal) << "ERROR: Empty VNS message received. Terminating.\n";
 						return 1;
 					}
-					// reconstructs the graph from its text representation
-					SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-					BOOST_LOG_TRIVIAL(trace) << "time limit is " << imsgvns.numberOfSlaves << endl;
-					SignedGraphPtr g = reader.readGraphFromString(imsgvns.graphInputFileContents);
+					// builds a new graph object only if it has changed (saves time)
+					if(previousId != imsgvns.id) {
+						// reconstructs the graph from its text representation
+						g = reader.readGraphFromString(imsgvns.graphInputFileContents);
+						previousId = imsgvns.id;
+					}
 
 					// triggers the local partial VNS search to be done between initial and final cluster indices
-					ClusteringProblemFactory problemFactory;
-					SequentialNeighborhoodSearch neig;
-					ClusteringPtr bestClustering = neig.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
+					ClusteringPtr bestClustering = seqNSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
 							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed,
 							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex);
 
@@ -495,7 +511,7 @@ void CommandLineInterfaceController::initLogging(int myRank) {
 
     logging::core::get()->set_filter
     (
-        logging::trivial::severity >= logging::trivial::trace
+        logging::trivial::severity >= logging::trivial::debug
     );
 }
 

@@ -28,8 +28,8 @@ using namespace boost;
 
 namespace clusteringgraph {
 
-SignedGraph::SignedGraph(const unsigned long &numberOfNodes) : graph(numberOfNodes),
-		n(numberOfNodes) {
+SignedGraph::SignedGraph(const unsigned long &numberOfNodes) :
+		graph(numberOfNodes), n(numberOfNodes) {
 
 }
 
@@ -44,6 +44,14 @@ unsigned long SignedGraph::getN() {
 
 unsigned long SignedGraph::getM() {
 	return graph.m_num_edges;
+}
+
+unsigned int SignedGraph::getId() {
+	return id;
+}
+
+void SignedGraph::setId(const unsigned int& i) {
+	id = i;
 }
 
 void SignedGraph::addEdge(unsigned long a, unsigned long b, Edge edge) {

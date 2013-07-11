@@ -31,20 +31,22 @@ namespace util {
  */
 class InputMessage {
 public:
+	// the identifier of the graph
+	unsigned int id;
 	string graphInputFileContents;
 	int l;
 	// the number of grasp slave processes
-	int numberOfSlaves;
+	unsigned int numberOfSlaves;
 	// the number of vns slave processes
-	int numberOfSearchSlaves;
+	unsigned int numberOfSearchSlaves;
 
-	InputMessage() : graphInputFileContents(), l(0), numberOfSlaves(0),
+	InputMessage() : id(0), graphInputFileContents(), l(0), numberOfSlaves(0),
 			numberOfSearchSlaves(0) {
 
 	}
 
-	InputMessage(string graphContents, int nl, unsigned long slaves, unsigned long searchSlaves) :
-		graphInputFileContents(graphContents), l(nl), numberOfSlaves(slaves),
+	InputMessage(unsigned int i, string graphContents, int nl, unsigned int slaves, unsigned int searchSlaves) :
+		id(i), graphInputFileContents(graphContents), l(nl), numberOfSlaves(slaves),
 		numberOfSearchSlaves(searchSlaves) {
 
 	}
@@ -56,6 +58,7 @@ public:
 	template<class Archive>
 	void serialize(Archive & ar, unsigned int file_version)
 	{
+		ar & id;
 		ar & graphInputFileContents;
 		ar & l;
 		ar & numberOfSlaves;
@@ -81,10 +84,10 @@ public:
 
 	}
 
-	InputMessageParallelGrasp(string graphContents, int it, double a, int neigh,
-			int pType, int gfType, string id, string folder, long t, unsigned long slaves,
-			unsigned long searchSlaves) :
-				InputMessage(graphContents, neigh, slaves, searchSlaves),
+	InputMessageParallelGrasp(unsigned int i, string graphContents, int it, double a, int neigh,
+			int pType, int gfType, string id, string folder, long t, unsigned int slaves,
+			unsigned int searchSlaves) :
+				InputMessage(i, graphContents, neigh, slaves, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), fileId(id),
 					outputFolder(folder), timeLimit(t) {
@@ -139,10 +142,10 @@ public:
 
 	}
 
-	InputMessageParallelVNS(int neig, string graphContents, Clustering c,
+	InputMessageParallelVNS(unsigned int i, int neig, string graphContents, Clustering c,
 			int pType, double timeSoFar, double tl, unsigned long startIdx,
-			unsigned long endIdx, int slaves, int searchSlaves) :
-			InputMessage(graphContents, neig, slaves, searchSlaves), clustering(c),
+			unsigned long endIdx, unsigned int slaves, unsigned int searchSlaves) :
+			InputMessage(i, graphContents, neig, slaves, searchSlaves), clustering(c),
 			problemType(pType), timeSpentSoFar(timeSoFar), timeLimit(tl),
 			initialClusterIndex(startIdx) , finalClusterIndex(endIdx) {
 
