@@ -9,6 +9,7 @@
 #include "../../util/include/MPIMessage.h"
 #include <cstring>
 #include <boost/mpi/communicator.hpp>
+#include <boost/log/trivial.hpp>
 
 namespace resolution {
 namespace grasp {
@@ -30,14 +31,15 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		const long& timeLimit, const int& numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
 	mpi::communicator world;
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel GRASP] Initiating parallel GRASP...";
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
-	for(int i = 1; i < numberOfSlaves; i++) {
+	for(int i = 1; i <= numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphAsText(), iter, alpha, l,
 				problem.getType(), gainFunction->getType(), fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves);
 		world.send(i, INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
-		cout << "Message sent to process " << i << endl;
+		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message sent to process " << i;
 	}
 	// the leader does its part of the work
 	ClusteringPtr bestClustering = Grasp::executeGRASP(g, iter, alpha,
@@ -46,20 +48,20 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 
 	// the leader receives the processing results
 	OutputMessage omsg;
-	for(int i = 1; i < numberOfSlaves; i++) {
+	for(int i = 1; i <= numberOfSlaves; i++) {
 		mpi::status stat = world.recv(mpi::any_source, OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-		cout << "Message received from process " << stat.source() << ": " <<
-				omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString()  << "\n";
+		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message received from process " << stat.source() << ": " <<
+				omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString();
 		// process the result of the execution of process i
 		if(omsg.clustering.getImbalance().getValue() < bestClustering->getImbalance().getValue()) {
 			ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
 			bestClustering.reset();
 			bestClustering = clustering;
-			cout << "*** [Parallel GRASP] Better value found for objective function in node " << stat.source() << ": " <<
-					omsg.clustering.getImbalance().getValue() << endl;
+			BOOST_LOG_TRIVIAL(trace) << "*** [Parallel GRASP] Better value found for objective function in node " << stat.source() << ": " <<
+					omsg.clustering.getImbalance().getValue();
 		}
 	}
-	cout << "Best solution found: I(P) = " << bestClustering->getImbalance().getValue() << endl;
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel GRASP] Best solution found: I(P) = " << bestClustering->getImbalance().getValue();
 	bestClustering->printClustering();
 	return bestClustering;
 }

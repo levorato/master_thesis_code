@@ -206,7 +206,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 }
 
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(const string& filepath) {
-	BOOST_LOG_TRIVIAL(debug) << "Reading input file: '" << filepath << "' ..." << endl;
+	BOOST_LOG_TRIVIAL(info) << "Reading input file: '" << filepath << "' ..." << endl;
 	return readGraphFromString(get_file_contents(filepath.c_str()));
 }
 

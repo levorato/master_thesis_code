@@ -4,14 +4,17 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../src/util/EnumUtil.cpp \
 ../src/util/MPIMessage.cpp \
 ../src/util/TimeDateUtil.cpp 
 
 OBJS += \
+./src/util/EnumUtil.o \
 ./src/util/MPIMessage.o \
 ./src/util/TimeDateUtil.o 
 
 CPP_DEPS += \
+./src/util/EnumUtil.d \
 ./src/util/MPIMessage.d \
 ./src/util/TimeDateUtil.d 
 

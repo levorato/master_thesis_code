@@ -63,7 +63,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	int i = 0, totalIter = 0;
 
 	for (i = 0, totalIter = 0; i <= iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
-		// cout << "GRASP iteration " << i << endl;
+		BOOST_LOG_TRIVIAL(trace) << "GRASP iteration " << i;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
 		// 0. Triggers local processing time calculation

@@ -15,6 +15,7 @@
 #include "../problem/include/ClusteringProblem.h"
 #include "../problem/include/CCProblem.h"
 #include "../util/include/TimeDateUtil.h"
+#include "../util/include/EnumUtil.h"
 #include "../util/include/MPIMessage.h"
 #include "../problem/include/ClusteringProblemFactory.h"
 #include "../resolution/grasp/include/GainFunctionFactory.h"
@@ -48,6 +49,8 @@
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/sources/logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -96,7 +99,7 @@ std::istream& operator>>(std::istream& in, CommandLineInterfaceController::State
 }
 
 
-CommandLineInterfaceController::CommandLineInterfaceController() {
+CommandLineInterfaceController::CommandLineInterfaceController() : logSeverity("warning") {
 	// TODO Auto-generated constructor stub
 
 }
@@ -148,7 +151,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		string filename = outputFolder + fileId + "/" + timestamp + "/result.txt";
 		ofstream out(filename.c_str(), ios::out | ios::trunc); 
 		if(!out) { 
-		    cerr << "Cannot open output summary file.\n"; 
+			BOOST_LOG_TRIVIAL(fatal) << "Cannot open output summary file.\n";
 		    // TODO tratar excecao 
   		} 
 
@@ -161,7 +164,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
  		out.close();
 
 	} else {
-		cerr << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
+		BOOST_LOG_TRIVIAL(fatal) << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
 	}
 }
 
@@ -199,8 +202,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	unsigned long seed = mix(clock(), time(NULL), getpid());
 	// boost::minstd_rand generator(seed);
 
+	// reads the system properties from ini file
+	this->readPropertiesFile();
 	// initializes the logging subsystem
-	CommandLineInterfaceController::initLogging(myRank);
+	this->initLogging(myRank);
 
 	// codigo do processor lider
 	if(myRank == 0) {
@@ -273,28 +278,28 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				sscanf(s_alpha.c_str(), "%f", &alpha);				
 			}
 
-			BOOST_LOG_TRIVIAL(debug) << "Resolution strategy is " << strategy << endl;
-			BOOST_LOG_TRIVIAL(debug) << "Neighborhood size (l) is " << l << "\n";
-			BOOST_LOG_TRIVIAL(debug) << "Gain function type is ";
+			BOOST_LOG_TRIVIAL(info) << "Resolution strategy is " << strategy << endl;
+			BOOST_LOG_TRIVIAL(info) << "Neighborhood size (l) is " << l << "\n";
+			BOOST_LOG_TRIVIAL(info) << "Gain function type is ";
 			if(functionType == GainFunction::MODULARITY) {
-				BOOST_LOG_TRIVIAL(debug) << "max modularity\n";
+				BOOST_LOG_TRIVIAL(info) << "max modularity\n";
 			} else if(functionType == GainFunction::NEGATIVE_MODULARITY) {
-				BOOST_LOG_TRIVIAL(debug) << "max negative modularity\n";
+				BOOST_LOG_TRIVIAL(info) << "max negative modularity\n";
 			} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY) {
-				BOOST_LOG_TRIVIAL(debug) << "max positive-negative modularity\n";
+				BOOST_LOG_TRIVIAL(info) << "max positive-negative modularity\n";
 			} else {
-				BOOST_LOG_TRIVIAL(debug) << "min imbalance\n";
+				BOOST_LOG_TRIVIAL(info) << "min imbalance\n";
 			}
-			BOOST_LOG_TRIVIAL(debug) << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
+			BOOST_LOG_TRIVIAL(info) << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
 			vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
 				fs::path filePath (vm["input-file"].as< vector<string> >().at(0));
-				BOOST_LOG_TRIVIAL(debug) << "Input file is: "
+				BOOST_LOG_TRIVIAL(info) << "Input file is: "
 									 << filePath.string() << "\n";
 				fileList.push_back(filePath);
 			} else if(vm.count("input-file-dir")) {
-				BOOST_LOG_TRIVIAL(debug) << "Input file dir is: " << inputFileDir << endl;
+				BOOST_LOG_TRIVIAL(info) << "Input file dir is: " << inputFileDir << endl;
 				fs::path inputDir(inputFileDir);
 				fs::directory_iterator end_iter;
 				if (!fs::exists(inputDir) || !fs::is_directory(inputDir)) {
@@ -320,7 +325,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				// Number of remaining slaves after using 1 (leader) + 'numberOfSlaves' processes for parallel GRASP execution
 				int remainingSlaves = np - numberOfSlaves - 1;
 				// Divides the remaining slaves that will be used in parallel VNS processing
-				numberOfSearchSlaves = remainingSlaves / numberOfSlaves;
+				numberOfSearchSlaves = remainingSlaves / (numberOfSlaves + 1);
 				BOOST_LOG_TRIVIAL(info) << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
 			}
 			if(np > 1) {
@@ -332,20 +337,20 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				}
 			}
 
-			// -------------------  F I L E S     P R O C E S S I N G -------------------------
+			// -------------------  G R A P H     F I L E S     P R O C E S S I N G -------------------------
 			for(unsigned int i = 0; i < fileList.size(); i++) {
 				fs::path filePath = fileList.at(i);
 
 				if(not profile) { // default mode: use specified parameters
-					BOOST_LOG_TRIVIAL(debug) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
-					BOOST_LOG_TRIVIAL(debug) << "Number of iterations is " << numberOfIterations << "\n";
+					BOOST_LOG_TRIVIAL(info) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
+					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, timestamp, debug, alpha, l,
 							numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
 							myRank, problemType, functionType, seed);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
-						BOOST_LOG_TRIVIAL(debug) << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
+						BOOST_LOG_TRIVIAL(info) << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, timestamp, debug, alpha2, l,
 								numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
 								myRank, problemType, functionType, seed);
@@ -355,12 +360,19 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			// ------------------ M P I    T E R M I N A T I O N ---------------------
 			if(np > 1) {
 				mpi::communicator world;
-				for(int i = 1; i < np; i++) {
-					InputMessage imsg;
+				int i = 1;
+				for(i = 1; i <= numberOfSlaves; i++) {
+					InputMessageParallelGrasp imsg;
+					world.send(i, ParallelGrasp::TERMINATE_MSG_TAG, imsg);
+					BOOST_LOG_TRIVIAL(debug) << "Terminate message sent to process " << i << endl;
+				}
+				for(; i < np; i++) {
+					InputMessageParallelVNS imsg;
 					world.send(i, ParallelGrasp::TERMINATE_MSG_TAG, imsg);
 					BOOST_LOG_TRIVIAL(debug) << "Terminate message sent to process " << i << endl;
 				}
 			}
+			BOOST_LOG_TRIVIAL(info) << "Done.";
 		}
 		catch(std::exception& e)
 		{
@@ -411,6 +423,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// builds a new graph object only if it has changed (saves time)
 					if(previousId != imsgpg.id) {
 						// reconstructs the graph from its text representation
+						g.reset();
 						g = reader.readGraphFromString(imsgpg.graphInputFileContents);
 						previousId = imsgpg.id;
 					}
@@ -434,12 +447,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					InputMessageParallelVNS imsgvns;
 					// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG or a terminate msg
 					mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgvns);
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
+					messageCount++;
 					if(stat.tag() == ParallelGrasp::TERMINATE_MSG_TAG) {
 						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": terminate msg received.\n";
 						return 0;
 					}
-					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
-					messageCount++;
 
 					if(imsgvns.l == 0) {
 						BOOST_LOG_TRIVIAL(fatal) << "ERROR: Empty VNS message received. Terminating.\n";
@@ -448,6 +461,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// builds a new graph object only if it has changed (saves time)
 					if(previousId != imsgvns.id) {
 						// reconstructs the graph from its text representation
+						g.reset();
 						g = reader.readGraphFromString(imsgvns.graphInputFileContents);
 						previousId = imsgvns.id;
 					}
@@ -461,7 +475,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					int leader = stat.source();
 					OutputMessage omsg(*bestClustering);
 					world.send(leader, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VNS Output Message sent to grasp leader number " << leader << "." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VNS Output Message sent to grasp leader number "
+							<< leader << ". I(P) = " << bestClustering->getImbalance().getValue();
 				}
 			}
 			catch(std::exception& e)
@@ -479,12 +494,33 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	return 0;
 }
 
+void CommandLineInterfaceController::readPropertiesFile() {
+	namespace pt = boost::property_tree;
+	pt::ptree propTree;
+
+	if ( !boost::filesystem::exists( "config.ini" ) ) {
+	  cout << "Can't find config.ini file! Assuming default properties." << endl;
+	} else {
+		read_ini("config.ini", propTree);
+
+		boost::optional<string> severity = propTree.get_optional<std::string>("logging.severity");
+		if(severity) {
+			logSeverity = *severity;
+		} else {
+			cout << "WARNING: warn log level not specified, assuming warn level." << endl;
+		}
+	}
+}
+
 void CommandLineInterfaceController::initLogging(int myRank) {
 	namespace logging = boost::log;
 	namespace keywords = boost::log::keywords;
 	namespace sinks = boost::log::sinks;
 	namespace expr = boost::log::expressions;
-	string filename = string("Node") + lexical_cast<string>(myRank) + string(".log");
+	string filename = string("logs/Node") + lexical_cast<string>(myRank) + string(".log");
+
+	LogSeverityEnumParser parser;
+	logging::trivial::severity_level severity = parser.ParseSomeEnum(logSeverity);
 
 	logging::add_file_log
 	    (
@@ -511,7 +547,7 @@ void CommandLineInterfaceController::initLogging(int myRank) {
 
     logging::core::get()->set_filter
     (
-        logging::trivial::severity >= logging::trivial::debug
+        logging::trivial::severity >= severity
     );
 }
 

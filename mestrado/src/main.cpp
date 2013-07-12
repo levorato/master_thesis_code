@@ -12,6 +12,7 @@
 #include <boost/mpi/communicator.hpp>
 
 namespace mpi = boost::mpi;
+using namespace controller;
 
 int main(int ac, char* av[])
 {
@@ -19,8 +20,8 @@ int main(int ac, char* av[])
 	mpi::environment env(ac, av);
 	mpi::communicator world;
 
-	int return_value = controller::CommandLineInterfaceController::
-			processArgumentsAndExecute(ac, av, world.rank(), world.size());
+	CommandLineInterfaceController controller;
+	int return_value = controller.processArgumentsAndExecute(ac, av, world.rank(), world.size());
 
 	return return_value;
 }

@@ -27,19 +27,24 @@ public:
 	virtual ~CommandLineInterfaceController();
 
 	enum StategyName {GRASP, GRASP_PR};
-	static string getTimeAndDateAsString();
-	static int processArgumentsAndExecute(int argc, char *argv[],
+	string getTimeAndDateAsString();
+	int processArgumentsAndExecute(int argc, char *argv[],
 			const int &myRank, const int &np);
 
 private:
-	static void processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
+	void processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
 			const bool& debug, const double& alpha, const int& l,
 			const int& numberOfIterations, const long& timeLimit,
 			const int& numberOfSlaves, const int& numberOfSearchSlaves, const int& myRank,
 			const int& problemType, const int& functionType, const unsigned long& seed);
 
-	static void initLogging(int myRank);
+	void readPropertiesFile();
+
+	void initLogging(int myRank);
+
 	static void handler();
+
+	string logSeverity;
 };
 } /* namespace controller */
 
