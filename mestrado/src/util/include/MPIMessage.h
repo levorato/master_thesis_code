@@ -74,6 +74,7 @@ public:
 	int iter;
 	int gainFunctionType;
 	int problemType;
+	string executionId;
 	string fileId;
 	string outputFolder;
 	long timeLimit;
@@ -85,11 +86,11 @@ public:
 	}
 
 	InputMessageParallelGrasp(unsigned int i, string graphContents, int it, double a, int neigh,
-			int pType, int gfType, string id, string folder, long t, unsigned int slaves,
+			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int slaves,
 			unsigned int searchSlaves) :
 				InputMessage(i, graphContents, neigh, slaves, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
-					problemType(pType), fileId(id),
+					problemType(pType), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t) {
 
 	}
@@ -120,6 +121,7 @@ public:
 		ar & iter;
 		ar & gainFunctionType;
 		ar & problemType;
+		ar & executionId;
 		ar & fileId;
 		ar & outputFolder;
 		ar & timeLimit;

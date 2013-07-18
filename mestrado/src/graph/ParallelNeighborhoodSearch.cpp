@@ -58,12 +58,11 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 					timeSpentSoFar, timeLimit, cont * sizeOfChunk, (cont + 1) * sizeOfChunk - 1, numberOfSlaves,
 					numberOfSearchSlaves);
 			world.send(i, ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
-			BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk << ", " << (cont + 1) * sizeOfChunk - 1 << "]" << endl;
+			BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk
+					<< ", " << (cont + 1) * sizeOfChunk - 1 << "]" << endl;
 		}
 	}
 	// the leader (me) does its part of the work too
-	SequentialNeighborhoodSearch neig;
-
 	BOOST_LOG_TRIVIAL(trace) << "Total number of clusters is " << clustering->getNumberOfClusters() << endl;
 	BOOST_LOG_TRIVIAL(trace) << "VNS Parallelization status: " << numberOfSearchSlaves <<
 			" search slaves will process " << sizeOfChunk << " clusters each one." << endl;
@@ -72,13 +71,14 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	double bestValue = numeric_limits<double>::infinity();
 	ClusteringPtr bestClustering;
 	if(remainingClusters > 0) {
-		bestClustering = neig.searchNeighborhood(l, g, clustering,
-				problem, timeSpentSoFar, timeLimit, randomSeed,
+		bestClustering = this->searchNeighborhood(l, g, clustering,
+				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
 				cont * sizeOfChunk, cont * sizeOfChunk + remainingClusters - 1);
 		bestValue = bestClustering->getImbalance().getValue();
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
-	// the leader receives the processing results, if any
+	// the leader receives the processing results, if that is the case
+	// TODO implement global first improvement (l = 2-opt) in parallel VNS here!
 	if(sizeOfChunk > 0) {
 		OutputMessage omsg;
 		for(i = firstSlave; i < lastSlave; i++) {
@@ -99,6 +99,26 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	BOOST_LOG_TRIVIAL(debug) << "[Parallel VNS] Best solution found: I(P) = " << bestClustering->getImbalance().getValue() << endl;
 	bestClustering->printClustering();
 	return bestClustering;
+}
+
+ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
+		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
+		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialClusterIndex,
+		unsigned long finalClusterIndex) {
+
+	assert(initialClusterIndex < clustering->getNumberOfClusters());
+	assert(finalClusterIndex < clustering->getNumberOfClusters());
+
+	if (l == 1) {  // 1-opt
+		// Parallel search does best improvement in 1-opt
+		return this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
+				myRank, initialClusterIndex, finalClusterIndex, false);
+	} else {  // 2-opt
+		// TODO implement global first improvement in parallel 2-opt
+		// first improvement found in one process must break all other processes' loop
+		return this->search2opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
+				myRank, initialClusterIndex, finalClusterIndex, true);
+	}
 }
 
 

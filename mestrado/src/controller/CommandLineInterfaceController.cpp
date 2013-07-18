@@ -109,7 +109,7 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 }
 
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
-		string& timestamp, const bool& debug, const double& alpha, const int& l,
+		string& executionId, const bool& debug, const double& alpha, const int& l,
 		const int& numberOfIterations, const long& timeLimit, const int& numberOfSlaves, const int& numberOfSearchSlaves,
 		const int& myRank, const int& problemType, const int& functionType, const unsigned long& seed) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
@@ -133,13 +133,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		if(numberOfSlaves == 0) {	// sequential version of GRASP
 			Grasp resolution(&functionFactory.build(functionType), seed);
 			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l,
-					problemFactory.build(problemType), timestamp, fileId, outputFolder,
+					problemFactory.build(problemType), executionId, fileId, outputFolder,
 					timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 		} else {  // parallel version
 			// distributes GRASP processing among numberOfSlaves processes and summarizes the result
 			ParallelGrasp parallelResolution(&functionFactory.build(functionType), seed);
 			c = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, 
-					problemFactory.build(problemType), timestamp, fileId, outputFolder, timeLimit,
+					problemFactory.build(problemType), executionId, fileId, outputFolder, timeLimit,
 					numberOfSlaves, myRank, numberOfSearchSlaves);
 		}
 
@@ -148,7 +148,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		boost::timer::cpu_times end_time = timer.elapsed();
 		double timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 		// Saves elapsed time and best solution to output file
-		string filename = outputFolder + fileId + "/" + timestamp + "/result.txt";
+		string filename = outputFolder + fileId + "/" + executionId + "/result.txt";
 		ofstream out(filename.c_str(), ios::out | ios::trunc); 
 		if(!out) { 
 			BOOST_LOG_TRIVIAL(fatal) << "Cannot open output summary file.\n";
@@ -188,8 +188,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 	// used for debugging purpose
 	std::set_terminate( handler );
-	// timestamp used for output files
-	string timestamp = TimeDateUtil::getTimeAndDateAsString();
+
 	// random seed used in grasp
 	/*
 	* Caveat: std::time(0) is not a very good truly-random seed.  When
@@ -210,6 +209,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	// codigo do processor lider
 	if(myRank == 0) {
 		cout << "Correlation clustering problem solver" << endl;
+		// id used for output folders
+		string executionId = TimeDateUtil::generateRandomId();
 
 		try {
 			string s_alpha;
@@ -322,11 +323,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 			int numberOfSearchSlaves = 0;
 			if(numberOfSlaves > 0) {
-				// Number of remaining slaves after using 1 (leader) + 'numberOfSlaves' processes for parallel GRASP execution
-				int remainingSlaves = np - numberOfSlaves - 1;
-				// Divides the remaining slaves that will be used in parallel VNS processing
-				numberOfSearchSlaves = remainingSlaves / (numberOfSlaves + 1);
-				BOOST_LOG_TRIVIAL(info) << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
+				numberOfSearchSlaves = calculateNumberOfSearchSlaves(np, numberOfSlaves);
 			}
 			if(np > 1) {
 				mpi::communicator world;
@@ -344,14 +341,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					BOOST_LOG_TRIVIAL(info) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, outputFolder, timestamp, debug, alpha, l,
+					processInputFile(filePath, outputFolder, executionId, debug, alpha, l,
 							numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
 							myRank, problemType, functionType, seed);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, outputFolder, timestamp, debug, alpha2, l,
+						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l,
 								numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
 								myRank, problemType, functionType, seed);
 					}
@@ -392,11 +389,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		unsigned int numberOfSlaves = 0;
 		world.recv(ParallelGrasp::LEADER_ID, mpi::any_tag, numberOfSlaves);
 		BOOST_LOG_TRIVIAL(trace) << "number of slaves received\n";
+		int numberOfSearchSlaves = 0;
+		if(numberOfSlaves > 0) {
+			numberOfSearchSlaves = calculateNumberOfSearchSlaves(np, numberOfSlaves);
+		}
 		// Controls the number of messages received
 		unsigned int messageCount = 0;
 		// common slave variables
 		ClusteringProblemFactory problemFactory;
-		SequentialNeighborhoodSearch seqNSearch;
+		ParallelNeighborhoodSearch pnSearch(numberOfSlaves, numberOfSearchSlaves);
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 		SignedGraphPtr g;
 		unsigned int previousId = 0;
@@ -432,7 +433,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					GainFunctionFactory functionFactory(g.get());
 					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
-							imsgpg.l, problemFactory.build(imsgpg.problemType), timestamp, imsgpg.fileId,
+							imsgpg.l, problemFactory.build(imsgpg.problemType), imsgpg.executionId, imsgpg.fileId,
 							imsgpg.outputFolder, imsgpg.timeLimit, imsgpg.numberOfSlaves, myRank,
 							imsgpg.numberOfSearchSlaves);
 
@@ -467,8 +468,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 
 					// triggers the local partial VNS search to be done between initial and final cluster indices
-					ClusteringPtr bestClustering = seqNSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
-							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed,
+					ClusteringPtr bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
+							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
 							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex);
 
 					// Sends the result back to the leader process
@@ -492,6 +493,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		}
 	}
 	return 0;
+}
+
+unsigned int CommandLineInterfaceController::calculateNumberOfSearchSlaves(const unsigned int& np, const unsigned int& numberOfSlaves) {
+	// Number of remaining slaves after using 1 (leader) + 'numberOfSlaves' processes for parallel GRASP execution
+	unsigned int remainingSlaves = np - numberOfSlaves - 1;
+	// Divides the remaining slaves that will be used in parallel VNS processing
+	unsigned int numberOfSearchSlaves = remainingSlaves / (numberOfSlaves + 1);
+	BOOST_LOG_TRIVIAL(info) << "The number of VNS search slaves per master is " << numberOfSearchSlaves << endl;
+
+	return numberOfSearchSlaves;
 }
 
 void CommandLineInterfaceController::readPropertiesFile() {

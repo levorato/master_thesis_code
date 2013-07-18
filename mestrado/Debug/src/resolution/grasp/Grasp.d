@@ -10,12 +10,12 @@ src/resolution/grasp/Grasp.d: ../src/resolution/grasp/Grasp.cpp \
  ../src/resolution/grasp/include/../../../problem/include/ClusteringProblem.h \
  ../src/resolution/grasp/include/../../../problem/include/../../graph/include/Clustering.h \
  ../src/resolution/grasp/include/../../../problem/include/../../graph/include/Imbalance.h \
- ../src/resolution/grasp/include/../../../graph/include/Neighborhood.h \
+ ../src/resolution/grasp/include/../../../graph/include/NeighborhoodSearch.h \
  ../src/resolution/grasp/include/../../../graph/include/Clustering.h \
  ../src/resolution/grasp/include/../../../graph/include/../../problem/include/ClusteringProblem.h \
  ../src/resolution/grasp/include/VertexSet.h \
  ../src/resolution/grasp/../../graph/include/SequentialNeighborhoodSearch.h \
- ../src/resolution/grasp/../../graph/include/Neighborhood.h \
+ ../src/resolution/grasp/../../graph/include/NeighborhoodSearch.h \
  ../src/resolution/grasp/../../graph/include/ParallelNeighborhoodSearch.h \
  ../src/resolution/grasp/../../problem/include/ClusteringProblem.h \
  ../src/resolution/grasp/../../problem/include/CCProblem.h \
@@ -47,7 +47,7 @@ src/resolution/grasp/Grasp.d: ../src/resolution/grasp/Grasp.cpp \
 
 ../src/resolution/grasp/include/../../../problem/include/../../graph/include/Imbalance.h:
 
-../src/resolution/grasp/include/../../../graph/include/Neighborhood.h:
+../src/resolution/grasp/include/../../../graph/include/NeighborhoodSearch.h:
 
 ../src/resolution/grasp/include/../../../graph/include/Clustering.h:
 
@@ -57,7 +57,7 @@ src/resolution/grasp/Grasp.d: ../src/resolution/grasp/Grasp.cpp \
 
 ../src/resolution/grasp/../../graph/include/SequentialNeighborhoodSearch.h:
 
-../src/resolution/grasp/../../graph/include/Neighborhood.h:
+../src/resolution/grasp/../../graph/include/NeighborhoodSearch.h:
 
 ../src/resolution/grasp/../../graph/include/ParallelNeighborhoodSearch.h:
 

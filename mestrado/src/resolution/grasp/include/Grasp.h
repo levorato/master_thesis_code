@@ -13,7 +13,7 @@
 #include "../../../graph/include/Graph.h"
 #include "../../../graph/include/Clustering.h"
 #include "../../../problem/include/ClusteringProblem.h"
-#include "../../../graph/include/Neighborhood.h"
+#include "../../../graph/include/NeighborhoodSearch.h"
 
 using namespace clusteringgraph;
 using namespace problem;
@@ -43,7 +43,7 @@ public:
 	 * @param numberOfSearchSlaves number of slaves used for parallel VNS processing
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
-			const ClusteringProblem& problem, string& timestamp, string& fileId, 
+			const ClusteringProblem& problem, string& executionId, string& fileId, 
 			string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
 			const int& myRank, const int& numberOfSearchSlaves);
 

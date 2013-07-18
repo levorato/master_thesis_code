@@ -7,6 +7,7 @@ CPP_SRCS += \
 ../src/graph/Clustering.cpp \
 ../src/graph/Graph.cpp \
 ../src/graph/Imbalance.cpp \
+../src/graph/NeighborhoodSearch.cpp \
 ../src/graph/NeighborhoodSearchFactory.cpp \
 ../src/graph/ParallelNeighborhoodSearch.cpp \
 ../src/graph/SequentialNeighborhoodSearch.cpp 
@@ -15,6 +16,7 @@ OBJS += \
 ./src/graph/Clustering.o \
 ./src/graph/Graph.o \
 ./src/graph/Imbalance.o \
+./src/graph/NeighborhoodSearch.o \
 ./src/graph/NeighborhoodSearchFactory.o \
 ./src/graph/ParallelNeighborhoodSearch.o \
 ./src/graph/SequentialNeighborhoodSearch.o 
@@ -23,6 +25,7 @@ CPP_DEPS += \
 ./src/graph/Clustering.d \
 ./src/graph/Graph.d \
 ./src/graph/Imbalance.d \
+./src/graph/NeighborhoodSearch.d \
 ./src/graph/NeighborhoodSearchFactory.d \
 ./src/graph/ParallelNeighborhoodSearch.d \
 ./src/graph/SequentialNeighborhoodSearch.d 

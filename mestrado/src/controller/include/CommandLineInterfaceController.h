@@ -40,6 +40,8 @@ private:
 
 	void readPropertiesFile();
 
+	unsigned int calculateNumberOfSearchSlaves(const unsigned int& np, const unsigned int& numberOfSlaves);
+
 	void initLogging(int myRank);
 
 	static void handler();

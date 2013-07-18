@@ -8,7 +8,7 @@
 #ifndef PARALLELNEIGHBORHOODSEARCH_H_
 #define PARALLELNEIGHBORHOODSEARCH_H_
 
-#include "Neighborhood.h"
+#include "NeighborhoodSearch.h"
 
 namespace resolution {
 namespace grasp {
@@ -27,6 +27,20 @@ public:
 					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 					int myRank);
 
+	/**
+	 * Searches the l-neighborhood of the given clustering, by removing a vertex
+	 * from a cluster which index is between initialClusterIndex and finalClusterIndex
+	 * and adding it to any other cluster available (and also a new cluster). In the case
+	 * of 2-opt, the initial and final cluster indices only apply to the first vertex in
+	 * the search (not the second one).
+	 * This parallel version does best-improvement for 1-opt e first improvement for 2-opt.
+	 */
+	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
+					Clustering* clustering, const ClusteringProblem& problem,
+					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
+					int myRank,
+					unsigned long initialClusterIndex, unsigned long finalClusterIndex);
+
 private:
 	/**
 	 * Number of slave processes that will execute the grasp iterations in parallel.
@@ -36,6 +50,7 @@ private:
 	 * Number of slave processes that will execute the parallel search (parallel VNS).
 	 */
 	unsigned int numberOfSearchSlaves;
+
 };
 
 } /* namespace grasp */

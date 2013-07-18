@@ -10,7 +10,7 @@
 
 #include "SequentialNeighborhoodSearch.h"
 #include "ParallelNeighborhoodSearch.h"
-#include "Neighborhood.h"
+#include "NeighborhoodSearch.h"
 
 namespace resolution {
 namespace grasp {

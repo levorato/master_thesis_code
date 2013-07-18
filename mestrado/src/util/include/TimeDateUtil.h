@@ -18,7 +18,7 @@ public:
 	virtual ~TimeDateUtil();
 
 	static std::wstring FormatTime(boost::posix_time::ptime now);
-	static std::string getTimeAndDateAsString();
+	static std::string generateRandomId();
 };
 
 } /* namespace util */

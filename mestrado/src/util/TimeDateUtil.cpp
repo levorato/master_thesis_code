@@ -39,7 +39,7 @@ std::wstring TimeDateUtil::FormatTime(boost::posix_time::ptime now)
   return wss.str();
 }
 
-std::string TimeDateUtil::getTimeAndDateAsString() {
+std::string TimeDateUtil::generateRandomId() {
 	using namespace boost::posix_time;
 	ptime now = second_clock::local_time();
 
