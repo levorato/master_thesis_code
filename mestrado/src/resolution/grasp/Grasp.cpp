@@ -130,7 +130,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		double alpha, int myRank) {
 	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
-	// std::cout << "GRASP construct clustering...\n";
+	BOOST_LOG_TRIVIAL(trace) << "GRASP construct clustering...\n";
 
 	while(lc.size() > 0) { // lc != empty
 		// cout << "Vertex list size is " << lc.size() << endl;
@@ -164,7 +164,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 
 		// Cc->printClustering();
 	}
-	// std::cout << endl << myRank << ": Initial clustering completed.\n";
+	BOOST_LOG_TRIVIAL(trace) << myRank << ": Initial clustering completed.\n";
 	Cc->setImbalance(problem.objectiveFunction(g, Cc.get()));
 	// Cc->printClustering();
 	return Cc;
@@ -178,7 +178,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	ClusteringPtr CStar = make_shared<Clustering>(Cc); // C* := Cc
 	double localTimeSpent = 0.0;
 	BOOST_LOG_TRIVIAL(trace) << "GRASP local search...\n";
-	// cout << "Current neighborhood is " << k << endl;
+	BOOST_LOG_TRIVIAL(trace) << "Current neighborhood is " << k << endl;
 
 	while(k <= l && (timeSpentSoFar + localTimeSpent < timeLimit)) {
 		// cout << "Local search iteration " << iteration << endl;
@@ -193,21 +193,21 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
 				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed, myRank);
 		if(Cl->getImbalance().getValue() < 0.0) {
-			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error." << endl;
+			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error.";
 			break;
 		}
 		// cout << "Comparing local solution value." << endl;
 		Imbalance il = Cl->getImbalance();
 		Imbalance ic = CStar->getImbalance();
 		if(il < ic) {
-			// cout << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
+			BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			// Cl->printClustering();
 			CStar.reset();
 			CStar = Cl;
 			k = 1;
 		} else {  // no better result found in neighborhood
 			k++;
-			// cout << "Changed to neighborhood size l = " << k << endl;
+			BOOST_LOG_TRIVIAL(trace) << "Changed to neighborhood size l = " << k;
 		}
 		iteration++;
 

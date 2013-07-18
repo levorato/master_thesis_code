@@ -12,7 +12,8 @@ namespace grasp {
 
 GainFunctionFactory::GainFunctionFactory(SignedGraph* g) :
 		imbalanceFunction(g), modularityFunction(g), negativeModularityGainFunction(g),
-		positiveNegativeModularityGainFunction(g) {
+		positiveNegativeModularityGainFunction(g), positiveNegativeModularityGainFunctionII(g),
+		positiveNegativeModularityGainFunctionIII(g) {
 	// TODO Auto-generated constructor stub
 
 }

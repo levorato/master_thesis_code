@@ -14,6 +14,8 @@ CPP_SRCS += \
 ../src/resolution/grasp/ParallelGrasp.cpp \
 ../src/resolution/grasp/Pool.cpp \
 ../src/resolution/grasp/PositiveNegativeModularityGainFunction.cpp \
+../src/resolution/grasp/PositiveNegativeModularityGainFunctionII.cpp \
+../src/resolution/grasp/PositiveNegativeModularityGainFunctionIII.cpp \
 ../src/resolution/grasp/VertexSet.cpp 
 
 OBJS += \
@@ -27,6 +29,8 @@ OBJS += \
 ./src/resolution/grasp/ParallelGrasp.o \
 ./src/resolution/grasp/Pool.o \
 ./src/resolution/grasp/PositiveNegativeModularityGainFunction.o \
+./src/resolution/grasp/PositiveNegativeModularityGainFunctionII.o \
+./src/resolution/grasp/PositiveNegativeModularityGainFunctionIII.o \
 ./src/resolution/grasp/VertexSet.o 
 
 CPP_DEPS += \
@@ -40,6 +44,8 @@ CPP_DEPS += \
 ./src/resolution/grasp/ParallelGrasp.d \
 ./src/resolution/grasp/Pool.d \
 ./src/resolution/grasp/PositiveNegativeModularityGainFunction.d \
+./src/resolution/grasp/PositiveNegativeModularityGainFunctionII.d \
+./src/resolution/grasp/PositiveNegativeModularityGainFunctionIII.d \
 ./src/resolution/grasp/VertexSet.d 
 
 

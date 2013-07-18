@@ -25,6 +25,8 @@ class GainFunction {
 public:
 	static const int IMBALANCE = 0, MODULARITY = 1, NEGATIVE_MODULARITY = 2;
 	static const int POSITIVE_NEGATIVE_MODULARITY = 3;
+	static const int POSITIVE_NEGATIVE_MODULARITY_II = 4;
+	static const int POSITIVE_NEGATIVE_MODULARITY_III = 5;
 
 	GainFunction(SignedGraph* g);
 	virtual ~GainFunction();

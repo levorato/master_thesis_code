@@ -10,7 +10,9 @@ src/resolution/grasp/GainFunctionFactory.d: \
  ../src/resolution/grasp/include/../../../graph/include/Imbalance.h \
  ../src/resolution/grasp/include/ModularityGainFunction.h \
  ../src/resolution/grasp/include/NegativeModularityGainFunction.h \
- ../src/resolution/grasp/include/PositiveNegativeModularityGainFunction.h
+ ../src/resolution/grasp/include/PositiveNegativeModularityGainFunction.h \
+ ../src/resolution/grasp/include/PositiveNegativeModularityGainFunctionII.h \
+ ../src/resolution/grasp/include/PositiveNegativeModularityGainFunctionIII.h
 
 ../src/resolution/grasp/include/GainFunctionFactory.h:
 
@@ -33,3 +35,7 @@ src/resolution/grasp/GainFunctionFactory.d: \
 ../src/resolution/grasp/include/NegativeModularityGainFunction.h:
 
 ../src/resolution/grasp/include/PositiveNegativeModularityGainFunction.h:
+
+../src/resolution/grasp/include/PositiveNegativeModularityGainFunctionII.h:
+
+../src/resolution/grasp/include/PositiveNegativeModularityGainFunctionIII.h:

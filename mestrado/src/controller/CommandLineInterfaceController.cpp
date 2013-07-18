@@ -239,7 +239,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
 				("output-folder", po::value<string>(&outputFolder), "output folder for results files")
 				("gain-function-type", po::value<int>(&functionType),
-						"0 for imbalance, 1 for modularity gain function, 2 for negative modularity gain function, 3 for positive-negative modularity gain function")
+						"0 for imbalance, 1 for modularity gain function, 2 for negative modularity gain function, "
+						"3 for positive-negative modularity gain function, 4 for pos-neg mod gain function II, "
+						"5 for pos-neg mod gain function III")
 				("slaves,s", po::value<int>(&numberOfSlaves)->default_value(8), "number of GRASP processes in parallel")
 				/* TODO Resolver problema com o parametro da descricao
 				("strategy",
@@ -288,6 +290,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				BOOST_LOG_TRIVIAL(info) << "max negative modularity\n";
 			} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY) {
 				BOOST_LOG_TRIVIAL(info) << "max positive-negative modularity\n";
+			} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY_II) {
+				BOOST_LOG_TRIVIAL(info) << "max positive-negative modularity II\n";
+			} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY_III) {
+				BOOST_LOG_TRIVIAL(info) << "max positive-negative modularity III\n";
 			} else {
 				BOOST_LOG_TRIVIAL(info) << "min imbalance\n";
 			}
