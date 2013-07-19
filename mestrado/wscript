@@ -5,9 +5,9 @@ top = '.'
 out = 'build'
 
 def dist(ctx):
-        ctx.algo      = 'zip'
-        ctx.excl      = ' **/.waf-1* **/*~ **/*.pyc **/*.swp **/.lock-w* **/.git'
-        ctx.files     = ctx.path.ant_glob('**/wscript')
+        ctx.algo      = 'tar.bz2'
+        ctx.excl      = ' **/*~ **/*.swp **/.lock-w* **/.git build Debug'
+
 
 def options(opt):
 	opt.load('compiler_c')

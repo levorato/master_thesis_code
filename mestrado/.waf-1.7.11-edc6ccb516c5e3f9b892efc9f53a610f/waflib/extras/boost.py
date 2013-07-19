@@ -52,6 +52,7 @@ import sys
 import re
 from waflib import Utils, Logs, Errors
 from waflib.Configure import conf
+from waflib.Errors import WafError
 
 BOOST_LIBS = ['/usr/lib', '/usr/local/lib', '/opt/local/lib', '/sw/lib', '/lib']
 BOOST_INCLUDES = ['/usr/include', '/usr/local/include', '/opt/local/include', '/sw/include']
@@ -123,42 +124,37 @@ def options(opt):
 
 
 @conf
-def __boost_get_version_file(self, d):
-	dnode = self.root.find_dir(d)
-	if dnode:
-		return dnode.find_node(BOOST_VERSION_FILE)
-	return None
+def __boost_get_version_file(self, dir):
+	try:
+		return self.root.find_dir(dir).find_node(BOOST_VERSION_FILE)
+	except:
+		return None
+
 
 @conf
-def boost_get_version(self, d):
+def boost_get_version(self, dir):
 	"""silently retrieve the boost version number"""
-	node = self.__boost_get_version_file(d)
-	if node:
-		try:
-			txt = node.read()
-		except (OSError, IOError):
-			Logs.error("Could not read the file %r" % node.abspath())
-		else:
-			re_but = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.*)"', re.M)
-			m = re_but.search(txt)
-			if m:
-				return m.group(1)
-	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[d], execute=True, define_ret=True)
+	re_but = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.*)"$', re.M)
+	try:
+		val = re_but.search(self.__boost_get_version_file(dir).read()).group(1)
+	except:
+		val = self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[dir], execute=False, define_ret=True)
+	return val
+
 
 @conf
 def boost_get_includes(self, *k, **kw):
 	includes = k and k[0] or kw.get('includes', None)
 	if includes and self.__boost_get_version_file(includes):
 		return includes
-	for d in Utils.to_list(self.environ.get('INCLUDE', '')) + BOOST_INCLUDES:
-		if self.__boost_get_version_file(d):
-			return d
-	if includes:
-		self.end_msg('headers not found in %s' % includes)
-		self.fatal('The configuration failed')
-	else:
-		self.end_msg('headers not found, please provide a --boost-includes argument (see help)')
-		self.fatal('The configuration failed')
+	for dir in BOOST_INCLUDES:
+		if self.__boost_get_version_file(dir):
+			return dir
+	if kw.get('boost_mandatory', True):
+		if includes:
+			self.fatal('headers not found in %s' % includes)
+		else:
+			self.fatal('headers not found, please provide a --boost-includes argument (see help)')
 
 
 @conf
@@ -185,24 +181,23 @@ def __boost_get_libs_path(self, *k, **kw):
 		path = self.root.find_dir(libs)
 		files = path.ant_glob('*boost_*')
 	if not libs or not files:
-		for d in Utils.to_list(self.environ.get('LIB', [])) + BOOST_LIBS:
-			path = self.root.find_dir(d)
-			if path:
+		for dir in BOOST_LIBS:
+			try:
+				path = self.root.find_dir(dir)
 				files = path.ant_glob('*boost_*')
 				if files:
 					break
-			path = self.root.find_dir(d + '64')
-			if path:
+				path = self.root.find_dir(dir + '64')
 				files = path.ant_glob('*boost_*')
 				if files:
 					break
+			except:
+				path = None
 	if not path:
 		if libs:
-			self.end_msg('libs not found in %s' % libs)
-			self.fatal('The configuration failed')
+			self.fatal('libs not found in %s' % libs)
 		else:
-			self.end_msg('libs not found, please provide a --boost-libs argument (see help)')
-			self.fatal('The configuration failed')
+			self.fatal('libs not found, please provide a --boost-libs argument (see help)')
 
 	self.to_log('Found the boost path in %r with the libraries:' % path)
 	for x in files:
@@ -255,8 +250,7 @@ def boost_get_libs(self, *k, **kw):
 				libs.append(format_lib_name(file.name))
 				break
 		else:
-			self.end_msg('lib %s not found in %s' % (lib, path.abspath()))
-			self.fatal('The configuration failed')
+			self.fatal('lib %s not found in %s' % (lib, path.abspath()))
 
 	return path.abspath(), libs
 
@@ -282,8 +276,14 @@ def check_boost(self, *k, **kw):
 	var = kw.get('uselib_store', 'BOOST')
 
 	self.start_msg('Checking boost includes')
-	self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
-	self.env.BOOST_VERSION = self.boost_get_version(inc)
+	try:
+		self.env['INCLUDES_%s' % var] = self.boost_get_includes(**params)
+		self.env.BOOST_VERSION = self.boost_get_version(self.env['INCLUDES_%s' % var])
+	except WafError:
+		self.end_msg("not found", 'YELLOW')
+		raise
+	#self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
+	#self.env.BOOST_VERSION = self.boost_get_version(inc)
 	self.end_msg(self.env.BOOST_VERSION)
 	if Logs.verbose:
 		Logs.pprint('CYAN', '	path : %s' % self.env['INCLUDES_%s' % var])
@@ -291,8 +291,14 @@ def check_boost(self, *k, **kw):
 	if not params['lib']:
 		return
 	self.start_msg('Checking boost libs')
-	suffix = params.get('static', None) and 'ST' or ''
-	path, libs = self.boost_get_libs(**params)
+	try:
+		suffix = params.get('static', 'ST') or ''
+		path, libs = self.boost_get_libs(**params)
+	except WafError:
+		self.end_msg("not found", 'YELLOW')
+		raise
+	#suffix = params.get('static', None) and 'ST' or ''
+	#path, libs = self.boost_get_libs(**params)
 	self.env['%sLIBPATH_%s' % (suffix, var)] = [path]
 	self.env['%sLIB_%s' % (suffix, var)] = libs
 	self.end_msg('ok')
@@ -350,22 +356,19 @@ def check_boost(self, *k, **kw):
 					self.end_msg("ok: winning cxxflags combination: %s" % (self.env["CXXFLAGS_%s" % var]))
 					e = None
 					break
-				except Errors.ConfigurationError as exc:
+				except Errors.ConfigurationError, exc:
 					self.env.revert()
 					e = exc
 
 			if e is not None:
-				self.end_msg("Could not auto-detect boost linking flags combination, you may report it to boost.py author", ex=e)
-				self.fatal('The configuration failed')
+				self.fatal("Could not auto-detect boost linking flags combination, you may report it to boost.py author", ex=e)
 		else:
-			self.end_msg("Boost linkage flags auto-detection not implemented (needed ?) for this toolchain")
-			self.fatal('The configuration failed')
+			self.fatal("Boost linkage flags auto-detection not implemented (needed ?) for this toolchain")
 	else:
 		self.start_msg('Checking for boost linkage')
 		try:
 			try_link()
-		except Errors.ConfigurationError as e:
-			self.end_msg("Could not link against boost libraries using supplied options")
-			self.fatal('The configuration failed')
+		except Errors.ConfigurationError, e:
+			self.fatal("Could not link against boost libraries using supplied options")
 		self.end_msg('ok')
 
