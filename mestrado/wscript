@@ -1,0 +1,49 @@
+APPNAME = 'graspcc'
+VERSION = '1.0'
+
+top = '.'
+out = 'build'
+
+def dist(ctx):
+        ctx.algo      = 'zip'
+        ctx.excl      = ' **/.waf-1* **/*~ **/*.pyc **/*.swp **/.lock-w* **/.git'
+        ctx.files     = ctx.path.ant_glob('**/wscript')
+
+def options(opt):
+	opt.load('compiler_c')
+	opt.load('compiler_cxx boost')
+#	opt.load('eclipse')
+
+def configure(conf):
+        print('→ configuring the project in ' + conf.path.abspath())
+	conf.load('compiler_c')
+
+	conf.check_cfg(path='mpic++', args='--showme:compile --showme:link',
+                package='', uselib_store='MPI_CH', mandatory=False)
+
+	conf.load('compiler_cxx boost')
+        conf.check_boost(lib='serialization system filesystem timer program_options random mpi thread date_time log log_setup', mt=False)
+
+	conf.path.ant_glob('**/*.cpp') # find all .cpp files
+	pass
+
+def build(bld):
+		
+	bld.stlib(
+                features='cxx',
+                source   = bld.path.ant_glob("src/**/*.cpp"),
+                target   = 'graspcclib',
+                includes = '. ./include /usr/local/include /usr/include/mpi $$HOME/include',
+                uselib='BOOST dl opa rt mpich mpichcxx',
+                libs = ['dl opa pthread rt mpich mpichcxx']
+                )
+
+	bld.program(
+		features='cxx cxxprogram',
+        	source   = 'src/main.cpp',
+	        target   = 'graspcc',
+	        includes = '. ./src ./src/*/include /usr/include/mpi',
+		use='BOOST graspcclib dl opa rt mpich mpichcxx',
+		libs = ['dl opa pthread rt mpich mpichcxx']
+	       	)
+
