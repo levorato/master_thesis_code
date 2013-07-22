@@ -1,4 +1,4 @@
-APPNAME = 'graspcc'
+exitAPPNAME = 'graspcc'
 VERSION = '1.0'
 
 top = '.'
@@ -16,34 +16,52 @@ def options(opt):
 
 def configure(conf):
         print('→ configuring the project in ' + conf.path.abspath())
+
+	conf.find_icpc()
+	conf.find_ar()
+	conf.gxx_common_flags()
+	conf.gxx_modifier_platform()
+	conf.cxx_load_tools()
+	conf.cxx_add_flags()
+	conf.link_add_flags()
+
 	conf.load('compiler_c')
+
+	conf.check(compiler='cxx', lib='boost_serialization', uselib_store='BSERIAL', mandatory=True)
 
 	conf.check_cfg(path='mpic++', args='--showme:compile --showme:link',
                 package='', uselib_store='MPI_CH', mandatory=False)
 
 	conf.load('compiler_cxx boost')
-        conf.check_boost(lib='serialization system filesystem timer program_options random mpi thread date_time log log_setup', mt=False)
+#        conf.check_boost(lib='serialization system filesystem timer program_options random mpi thread date_time log log_setup', mt=True)
 
 	conf.path.ant_glob('**/*.cpp') # find all .cpp files
+
+        env.append_value('LIBPATH', env['/usr/lib64'])
+	env.append_value('LIBPATH', env['/opt/mpi/mpibull2-1.3.9-18.s/lib'])
+
 	pass
 
 def build(bld):
 		
 	bld.stlib(
-                features='cxx',
+                features='cxx cxxprogram',
+				cxxflags  = ['-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-DHAVE_MPI_CXX', '-m64', '-O2', '-fPIC'], 
                 source   = bld.path.ant_glob("src/**/*.cpp"),
-                target   = 'graspcclib',
-                includes = '. ./include /usr/local/include /usr/include/mpi $$HOME/include',
-                uselib='BOOST dl opa rt mpich mpichcxx',
-                libs = ['dl opa pthread rt mpich mpichcxx']
+                target   = 'graspcc',
+                includes = '. ../include /usr/local/include /usr/include/mpi /opt/mpich2_p1/include /opt/mpi/mpibull2-1.3.9-18.s/include',
+                uselib='BSERIAL dl opa rt mpich mpichcxx boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_date_time boost_log boost_log_setup',
+                lib = ['dl', 'pthread', 'rt', 'uuid', 'mpich', 'mpichcxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_chrono', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log_setup', 'boost_log', 'mpibinding_cxx', 'pmi'],
+                libpath = ['/home_nfs/mlevorato/lib', '/usr/local/lib', '/lib64', '/usr/lib64', '/usr/lib64/mpich2/lib', '/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi', '/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock', '/opt/mpi/mpibull2-1.3.9-18.s/lib', '/home_nfs/3.2.2.006/lib64']
                 )
 
-	bld.program(
-		features='cxx cxxprogram',
-        	source   = 'src/main.cpp',
-	        target   = 'graspcc',
-	        includes = '. ./src ./src/*/include /usr/include/mpi',
-		use='BOOST graspcclib dl opa rt mpich mpichcxx',
-		libs = ['dl opa pthread rt mpich mpichcxx']
-	       	)
+#	bld.program(
+#		features='cxx cxxprogram',
+#		cxxflags  = ['-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-DHAVE_MPI_CXX', '-m64', '-O2', '-fPIC'],
+#        	source   = 'src/main.cpp',
+#	        target   = 'graspcc',
+#	        includes = '. ../include /usr/local/include /usr/include/mpi /opt/mpich2_p1/include /opt/mpi/mpibull2-1.3.9-18.s/include',
+#		use='BOOST graspcclib dl opa rt mpich mpichcxx boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_date_time boost_log boost_log_setup',
+#		lib = ['dl', 'pthread', 'rt', 'mpich', 'mpichcxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log', 'boost_log_setup', 'graspcclib']
+#	       	)
 
