@@ -32,7 +32,7 @@ ParallelNeighborhoodSearch::~ParallelNeighborhoodSearch() {
 
 ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
-		double timeLimit, unsigned long randomSeed, int myRank) {
+		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig) {
 
 	// Splits the processing in (numberOfClusters / numberOfSearchSlaves) chunks,
 	// to be consumed by numberOfSearchSlaves processes
@@ -73,7 +73,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	if(remainingClusters > 0) {
 		bestClustering = this->searchNeighborhood(l, g, clustering,
 				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
-				cont * sizeOfChunk, cont * sizeOfChunk + remainingClusters - 1);
+				cont * sizeOfChunk, cont * sizeOfChunk + remainingClusters - 1, false);
 		bestValue = bestClustering->getImbalance().getValue();
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
@@ -104,13 +104,14 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialClusterIndex,
-		unsigned long finalClusterIndex) {
+		unsigned long finalClusterIndex, bool firstImprovementOnOneNeig) {
 
 	assert(initialClusterIndex < clustering->getNumberOfClusters());
 	assert(finalClusterIndex < clustering->getNumberOfClusters());
 
 	if (l == 1) {  // 1-opt
-		// Parallel search does best improvement in 1-opt
+		// Parallel search always does best improvement in 1-opt
+		// Therefore, parameter firstImprovementOnOneNeig is ignored
 		return this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
 				myRank, initialClusterIndex, finalClusterIndex, false);
 	} else {  // 2-opt

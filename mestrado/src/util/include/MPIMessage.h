@@ -78,27 +78,28 @@ public:
 	string fileId;
 	string outputFolder;
 	long timeLimit;
+	bool firstImprovementOnOneNeig;
 
 	InputMessageParallelGrasp() : InputMessage(),
 			alpha(0.0F), iter(500), gainFunctionType(0), problemType(0),
-			fileId("noId"), outputFolder(""), timeLimit(1800) {
+			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false) {
 
 	}
 
 	InputMessageParallelGrasp(unsigned int i, string graphContents, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int slaves,
-			unsigned int searchSlaves) :
+			unsigned int searchSlaves, bool fiOneNeig) :
 				InputMessage(i, graphContents, neigh, slaves, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), executionId(eid), fileId(fid),
-					outputFolder(folder), timeLimit(t) {
+					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig) {
 
 	}
 
 	string toString() {
 		stringstream ss;
 		ss << "Alpha: " << alpha << "; l = " << l << "; iter = " << iter << "; fileId = " <<
-				fileId << "; " << graphInputFileContents << "\n\n";
+				fileId << "; " << graphInputFileContents << "\n";
 		return ss.str();
 	}
 
@@ -125,6 +126,7 @@ public:
 		ar & fileId;
 		ar & outputFolder;
 		ar & timeLimit;
+		ar & firstImprovementOnOneNeig;
 	}
 };
 

@@ -37,9 +37,9 @@ public:
 	 * Triggers the parallel execution of the GRASP algorithm using MPI.
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha,
-			const int& l, ClusteringProblem& problem, string& executionId, string& fileId,
-			string& outputFolder, const long& timeLimit, const int& numberOfSlaves,
-			const int& myRank, const int& numberOfSearchSlaves);
+			const int& l, const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
+			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
+			const int& numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 };
 
 } /* namespace grasp */

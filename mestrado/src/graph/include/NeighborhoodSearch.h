@@ -43,7 +43,7 @@ public:
         virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
                         Clustering* clustering, const ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-                        int myRank) = 0;
+                        int myRank, bool firstImprovementOnOneNeig) = 0;
 
 
 protected:
@@ -58,8 +58,8 @@ protected:
     	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
     					Clustering* clustering, const ClusteringProblem& problem,
     					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-    					int myRank,
-    					unsigned long initialClusterIndex, unsigned long finalClusterIndex) = 0;
+    					int myRank,	unsigned long initialClusterIndex, unsigned long finalClusterIndex,
+    					bool firstImprovementOnOneNeig) = 0;
 
         virtual ClusteringPtr search1opt(SignedGraph* g,
                         Clustering* clustering, const ClusteringProblem& problem,

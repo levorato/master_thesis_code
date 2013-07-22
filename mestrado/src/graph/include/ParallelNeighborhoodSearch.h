@@ -25,7 +25,7 @@ public:
 	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
 					Clustering* clustering, const ClusteringProblem& problem,
 					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-					int myRank);
+					int myRank, bool firstImprovementOnOneNeig);
 
 	/**
 	 * Searches the l-neighborhood of the given clustering, by removing a vertex
@@ -38,8 +38,8 @@ public:
 	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
 					Clustering* clustering, const ClusteringProblem& problem,
 					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-					int myRank,
-					unsigned long initialClusterIndex, unsigned long finalClusterIndex);
+					int myRank,	unsigned long initialClusterIndex, unsigned long finalClusterIndex,
+					bool firstImprovementOnOneNeig);
 
 private:
 	/**

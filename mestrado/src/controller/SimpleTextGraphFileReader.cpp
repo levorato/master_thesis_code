@@ -173,7 +173,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 		}
 	} else {  // formatType == 3, .dat files
 		char_separator<char> sep3(" \t");
-		int a = 0;
+		unsigned int a = 0;
 		while (not lines.empty()) {
 			string line = lines.back();
 			trim(line);
@@ -186,7 +186,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			for(unsigned int b = 0; b < vec.size(); b++) {
 				try {
 					double value = 0.0;
-	                                sscanf(vec.at(b).c_str(), "%lf", &value);
+	                sscanf(vec.at(b).c_str(), "%lf", &value);
 					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 					// the following is to avoid duplicate couting of arcs in the objective function
 					if(b <= a)	g->addEdge(a, b, value);

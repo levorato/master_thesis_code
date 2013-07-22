@@ -51,6 +51,8 @@
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/log/support/date_time.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -109,7 +111,7 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 }
 
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
-		string& executionId, const bool& debug, const double& alpha, const int& l,
+		string& executionId, const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 		const int& numberOfIterations, const long& timeLimit, const int& numberOfSlaves, const int& numberOfSearchSlaves,
 		const int& myRank, const int& problemType, const int& functionType, const unsigned long& seed) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
@@ -132,13 +134,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 
 		if(numberOfSlaves == 0) {	// sequential version of GRASP
 			Grasp resolution(&functionFactory.build(functionType), seed);
-			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l,
+			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
 					problemFactory.build(problemType), executionId, fileId, outputFolder,
 					timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 		} else {  // parallel version
 			// distributes GRASP processing among numberOfSlaves processes and summarizes the result
 			ParallelGrasp parallelResolution(&functionFactory.build(functionType), seed);
-			c = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, 
+			c = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
 					problemFactory.build(problemType), executionId, fileId, outputFolder, timeLimit,
 					numberOfSlaves, myRank, numberOfSearchSlaves);
 		}
@@ -184,7 +186,7 @@ unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
 }
 
 int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[],
-		const int &myRank, const int &np) {
+		const unsigned int &myRank, const int &np) {
 
 	// used for debugging purpose
 	std::set_terminate( handler );
@@ -215,11 +217,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		try {
 			string s_alpha;
 			int numberOfIterations = 500, k = -1, l = 1;
-			bool debug = false, profile = false;
+			bool debug = false, profile = false, firstImprovementOnOneNeig = true;
 			string inputFileDir, outputFolder;
 			int timeLimit = 1800;
 			int problemType = ClusteringProblem::CC_PROBLEM, functionType = GainFunction::IMBALANCE;
-			int numberOfSlaves = 8;
+			int numberOfSlaves = np - 1;
 			CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
 			po::options_description desc("Available options:");
@@ -239,10 +241,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
 				("output-folder", po::value<string>(&outputFolder), "output folder for results files")
 				("gain-function-type", po::value<int>(&functionType),
-						"0 for imbalance, 1 for modularity gain function, 2 for negative modularity gain function, "
-						"3 for positive-negative modularity gain function, 4 for pos-neg mod gain function II, "
-						"5 for pos-neg mod gain function III")
-				("slaves,s", po::value<int>(&numberOfSlaves)->default_value(8), "number of GRASP processes in parallel")
+						"0 for min imbalance, 1 for max modularity gain function, 2 for max negative modularity gain function, "
+						"3 for max positive-negative modularity gain function, 4 for max pos-neg mod gain function II, "
+						"5 for max pos-neg mod gain function III")
+				("slaves,s", po::value<int>(&numberOfSlaves)->default_value(np - 1), "number of GRASP processes in parallel")
+				("firstImprovementOnOneNeig", po::value<bool>(&firstImprovementOnOneNeig)->default_value(true), "first improvement in 1-opt neighborhood (** sequential VNS only **)")
 				/* TODO Resolver problema com o parametro da descricao
 				("strategy",
 							 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
@@ -347,14 +350,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					BOOST_LOG_TRIVIAL(info) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, outputFolder, executionId, debug, alpha, l,
+					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 							numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
 							myRank, problemType, functionType, seed);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing GRASP with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l,
+						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, numberOfSlaves, numberOfSearchSlaves,
 								myRank, problemType, functionType, seed);
 					}
@@ -439,9 +442,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					GainFunctionFactory functionFactory(g.get());
 					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
-							imsgpg.l, problemFactory.build(imsgpg.problemType), imsgpg.executionId, imsgpg.fileId,
-							imsgpg.outputFolder, imsgpg.timeLimit, imsgpg.numberOfSlaves, myRank,
-							imsgpg.numberOfSearchSlaves);
+							imsgpg.l, imsgpg.firstImprovementOnOneNeig, problemFactory.build(imsgpg.problemType),
+							imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, imsgpg.timeLimit,
+							imsgpg.numberOfSlaves, myRank, imsgpg.numberOfSearchSlaves);
 
 					// Sends the result back to the leader process
 					OutputMessage omsg(*bestClustering);
@@ -476,7 +479,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// triggers the local partial VNS search to be done between initial and final cluster indices
 					ClusteringPtr bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
 							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
-							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex);
+							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex, false);
 
 					// Sends the result back to the leader process
 					int leader = stat.source();
@@ -530,15 +533,23 @@ void CommandLineInterfaceController::readPropertiesFile() {
 }
 
 void CommandLineInterfaceController::initLogging(int myRank) {
-	namespace logging = boost::log;
+	using namespace boost::log;
 	namespace keywords = boost::log::keywords;
 	namespace sinks = boost::log::sinks;
 	namespace expr = boost::log::expressions;
+	namespace attrs = boost::log::attributes;
 	string filename = string("logs/Node") + lexical_cast<string>(myRank) + string(".log");
 
 	LogSeverityEnumParser parser;
 	logging::trivial::severity_level severity = parser.ParseSomeEnum(logSeverity);
 
+	boost::shared_ptr<log::core> logger = log::core::get();
+	logger->set_logging_enabled( true );
+	logger->add_global_attribute("TimeStamp", attrs::local_clock());
+	logger->add_global_attribute("ProcessID", attrs::current_process_id());
+	logger->add_global_attribute("LineID", attrs::counter< unsigned int >(1));
+
+	// @see boost log bug at: https://github.com/azat/boostcache/commit/839d14fbb7285ba3d702ac5c5d1b4c5adce81706
 	logging::add_file_log
 	    (
 	        keywords::file_name = filename.c_str(),
@@ -546,9 +557,16 @@ void CommandLineInterfaceController::initLogging(int myRank) {
 	        keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
 	        keywords::auto_flush = true,
 	        keywords::open_mode = (std::ios::out | std::ios::app),
-	        keywords::format = "%TimeStamp% (%LineID%): %Message%"
+	        keywords::format = (
+				expressions::stream
+					<< "[" << expr::format_date_time< boost::posix_time::ptime >("TimeStamp", "%d.%m.%Y %H:%M:%S.%f") << "] "
+					<< "[" << expr::attr< attrs::current_process_id::value_type >("ProcessID") << "] "
+					<< "(" << expr::attr< unsigned int >("LineID") << ")"
+					<< "[" << trivial::severity << "]\t"
+					<< expr::smessage
+			)
 	    );
-	logging::add_common_attributes();
+	// add_common_attributes();
 
 	// This makes the sink to write log records that look like this:
 	// 1: <normal> A normal severity message
@@ -562,7 +580,7 @@ void CommandLineInterfaceController::initLogging(int myRank) {
 			% expr::smessage
 	);*/
 
-    logging::core::get()->set_filter
+	logger->set_filter
     (
         logging::trivial::severity >= severity
     );

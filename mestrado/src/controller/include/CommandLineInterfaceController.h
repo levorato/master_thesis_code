@@ -29,11 +29,11 @@ public:
 	enum StategyName {GRASP, GRASP_PR};
 	string getTimeAndDateAsString();
 	int processArgumentsAndExecute(int argc, char *argv[],
-			const int &myRank, const int &np);
+			const unsigned int &myRank, const int &np);
 
 private:
 	void processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
-			const bool& debug, const double& alpha, const int& l,
+			const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 			const int& numberOfIterations, const long& timeLimit,
 			const int& numberOfSlaves, const int& numberOfSearchSlaves, const int& myRank,
 			const int& problemType, const int& functionType, const unsigned long& seed);

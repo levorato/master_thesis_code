@@ -26,10 +26,10 @@ ParallelGrasp::~ParallelGrasp() {
 }
 
 ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
-		const double& alpha, const int& l, ClusteringProblem& problem,
-		string& executionId, string& fileId, string& outputFolder, 
-		const long& timeLimit, const int& numberOfSlaves,
-		const int& myRank, const int& numberOfSearchSlaves) {
+		const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
+		ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
+		const long& timeLimit, const int& numberOfSlaves, const int& myRank,
+		const int& numberOfSearchSlaves) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(debug) << "[Parallel GRASP] Initiating parallel GRASP...";
 	// the leader distributes the work across the processors
@@ -37,13 +37,14 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	for(int i = 1; i <= numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphAsText(), iter, alpha, l,
 				problem.getType(), gainFunction->getType(), executionId, fileId, outputFolder, timeLimit,
-				numberOfSlaves, numberOfSearchSlaves);
+				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
 		world.send(i, INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message sent to process " << i;
 	}
 	// the leader does its part of the work
 	ClusteringPtr bestClustering = Grasp::executeGRASP(g, iter, alpha,
-			l, problem, executionId, fileId, outputFolder, timeLimit, numberOfSlaves,
+			l, firstImprovementOnOneNeig, problem, executionId, fileId,
+			outputFolder, timeLimit, numberOfSlaves,
 			myRank, numberOfSearchSlaves);
 
 	// the leader receives the processing results

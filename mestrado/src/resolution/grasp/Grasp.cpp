@@ -42,8 +42,9 @@ Grasp::~Grasp() {
 }
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
-		const ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
-		const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves) {
+		const bool& firstImprovementOnOneNeig, const ClusteringProblem& problem, string& executionId,
+		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
+		const int& myRank, const int& numberOfSearchSlaves) {
 	BOOST_LOG_TRIVIAL(debug) << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
 	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
 	ClusteringPtr CStar = constructClustering(g, problem, alpha, myRank);
@@ -75,7 +76,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		Cc = constructClustering(g, problem, alpha, myRank);
 
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl = localSearch(g, *Cc, l, problem, *neig, timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
+		ClusteringPtr Cl = localSearch(g, *Cc, l, firstImprovementOnOneNeig,
+				problem, *neig, timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl->getImbalance();
@@ -171,7 +173,8 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 }
 
 ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const ClusteringProblem& problem, NeighborhoodSearch &neig, const long& timeLimit,
+		const bool& firstImprovementOnOneNeig, const ClusteringProblem& problem,
+		NeighborhoodSearch &neig, const long& timeLimit,
 		const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
@@ -191,7 +194,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// apply a local search in CStar using the k-neighborhood
 
 		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
-				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed, myRank);
+				timeSpentSoFar + localTimeSpent, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig);
 		if(Cl->getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error.";
 			break;

@@ -12,8 +12,8 @@ namespace grasp {
 
 ModularityGainFunction::ModularityGainFunction(SignedGraph* g) :
 		GainFunction::GainFunction(g),
-		modularityMatrix(boost::extents[g->getN()][g->getN()]),
-		modularityMatrixCalculated(false) {
+		modularityMatrixCalculated(false),
+		modularityMatrix(boost::extents[g->getN()][g->getN()]) {
 	// TODO Auto-generated constructor stub
 
 }

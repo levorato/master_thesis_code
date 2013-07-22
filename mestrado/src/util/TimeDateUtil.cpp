@@ -23,7 +23,7 @@ TimeDateUtil::~TimeDateUtil() {
 	// TODO Auto-generated destructor stub
 }
 
-std::wstring TimeDateUtil::FormatTime(boost::posix_time::ptime now)
+std::string TimeDateUtil::FormatTime(boost::posix_time::ptime now)
 {
   using namespace boost::posix_time;
   static std::locale loc(std::wcout.getloc(),
@@ -35,16 +35,16 @@ std::wstring TimeDateUtil::FormatTime(boost::posix_time::ptime now)
 
   boost::uuids::uuid tag = boost::uuids::random_generator()();
   wss << "_" << tag;
+  std::wstring ws = wss.str();
 
-  return wss.str();
+  return std::string ( ws.begin(), ws.end() );
 }
 
 std::string TimeDateUtil::generateRandomId() {
 	using namespace boost::posix_time;
 	ptime now = second_clock::local_time();
 
-	std::wstring ws(TimeDateUtil::FormatTime(now));
-	return std::string ( ws.begin(), ws.end() );;
+	return TimeDateUtil::FormatTime(now);
 }
 
 } /* namespace util */
