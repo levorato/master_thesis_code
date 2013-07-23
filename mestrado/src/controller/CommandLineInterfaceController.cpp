@@ -150,10 +150,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		boost::timer::cpu_times end_time = timer.elapsed();
 		double timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 		// Saves elapsed time and best solution to output file
-		string filename = outputFolder + fileId + "/" + executionId + "/result.txt";
+		string filename = outputFolder + "/" + fileId + "/" + executionId + "/result.txt";
 		ofstream out(filename.c_str(), ios::out | ios::trunc); 
 		if(!out) { 
-			BOOST_LOG_TRIVIAL(fatal) << "Cannot open output summary file.\n";
+			BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << filename;
 		    // TODO tratar excecao 
   		} 
 
