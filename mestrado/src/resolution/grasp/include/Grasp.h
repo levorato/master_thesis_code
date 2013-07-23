@@ -15,6 +15,8 @@
 #include "../../../problem/include/ClusteringProblem.h"
 #include "../../../graph/include/NeighborhoodSearch.h"
 
+#include <iostream>
+
 using namespace clusteringgraph;
 using namespace problem;
 
@@ -71,24 +73,32 @@ protected:
 	 * @param Cc the clustering given by the construct clustering
 	 * phase of GRASP.
 	 * @param l the size of the neighborhood
+	 * @param graspIteration the number of the grasp iteration this LS belongs to
 	 * @param problem the ClusteringProblem object for the objective function calculation
 	 * @param timeLimit Maximum processing time in seconds.
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l,
+	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l, const int& graspIteration,
 			const bool& firstImprovementOnOneNeig, const ClusteringProblem& problem, NeighborhoodSearch &neig,
 			const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
 	/**
 	 * TODO document this method
 	 */
-	void generateOutputFile(stringstream& fileContents, string& outputFolder, string& fileId, string& timestamp,
-			const int &processNumber, const double& alpha, const int& l, const int& numberOfIterations);
+	void generateOutputFile(stringstream& fileContents, const string& rootFolder, const string& fileId, const string& timestamp,
+			const int &processNumber, const string& fileSuffix, const double& alpha, const int& l, const int& numberOfIterations);
 
 	/**
-	 * Time spent so far in the GRASP.
+	 * Computes the best known GRASP result at each time interval.
 	 */
-	double timeSpentSoFar;
+	void measureTimeResults(const double& timeSpentOnLocalSearch, const int& graspIteration);
+
+	void notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& graspIteration);
+
+	/**
+	 * Time spent so far in the GRASP in seconds.
+	 */
+	double timeSpentInGRASP;
 
 	/**
 	 * The gain function to be used in the construction phase.
@@ -99,6 +109,20 @@ protected:
 	 * Random seed.
 	 */
 	unsigned long randomSeed;
+
+	/**
+	 * Stringstream containing the best result found at each moment of time.
+	 * Results are collected in local search phase of GRASP.
+	 */
+	stringstream timeResults;
+
+	/**
+	 * Time measure interval for GRASP results in seconds.
+	 */
+	static const double timeMeasureInterval = 10.0;
+	double timeSum;
+	/** The best clustering found in all GRASP iterations. */
+	ClusteringPtr CBest, CBefore;
 };
 
 } /* namespace grasp */

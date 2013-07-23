@@ -300,6 +300,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			} else {
 				BOOST_LOG_TRIVIAL(info) << "min imbalance\n";
 			}
+			BOOST_LOG_TRIVIAL(info) << "First improvement on 1-opt neighborhood is enabled? " << firstImprovementOnOneNeig;
+
 			BOOST_LOG_TRIVIAL(info) << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
 			vector<fs::path> fileList;
 
