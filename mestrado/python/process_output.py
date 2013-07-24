@@ -176,7 +176,7 @@ def main(argv):
       avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_count)
    
    result_file = open(folder + "/summary.txt", "w")
-   print "Filename, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter"
+   print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter"
    result_file.write("Filename, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter\n")
    for key in sorted(all_files_summary.iterkeys()):
       print "%s, %s" % (key, all_files_summary[key])
@@ -186,7 +186,7 @@ def main(argv):
    for key in sorted(best_file_summary.iterkeys()):
       print "%s, %s" % (key, best_file_summary[key])
    print "------ Average results:"
-   print "Avg I(P), Avg K, Avg Time(s), Avg Iter, Num executions"
+   print "Instance, Avg I(P), Avg K, Avg Time(s), Avg Iter, Num executions"
    for key in sorted(avg_file_summary.iterkeys()):
       print "%s, %s" % (key, avg_file_summary[key])
 

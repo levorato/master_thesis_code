@@ -206,7 +206,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	// reads the system properties from ini file
 	this->readPropertiesFile();
 	// initializes the logging subsystem
-	this->initLogging(myRank);
+	this->initLogging(boost::lexical_cast<std::string>(getpid()), myRank);
 
 	// codigo do processor lider
 	if(myRank == 0) {
@@ -534,13 +534,13 @@ void CommandLineInterfaceController::readPropertiesFile() {
 	}
 }
 
-void CommandLineInterfaceController::initLogging(int myRank) {
+void CommandLineInterfaceController::initLogging(string executionId, int myRank) {
 	using namespace boost::log;
 	namespace keywords = boost::log::keywords;
 	namespace sinks = boost::log::sinks;
 	namespace expr = boost::log::expressions;
 	namespace attrs = boost::log::attributes;
-	string filename = string("logs/Node") + lexical_cast<string>(myRank) + string(".log");
+	string filename = string("logs/") + string("Node") + lexical_cast<string>(myRank) + string("-pid") + executionId + string(".log");
 
 	LogSeverityEnumParser parser;
 	logging::trivial::severity_level severity = parser.ParseSomeEnum(logSeverity);

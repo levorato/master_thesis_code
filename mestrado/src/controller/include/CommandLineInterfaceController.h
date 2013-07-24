@@ -42,7 +42,7 @@ private:
 
 	unsigned int calculateNumberOfSearchSlaves(const unsigned int& np, const unsigned int& numberOfSlaves);
 
-	void initLogging(int myRank);
+	void initLogging(string executionId, int myRank);
 
 	static void handler();
 
