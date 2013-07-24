@@ -5,6 +5,28 @@ import glob
 import os
 import os.path
 
+#gambit para python 2.4
+class _minmax(object):
+    def __init__(self, func):
+        self.func = func
+    def __call__(self, *seq, **kwargs):
+        key = kwargs.pop('key', None)
+        if kwargs:
+            raise TypeError("only 'key' accepted as a "
+                            "keyword argument")
+        if key is None:
+            return self.func(*seq)
+        if len(seq) == 1:
+            seq, = seq
+        return self.func((key(item), i, item)
+                         for i, item in enumerate(seq))[-1]
+
+min = _minmax(min)
+max = _minmax(max)
+
+def q(cond, on_true, on_false):
+    return {True: on_true, False: on_false}[cond is True]
+
 def main(argv):
 
    folder = ''
@@ -164,12 +186,12 @@ def main(argv):
 			time_list_keys = time_list.keys()
 			time_list_keys.sort()
 			print "Computed times are " + str(time_list_keys)
-			print "Time slot(s), Time(s), I(P), I(P)+, I(P)-, k, Iter"
+			print "Time slot(s), I(P), Details (Time(s), I(P), I(P)+, I(P)-, k, Iter)"
 			while time <= last_time:
-				index = min(time_list_keys, key=lambda x: (time - x) if x < time else x)
-				print str(time) + ", " + str(time_list[index])
+				index = min(time_list_keys, key=lambda x: q(x < time, time - x, x))
+				print str(time) + ", " + str(time_list[index][1]) + ", " + str(time_list[index])
 				time += 10.0
-			print str(last_time) + ", " + str(time_list[last_time])
+			print str(last_time) + ", " + str(time_list[last_time][1]) + ", " + str(time_list[last_time])
 
    if avg_count > 0:
       print "storing " + previous_filename
