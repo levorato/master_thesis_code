@@ -63,7 +63,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	} else {
 		neig = nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 	}
-	stringstream ss;
+	stringstream iterationResults;
+	stringstream constructivePhaseResults;
 	int i = 0, totalIter = 0;
 
 	for (i = 0, totalIter = 0; i <= iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
@@ -77,6 +78,9 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 
 		// 1. Construct the clustering
 		Cc = constructClustering(g, problem, alpha, myRank);
+		//    Store initial solution value in corresponding results file
+		constructivePhaseResults << (totalIter+1) << "," << Cc->getImbalance().getValue() << "," << Cc->getImbalance().getPositiveValue()
+						<< "," << Cc->getImbalance().getNegativeValue() << "," << Cc->getNumberOfClusters() << "\n";
 
 		// 2. Execute local search algorithm
 		ClusteringPtr Cl = localSearch(g, *Cc, l, totalIter, firstImprovementOnOneNeig,
@@ -93,7 +97,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
 		// TODO melhorar formatacao do tempo
 		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
-		ss << (totalIter+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
+		iterationResults << (totalIter+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
 				<< "," << newValue.getNegativeValue() << "," << CStar->getNumberOfClusters()
 				<< "," << fixed << setprecision(4) << timeSpentInGRASP << "\n";
 
@@ -114,7 +118,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			break;
 		}
 	}
-	ss << "Best value," << fixed << setprecision(4) << bestValue.getValue()
+	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
 			<< "," << bestValue.getPositiveValue()
 			<< "," << bestValue.getNegativeValue()
 			<< setprecision(0)
@@ -125,11 +129,13 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 
 	BOOST_LOG_TRIVIAL(debug) << "GRASP procedure done." << endl;
 	// CStar->printClustering();
-	CStar->printClustering(ss);
-	generateOutputFile(ss, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
+	CStar->printClustering(iterationResults);
+	generateOutputFile(iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
 	generateOutputFile(timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), alpha, l, iter);
+	// saves the initial solutions data to file
+	generateOutputFile(constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), alpha, l, iter);
 
 	return CStar;
 }
