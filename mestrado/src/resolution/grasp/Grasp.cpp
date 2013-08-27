@@ -54,7 +54,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	ClusteringPtr Cc;
 	Imbalance bestValue = CStar->getImbalance();
 	int iterationValue = 0;
-	double timeSpentOnBestSolution = 0;
+	double timeSpentOnBestSolution = 0.0;
+	double initialImbalanceSum = 0.0;
 	// Chooses between the sequential or parallel VNS algorithm
 	NeighborhoodSearch* neig;
 	NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
@@ -81,6 +82,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		//    Store initial solution value in corresponding results file
 		constructivePhaseResults << (totalIter+1) << "," << Cc->getImbalance().getValue() << "," << Cc->getImbalance().getPositiveValue()
 						<< "," << Cc->getImbalance().getNegativeValue() << "," << Cc->getNumberOfClusters() << "\n";
+		initialImbalanceSum += Cc->getImbalance().getValue();
 
 		// 2. Execute local search algorithm
 		ClusteringPtr Cl = localSearch(g, *Cc, l, totalIter, firstImprovementOnOneNeig,
@@ -126,6 +128,9 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			<< "," << (iterationValue+1)
 			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
 			<< "," << (totalIter+1) << endl;
+
+	constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << (initialImbalanceSum / (totalIter+1))
+			<< endl;
 
 	BOOST_LOG_TRIVIAL(debug) << "GRASP procedure done." << endl;
 	// CStar->printClustering();
