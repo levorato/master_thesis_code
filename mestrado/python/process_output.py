@@ -50,6 +50,8 @@ def main(argv):
    all_files_summary = dict()
    best_file_summary = dict()
    avg_file_summary = dict()
+   timeInterval = dict()
+   timeCount = dict()
    previous_filename = ""
    avg_value = 0
    avg_k = 0
@@ -145,8 +147,18 @@ def main(argv):
 		    avg_count = avg_count + 1
 		 else:
 		    if avg_count > 0:
-		       print "storing " + previous_filename
-		       avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_count)
+		        print "storing " + previous_filename
+		        avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_count)
+		        print "average execution times for file " + previous_filename
+			tdir = "./times"
+                        if not os.path.exists(tdir):
+				os.makedirs(tdir)
+			times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
+			for key, value in sorted(timeInterval.items()):
+      				times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
+			times_file.close()
+			timeInterval = dict()
+			timeCount = dict()
 		    avg_value = best_value
 		    avg_k = best_K
 		    avg_time = global_time
@@ -180,22 +192,40 @@ def main(argv):
 					last_time = float(row[0])
 			input_file_t.close
 			
-			print "Time intervals for file " + filename
-			print "Last time is " + str(last_time)
+			# print "Time intervals for file " + filename
+			# print "Last time is " + str(last_time)
 			time = 0.0
 			time_list_keys = time_list.keys()
 			time_list_keys.sort()
-			print "Computed times are " + str(time_list_keys)
-			print "Time slot(s), I(P), Details (Time(s), I(P), I(P)+, I(P)-, k, Iter)"
+			# print "Computed times are " + str(time_list_keys)
+			# print "Time slot(s), I(P), Details (Time(s), I(P), I(P)+, I(P)-, k, Iter)"
+			graph_name = filename[:filename.rfind("/")]
+			graph_name = graph_name[:graph_name.rfind("/")]
+			graph_name = graph_name[graph_name.rfind("/")+1:]
+			print "graph name is " + graph_name  
 			while time <= last_time:
 				index = min(time_list_keys, key=lambda x: q(x < time, time - x, x))
-				print str(time) + ", " + str(time_list[index][1]) + ", " + str(time_list[index])
+				timeInterval[time] = float(timeInterval.get(time, 0.0)) + float(time_list[index][1])
+				timeCount[time] = timeCount.get(time, 0.0) + 1
+				# str(time) + ", " + str(time_list[index][1]) + ", " + str(time_list[index])
 				time += 10.0
-			print str(last_time) + ", " + str(time_list[last_time][1]) + ", " + str(time_list[last_time])
+			timeInterval[time] = float(timeInterval.get(time, 0.0)) + float(time_list[last_time][1])
+			timeCount[time] = timeCount.get(time, 0.0) + 1
+			# str(last_time) + ", " + str(time_list[last_time][1]) + ", " + str(time_list[last_time])
 
    if avg_count > 0:
       print "storing " + previous_filename
       avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_count)
+      print "average execution times for file " + previous_filename
+      tdir = "./times"
+      if not os.path.exists(tdir):
+	      os.makedirs(tdir)
+      times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
+      for key, value in sorted(timeInterval.items()):
+    	times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
+      times_file.close()
+      timeInterval = dict()
+      timeCount = dict()
    
    result_file = open(folder + "/summary.txt", "w")
    print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter"
