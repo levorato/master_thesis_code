@@ -48,7 +48,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		const int& myRank, const int& numberOfSearchSlaves) {
 	BOOST_LOG_TRIVIAL(debug) << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
 	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
-	ClusteringPtr CStar = constructClustering(g, problem, alpha, myRank);
+	ClusteringPtr CStar = make_shared<Clustering>();
 	ClusteringPtr previousCc = CStar;
 	CBest = CStar;
 	ClusteringPtr Cc;
@@ -79,10 +79,20 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 
 		// 1. Construct the clustering
 		Cc = constructClustering(g, problem, alpha, myRank);
-		//    Store initial solution value in corresponding results file
+		// -- Stops the timer and stores the elapsed time
+		timer.stop();
+		boost::timer::cpu_times end_time = timer.elapsed();
+		double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+		timeSpentInGRASP += timeSpentInConstruction;
+		timer.resume();
+		start_time = timer.elapsed();
+		//    Stores initial solution value in corresponding results file, includes time spent in construction phase
 		constructivePhaseResults << (totalIter+1) << "," << Cc->getImbalance().getValue() << "," << Cc->getImbalance().getPositiveValue()
-						<< "," << Cc->getImbalance().getNegativeValue() << "," << Cc->getNumberOfClusters() << "\n";
+						<< "," << Cc->getImbalance().getNegativeValue() << "," << Cc->getNumberOfClusters()
+						<< "," << fixed << setprecision(4) << timeSpentInConstruction << "\n";
 		initialImbalanceSum += Cc->getImbalance().getValue();
+		// Registers the Cc result
+		notifyNewValue(Cc, 0.0, totalIter);
 
 		// 2. Execute local search algorithm
 		ClusteringPtr Cl = localSearch(g, *Cc, l, totalIter, firstImprovementOnOneNeig,
@@ -93,15 +103,17 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 
 		// 4. Stops the timer and stores the elapsed time
 		timer.stop();
-		boost::timer::cpu_times end_time = timer.elapsed();
+		end_time = timer.elapsed();
 
-		// 4. Write the results into ostream os, using csv format
+		// 5. Write the results into ostream os, using csv format
 		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
 		// TODO melhorar formatacao do tempo
 		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
 		iterationResults << (totalIter+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
 				<< "," << newValue.getNegativeValue() << "," << CStar->getNumberOfClusters()
 				<< "," << fixed << setprecision(4) << timeSpentInGRASP << "\n";
+		timer.resume();
+		start_time = timer.elapsed();
 
 		if(newValue < bestValue) {
 			// cout << "A better solution was found." << endl;
@@ -119,6 +131,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
+
+		timer.stop();
+		end_time = timer.elapsed();
+		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
 	}
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
 			<< "," << bestValue.getPositiveValue()

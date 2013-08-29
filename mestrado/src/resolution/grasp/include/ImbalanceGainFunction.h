@@ -20,7 +20,7 @@ public:
 
 	virtual GainCalculation& gain(const int &a);
 
-	virtual void calculateGainList(Clustering &c, list<int>& nodeList);
+	virtual void calculateGainList(Clustering &c, GainFunctionVertexSet& nodeList);
 
 	virtual bool operator () ( const int& a, const int& b );
 

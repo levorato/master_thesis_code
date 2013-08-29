@@ -10,6 +10,7 @@
 #include <boost/random/linear_congruential.hpp>
 #include <boost/nondet_random.hpp>
 #include <boost/random/variate_generator.hpp>
+#include <algorithm>
 
 #include "include/VertexSet.h"
 
@@ -17,9 +18,9 @@ namespace resolution {
 namespace grasp {
 
 VertexSet::VertexSet(unsigned long randomSeed, int n) : seed(randomSeed),
-		vertexSetPtr(new GainFunctionVertexSet) {
+		vertexSet() {
 	for(int i = 0; i < n; i++) {
-		vertexSetPtr->push_back(i);
+		vertexSet.push_back(i);
 	}
 }
 
@@ -28,14 +29,17 @@ VertexSet::~VertexSet() {
 }
 
 int VertexSet::size() {
-	return vertexSetPtr->size();
+	return vertexSet.size();
 }
 
 void VertexSet::removeVertex(int i) {
-	vertexSetPtr->remove(i);
+	// Swaps the i-th and the last element to avoid linear-time removal
+	swap(vertexSet[i], vertexSet[vertexSet.size() - 1]);
+	vertexSet.erase(vertexSet.end() - 1);
 }
 
 // TODO aceitar parametro seed para a geracao do numero aleatorio
+// O(1)
 int VertexSet::chooseRandomVertex(int x) {
 
 	// Generates a random number between 1 and x
@@ -49,29 +53,19 @@ int VertexSet::chooseRandomVertex(int x) {
 	generator.seed(boost::random::random_device()());
 	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uni(generator, dist);
 	unsigned int selectedVertexSetIndex = uni();
-	int selectedVertex = 0;
 
 	// Returns the Vertex
-	list<int, allocator<int> >::const_iterator pos;
-	list<int, allocator<int> > vertexSet = *vertexSetPtr.get();
-	unsigned int i = 0;
-	for(i = 0, pos = vertexSet.begin(); i < vertexSet.size(); ++pos, ++i) {
-		if(i == selectedVertexSetIndex) {
-			selectedVertex = *pos;
-			break;
-		}
-	}
-	return selectedVertex;
+	return vertexSet[selectedVertexSetIndex];
 }
 
 void VertexSet::sort(GainFunction *function) {
-	vertexSetPtr->sort(function->getComparator());
+	std::sort(vertexSet.begin(), vertexSet.end(), function->getComparator());
 	// cout << "Vertex set sorting:" << vertexSetPtr->front() << ", " << function->gain(vertexSetPtr->front()).value << endl;
 	// cout << "Vertex set sorting:" << vertexSetPtr->back() << ", " << function->gain(vertexSetPtr->back()).value << endl;
 }
 
-list<int>& VertexSet::getVertexList() {
-	return *(this->vertexSetPtr.get());
+GainFunctionVertexSet& VertexSet::getVertexList() {
+	return vertexSet;
 }
 
 } /* namespace grasp */

@@ -7,6 +7,7 @@
 #include <boost/random/linear_congruential.hpp>
 #include <boost/timer/timer.hpp>
 #include <iomanip>
+#include <iostream>
 #include <cassert>
 #include "include/NeighborhoodSearch.h"
 
@@ -17,7 +18,6 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
                 double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                 int myRank, unsigned long initialClusterIndex,
         		unsigned long finalClusterIndex, bool firstImprovement) {
-
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
 	timer.start();
@@ -71,8 +71,9 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 					// return if time limit is exceeded
 					boost::timer::cpu_times end_time = timer.elapsed();
 					double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+					std::cout << timeSpentSoFar + localTimeSpent << endl;
 					if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
-					// increment rule
+					// loop increment rule
 					k2++;
 					if(k2 >= totalNumberOfClusters) {
 						k2 = 0;

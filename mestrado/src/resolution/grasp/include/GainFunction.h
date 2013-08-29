@@ -10,6 +10,7 @@
 
 #include "../../../graph/include/Graph.h"
 #include "../../../graph/include/Clustering.h"
+#include <vector>
 
 using namespace clusteringgraph;
 
@@ -20,6 +21,8 @@ typedef struct {
 	double value;
 	int clusterNumber;
 } GainCalculation;
+
+typedef vector<int> GainFunctionVertexSet;
 
 class GainFunction {
 public:
@@ -57,7 +60,7 @@ public:
 	 */
 	virtual GainCalculation& gain(const int &a) = 0;
 
-	virtual void calculateGainList(Clustering &c, list<int>& nodeList) = 0;
+	virtual void calculateGainList(Clustering &c, GainFunctionVertexSet& vertexSet) = 0;
 
 	virtual GainFunctionComparison getComparator() {
 		return GainFunctionComparison(this, true);

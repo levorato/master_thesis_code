@@ -19,13 +19,12 @@ ImbalanceGainFunction::~ImbalanceGainFunction() {
 	// TODO Auto-generated destructor stub
 }
 
-void ImbalanceGainFunction::calculateGainList(Clustering &c, list<int>& nodeList) {
+void ImbalanceGainFunction::calculateGainList(Clustering &c, GainFunctionVertexSet& nodeList) {
 	gainMap.clear();
-	list<int, allocator<int> >::const_iterator pos;
 	// cout << "Calculating gain list..." << endl;
 	unsigned int i = 0;
-	for(i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
-		int a = *pos;
+	for(i = 0; i < nodeList.size(); i++) {
+		int a = nodeList[i];
 		// cout << "Vertex " << a << endl;
 		GainCalculation gainCalculation;
 		double min = std::numeric_limits<double>::max();
