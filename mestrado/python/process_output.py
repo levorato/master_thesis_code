@@ -53,6 +53,7 @@ def main(argv):
    timeInterval = dict()
    timeCount = dict()
    previous_filename = ""
+   avg_ip_const = 0
    avg_value = 0
    avg_k = 0
    avg_time = 0
@@ -87,6 +88,8 @@ def main(argv):
 		 datetime = root[root.rfind("/")+1:]
 		 filename = filename[filename.rfind("/")+1:]
 		 text_file.write("Summary for graph file: %s\n"%filename)
+		 local_avg_ip_const = 0
+		 local_avg_count = 0
 		 best_value = 1000000L
 		 best_pos_value = 0
 		 best_neg_value = 0
@@ -104,11 +107,10 @@ def main(argv):
 		    reader = csv.reader(StringIO.StringIO(content), delimiter=',')
 		    for row in reader:
 		       linestring = ''.join(row)
-		       if linestring.startswith( 'Best value' ):
-		          column = []
-		          for col in row:
-		             column.append(col)
-		          
+		       column = []
+                       for col in row:
+                          column.append(col)
+		       if linestring.startswith( 'Best value' ):          
 		          filepath = ''.join(file_list[count])
 		          text_file.write(filepath[filepath.rfind("/")+1:] + ' ' + linestring + '\n')
 		          value = float(column[1])
@@ -133,13 +135,21 @@ def main(argv):
 		             best_param = filepath[filepath.rfind("/")+1:]
 		             best_pos_value = pos_value
 		             best_neg_value = neg_value
+		       elif linestring.startswith( 'Average initial I(P)' ):
+			     # computa o valor medio da solucao inicial da fase construtiva para determinado no da execucao paralela
+			     ip_const = float(column[1])
+			     local_avg_ip_const = local_avg_ip_const + ip_const 
+			     local_avg_count = local_avg_count + 1
 		    count = count - 1
 		   finally:
 		    content_file.close()
 		 text_file.close()
 		 all_files_summary[filename+"/"+datetime] = str(best_value)+", "+str(pos_value)+", "+str(neg_value)+", "+str(best_K)+", "+str(iteration)+", "+str(best_time)+", "+str(global_time)+", "+best_param+", "+str(total_iter)
+		 # calcula a media dos valores de I(P) da fase de construcao para este set de arquivos de resultado
+		 local_avg_ip_const = local_avg_ip_const / local_avg_count
 		 # armazena os valores de todas as execucoes de um mesmo grafo para calculo da media
 		 if filename == previous_filename:
+		    avg_ip_const = avg_ip_const + local_avg_ip_const
 		    avg_value = avg_value + best_value
 		    avg_k = avg_k + best_K
 		    avg_time = avg_time + global_time
@@ -148,7 +158,7 @@ def main(argv):
 		 else:
 		    if avg_count > 0:
 		        print "storing " + previous_filename
-		        avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_count)
+		        avg_file_summary[previous_filename] = str(avg_ip_const / avg_count) + ", " + str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_count)
 		        print "average execution times for file " + previous_filename
 			tdir = "./times"
                         if not os.path.exists(tdir):
@@ -159,6 +169,7 @@ def main(argv):
 			times_file.close()
 			timeInterval = dict()
 			timeCount = dict()
+		    avg_ip_const = local_avg_ip_const 
 		    avg_value = best_value
 		    avg_k = best_K
 		    avg_time = global_time
@@ -215,7 +226,7 @@ def main(argv):
 
    if avg_count > 0:
       print "storing " + previous_filename
-      avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_count)
+      avg_file_summary[previous_filename] = str(avg_ip_const / avg_count)+", "+str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_count)
       print "average execution times for file " + previous_filename
       tdir = "./times"
       if not os.path.exists(tdir):
@@ -238,7 +249,7 @@ def main(argv):
    for key in sorted(best_file_summary.iterkeys()):
       print "%s, %s" % (key, best_file_summary[key])
    print "------ Average results:"
-   print "Instance, Avg I(P), Avg K, Avg Time(s), Avg Iter, Num executions"
+   print "Instance, Avg I(P) const, Avg I(P), Avg K, Avg Time(s), Avg Iter, Num executions"
    for key in sorted(avg_file_summary.iterkeys()):
       print "%s, %s" % (key, avg_file_summary[key])
 
