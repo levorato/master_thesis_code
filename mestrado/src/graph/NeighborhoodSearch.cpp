@@ -71,7 +71,7 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 					// return if time limit is exceeded
 					boost::timer::cpu_times end_time = timer.elapsed();
 					double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-					std::cout << timeSpentSoFar + localTimeSpent << endl;
+					// std::cout << timeSpentSoFar + localTimeSpent << endl;
 					if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
 					// loop increment rule
 					k2++;

@@ -68,7 +68,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	stringstream constructivePhaseResults;
 	int i = 0, totalIter = 0;
 
-	for (i = 0, totalIter = 0; i <= iter; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
+	for (i = 0, totalIter = 0; i <= iter || iter < 0 ; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
 		BOOST_LOG_TRIVIAL(trace) << "GRASP iteration " << i;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
@@ -126,15 +126,16 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue.getValue() == 0)  break;
 		}
+		timer.stop();
+		end_time = timer.elapsed();
+		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
 		// if elapsed time is bigger than timeLimit, break
 		if(timeSpentInGRASP >= timeLimit) {
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
-
-		timer.stop();
-		end_time = timer.elapsed();
-		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
+		// guarantees at least one execution of the GRASP when the number of iterations is smaller than one
+		if(iter <= 0) {  break;  }
 	}
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
 			<< "," << bestValue.getPositiveValue()
