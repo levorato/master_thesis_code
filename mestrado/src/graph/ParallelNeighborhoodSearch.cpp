@@ -93,6 +93,10 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 				BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] Better value found for objective function in node "
 						<< stat.source() << ": " <<
 						omsg.clustering.getImbalance().getValue() << endl;
+				// terminate other slaves' VNS search
+				for(int pj = firstSlave; pj < lastSlave; pj++) {
+					world.send(pj, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG);
+				}
 			}
 		}
 	}

@@ -6,10 +6,26 @@
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/linear_congruential.hpp>
 #include <boost/timer/timer.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/optional.hpp>
 #include <iomanip>
 #include <iostream>
 #include <cassert>
 #include "include/NeighborhoodSearch.h"
+#include "../resolution/grasp/include/ParallelGrasp.h"
+
+using namespace boost::mpi;
+using namespace resolution::grasp;
+using namespace std;
+
+// probes for mpi searchEnded message and returns if it exists
+#define MPI_IPROBE_RETURN(ret_val) \
+optional< mpi::status > stat = world.iprobe(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG); \
+if (stat) { \
+	mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG); \
+	cout << "VNS interrupt msg received." << endl; \
+    return ret_val; }
+
 
 namespace clusteringgraph {
 
@@ -124,6 +140,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 	boost::timer::cpu_times start_time = timer.elapsed();
 
 	// cout << "Generating 2-opt neighborhood..." << endl;
+	mpi::communicator world;
 	unsigned long n = g->getN();
 	unsigned long numberOfClustersInInterval = finalClusterIndex - initialClusterIndex + 1;
 	unsigned long totalNumberOfClusters = clustering->getNumberOfClusters();
@@ -155,6 +172,8 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 						if (cluster2[j]) {
 							// Option 1: node i is moved to another existing cluster k3
 							for (unsigned long k3 = uninc(), contk3 = 0; contk3 < numberOfClustersInInterval; contk3++) {
+								MPI_IPROBE_RETURN(cBest)
+
 								if (k1 != k3) {
 									// cluster(k3)
 									// Option 1: node i is moved to another existing cluster k3 and

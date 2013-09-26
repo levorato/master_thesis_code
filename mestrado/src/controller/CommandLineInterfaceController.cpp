@@ -424,6 +424,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					if(stat.tag() == ParallelGrasp::TERMINATE_MSG_TAG) {
 						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": terminate msg received.\n";
 						return 0;
+					} else if(stat.tag() == ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG) {
+						// ignores interrupt message from previous VNS processing
+						continue;
 					}
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
 					messageCount++;
