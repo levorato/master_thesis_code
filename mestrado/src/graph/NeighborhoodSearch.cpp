@@ -7,23 +7,27 @@
 #include <boost/random/linear_congruential.hpp>
 #include <boost/timer/timer.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <boost/log/trivial.hpp>
 #include <boost/optional.hpp>
 #include <iomanip>
 #include <iostream>
 #include <cassert>
 #include "include/NeighborhoodSearch.h"
 #include "../resolution/grasp/include/ParallelGrasp.h"
+#include "../util/include/MPIMessage.h"
 
 using namespace boost::mpi;
 using namespace resolution::grasp;
 using namespace std;
+using namespace util;
 
-// probes for mpi searchEnded message and returns if it exists
+// probes for mpi VNS interrupt message (first improvement from other node) and returns if it exists
 #define MPI_IPROBE_RETURN(ret_val) \
 optional< mpi::status > stat = world.iprobe(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG); \
 if (stat) { \
-	mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG); \
-	cout << "VNS interrupt msg received." << endl; \
+	InputMessageParallelVNS imsg; \
+	mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg); \
+	BOOST_LOG_TRIVIAL(trace) << "VNS interrupt message received."; \
     return ret_val; }
 
 
