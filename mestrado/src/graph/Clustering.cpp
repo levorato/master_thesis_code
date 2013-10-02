@@ -64,7 +64,7 @@ void Clustering::addNodeToCluster(SignedGraph& g, unsigned long i, unsigned long
 
 void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 	// Swaps the k-th and the last element, to avoid linear-time removal
-	//swap (clusterList[k], clusterList[clusterList.size() - 1]);
+	//swap(clusterList[k], clusterList[clusterList.size() - 1]);
 	//clusterList.erase(clusterList.end() - 1);
 	clusterList.erase(clusterList.begin()+k);
 }

@@ -26,6 +26,7 @@ public:
 	// Parallel VNS message tag
 	static const int INPUT_MSG_PARALLEL_VNS_TAG = 70;
 	static const int OUTPUT_MSG_PARALLEL_VNS_TAG = 80;
+	static const int INTERRUPT_MSG_PARALLEL_VNS_TAG = 85;
 	// Other tags
 	static const int TERMINATE_MSG_TAG = 90;
 	static const int LEADER_ID = 0;

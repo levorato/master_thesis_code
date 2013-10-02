@@ -206,7 +206,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	// reads the system properties from ini file
 	this->readPropertiesFile();
 	// initializes the logging subsystem
-	this->initLogging(boost::lexical_cast<std::string>(getpid()), myRank);
+	this->initLogging(TimeDateUtil::generateRandomId(), myRank);
 
 	// codigo do processor lider
 	if(myRank == 0) {
@@ -303,6 +303,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			BOOST_LOG_TRIVIAL(info) << "First improvement on 1-opt neighborhood is enabled? " << firstImprovementOnOneNeig;
 
 			BOOST_LOG_TRIVIAL(info) << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
+			cout << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
 			vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
@@ -332,10 +333,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				return 1;
 			}
 
-			int numberOfSearchSlaves = 0;
-			if(numberOfSlaves > 0) {
-				numberOfSearchSlaves = calculateNumberOfSearchSlaves(np, numberOfSlaves);
-			}
+			int numberOfSearchSlaves = calculateNumberOfSearchSlaves(np, numberOfSlaves);
 			if(np > 1) {
 				mpi::communicator world;
 				// broadcasts the numberOfSlaves to all processes
@@ -400,6 +398,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		unsigned int numberOfSlaves = 0;
 		world.recv(ParallelGrasp::LEADER_ID, mpi::any_tag, numberOfSlaves);
 		BOOST_LOG_TRIVIAL(trace) << "number of slaves received\n";
+		cout << "number of slaves received\n";
+		cout << "Process " << myRank << " ready [GRASP slave process]." << endl;
 		int numberOfSearchSlaves = 0;
 		if(numberOfSlaves > 0) {
 			numberOfSearchSlaves = calculateNumberOfSearchSlaves(np, numberOfSlaves);
@@ -417,6 +417,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			try {
 				if(myRank <= numberOfSlaves) {  // GRASP slave
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " ready [GRASP slave process]." << endl;
+
 					// Receives a message with GRASP parameters and triggers local GRASP execution
 					InputMessageParallelGrasp imsgpg;
 					// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_GRASP_TAG or a terminate msg
@@ -464,6 +465,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					if(stat.tag() == ParallelGrasp::TERMINATE_MSG_TAG) {
 						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": terminate msg received.\n";
 						return 0;
+					} else if(stat.tag() == ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG) {
+						// ignores interrupt message from previous VNS processing
+						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": ignoring VNS interrupt msg received.\n";
+						continue;
 					}
 
 					if(imsgvns.l == 0) {
@@ -540,7 +545,7 @@ void CommandLineInterfaceController::initLogging(string executionId, int myRank)
 	namespace sinks = boost::log::sinks;
 	namespace expr = boost::log::expressions;
 	namespace attrs = boost::log::attributes;
-	string filename = string("logs/") + string("Node") + lexical_cast<string>(myRank) + string("-pid") + executionId + string(".log");
+	string filename = string("logs/") + executionId + string("-Node") + lexical_cast<string>(myRank) + string(".log");
 
 	LogSeverityEnumParser parser;
 	logging::trivial::severity_level severity = parser.ParseSomeEnum(logSeverity);

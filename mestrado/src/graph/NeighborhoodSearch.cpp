@@ -6,9 +6,30 @@
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/linear_congruential.hpp>
 #include <boost/timer/timer.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/optional.hpp>
 #include <iomanip>
+#include <iostream>
 #include <cassert>
 #include "include/NeighborhoodSearch.h"
+#include "../resolution/grasp/include/ParallelGrasp.h"
+#include "../util/include/MPIMessage.h"
+
+using namespace boost::mpi;
+using namespace resolution::grasp;
+using namespace std;
+using namespace util;
+
+// probes for mpi VNS interrupt message (first improvement from other node) and returns if it exists
+#define MPI_IPROBE_RETURN(ret_val) \
+optional< mpi::status > stat = world.iprobe(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG); \
+if (stat) { \
+	InputMessageParallelVNS imsg; \
+	mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg); \
+	BOOST_LOG_TRIVIAL(trace) << "VNS interrupt message received."; \
+    return ret_val; }
+
 
 namespace clusteringgraph {
 
@@ -17,7 +38,6 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
                 double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                 int myRank, unsigned long initialClusterIndex,
         		unsigned long finalClusterIndex, bool firstImprovement) {
-
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
 	timer.start();
@@ -71,8 +91,9 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 					// return if time limit is exceeded
 					boost::timer::cpu_times end_time = timer.elapsed();
 					double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+					// std::cout << timeSpentSoFar + localTimeSpent << endl;
 					if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
-					// increment rule
+					// loop increment rule
 					k2++;
 					if(k2 >= totalNumberOfClusters) {
 						k2 = 0;
@@ -123,6 +144,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 	boost::timer::cpu_times start_time = timer.elapsed();
 
 	// cout << "Generating 2-opt neighborhood..." << endl;
+	mpi::communicator world;
 	unsigned long n = g->getN();
 	unsigned long numberOfClustersInInterval = finalClusterIndex - initialClusterIndex + 1;
 	unsigned long totalNumberOfClusters = clustering->getNumberOfClusters();
@@ -154,6 +176,8 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 						if (cluster2[j]) {
 							// Option 1: node i is moved to another existing cluster k3
 							for (unsigned long k3 = uninc(), contk3 = 0; contk3 < numberOfClustersInInterval; contk3++) {
+								MPI_IPROBE_RETURN(cBest)
+
 								if (k1 != k3) {
 									// cluster(k3)
 									// Option 1: node i is moved to another existing cluster k3 and
