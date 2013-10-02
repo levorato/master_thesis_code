@@ -1,0 +1,8 @@
+[cli_0]: got unexpected response to put :cmd=unparseable_msg rc=-1
+:
+[cli_0]: aborting job:
+Fatal error in MPI_Init: Other MPI error, error stack:
+MPIR_Init_thread(283): Initialization failed
+MPIDD_Init(98).......: channel initialization failed
+MPIDI_CH3_Init(163)..: generic failure with errno = 336068751
+(unknown)(): Other MPI error

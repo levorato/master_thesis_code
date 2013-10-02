@@ -1,0 +1,4 @@
+Correlation clustering problem solver
+Number of GRASP processes in parallel is 0
+rank 0 in job 1  uff2_37436   caused collective abort of all ranks
+  exit status of rank 0: killed by signal 9 
