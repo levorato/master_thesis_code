@@ -6,14 +6,18 @@
  */
 
 #include "include/Clustering.h"
+#include "include/Graph.h"
 #include <limits>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
 
 #include <boost/log/trivial.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
+
 
 using namespace std;
+using namespace boost;
 
 namespace clusteringgraph {
 
@@ -130,7 +134,50 @@ bool Clustering::equals(Clustering& c) {
 // Calculates the delta of the objective function
 Imbalance Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster, const unsigned long& i) {
 	double negativeSum = 0, positiveSum = 0;
-	unsigned long n = g.getN();
+	// unsigned long n = g.getN();
+
+	// iterates over out-edges of vertex i
+	//typedef graph_traits<Graph> GraphTraits;
+	typename DirectedGraph::out_edge_iterator out_i, out_end;
+	typename DirectedGraph::edge_descriptor e;
+
+	// std::cout << "out-edges of " << i << ": ";
+	for (tie(out_i, out_end) = out_edges(i, g.graph); out_i != out_end; ++out_i) {
+		e = *out_i;
+		Vertex src = source(e, g.graph), targ = target(e, g.graph);
+		double weight = ((Edge*)out_i->get_property())->weight;
+		if(cluster[targ.id]) {
+			if(weight < 0) {
+				negativeSum += fabs(weight);
+			}
+		} else {
+			if(weight > 0) {
+				positiveSum += weight;
+			}
+		}
+		// std::cout << "(" << src.id << "," << targ.id << ") ";
+	}
+
+	// iterates over in-edges of vertex i
+	typename DirectedGraph::in_edge_iterator in_i, in_end;
+	// std::cout << "in-edges of " << i << ": ";
+	for (tie(in_i, in_end) = in_edges(i,g.graph); in_i != in_end; ++in_i) {
+		e = *in_i;
+		Vertex src = source(e, g.graph), targ = target(e, g.graph);
+		double weight = ((Edge*)in_i->get_property())->weight;
+		if(cluster[src.id]) {
+			if(weight < 0) {
+				negativeSum += fabs(weight);
+			}
+		} else {
+			if(weight > 0) {
+				positiveSum += weight;
+			}
+		}
+		// std::cout << "(" << src.id << "," << targ.id << ") ";
+	}
+
+/*
 	for(unsigned long b = 0; b < n; b++) {
 		if(b != i) {
 			if(cluster[b]) {
@@ -156,7 +203,7 @@ Imbalance Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray&
 			}
 		}
 	}
-
+*/
 	return Imbalance(positiveSum, negativeSum);
 }
 

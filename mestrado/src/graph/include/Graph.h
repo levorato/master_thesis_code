@@ -26,7 +26,12 @@ struct Edge {
     Edge() : weight(0) { }
     Edge(double w) : weight(w) { }
 };
-typedef adjacency_matrix<directedS, no_property, Edge > DirectedGraph;
+struct Vertex {
+    int id;
+    Vertex() : id(0) { }
+    Vertex(int w) : id(w) { }
+};
+typedef adjacency_matrix<directedS, Vertex, Edge > DirectedGraph;
 
 class SignedGraph {
 public:
@@ -83,8 +88,9 @@ public:
 
 	void setGraphAsText(string txt);
 
-private:
 	DirectedGraph graph;
+private:
+
 
 	/** the number of nodes of the graph */
 	unsigned long n;

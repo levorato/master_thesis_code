@@ -69,7 +69,7 @@ bool SignedGraph::isPositiveEdge(const unsigned long &a, const unsigned long &b)
 
 bool SignedGraph::isNegativeEdge(const unsigned long &a, const unsigned long &b) {
 	 double value = getEdge(a, b);
-        return (value < (-2) * std::numeric_limits<double>::epsilon());
+	 return (value < (-2) * std::numeric_limits<double>::epsilon());
 }
 
 unsigned long SignedGraph::getDegree(const unsigned long &a) {
