@@ -54,9 +54,11 @@ void ModularityGainFunction::calculateGainList(Clustering &c, GainFunctionVertex
 	int n = graph->getN();
 	// cout << "Calculating gain list..." << endl;
 	// For each vertex a
+	list<int, allocator<int> >::const_iterator pos;
+	// cout << "Calculating gain list..." << endl;
 	unsigned int i = 0;
-	for(i = 0; i < nodeList.size(); i++) {
-		int a = nodeList[i];
+	for(i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
+		int a = *pos;
 		GainCalculation gainCalculation;
 		double max = modularityMatrix[a][a];
 		gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;

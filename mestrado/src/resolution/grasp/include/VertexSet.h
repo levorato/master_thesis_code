@@ -8,6 +8,9 @@
 #ifndef VERTEXSET_H_
 #define VERTEXSET_H_
 
+#include <list>
+#include <boost/shared_ptr.hpp>
+
 #include "GainFunction.h"
 #include "../../../graph/include/Clustering.h"
 
@@ -17,6 +20,9 @@ namespace grasp {
 using namespace std;
 using namespace boost;
 using namespace clusteringgraph;
+
+typedef list<int> GainFunctionVertexSet;
+typedef boost::shared_ptr<GainFunctionVertexSet> GainFunctionVertexSetPtr;
 
 class VertexSet {
 public:
@@ -44,14 +50,14 @@ public:
 	 */
 	void sort(GainFunction* function);
 
-	GainFunctionVertexSet& getVertexList();
+	list<int>& getVertexList();
 private:
 	/**
 	 * The random seed used by random vertex choose.
 	 */
 	unsigned long seed;
 
-	GainFunctionVertexSet vertexSet;
+	GainFunctionVertexSetPtr vertexSetPtr;
 
 };
 

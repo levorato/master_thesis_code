@@ -22,9 +22,10 @@ ImbalanceGainFunction::~ImbalanceGainFunction() {
 void ImbalanceGainFunction::calculateGainList(Clustering &c, GainFunctionVertexSet& nodeList) {
 	gainMap.clear();
 	// cout << "Calculating gain list..." << endl;
+	list<int, allocator<int> >::const_iterator pos;
 	unsigned int i = 0;
-	for(i = 0; i < nodeList.size(); i++) {
-		int a = nodeList[i];
+	for(i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
+	    int a = *pos;
 		// cout << "Vertex " << a << endl;
 		GainCalculation gainCalculation;
 		double min = std::numeric_limits<double>::max();
