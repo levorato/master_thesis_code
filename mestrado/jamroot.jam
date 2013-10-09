@@ -1,0 +1,35 @@
+import modules ; 
+local BOOST_STAGE_INCLUDE = [ modules.peek : BOOST_STAGE_INCLUDE ] ;
+local BOOST_STAGE_LIBS = [ modules.peek : BOOST_STAGE_LIBS ] ;
+
+using gcc ;
+project graspcc ;
+
+# Libraries
+lib dl : : <name>libdl  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_serialization  : : <name>libboost_serialization  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_system  : : <name>libboost_system  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_filesystem  : : <name>libboost_filesystem  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_timer  : : <name>libboost_timer  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_program_options  : : <name>libboost_program_options  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_random  : : <name>libboost_random  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib opa  : : <name>libopa  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib pthread  : : <name>libpthread  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib rt  : : <name>librt  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib mpich  : : <name>libmpich  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib mpichcxx  : : <name>libmpichcxx  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_mpi  : : <name>libboost_mpi  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_thread  : : <name>libboost_thread  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_date_time  : : <name>libboost_date_time  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_log  : : <name>libboost_log  <search>/usr/local/lib /usr/lib $HOME/lib ;
+lib boost_log_setup : : <name>libboost_log_setup  <search>/usr/local/lib /usr/lib $HOME/lib ;
+
+#<source>$(BOOST_STAGE_LIBS)
+#<include>$(BOOST_STAGE_INCLUDE)
+# An executable called 'graspcc'
+exe graspcc :  <lib>dl boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random opa pthread rt mpich mpichcxx boost_mpi boost_thread boost_date_time boost_log boost_log_setup
+           *.cpp   # C++ source
+         : 
+         <link>shared
+         <threading>multi
+    ;

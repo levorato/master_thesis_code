@@ -48,10 +48,22 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		const int& myRank, const int& numberOfSearchSlaves) {
 	BOOST_LOG_TRIVIAL(debug) << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
 	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
-	ClusteringPtr CStar = make_shared<Clustering>();
+
+	// 0. Triggers local processing time calculation
+	boost::timer::cpu_timer timer;
+	timer.start();
+	boost::timer::cpu_times start_time = timer.elapsed();
+	ClusteringPtr CStar = constructClustering(g, problem, alpha, myRank);
+	timer.stop();
+	boost::timer::cpu_times end_time = timer.elapsed();
+	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+	timeSpentInGRASP += timeSpentInConstruction;
+	timer.resume();
+	start_time = timer.elapsed();
+
 	ClusteringPtr previousCc = CStar;
 	CBest = CStar;
-	ClusteringPtr Cc;
+	ClusteringPtr Cc = CStar;
 	Imbalance bestValue = CStar->getImbalance();
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0.0;
@@ -72,21 +84,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		BOOST_LOG_TRIVIAL(trace) << "GRASP iteration " << i;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
-		// 0. Triggers local processing time calculation
-		boost::timer::cpu_timer timer;
-		timer.start();
-		boost::timer::cpu_times start_time = timer.elapsed();
-
-		// 1. Construct the clustering
-		Cc = constructClustering(g, problem, alpha, myRank);
-		// -- Stops the timer and stores the elapsed time
-		timer.stop();
-		boost::timer::cpu_times end_time = timer.elapsed();
-		double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
-		timeSpentInGRASP += timeSpentInConstruction;
-		timer.resume();
-		start_time = timer.elapsed();
-		//    Stores initial solution value in corresponding results file, includes time spent in construction phase
+		//    Store initial solution value in corresponding results file
 		constructivePhaseResults << (totalIter+1) << "," << Cc->getImbalance().getValue() << "," << Cc->getImbalance().getPositiveValue()
 						<< "," << Cc->getImbalance().getNegativeValue() << "," << Cc->getNumberOfClusters()
 						<< "," << fixed << setprecision(4) << timeSpentInConstruction << "\n";
@@ -134,6 +132,19 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
+
+		// 0. Triggers local processing time calculation
+		timer.resume();
+		start_time = timer.elapsed();
+
+		// 1. Construct the next clustering
+		Cc = constructClustering(g, problem, alpha, myRank);
+
+		timer.stop();
+		end_time = timer.elapsed();
+		timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+		timer.resume();
+
 		// guarantees at least one execution of the GRASP when the number of iterations is smaller than one
 		if(iter <= 0) {  break;  }
 	}

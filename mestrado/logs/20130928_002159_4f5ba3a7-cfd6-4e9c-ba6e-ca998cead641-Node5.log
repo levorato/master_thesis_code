@@ -1,0 +1,1743 @@
+[28.09.2013 00:21:59.657490] [00000x1f94] (1)[trace]	number of slaves received
+
+[28.09.2013 00:21:59.663708] [00000x1f94] (2)[info]	The number of VNS search slaves per master is 2
+
+[28.09.2013 00:21:59.663751] [00000x1f94] (3)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:00.328470] [00000x1f94] (4)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:00.328954] [00000x1f94] (5)[trace]	Line: 200 887
+
+[28.09.2013 00:22:00.328984] [00000x1f94] (6)[trace]	Format type is 2
+
+[28.09.2013 00:22:00.331293] [00000x1f94] (7)[trace]	Successfully created signed graph with 200 vertices.
+
+[28.09.2013 00:22:00.349202] [00000x1f94] (8)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:22:00.349263] [00000x1f94] (9)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:00.358445] [00000x1f94] (10)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:00.382146] [00000x1f94] (11)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:22:00.382216] [00000x1f94] (12)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:01.794296] [00000x1f94] (13)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:01.794413] [00000x1f94] (14)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 804
+[28.09.2013 00:22:01.794436] [00000x1f94] (15)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:01.801583] [00000x1f94] (16)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:01.802546] [00000x1f94] (17)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:01.802575] [00000x1f94] (18)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 804
+[28.09.2013 00:22:01.802594] [00000x1f94] (19)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:02.310058] [00000x1f94] (20)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:02.310204] [00000x1f94] (21)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 804
+[28.09.2013 00:22:02.310225] [00000x1f94] (22)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:02.315095] [00000x1f94] (23)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:02.315175] [00000x1f94] (24)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:22:02.315194] [00000x1f94] (25)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:02.316075] [00000x1f94] (26)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:02.316091] [00000x1f94] (27)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:02.316103] [00000x1f94] (28)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:02.317908] [00000x1f94] (29)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:02.317972] [00000x1f94] (30)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:22:02.317991] [00000x1f94] (31)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:02.322226] [00000x1f94] (32)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:02.322296] [00000x1f94] (33)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:02.322316] [00000x1f94] (34)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:02.325190] [00000x1f94] (35)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:02.325404] [00000x1f94] (36)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:02.325423] [00000x1f94] (37)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:02.328543] [00000x1f94] (38)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:03.989971] [00000x1f94] (39)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:03.990061] [00000x1f94] (40)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:03.998324] [00000x1f94] (41)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:03.998359] [00000x1f94] (42)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:03.998372] [00000x1f94] (43)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:04.521482] [00000x1f94] (44)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:04.522690] [00000x1f94] (45)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:22:04.522717] [00000x1f94] (46)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:04.527043] [00000x1f94] (47)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:04.540459] [00000x1f94] (48)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:04.540501] [00000x1f94] (49)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:22:04.540523] [00000x1f94] (50)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:05.292201] [00000x1f94] (51)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:05.292329] [00000x1f94] (52)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 794
+[28.09.2013 00:22:05.292350] [00000x1f94] (53)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:05.295560] [00000x1f94] (54)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:05.295762] [00000x1f94] (55)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 794
+[28.09.2013 00:22:05.295781] [00000x1f94] (56)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:05.302317] [00000x1f94] (57)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:05.302342] [00000x1f94] (58)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:05.302354] [00000x1f94] (59)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:05.885312] [00000x1f94] (60)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:05.885463] [00000x1f94] (61)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 817
+[28.09.2013 00:22:05.885485] [00000x1f94] (62)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:05.890318] [00000x1f94] (63)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:05.893494] [00000x1f94] (64)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 817
+[28.09.2013 00:22:05.893531] [00000x1f94] (65)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:05.904048] [00000x1f94] (66)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:05.904136] [00000x1f94] (67)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 816
+[28.09.2013 00:22:05.904156] [00000x1f94] (68)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:05.910317] [00000x1f94] (69)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:05.925035] [00000x1f94] (70)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 816
+[28.09.2013 00:22:05.925091] [00000x1f94] (71)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:07.174356] [00000x1f94] (72)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:07.174440] [00000x1f94] (73)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:07.174463] [00000x1f94] (74)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:07.196181] [00000x1f94] (75)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:07.198079] [00000x1f94] (76)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:07.198113] [00000x1f94] (77)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:07.198522] [00000x1f94] (78)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:07.289096] [00000x1f94] (79)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:07.289176] [00000x1f94] (80)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:07.291551] [00000x1f94] (81)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:07.291567] [00000x1f94] (82)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:07.291578] [00000x1f94] (83)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:07.925434] [00000x1f94] (84)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:07.925588] [00000x1f94] (85)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:22:07.925610] [00000x1f94] (86)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:07.928579] [00000x1f94] (87)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:07.995488] [00000x1f94] (88)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:07.995539] [00000x1f94] (89)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:22:07.995563] [00000x1f94] (90)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:08.621273] [00000x1f94] (91)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:08.622466] [00000x1f94] (92)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:08.622491] [00000x1f94] (93)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:08.627246] [00000x1f94] (94)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:08.632871] [00000x1f94] (95)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:08.632901] [00000x1f94] (96)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:08.634969] [00000x1f94] (97)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:08.634992] [00000x1f94] (98)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:08.635004] [00000x1f94] (99)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:09.149861] [00000x1f94] (100)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:09.151014] [00000x1f94] (101)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 805
+[28.09.2013 00:22:09.151054] [00000x1f94] (102)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:09.154618] [00000x1f94] (103)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:09.154847] [00000x1f94] (104)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 805
+[28.09.2013 00:22:09.154868] [00000x1f94] (105)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:09.166459] [00000x1f94] (106)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:09.166483] [00000x1f94] (107)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:09.166495] [00000x1f94] (108)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:09.678323] [00000x1f94] (109)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:09.678452] [00000x1f94] (110)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:09.678474] [00000x1f94] (111)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:09.690307] [00000x1f94] (112)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:09.690722] [00000x1f94] (113)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:09.690745] [00000x1f94] (114)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:09.694292] [00000x1f94] (115)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:09.694313] [00000x1f94] (116)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:09.694338] [00000x1f94] (117)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:10.196232] [00000x1f94] (118)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:10.196387] [00000x1f94] (119)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:10.196410] [00000x1f94] (120)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:10.202503] [00000x1f94] (121)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:10.203014] [00000x1f94] (122)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:10.203041] [00000x1f94] (123)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:10.203059] [00000x1f94] (124)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:10.805408] [00000x1f94] (125)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:10.806669] [00000x1f94] (126)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:22:10.806696] [00000x1f94] (127)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:10.813896] [00000x1f94] (128)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:10.814110] [00000x1f94] (129)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:22:10.814139] [00000x1f94] (130)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:10.815077] [00000x1f94] (131)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:10.833316] [00000x1f94] (132)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:10.833400] [00000x1f94] (133)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:22:10.833429] [00000x1f94] (134)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:10.834610] [00000x1f94] (135)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:10.834786] [00000x1f94] (136)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:10.834807] [00000x1f94] (137)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:10.837256] [00000x1f94] (138)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:10.957274] [00000x1f94] (139)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:10.957360] [00000x1f94] (140)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:10.957965] [00000x1f94] (141)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:10.957980] [00000x1f94] (142)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:10.957992] [00000x1f94] (143)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:11.664865] [00000x1f94] (144)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:11.665944] [00000x1f94] (145)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:11.665970] [00000x1f94] (146)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:11.667706] [00000x1f94] (147)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:11.667821] [00000x1f94] (148)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:11.667843] [00000x1f94] (149)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:11.669444] [00000x1f94] (150)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:11.669497] [00000x1f94] (151)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:11.669516] [00000x1f94] (152)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:11.731077] [00000x1f94] (153)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:11.731121] [00000x1f94] (154)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:11.731134] [00000x1f94] (155)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:11.731310] [00000x1f94] (156)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:11.731397] [00000x1f94] (157)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:11.731417] [00000x1f94] (158)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:11.736800] [00000x1f94] (159)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:11.780047] [00000x1f94] (160)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:11.780108] [00000x1f94] (161)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.110324] [00000x1f94] (162)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.110423] [00000x1f94] (163)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:12.110447] [00000x1f94] (164)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.113060] [00000x1f94] (165)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.113099] [00000x1f94] (166)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:12.113123] [00000x1f94] (167)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:12.113141] [00000x1f94] (168)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.113400] [00000x1f94] (169)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.113744] [00000x1f94] (170)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:22:12.113770] [00000x1f94] (171)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.121380] [00000x1f94] (172)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.145704] [00000x1f94] (173)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:22:12.145765] [00000x1f94] (174)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.152906] [00000x1f94] (175)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.152927] [00000x1f94] (176)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:12.152939] [00000x1f94] (177)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.152977] [00000x1f94] (178)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.153090] [00000x1f94] (179)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:22:12.153109] [00000x1f94] (180)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.153414] [00000x1f94] (181)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.153486] [00000x1f94] (182)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 805
+[28.09.2013 00:22:12.153506] [00000x1f94] (183)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.153751] [00000x1f94] (184)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.153765] [00000x1f94] (185)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:12.153777] [00000x1f94] (186)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.157222] [00000x1f94] (187)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.158483] [00000x1f94] (188)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 805
+[28.09.2013 00:22:12.158513] [00000x1f94] (189)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.162610] [00000x1f94] (190)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.162755] [00000x1f94] (191)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 805
+[28.09.2013 00:22:12.162783] [00000x1f94] (192)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.681403] [00000x1f94] (193)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.681533] [00000x1f94] (194)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:12.681554] [00000x1f94] (195)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.681755] [00000x1f94] (196)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.681819] [00000x1f94] (197)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:22:12.681838] [00000x1f94] (198)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:12.683979] [00000x1f94] (199)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:12.684216] [00000x1f94] (200)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:22:12.684235] [00000x1f94] (201)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:13.263418] [00000x1f94] (202)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:13.263560] [00000x1f94] (203)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:22:13.263583] [00000x1f94] (204)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:13.264311] [00000x1f94] (205)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:13.264412] [00000x1f94] (206)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:13.264437] [00000x1f94] (207)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:22:13.264455] [00000x1f94] (208)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:13.780820] [00000x1f94] (209)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:13.780985] [00000x1f94] (210)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:22:13.781009] [00000x1f94] (211)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:13.782308] [00000x1f94] (212)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:13.782830] [00000x1f94] (213)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:22:13.782850] [00000x1f94] (214)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:13.789723] [00000x1f94] (215)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:13.789783] [00000x1f94] (216)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:13.789796] [00000x1f94] (217)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:14.439370] [00000x1f94] (218)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:14.439499] [00000x1f94] (219)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 814
+[28.09.2013 00:22:14.439522] [00000x1f94] (220)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:14.442952] [00000x1f94] (221)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:14.471886] [00000x1f94] (222)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 814
+[28.09.2013 00:22:14.471961] [00000x1f94] (223)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:14.477245] [00000x1f94] (224)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:14.477275] [00000x1f94] (225)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:14.477287] [00000x1f94] (226)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:15.159453] [00000x1f94] (227)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:15.162461] [00000x1f94] (228)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:15.162511] [00000x1f94] (229)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:15.167562] [00000x1f94] (230)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:15.169377] [00000x1f94] (231)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:15.169407] [00000x1f94] (232)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:15.170628] [00000x1f94] (233)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:15.170666] [00000x1f94] (234)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:15.170691] [00000x1f94] (235)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:15.170708] [00000x1f94] (236)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:16.030365] [00000x1f94] (237)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:16.030531] [00000x1f94] (238)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:16.030558] [00000x1f94] (239)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:16.042378] [00000x1f94] (240)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:16.042563] [00000x1f94] (241)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:16.042594] [00000x1f94] (242)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:16.059822] [00000x1f94] (243)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:16.068050] [00000x1f94] (244)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:16.068086] [00000x1f94] (245)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:17.045291] [00000x1f94] (246)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:17.045388] [00000x1f94] (247)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:22:17.045413] [00000x1f94] (248)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:17.059757] [00000x1f94] (249)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:17.105341] [00000x1f94] (250)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:17.105429] [00000x1f94] (251)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:22:17.105460] [00000x1f94] (252)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:17.106339] [00000x1f94] (253)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:17.106427] [00000x1f94] (254)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 802
+[28.09.2013 00:22:17.106450] [00000x1f94] (255)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:17.121265] [00000x1f94] (256)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:17.190511] [00000x1f94] (257)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 802
+[28.09.2013 00:22:17.190603] [00000x1f94] (258)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:18.543153] [00000x1f94] (259)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:18.543323] [00000x1f94] (260)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 805
+[28.09.2013 00:22:18.543344] [00000x1f94] (261)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:18.547817] [00000x1f94] (262)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:18.548099] [00000x1f94] (263)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 805
+[28.09.2013 00:22:18.548126] [00000x1f94] (264)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:19.454312] [00000x1f94] (265)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:19.454452] [00000x1f94] (266)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:22:19.454487] [00000x1f94] (267)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:19.456152] [00000x1f94] (268)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:19.456456] [00000x1f94] (269)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:22:19.456475] [00000x1f94] (270)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:19.478977] [00000x1f94] (271)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:19.479126] [00000x1f94] (272)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:19.479147] [00000x1f94] (273)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:19.486597] [00000x1f94] (274)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:21.393488] [00000x1f94] (275)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:21.393569] [00000x1f94] (276)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:21.406723] [00000x1f94] (277)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:21.406789] [00000x1f94] (278)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:21.406802] [00000x1f94] (279)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:22.758348] [00000x1f94] (280)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:22.758471] [00000x1f94] (281)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:22:22.758496] [00000x1f94] (282)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:22.778257] [00000x1f94] (283)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:22.779820] [00000x1f94] (284)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:22:22.779867] [00000x1f94] (285)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:23.628667] [00000x1f94] (286)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:23.628779] [00000x1f94] (287)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 812
+[28.09.2013 00:22:23.628802] [00000x1f94] (288)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:23.636840] [00000x1f94] (289)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:23.644387] [00000x1f94] (290)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:23.644468] [00000x1f94] (291)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 812
+[28.09.2013 00:22:23.644496] [00000x1f94] (292)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:24.627338] [00000x1f94] (293)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:24.627553] [00000x1f94] (294)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 804
+[28.09.2013 00:22:24.627577] [00000x1f94] (295)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:24.630321] [00000x1f94] (296)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:24.631130] [00000x1f94] (297)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 804
+[28.09.2013 00:22:24.631154] [00000x1f94] (298)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:24.635358] [00000x1f94] (299)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:24.635400] [00000x1f94] (300)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:24.635413] [00000x1f94] (301)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:25.501338] [00000x1f94] (302)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:25.502539] [00000x1f94] (303)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:25.502573] [00000x1f94] (304)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:25.514321] [00000x1f94] (305)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:25.565033] [00000x1f94] (306)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:25.565081] [00000x1f94] (307)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:25.565103] [00000x1f94] (308)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:26.301888] [00000x1f94] (309)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:26.303556] [00000x1f94] (310)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:22:26.305356] [00000x1f94] (311)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:26.314328] [00000x1f94] (312)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:26.314701] [00000x1f94] (313)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:22:26.314723] [00000x1f94] (314)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:26.405804] [00000x1f94] (315)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:26.405956] [00000x1f94] (316)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:26.405977] [00000x1f94] (317)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:26.407631] [00000x1f94] (318)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:28.998247] [00000x1f94] (319)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:28.998302] [00000x1f94] (320)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:28.998324] [00000x1f94] (321)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:29.578328] [00000x1f94] (322)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:29.578489] [00000x1f94] (323)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:22:29.578512] [00000x1f94] (324)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:29.584188] [00000x1f94] (325)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:29.584354] [00000x1f94] (326)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:29.584381] [00000x1f94] (327)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:22:29.584400] [00000x1f94] (328)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:30.243911] [00000x1f94] (329)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:30.244953] [00000x1f94] (330)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 816
+[28.09.2013 00:22:30.244983] [00000x1f94] (331)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:30.250871] [00000x1f94] (332)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:30.251996] [00000x1f94] (333)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 815
+[28.09.2013 00:22:30.252023] [00000x1f94] (334)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:30.257233] [00000x1f94] (335)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:30.257462] [00000x1f94] (336)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 815
+[28.09.2013 00:22:30.257483] [00000x1f94] (337)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:30.258174] [00000x1f94] (338)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:30.258365] [00000x1f94] (339)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 814
+[28.09.2013 00:22:30.258387] [00000x1f94] (340)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:30.266814] [00000x1f94] (341)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:30.266915] [00000x1f94] (342)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:22:30.266944] [00000x1f94] (343)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:30.274523] [00000x1f94] (344)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:30.313834] [00000x1f94] (345)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:22:30.313900] [00000x1f94] (346)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.222678] [00000x1f94] (347)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.222787] [00000x1f94] (348)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:31.222807] [00000x1f94] (349)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.223270] [00000x1f94] (350)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.231994] [00000x1f94] (351)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:31.232025] [00000x1f94] (352)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.236690] [00000x1f94] (353)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.236718] [00000x1f94] (354)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:31.236730] [00000x1f94] (355)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.236765] [00000x1f94] (356)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.236864] [00000x1f94] (357)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:31.236884] [00000x1f94] (358)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.245238] [00000x1f94] (359)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.245514] [00000x1f94] (360)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:31.245536] [00000x1f94] (361)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.261648] [00000x1f94] (362)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.261674] [00000x1f94] (363)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:31.261687] [00000x1f94] (364)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.261892] [00000x1f94] (365)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.262172] [00000x1f94] (366)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:22:31.262193] [00000x1f94] (367)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.272732] [00000x1f94] (368)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.358392] [00000x1f94] (369)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:22:31.358467] [00000x1f94] (370)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.361963] [00000x1f94] (371)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.361980] [00000x1f94] (372)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:31.361992] [00000x1f94] (373)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.818340] [00000x1f94] (374)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.818431] [00000x1f94] (375)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:31.818454] [00000x1f94] (376)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.823448] [00000x1f94] (377)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.823502] [00000x1f94] (378)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:31.823521] [00000x1f94] (379)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.826313] [00000x1f94] (380)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.826503] [00000x1f94] (381)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:22:31.826524] [00000x1f94] (382)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.829446] [00000x1f94] (383)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.830505] [00000x1f94] (384)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:22:31.830542] [00000x1f94] (385)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:31.834428] [00000x1f94] (386)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:31.834451] [00000x1f94] (387)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:31.834464] [00000x1f94] (388)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:32.313348] [00000x1f94] (389)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:32.313484] [00000x1f94] (390)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:22:32.313506] [00000x1f94] (391)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:32.318083] [00000x1f94] (392)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:32.318161] [00000x1f94] (393)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 795
+[28.09.2013 00:22:32.318181] [00000x1f94] (394)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:32.319726] [00000x1f94] (395)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:32.323814] [00000x1f94] (396)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 795
+[28.09.2013 00:22:32.323850] [00000x1f94] (397)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:32.943886] [00000x1f94] (398)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:32.944068] [00000x1f94] (399)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:32.944089] [00000x1f94] (400)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:32.950312] [00000x1f94] (401)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:33.029399] [00000x1f94] (402)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:33.029443] [00000x1f94] (403)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:33.029464] [00000x1f94] (404)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:33.030109] [00000x1f94] (405)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:33.032311] [00000x1f94] (406)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:22:33.032336] [00000x1f94] (407)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:33.034911] [00000x1f94] (408)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:33.099332] [00000x1f94] (409)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:22:33.099404] [00000x1f94] (410)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:33.805252] [00000x1f94] (411)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:33.806516] [00000x1f94] (412)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:33.806564] [00000x1f94] (413)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:33.809691] [00000x1f94] (414)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:33.809971] [00000x1f94] (415)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:22:33.809992] [00000x1f94] (416)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:34.387146] [00000x1f94] (417)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:34.388356] [00000x1f94] (418)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:22:34.388384] [00000x1f94] (419)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:34.390158] [00000x1f94] (420)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:34.403844] [00000x1f94] (421)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:22:34.403891] [00000x1f94] (422)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:34.406686] [00000x1f94] (423)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:34.406704] [00000x1f94] (424)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:34.406715] [00000x1f94] (425)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:34.942199] [00000x1f94] (426)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:34.942375] [00000x1f94] (427)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:34.942399] [00000x1f94] (428)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:34.948431] [00000x1f94] (429)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:34.948653] [00000x1f94] (430)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:34.948677] [00000x1f94] (431)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:34.948764] [00000x1f94] (432)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:34.948778] [00000x1f94] (433)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:34.948790] [00000x1f94] (434)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:35.532572] [00000x1f94] (435)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:35.532779] [00000x1f94] (436)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:35.532802] [00000x1f94] (437)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:35.533302] [00000x1f94] (438)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:35.590543] [00000x1f94] (439)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:35.590587] [00000x1f94] (440)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:35.590608] [00000x1f94] (441)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:36.143700] [00000x1f94] (442)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:36.143853] [00000x1f94] (443)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:36.143874] [00000x1f94] (444)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:36.145662] [00000x1f94] (445)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:36.147785] [00000x1f94] (446)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:36.147816] [00000x1f94] (447)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:36.147835] [00000x1f94] (448)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:36.148199] [00000x1f94] (449)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:36.149379] [00000x1f94] (450)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:22:36.149399] [00000x1f94] (451)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:36.150744] [00000x1f94] (452)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:36.150797] [00000x1f94] (453)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:22:36.150815] [00000x1f94] (454)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:38.020566] [00000x1f94] (455)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:38.021863] [00000x1f94] (456)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 812
+[28.09.2013 00:22:38.021887] [00000x1f94] (457)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:38.028555] [00000x1f94] (458)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:38.028777] [00000x1f94] (459)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 812
+[28.09.2013 00:22:38.028799] [00000x1f94] (460)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:39.640497] [00000x1f94] (461)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:39.641740] [00000x1f94] (462)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:22:39.641764] [00000x1f94] (463)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:39.649481] [00000x1f94] (464)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:39.664238] [00000x1f94] (465)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:39.664273] [00000x1f94] (466)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:22:39.664293] [00000x1f94] (467)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:40.281143] [00000x1f94] (468)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:40.281245] [00000x1f94] (469)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 793
+[28.09.2013 00:22:40.281266] [00000x1f94] (470)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:40.288133] [00000x1f94] (471)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:40.288299] [00000x1f94] (472)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 793
+[28.09.2013 00:22:40.288322] [00000x1f94] (473)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:40.976316] [00000x1f94] (474)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:40.976502] [00000x1f94] (475)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 794
+[28.09.2013 00:22:40.976525] [00000x1f94] (476)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:40.978313] [00000x1f94] (477)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:40.978647] [00000x1f94] (478)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 794
+[28.09.2013 00:22:40.978671] [00000x1f94] (479)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:44.610326] [00000x1f94] (480)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:44.610476] [00000x1f94] (481)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 783
+[28.09.2013 00:22:44.610498] [00000x1f94] (482)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:44.631937] [00000x1f94] (483)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:44.632058] [00000x1f94] (484)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 782
+[28.09.2013 00:22:44.632078] [00000x1f94] (485)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:44.633942] [00000x1f94] (486)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:44.672077] [00000x1f94] (487)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 782
+[28.09.2013 00:22:44.672152] [00000x1f94] (488)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:44.696276] [00000x1f94] (489)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:44.696334] [00000x1f94] (490)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:44.696347] [00000x1f94] (491)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:46.027310] [00000x1f94] (492)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:46.028461] [00000x1f94] (493)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:46.028487] [00000x1f94] (494)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:46.036651] [00000x1f94] (495)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:46.036763] [00000x1f94] (496)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:46.036789] [00000x1f94] (497)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:46.041641] [00000x1f94] (498)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:46.059900] [00000x1f94] (499)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:46.059973] [00000x1f94] (500)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:47.397152] [00000x1f94] (501)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:47.398521] [00000x1f94] (502)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:47.398573] [00000x1f94] (503)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:47.408545] [00000x1f94] (504)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:47.410427] [00000x1f94] (505)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:47.410467] [00000x1f94] (506)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:49.031472] [00000x1f94] (507)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:49.032023] [00000x1f94] (508)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:49.032050] [00000x1f94] (509)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:49.040399] [00000x1f94] (510)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:49.087458] [00000x1f94] (511)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:49.087548] [00000x1f94] (512)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:22:49.087577] [00000x1f94] (513)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:50.635644] [00000x1f94] (514)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:50.635765] [00000x1f94] (515)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:50.635787] [00000x1f94] (516)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:50.643867] [00000x1f94] (517)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:50.643957] [00000x1f94] (518)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:22:50.643979] [00000x1f94] (519)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:50.650337] [00000x1f94] (520)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:50.650448] [00000x1f94] (521)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:50.650471] [00000x1f94] (522)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:50.662331] [00000x1f94] (523)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:50.662526] [00000x1f94] (524)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:22:50.662549] [00000x1f94] (525)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:52.514403] [00000x1f94] (526)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:52.514525] [00000x1f94] (527)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:52.514548] [00000x1f94] (528)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:52.531941] [00000x1f94] (529)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:52.534728] [00000x1f94] (530)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:52.534765] [00000x1f94] (531)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:22:52.534786] [00000x1f94] (532)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:53.974336] [00000x1f94] (533)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:53.975460] [00000x1f94] (534)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:53.975492] [00000x1f94] (535)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:53.993704] [00000x1f94] (536)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:54.001152] [00000x1f94] (537)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:22:54.001207] [00000x1f94] (538)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:54.010872] [00000x1f94] (539)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:54.010900] [00000x1f94] (540)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:54.010913] [00000x1f94] (541)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:55.309515] [00000x1f94] (542)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:55.310693] [00000x1f94] (543)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 802
+[28.09.2013 00:22:55.310719] [00000x1f94] (544)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:55.317831] [00000x1f94] (545)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:55.333932] [00000x1f94] (546)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 802
+[28.09.2013 00:22:55.334011] [00000x1f94] (547)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:55.348912] [00000x1f94] (548)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:55.348951] [00000x1f94] (549)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:55.348963] [00000x1f94] (550)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:56.645519] [00000x1f94] (551)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:56.645613] [00000x1f94] (552)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 802
+[28.09.2013 00:22:56.645634] [00000x1f94] (553)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:56.650799] [00000x1f94] (554)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:56.663520] [00000x1f94] (555)[trace]	VNS interrupt message received.
+[28.09.2013 00:22:56.663560] [00000x1f94] (556)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 802
+[28.09.2013 00:22:56.663580] [00000x1f94] (557)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:58.045698] [00000x1f94] (558)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:58.045827] [00000x1f94] (559)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:58.045848] [00000x1f94] (560)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:58.056600] [00000x1f94] (561)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:58.100070] [00000x1f94] (562)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:58.100142] [00000x1f94] (563)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:58.114328] [00000x1f94] (564)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:58.114374] [00000x1f94] (565)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:22:58.114386] [00000x1f94] (566)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:59.793980] [00000x1f94] (567)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:59.808173] [00000x1f94] (568)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:59.808251] [00000x1f94] (569)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:22:59.822340] [00000x1f94] (570)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:22:59.977233] [00000x1f94] (571)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:22:59.977314] [00000x1f94] (572)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:01.619052] [00000x1f94] (573)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:01.620228] [00000x1f94] (574)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:23:01.620251] [00000x1f94] (575)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:01.634334] [00000x1f94] (576)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:01.634607] [00000x1f94] (577)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:23:01.634632] [00000x1f94] (578)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:01.634828] [00000x1f94] (579)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:01.634843] [00000x1f94] (580)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:01.634855] [00000x1f94] (581)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:03.460281] [00000x1f94] (582)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:03.460402] [00000x1f94] (583)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:23:03.460425] [00000x1f94] (584)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:03.488967] [00000x1f94] (585)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:03.566506] [00000x1f94] (586)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:03.566598] [00000x1f94] (587)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:23:03.566628] [00000x1f94] (588)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:05.478335] [00000x1f94] (589)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:05.478554] [00000x1f94] (590)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 812
+[28.09.2013 00:23:05.478581] [00000x1f94] (591)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:05.502344] [00000x1f94] (592)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:05.503501] [00000x1f94] (593)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:05.503530] [00000x1f94] (594)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 812
+[28.09.2013 00:23:05.503552] [00000x1f94] (595)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:05.506338] [00000x1f94] (596)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:05.506440] [00000x1f94] (597)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:23:05.506463] [00000x1f94] (598)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:05.507277] [00000x1f94] (599)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:05.508859] [00000x1f94] (600)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:23:05.508882] [00000x1f94] (601)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:07.462386] [00000x1f94] (602)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:07.463589] [00000x1f94] (603)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:07.463706] [00000x1f94] (604)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:07.469748] [00000x1f94] (605)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:07.469864] [00000x1f94] (606)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:07.469887] [00000x1f94] (607)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:07.471009] [00000x1f94] (608)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:07.471060] [00000x1f94] (609)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:07.471079] [00000x1f94] (610)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:11.804262] [00000x1f94] (611)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:11.804413] [00000x1f94] (612)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:11.804434] [00000x1f94] (613)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:11.806584] [00000x1f94] (614)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:11.835030] [00000x1f94] (615)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:11.835104] [00000x1f94] (616)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:11.835131] [00000x1f94] (617)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:13.550294] [00000x1f94] (618)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:13.550479] [00000x1f94] (619)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:13.550502] [00000x1f94] (620)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:13.576192] [00000x1f94] (621)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:13.612914] [00000x1f94] (622)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:13.612984] [00000x1f94] (623)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:13.658678] [00000x1f94] (624)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:13.658849] [00000x1f94] (625)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:13.658870] [00000x1f94] (626)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:13.672584] [00000x1f94] (627)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:13.952019] [00000x1f94] (628)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:13.952105] [00000x1f94] (629)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:13.952401] [00000x1f94] (630)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:13.952417] [00000x1f94] (631)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:13.952428] [00000x1f94] (632)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:15.226328] [00000x1f94] (633)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:15.227390] [00000x1f94] (634)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:15.227415] [00000x1f94] (635)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:15.237660] [00000x1f94] (636)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:15.366050] [00000x1f94] (637)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:15.366130] [00000x1f94] (638)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:15.367607] [00000x1f94] (639)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:15.367624] [00000x1f94] (640)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:15.367636] [00000x1f94] (641)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:16.742301] [00000x1f94] (642)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:16.742432] [00000x1f94] (643)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:23:16.742466] [00000x1f94] (644)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:16.761129] [00000x1f94] (645)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:16.762805] [00000x1f94] (646)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:23:16.762833] [00000x1f94] (647)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:16.770312] [00000x1f94] (648)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:16.770339] [00000x1f94] (649)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:16.770351] [00000x1f94] (650)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:16.770386] [00000x1f94] (651)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:16.770552] [00000x1f94] (652)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:23:16.770574] [00000x1f94] (653)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:16.778578] [00000x1f94] (654)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:16.780538] [00000x1f94] (655)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:16.787705] [00000x1f94] (656)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:16.787755] [00000x1f94] (657)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:16.787897] [00000x1f94] (658)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:16.787917] [00000x1f94] (659)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:16.797081] [00000x1f94] (660)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:16.869524] [00000x1f94] (661)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:16.869595] [00000x1f94] (662)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:16.906152] [00000x1f94] (663)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:16.906201] [00000x1f94] (664)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:16.906215] [00000x1f94] (665)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:18.416050] [00000x1f94] (666)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:18.416188] [00000x1f94] (667)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:23:18.416209] [00000x1f94] (668)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:18.420053] [00000x1f94] (669)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:18.433368] [00000x1f94] (670)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:18.433423] [00000x1f94] (671)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:23:18.433446] [00000x1f94] (672)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:18.436432] [00000x1f94] (673)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:18.437635] [00000x1f94] (674)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:23:18.437657] [00000x1f94] (675)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:18.444638] [00000x1f94] (676)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:18.518849] [00000x1f94] (677)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:23:18.518914] [00000x1f94] (678)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:21.650256] [00000x1f94] (679)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:21.651676] [00000x1f94] (680)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:23:21.651738] [00000x1f94] (681)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:21.663450] [00000x1f94] (682)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:21.664773] [00000x1f94] (683)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:21.664820] [00000x1f94] (684)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:21.669088] [00000x1f94] (685)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:21.669170] [00000x1f94] (686)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:21.669190] [00000x1f94] (687)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:21.670306] [00000x1f94] (688)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:21.670643] [00000x1f94] (689)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:21.670663] [00000x1f94] (690)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:23.021723] [00000x1f94] (691)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:23.023346] [00000x1f94] (692)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:23.023377] [00000x1f94] (693)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:23.029296] [00000x1f94] (694)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:23.030471] [00000x1f94] (695)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:23.030511] [00000x1f94] (696)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:23.037214] [00000x1f94] (697)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:23.098869] [00000x1f94] (698)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:23.098947] [00000x1f94] (699)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:23.099775] [00000x1f94] (700)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:23.099790] [00000x1f94] (701)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:23.099802] [00000x1f94] (702)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:24.374716] [00000x1f94] (703)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:24.374895] [00000x1f94] (704)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:23:24.374920] [00000x1f94] (705)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:24.382320] [00000x1f94] (706)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:24.382427] [00000x1f94] (707)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:24.382448] [00000x1f94] (708)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:24.387787] [00000x1f94] (709)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:24.446774] [00000x1f94] (710)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:24.446856] [00000x1f94] (711)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:24.453040] [00000x1f94] (712)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:24.453107] [00000x1f94] (713)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:24.453120] [00000x1f94] (714)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:25.614100] [00000x1f94] (715)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:25.614213] [00000x1f94] (716)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:23:25.614236] [00000x1f94] (717)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:25.629082] [00000x1f94] (718)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:25.636305] [00000x1f94] (719)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:23:25.636347] [00000x1f94] (720)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:25.639224] [00000x1f94] (721)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:25.674048] [00000x1f94] (722)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:23:25.674134] [00000x1f94] (723)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:27.251645] [00000x1f94] (724)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:27.252784] [00000x1f94] (725)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 812
+[28.09.2013 00:23:27.252825] [00000x1f94] (726)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:27.262347] [00000x1f94] (727)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:27.315915] [00000x1f94] (728)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 812
+[28.09.2013 00:23:27.316003] [00000x1f94] (729)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:27.327783] [00000x1f94] (730)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:27.327845] [00000x1f94] (731)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:27.327858] [00000x1f94] (732)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:28.539834] [00000x1f94] (733)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:28.542922] [00000x1f94] (734)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:28.542958] [00000x1f94] (735)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:28.545125] [00000x1f94] (736)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:28.545184] [00000x1f94] (737)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:28.545203] [00000x1f94] (738)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:28.546591] [00000x1f94] (739)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:29.742376] [00000x1f94] (740)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:29.742457] [00000x1f94] (741)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:30.839298] [00000x1f94] (742)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:30.840497] [00000x1f94] (743)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:23:30.840530] [00000x1f94] (744)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:30.849380] [00000x1f94] (745)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:30.890462] [00000x1f94] (746)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:23:30.890546] [00000x1f94] (747)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:30.904208] [00000x1f94] (748)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:30.904274] [00000x1f94] (749)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:30.904287] [00000x1f94] (750)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:32.033712] [00000x1f94] (751)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:32.036975] [00000x1f94] (752)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:32.037004] [00000x1f94] (753)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:32.060487] [00000x1f94] (754)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:32.061640] [00000x1f94] (755)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:32.061675] [00000x1f94] (756)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:32.070534] [00000x1f94] (757)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:32.208740] [00000x1f94] (758)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:32.208794] [00000x1f94] (759)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:32.208818] [00000x1f94] (760)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:33.481823] [00000x1f94] (761)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:33.481947] [00000x1f94] (762)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 811
+[28.09.2013 00:23:33.481968] [00000x1f94] (763)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:33.498352] [00000x1f94] (764)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:33.498480] [00000x1f94] (765)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:23:33.498501] [00000x1f94] (766)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:33.499697] [00000x1f94] (767)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:33.499823] [00000x1f94] (768)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:23:33.499842] [00000x1f94] (769)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:33.502097] [00000x1f94] (770)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:33.502206] [00000x1f94] (771)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:33.502226] [00000x1f94] (772)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:33.551768] [00000x1f94] (773)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:34.917622] [00000x1f94] (774)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:34.917708] [00000x1f94] (775)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:36.857016] [00000x1f94] (776)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:36.857190] [00000x1f94] (777)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:36.857211] [00000x1f94] (778)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:36.863991] [00000x1f94] (779)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:36.888826] [00000x1f94] (780)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:36.888878] [00000x1f94] (781)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:38.437404] [00000x1f94] (782)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:38.438567] [00000x1f94] (783)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:23:38.438592] [00000x1f94] (784)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:38.452968] [00000x1f94] (785)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:38.454015] [00000x1f94] (786)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:23:38.454040] [00000x1f94] (787)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:38.459727] [00000x1f94] (788)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:38.474481] [00000x1f94] (789)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:38.474531] [00000x1f94] (790)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:23:38.474553] [00000x1f94] (791)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:39.567940] [00000x1f94] (792)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:39.568049] [00000x1f94] (793)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:23:39.568077] [00000x1f94] (794)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:39.575569] [00000x1f94] (795)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:39.576229] [00000x1f94] (796)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:39.576256] [00000x1f94] (797)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 813
+[28.09.2013 00:23:39.576274] [00000x1f94] (798)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:40.833128] [00000x1f94] (799)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:40.838544] [00000x1f94] (800)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:40.838573] [00000x1f94] (801)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:40.850304] [00000x1f94] (802)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:40.885880] [00000x1f94] (803)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:40.885920] [00000x1f94] (804)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:40.885942] [00000x1f94] (805)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:42.210390] [00000x1f94] (806)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:42.210472] [00000x1f94] (807)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:23:42.210495] [00000x1f94] (808)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:42.219486] [00000x1f94] (809)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:42.220714] [00000x1f94] (810)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:23:42.220737] [00000x1f94] (811)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:42.226411] [00000x1f94] (812)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:42.227620] [00000x1f94] (813)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:23:42.227643] [00000x1f94] (814)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:42.234510] [00000x1f94] (815)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:42.234664] [00000x1f94] (816)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:23:42.234688] [00000x1f94] (817)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.166665] [00000x1f94] (818)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.166787] [00000x1f94] (819)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:23:46.166808] [00000x1f94] (820)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.177875] [00000x1f94] (821)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.192924] [00000x1f94] (822)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:46.192995] [00000x1f94] (823)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.200332] [00000x1f94] (824)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.200358] [00000x1f94] (825)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:46.200370] [00000x1f94] (826)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.200404] [00000x1f94] (827)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.200490] [00000x1f94] (828)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:46.200510] [00000x1f94] (829)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.203154] [00000x1f94] (830)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.203305] [00000x1f94] (831)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:46.203324] [00000x1f94] (832)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.237795] [00000x1f94] (833)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.237826] [00000x1f94] (834)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:46.237838] [00000x1f94] (835)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.237873] [00000x1f94] (836)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.238016] [00000x1f94] (837)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 795
+[28.09.2013 00:23:46.238036] [00000x1f94] (838)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.256399] [00000x1f94] (839)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.304794] [00000x1f94] (840)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 795
+[28.09.2013 00:23:46.304836] [00000x1f94] (841)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:46.321245] [00000x1f94] (842)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:46.321291] [00000x1f94] (843)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:46.321304] [00000x1f94] (844)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:47.469130] [00000x1f94] (845)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:47.469271] [00000x1f94] (846)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:23:47.469295] [00000x1f94] (847)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:47.489120] [00000x1f94] (848)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:47.495938] [00000x1f94] (849)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:47.495967] [00000x1f94] (850)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:47.498484] [00000x1f94] (851)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:47.498869] [00000x1f94] (852)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:23:47.498888] [00000x1f94] (853)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:47.501403] [00000x1f94] (854)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:47.501421] [00000x1f94] (855)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:47.501433] [00000x1f94] (856)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:48.666020] [00000x1f94] (857)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:48.667146] [00000x1f94] (858)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 802
+[28.09.2013 00:23:48.667172] [00000x1f94] (859)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:48.675316] [00000x1f94] (860)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:48.753872] [00000x1f94] (861)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 802
+[28.09.2013 00:23:48.753957] [00000x1f94] (862)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:48.757434] [00000x1f94] (863)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:48.757452] [00000x1f94] (864)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:48.757464] [00000x1f94] (865)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:50.317025] [00000x1f94] (866)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:50.317245] [00000x1f94] (867)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:23:50.317266] [00000x1f94] (868)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:50.318708] [00000x1f94] (869)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:50.318771] [00000x1f94] (870)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:23:50.318790] [00000x1f94] (871)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:50.324230] [00000x1f94] (872)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:50.337618] [00000x1f94] (873)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:23:50.337679] [00000x1f94] (874)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:52.393662] [00000x1f94] (875)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:52.397049] [00000x1f94] (876)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:23:52.397101] [00000x1f94] (877)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:52.405082] [00000x1f94] (878)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:52.411500] [00000x1f94] (879)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:52.411543] [00000x1f94] (880)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:23:52.411564] [00000x1f94] (881)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:53.606377] [00000x1f94] (882)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:53.607482] [00000x1f94] (883)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 792
+[28.09.2013 00:23:53.607513] [00000x1f94] (884)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:53.624342] [00000x1f94] (885)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:53.749356] [00000x1f94] (886)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:53.749445] [00000x1f94] (887)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 792
+[28.09.2013 00:23:53.749474] [00000x1f94] (888)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:54.316125] [00000x1f94] (889)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:54.317261] [00000x1f94] (890)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:23:54.317293] [00000x1f94] (891)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:54.327937] [00000x1f94] (892)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:54.461794] [00000x1f94] (893)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:54.461844] [00000x1f94] (894)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 797
+[28.09.2013 00:23:54.461866] [00000x1f94] (895)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:55.013479] [00000x1f94] (896)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:55.014567] [00000x1f94] (897)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:55.014604] [00000x1f94] (898)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:55.023819] [00000x1f94] (899)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:55.023986] [00000x1f94] (900)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:55.024007] [00000x1f94] (901)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:55.026636] [00000x1f94] (902)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:55.165523] [00000x1f94] (903)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 806
+[28.09.2013 00:23:55.165586] [00000x1f94] (904)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:55.167533] [00000x1f94] (905)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:55.167554] [00000x1f94] (906)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:55.167583] [00000x1f94] (907)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:55.911958] [00000x1f94] (908)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:55.913233] [00000x1f94] (909)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 814
+[28.09.2013 00:23:55.913256] [00000x1f94] (910)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:55.921577] [00000x1f94] (911)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:55.921653] [00000x1f94] (912)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 814
+[28.09.2013 00:23:55.921677] [00000x1f94] (913)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:56.637448] [00000x1f94] (914)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:56.645834] [00000x1f94] (915)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:56.645870] [00000x1f94] (916)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:56.648612] [00000x1f94] (917)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:56.649703] [00000x1f94] (918)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:56.649725] [00000x1f94] (919)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:56.658908] [00000x1f94] (920)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:56.658980] [00000x1f94] (921)[trace]	VNS interrupt message received.
+[28.09.2013 00:23:56.659011] [00000x1f94] (922)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 796
+[28.09.2013 00:23:56.659035] [00000x1f94] (923)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:56.662556] [00000x1f94] (924)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:56.662739] [00000x1f94] (925)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 795
+[28.09.2013 00:23:56.662759] [00000x1f94] (926)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:56.665286] [00000x1f94] (927)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:56.665344] [00000x1f94] (928)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 795
+[28.09.2013 00:23:56.665364] [00000x1f94] (929)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:57.718544] [00000x1f94] (930)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:57.718753] [00000x1f94] (931)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 801
+[28.09.2013 00:23:57.718780] [00000x1f94] (932)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:57.727039] [00000x1f94] (933)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:57.730007] [00000x1f94] (934)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:23:57.730034] [00000x1f94] (935)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:57.746769] [00000x1f94] (936)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:57.746803] [00000x1f94] (937)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:57.746815] [00000x1f94] (938)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:57.746852] [00000x1f94] (939)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:57.747087] [00000x1f94] (940)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 800
+[28.09.2013 00:23:57.747111] [00000x1f94] (941)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:57.751430] [00000x1f94] (942)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:57.751555] [00000x1f94] (943)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:57.751586] [00000x1f94] (944)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:57.752516] [00000x1f94] (945)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:57.752605] [00000x1f94] (946)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:57.752624] [00000x1f94] (947)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:57.773364] [00000x1f94] (948)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:57.878739] [00000x1f94] (949)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 798
+[28.09.2013 00:23:57.878817] [00000x1f94] (950)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:57.886261] [00000x1f94] (951)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:57.886487] [00000x1f94] (952)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:57.886499] [00000x1f94] (953)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:58.709968] [00000x1f94] (954)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:58.712634] [00000x1f94] (955)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:58.712668] [00000x1f94] (956)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:58.717313] [00000x1f94] (957)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:58.717378] [00000x1f94] (958)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:58.717397] [00000x1f94] (959)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:58.718406] [00000x1f94] (960)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:58.718598] [00000x1f94] (961)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:23:58.718617] [00000x1f94] (962)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:59.545234] [00000x1f94] (963)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:59.545334] [00000x1f94] (964)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 816
+[28.09.2013 00:23:59.545355] [00000x1f94] (965)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:59.554343] [00000x1f94] (966)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:59.555007] [00000x1f94] (967)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 814
+[28.09.2013 00:23:59.555029] [00000x1f94] (968)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:59.559130] [00000x1f94] (969)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:59.559153] [00000x1f94] (970)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:23:59.559165] [00000x1f94] (971)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:59.562644] [00000x1f94] (972)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:59.562709] [00000x1f94] (973)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 814
+[28.09.2013 00:23:59.562729] [00000x1f94] (974)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:23:59.563664] [00000x1f94] (975)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:23:59.581239] [00000x1f94] (976)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 814
+[28.09.2013 00:23:59.581292] [00000x1f94] (977)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:00.342044] [00000x1f94] (978)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:00.342209] [00000x1f94] (979)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:24:00.342230] [00000x1f94] (980)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:00.354812] [00000x1f94] (981)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:01.679187] [00000x1f94] (982)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 799
+[28.09.2013 00:24:01.679275] [00000x1f94] (983)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:01.680631] [00000x1f94] (984)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:01.680646] [00000x1f94] (985)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:24:01.680658] [00000x1f94] (986)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:03.511934] [00000x1f94] (987)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:03.512019] [00000x1f94] (988)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:24:03.512040] [00000x1f94] (989)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:03.521912] [00000x1f94] (990)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:03.521986] [00000x1f94] (991)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:24:03.522009] [00000x1f94] (992)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:03.540183] [00000x1f94] (993)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:03.540441] [00000x1f94] (994)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 808
+[28.09.2013 00:24:03.540466] [00000x1f94] (995)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:03.552935] [00000x1f94] (996)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:03.553103] [00000x1f94] (997)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:24:03.553130] [00000x1f94] (998)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:03.565334] [00000x1f94] (999)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:03.640299] [00000x1f94] (1000)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 807
+[28.09.2013 00:24:03.640380] [00000x1f94] (1001)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:05.353229] [00000x1f94] (1002)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:05.353420] [00000x1f94] (1003)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 804
+[28.09.2013 00:24:05.353441] [00000x1f94] (1004)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:05.358755] [00000x1f94] (1005)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:05.380195] [00000x1f94] (1006)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:24:05.380257] [00000x1f94] (1007)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:05.385714] [00000x1f94] (1008)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:05.385746] [00000x1f94] (1009)[debug]	Process 5: ignoring VNS interrupt msg received.
+
+[28.09.2013 00:24:05.385759] [00000x1f94] (1010)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:05.390454] [00000x1f94] (1011)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:05.391764] [00000x1f94] (1012)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:24:05.391790] [00000x1f94] (1013)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:05.402894] [00000x1f94] (1014)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:05.571141] [00000x1f94] (1015)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 803
+[28.09.2013 00:24:05.571237] [00000x1f94] (1016)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:06.962121] [00000x1f94] (1017)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:06.963247] [00000x1f94] (1018)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 810
+[28.09.2013 00:24:06.963302] [00000x1f94] (1019)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:06.971463] [00000x1f94] (1020)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:06.972529] [00000x1f94] (1021)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:24:06.972552] [00000x1f94] (1022)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:06.980154] [00000x1f94] (1023)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:06.980237] [00000x1f94] (1024)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:24:06.980261] [00000x1f94] (1025)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:06.981786] [00000x1f94] (1026)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:09.389722] [00000x1f94] (1027)[debug]	Process 5: VNS Output Message sent to grasp leader number 1. I(P) = 809
+[28.09.2013 00:24:09.389804] [00000x1f94] (1028)[debug]	Process 5 ready [VNS slave process].
+
+[28.09.2013 00:24:09.398977] [00000x1f94] (1029)[debug]	Process 5 [Parallel VNS]: Received message from leader.
+
+[28.09.2013 00:24:09.399016] [00000x1f94] (1030)[debug]	Process 5: terminate msg received.
+

@@ -1,0 +1,220 @@
+# project graspcc (1.0) configured on Fri Jul 19 03:55:13 2013 by
+# waf 1.7.11 (abi 98, python 20704f0 on linux2)
+# using ./waf configure --boost-libs=/usr/local/lib --boost-includes=/usr/local/include
+#
+----------------------------------------
+Setting top to
+/home/mlevorato/git/mestrado/mestrado
+----------------------------------------
+Setting out to
+/home/mlevorato/git/mestrado/mestrado/build
+----------------------------------------
+Checking for 'gcc' (c compiler)
+find program=['gcc', 'cc'] paths=['/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin', '/bin', '/usr/games', '/usr/local/games'] var='CC' -> '/usr/bin/gcc'
+find program=['ar'] paths=['/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin', '/bin', '/usr/games', '/usr/local/games'] var='AR' -> '/usr/bin/ar'
+/usr/bin/gcc
+----------------------------------------
+Checking for 'mpic++'
+['mpic++', '--showme:compile', '--showme:link']
+err: c++: error: unrecognized command line option ‘--showme:compile’
+c++: error: unrecognized command line option ‘--showme:link’
+
+not found
+from /home/mlevorato/git/mestrado/mestrado: The configuration failed
+----------------------------------------
+Checking for 'g++' (c++ compiler)
+find program=['g++', 'c++'] paths=['/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin', '/bin', '/usr/games', '/usr/local/games'] var='CXX' -> '/usr/bin/g++'
+(tool ar is already loaded, skipping)
+/usr/bin/g++
+----------------------------------------
+Checking boost includes
+1_54
+----------------------------------------
+Checking boost libs
+Found the boost path in /usr/local/lib with the libraries:
+    /usr/local/lib/libboost_atomic.a
+    /usr/local/lib/libboost_atomic.so
+    /usr/local/lib/libboost_atomic.so.1.54.0
+    /usr/local/lib/libboost_chrono.a
+    /usr/local/lib/libboost_chrono.so
+    /usr/local/lib/libboost_chrono.so.1.54.0
+    /usr/local/lib/libboost_context.a
+    /usr/local/lib/libboost_context.so
+    /usr/local/lib/libboost_context.so.1.54.0
+    /usr/local/lib/libboost_coroutine.a
+    /usr/local/lib/libboost_date_time.a
+    /usr/local/lib/libboost_date_time.so
+    /usr/local/lib/libboost_date_time.so.1.54.0
+    /usr/local/lib/libboost_exception.a
+    /usr/local/lib/libboost_filesystem.a
+    /usr/local/lib/libboost_filesystem.so
+    /usr/local/lib/libboost_filesystem.so.1.54.0
+    /usr/local/lib/libboost_graph.a
+    /usr/local/lib/libboost_graph.so
+    /usr/local/lib/libboost_graph.so.1.54.0
+    /usr/local/lib/libboost_graph_parallel.a
+    /usr/local/lib/libboost_graph_parallel.so
+    /usr/local/lib/libboost_graph_parallel.so.1.54.0
+    /usr/local/lib/libboost_locale.a
+    /usr/local/lib/libboost_locale.so
+    /usr/local/lib/libboost_locale.so.1.54.0
+    /usr/local/lib/libboost_log.a
+    /usr/local/lib/libboost_log.so
+    /usr/local/lib/libboost_log.so.1.54.0
+    /usr/local/lib/libboost_log_setup.a
+    /usr/local/lib/libboost_log_setup.so
+    /usr/local/lib/libboost_log_setup.so.1.54.0
+    /usr/local/lib/libboost_math_c99.a
+    /usr/local/lib/libboost_math_c99.so
+    /usr/local/lib/libboost_math_c99.so.1.54.0
+    /usr/local/lib/libboost_math_c99f.a
+    /usr/local/lib/libboost_math_c99f.so
+    /usr/local/lib/libboost_math_c99f.so.1.54.0
+    /usr/local/lib/libboost_math_c99l.a
+    /usr/local/lib/libboost_math_c99l.so
+    /usr/local/lib/libboost_math_c99l.so.1.54.0
+    /usr/local/lib/libboost_math_tr1.a
+    /usr/local/lib/libboost_math_tr1.so
+    /usr/local/lib/libboost_math_tr1.so.1.54.0
+    /usr/local/lib/libboost_math_tr1f.a
+    /usr/local/lib/libboost_math_tr1f.so
+    /usr/local/lib/libboost_math_tr1f.so.1.54.0
+    /usr/local/lib/libboost_math_tr1l.a
+    /usr/local/lib/libboost_math_tr1l.so
+    /usr/local/lib/libboost_math_tr1l.so.1.54.0
+    /usr/local/lib/libboost_mpi.a
+    /usr/local/lib/libboost_mpi.so
+    /usr/local/lib/libboost_mpi.so.1.54.0
+    /usr/local/lib/libboost_mpi_python.a
+    /usr/local/lib/libboost_mpi_python.so
+    /usr/local/lib/libboost_mpi_python.so.1.54.0
+    /usr/local/lib/libboost_prg_exec_monitor.a
+    /usr/local/lib/libboost_prg_exec_monitor.so
+    /usr/local/lib/libboost_prg_exec_monitor.so.1.54.0
+    /usr/local/lib/libboost_program_options.a
+    /usr/local/lib/libboost_program_options.so
+    /usr/local/lib/libboost_program_options.so.1.54.0
+    /usr/local/lib/libboost_python.a
+    /usr/local/lib/libboost_python.so
+    /usr/local/lib/libboost_python.so.1.54.0
+    /usr/local/lib/libboost_random.a
+    /usr/local/lib/libboost_random.so
+    /usr/local/lib/libboost_random.so.1.54.0
+    /usr/local/lib/libboost_regex.a
+    /usr/local/lib/libboost_regex.so
+    /usr/local/lib/libboost_regex.so.1.54.0
+    /usr/local/lib/libboost_serialization.a
+    /usr/local/lib/libboost_serialization.so
+    /usr/local/lib/libboost_serialization.so.1.54.0
+    /usr/local/lib/libboost_signals.a
+    /usr/local/lib/libboost_signals.so
+    /usr/local/lib/libboost_signals.so.1.54.0
+    /usr/local/lib/libboost_system.a
+    /usr/local/lib/libboost_system.so
+    /usr/local/lib/libboost_system.so.1.54.0
+    /usr/local/lib/libboost_test_exec_monitor.a
+    /usr/local/lib/libboost_thread.a
+    /usr/local/lib/libboost_thread.so
+    /usr/local/lib/libboost_thread.so.1.54.0
+    /usr/local/lib/libboost_timer.a
+    /usr/local/lib/libboost_timer.so
+    /usr/local/lib/libboost_timer.so.1.54.0
+    /usr/local/lib/libboost_unit_test_framework.a
+    /usr/local/lib/libboost_unit_test_framework.so
+    /usr/local/lib/libboost_unit_test_framework.so.1.54.0
+    /usr/local/lib/libboost_wave.a
+    /usr/local/lib/libboost_wave.so
+    /usr/local/lib/libboost_wave.so.1.54.0
+    /usr/local/lib/libboost_wserialization.a
+    /usr/local/lib/libboost_wserialization.so
+    /usr/local/lib/libboost_wserialization.so.1.54.0
+Trying pattern boost_serialization(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_serialization(-1_54)+
+Trying pattern boost_serialization(-1_54)+
+Trying pattern boost_serialization(-gcc[0-9]{0,3})+
+Trying pattern boost_serialization
+Found boost lib libboost_serialization.a
+Trying pattern boost_system(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_system(-1_54)+
+Trying pattern boost_system(-1_54)+
+Trying pattern boost_system(-gcc[0-9]{0,3})+
+Trying pattern boost_system
+Found boost lib libboost_system.a
+Trying pattern boost_filesystem(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_filesystem(-1_54)+
+Trying pattern boost_filesystem(-1_54)+
+Trying pattern boost_filesystem(-gcc[0-9]{0,3})+
+Trying pattern boost_filesystem
+Found boost lib libboost_filesystem.a
+Trying pattern boost_timer(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_timer(-1_54)+
+Trying pattern boost_timer(-1_54)+
+Trying pattern boost_timer(-gcc[0-9]{0,3})+
+Trying pattern boost_timer
+Found boost lib libboost_timer.a
+Trying pattern boost_program_options(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_program_options(-1_54)+
+Trying pattern boost_program_options(-1_54)+
+Trying pattern boost_program_options(-gcc[0-9]{0,3})+
+Trying pattern boost_program_options
+Found boost lib libboost_program_options.a
+Trying pattern boost_random(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_random(-1_54)+
+Trying pattern boost_random(-1_54)+
+Trying pattern boost_random(-gcc[0-9]{0,3})+
+Trying pattern boost_random
+Found boost lib libboost_random.a
+Trying pattern boost_mpi(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_mpi(-1_54)+
+Trying pattern boost_mpi(-1_54)+
+Trying pattern boost_mpi(-gcc[0-9]{0,3})+
+Trying pattern boost_mpi
+Found boost lib libboost_mpi.a
+Trying pattern boost_thread(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_thread(-1_54)+
+Trying pattern boost_thread(-1_54)+
+Trying pattern boost_thread(-gcc[0-9]{0,3})+
+Trying pattern boost_thread
+Found boost lib libboost_thread.a
+Trying pattern boost_date_time(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_date_time(-1_54)+
+Trying pattern boost_date_time(-1_54)+
+Trying pattern boost_date_time(-gcc[0-9]{0,3})+
+Trying pattern boost_date_time
+Found boost lib libboost_date_time.a
+Trying pattern boost_log(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_log(-1_54)+
+Trying pattern boost_log(-1_54)+
+Trying pattern boost_log(-gcc[0-9]{0,3})+
+Trying pattern boost_log
+Found boost lib libboost_log.a
+Trying pattern boost_log_setup(-gcc[0-9]{0,3})+(-1_54)+
+Trying pattern boost_log_setup(-1_54)+
+Trying pattern boost_log_setup(-1_54)+
+Trying pattern boost_log_setup(-gcc[0-9]{0,3})+
+Trying pattern boost_log_setup
+Found boost lib libboost_log_setup.a
+ok
+----------------------------------------
+Checking for boost linkage
+==>
+#include <boost/system/error_code.hpp>
+int main() { boost::system::error_code c; }
+<==
+[1/2] [32mcxx: build/.conf_check_968fbcee789046a8c143bb4a6e302895/test.cpp -> build/.conf_check_968fbcee789046a8c143bb4a6e302895/testbuild/test.cpp.1.o
+[0m
+['/usr/bin/g++', '-I/usr/local/include', '../test.cpp', '-c', '-o', 'test.cpp.1.o']
+[2/2] [33mcxxprogram: build/.conf_check_968fbcee789046a8c143bb4a6e302895/testbuild/test.cpp.1.o -> build/.conf_check_968fbcee789046a8c143bb4a6e302895/testbuild/testprog
+[0m
+['/usr/bin/g++', 'test.cpp.1.o', '-o', '/home/mlevorato/git/mestrado/mestrado/build/.conf_check_968fbcee789046a8c143bb4a6e302895/testbuild/testprog', '-Wl,-Bstatic', '-Wl,-Bdynamic', '-L/usr/local/lib', '-lboost_serialization', '-lboost_system', '-lboost_filesystem', '-lboost_timer', '-lboost_program_options', '-lboost_random', '-lboost_mpi', '-lboost_thread', '-lboost_date_time', '-lboost_log', '-lboost_log_setup']
+==>
+#include <boost/thread.hpp>
+int main() { boost::thread t; }
+<==
+[1/2] [32mcxx: build/.conf_check_f9432292e9cb949513778706dc8c1baa/test.cpp -> build/.conf_check_f9432292e9cb949513778706dc8c1baa/testbuild/test.cpp.1.o
+[0m
+['/usr/bin/g++', '-I/usr/local/include', '../test.cpp', '-c', '-o', 'test.cpp.1.o']
+[2/2] [33mcxxprogram: build/.conf_check_f9432292e9cb949513778706dc8c1baa/testbuild/test.cpp.1.o -> build/.conf_check_f9432292e9cb949513778706dc8c1baa/testbuild/testprog
+[0m
+['/usr/bin/g++', 'test.cpp.1.o', '-o', '/home/mlevorato/git/mestrado/mestrado/build/.conf_check_f9432292e9cb949513778706dc8c1baa/testbuild/testprog', '-Wl,-Bstatic', '-Wl,-Bdynamic', '-L/usr/local/lib', '-lboost_serialization', '-lboost_system', '-lboost_filesystem', '-lboost_timer', '-lboost_program_options', '-lboost_random', '-lboost_mpi', '-lboost_thread', '-lboost_date_time', '-lboost_log', '-lboost_log_setup']
+ok

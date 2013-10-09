@@ -4,6 +4,7 @@ import StringIO
 import glob
 import os
 import os.path
+import re
 
 #gambit para python 2.4
 class _minmax(object):
@@ -26,6 +27,28 @@ max = _minmax(max)
 
 def q(cond, on_true, on_false):
     return {True: on_true, False: on_false}[cond is True]
+
+# ---------------------------------------------------------
+# natsort.py: Natural string sorting.
+# ---------------------------------------------------------
+def tryint(s):
+    try:
+        return int(s)
+    except:
+        return s
+     
+def alphanum_key(s):
+    """ Turn a string into a list of string and number chunks.
+        "z23a" -> ["z", 23, "a"]
+    """
+    print [ tryint(c) for c in re.split('([0-9]+)', s) ][1]
+    return int([ tryint(c) for c in re.split('([0-9]+)', s) ][1])
+
+def natsorted(l):
+    """ Sort the given list in the way that humans expect.
+    """
+    temp = [(alphanum_key(x), x) for x in l]
+    temp.sort()
 
 def main(argv):
 

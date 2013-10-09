@@ -22,7 +22,7 @@ using namespace boost;
 namespace clusteringgraph {
 
 Clustering::Clustering() : clusterList(),
-		imbalance(std::numeric_limits<double>::max()/2, std::numeric_limits<double>::max()/2) {
+		imbalance(0.0, 0.0) {
 
 }
 
@@ -68,9 +68,9 @@ void Clustering::addNodeToCluster(SignedGraph& g, unsigned long i, unsigned long
 
 void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 	// Swaps the k-th and the last element, to avoid linear-time removal
-	swap(clusterList[k], clusterList[clusterList.size() - 1]);
-	clusterList.erase(clusterList.end() - 1);
-	//clusterList.erase(clusterList.begin()+k);
+	//swap(clusterList[k], clusterList[clusterList.size() - 1]);
+	//clusterList.erase(clusterList.end() - 1);
+	clusterList.erase(clusterList.begin()+k);
 }
 
 unsigned long Clustering::clusterSize(unsigned long k) {

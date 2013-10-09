@@ -1,0 +1,277 @@
+[28.09.2013 00:39:08.016487] [00000x213e] (1)[info]	Resolution strategy is 0
+
+[28.09.2013 00:39:08.016683] [00000x213e] (2)[info]	Neighborhood size (l) is 2
+
+[28.09.2013 00:39:08.016703] [00000x213e] (3)[info]	Gain function type is 
+[28.09.2013 00:39:08.016723] [00000x213e] (4)[info]	max positive-negative modularity
+
+[28.09.2013 00:39:08.016737] [00000x213e] (5)[info]	First improvement on 1-opt neighborhood is enabled? true
+[28.09.2013 00:39:08.016752] [00000x213e] (6)[info]	Number of GRASP processes in parallel is 0
+
+[28.09.2013 00:39:08.021790] [00000x213e] (7)[info]	Input file is: /home/mlevorato/git/mestrado/mestrado/tests/Instances/Social Media/slashdot-undirected/part0/slashdot-undirected-size200-part0.g
+
+[28.09.2013 00:39:08.021865] [00000x213e] (8)[info]	The number of VNS search slaves per master is 0
+
+[28.09.2013 00:39:08.021881] [00000x213e] (9)[info]	Alpha value is 0.80
+
+[28.09.2013 00:39:08.021925] [00000x213e] (10)[info]	Number of iterations is 50
+
+[28.09.2013 00:39:08.021957] [00000x213e] (11)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Social Media/slashdot-undirected/part0/slashdot-undirected-size200-part0.g' ...
+
+[28.09.2013 00:39:08.022516] [00000x213e] (12)[trace]	Line: 200 887
+
+[28.09.2013 00:39:08.022546] [00000x213e] (13)[trace]	Format type is 2
+
+[28.09.2013 00:39:08.022944] [00000x213e] (14)[trace]	Successfully created signed graph with 200 vertices.
+
+[28.09.2013 00:39:08.041066] [00000x213e] (15)[debug]	Initializing GRASP procedure for alpha = 0.80 and l = 2...
+
+[28.09.2013 00:39:08.041146] [00000x213e] (16)[trace]	Random seed is 9388020891586751284
+
+[28.09.2013 00:39:08.041169] [00000x213e] (17)[trace]	GRASP iteration 0
+[28.09.2013 00:39:08.041190] [00000x213e] (18)[trace]	GRASP construct clustering...
+
+[28.09.2013 00:39:08.965739] [00000x213e] (19)[trace]	0: Initial clustering completed.
+
+[28.09.2013 00:39:09.633879] [00000x213e] (20)[trace]	GRASP local search...
+
+[28.09.2013 00:39:09.633944] [00000x213e] (21)[trace]	Current neighborhood is 1
+
+[28.09.2013 00:39:09.642551] [00000x213e] (22)[trace]	0: New local solution found: 742.00
+
+[28.09.2013 00:39:09.680515] [00000x213e] (23)[trace]	0: New local solution found: 741.00
+
+[28.09.2013 00:39:09.688677] [00000x213e] (24)[trace]	0: New local solution found: 740.00
+
+[28.09.2013 00:39:09.688892] [00000x213e] (25)[trace]	0: New local solution found: 738.00
+
+[28.09.2013 00:39:09.689032] [00000x213e] (26)[trace]	0: New local solution found: 737.00
+
+[28.09.2013 00:39:09.689298] [00000x213e] (27)[trace]	0: New local solution found: 736.00
+
+[28.09.2013 00:39:09.689424] [00000x213e] (28)[trace]	0: New local solution found: 734.00
+
+[28.09.2013 00:39:09.701659] [00000x213e] (29)[trace]	0: New local solution found: 732.00
+
+[28.09.2013 00:39:09.735749] [00000x213e] (30)[trace]	0: New local solution found: 731.00
+
+[28.09.2013 00:39:09.807630] [00000x213e] (31)[trace]	0: New local solution found: 730.00
+
+[28.09.2013 00:39:09.865128] [00000x213e] (32)[trace]	0: New local solution found: 729.00
+
+[28.09.2013 00:39:09.910184] [00000x213e] (33)[trace]	0: New local solution found: 726.00
+
+[28.09.2013 00:39:09.923298] [00000x213e] (34)[trace]	0: New local solution found: 725.00
+
+[28.09.2013 00:39:09.923507] [00000x213e] (35)[trace]	0: New local solution found: 723.00
+
+[28.09.2013 00:39:09.992166] [00000x213e] (36)[trace]	0: New local solution found: 722.00
+
+[28.09.2013 00:39:09.998342] [00000x213e] (37)[trace]	0: New local solution found: 721.00
+
+[28.09.2013 00:39:09.999195] [00000x213e] (38)[trace]	0: New local solution found: 720.00
+
+[28.09.2013 00:39:10.000634] [00000x213e] (39)[trace]	0: New local solution found: 717.00
+
+[28.09.2013 00:39:10.001448] [00000x213e] (40)[trace]	0: New local solution found: 715.00
+
+[28.09.2013 00:39:10.016467] [00000x213e] (41)[trace]	0: New local solution found: 714.00
+
+[28.09.2013 00:39:10.086044] [00000x213e] (42)[trace]	0: New local solution found: 713.00
+
+[28.09.2013 00:39:10.113420] [00000x213e] (43)[trace]	0: New local solution found: 712.00
+
+[28.09.2013 00:39:10.187893] [00000x213e] (44)[trace]	0: New local solution found: 710.00
+
+[28.09.2013 00:39:10.227542] [00000x213e] (45)[trace]	0: New local solution found: 709.00
+
+[28.09.2013 00:39:10.239363] [00000x213e] (46)[trace]	0: New local solution found: 708.00
+
+[28.09.2013 00:39:10.292424] [00000x213e] (47)[trace]	0: New local solution found: 706.00
+
+[28.09.2013 00:39:10.303805] [00000x213e] (48)[trace]	0: New local solution found: 705.00
+
+[28.09.2013 00:39:10.313688] [00000x213e] (49)[trace]	0: New local solution found: 704.00
+
+[28.09.2013 00:39:10.328823] [00000x213e] (50)[trace]	0: New local solution found: 702.00
+
+[28.09.2013 00:39:10.329516] [00000x213e] (51)[trace]	0: New local solution found: 701.00
+
+[28.09.2013 00:39:10.344075] [00000x213e] (52)[trace]	0: New local solution found: 700.00
+
+[28.09.2013 00:39:10.363537] [00000x213e] (53)[trace]	0: New local solution found: 698.00
+
+[28.09.2013 00:39:10.368156] [00000x213e] (54)[trace]	0: New local solution found: 697.00
+
+[28.09.2013 00:39:10.380215] [00000x213e] (55)[trace]	0: New local solution found: 696.00
+
+[28.09.2013 00:39:10.380800] [00000x213e] (56)[trace]	0: New local solution found: 694.00
+
+[28.09.2013 00:39:10.381291] [00000x213e] (57)[trace]	0: New local solution found: 693.00
+
+[28.09.2013 00:39:10.392920] [00000x213e] (58)[trace]	0: New local solution found: 692.00
+
+[28.09.2013 00:39:10.416275] [00000x213e] (59)[trace]	0: New local solution found: 691.00
+
+[28.09.2013 00:39:10.436786] [00000x213e] (60)[trace]	0: New local solution found: 690.00
+
+[28.09.2013 00:39:10.447928] [00000x213e] (61)[trace]	0: New local solution found: 689.00
+
+[28.09.2013 00:39:10.463832] [00000x213e] (62)[trace]	0: New local solution found: 683.00
+
+[28.09.2013 00:39:10.535721] [00000x213e] (63)[trace]	0: New local solution found: 682.00
+
+[28.09.2013 00:39:10.536095] [00000x213e] (64)[trace]	0: New local solution found: 679.00
+
+[28.09.2013 00:39:10.548770] [00000x213e] (65)[trace]	0: New local solution found: 676.00
+
+[28.09.2013 00:39:10.550560] [00000x213e] (66)[trace]	0: New local solution found: 675.00
+
+[28.09.2013 00:39:10.629312] [00000x213e] (67)[trace]	0: New local solution found: 674.00
+
+[28.09.2013 00:39:10.643446] [00000x213e] (68)[trace]	0: New local solution found: 673.00
+
+[28.09.2013 00:39:10.643873] [00000x213e] (69)[trace]	0: New local solution found: 672.00
+
+[28.09.2013 00:39:10.767291] [00000x213e] (70)[trace]	0: New local solution found: 671.00
+
+[28.09.2013 00:39:10.767538] [00000x213e] (71)[trace]	0: New local solution found: 670.00
+
+[28.09.2013 00:39:10.777185] [00000x213e] (72)[trace]	0: New local solution found: 668.00
+
+[28.09.2013 00:39:10.810685] [00000x213e] (73)[trace]	0: New local solution found: 666.00
+
+[28.09.2013 00:39:10.879777] [00000x213e] (74)[trace]	0: New local solution found: 665.00
+
+[28.09.2013 00:39:10.904816] [00000x213e] (75)[trace]	0: New local solution found: 662.00
+
+[28.09.2013 00:39:10.961288] [00000x213e] (76)[trace]	0: New local solution found: 659.00
+
+[28.09.2013 00:39:11.095533] [00000x213e] (77)[trace]	0: New local solution found: 658.00
+
+[28.09.2013 00:39:11.099297] [00000x213e] (78)[trace]	0: New local solution found: 657.00
+
+[28.09.2013 00:39:11.100477] [00000x213e] (79)[trace]	0: New local solution found: 656.00
+
+[28.09.2013 00:39:11.101241] [00000x213e] (80)[trace]	0: New local solution found: 655.00
+
+[28.09.2013 00:39:11.222146] [00000x213e] (81)[trace]	0: New local solution found: 654.00
+
+[28.09.2013 00:39:11.244194] [00000x213e] (82)[trace]	0: New local solution found: 651.00
+
+[28.09.2013 00:39:11.368844] [00000x213e] (83)[trace]	0: New local solution found: 647.00
+
+[28.09.2013 00:39:11.512029] [00000x213e] (84)[trace]	0: New local solution found: 645.00
+
+[28.09.2013 00:39:11.519612] [00000x213e] (85)[trace]	0: New local solution found: 643.00
+
+[28.09.2013 00:39:11.520724] [00000x213e] (86)[trace]	0: New local solution found: 642.00
+
+[28.09.2013 00:39:11.521307] [00000x213e] (87)[trace]	0: New local solution found: 641.00
+
+[28.09.2013 00:39:11.581607] [00000x213e] (88)[trace]	0: New local solution found: 640.00
+
+[28.09.2013 00:39:11.616088] [00000x213e] (89)[trace]	0: New local solution found: 639.00
+
+[28.09.2013 00:39:11.630524] [00000x213e] (90)[trace]	0: New local solution found: 638.00
+
+[28.09.2013 00:39:11.718523] [00000x213e] (91)[trace]	0: New local solution found: 637.00
+
+[28.09.2013 00:39:11.757400] [00000x213e] (92)[trace]	0: New local solution found: 635.00
+
+[28.09.2013 00:39:11.896629] [00000x213e] (93)[trace]	0: New local solution found: 634.00
+
+[28.09.2013 00:39:11.936085] [00000x213e] (94)[trace]	0: New local solution found: 629.00
+
+[28.09.2013 00:39:11.998348] [00000x213e] (95)[trace]	0: New local solution found: 626.00
+
+[28.09.2013 00:39:12.013455] [00000x213e] (96)[trace]	0: New local solution found: 624.00
+
+[28.09.2013 00:39:12.034849] [00000x213e] (97)[trace]	0: New local solution found: 622.00
+
+[28.09.2013 00:39:12.132304] [00000x213e] (98)[trace]	0: New local solution found: 620.00
+
+[28.09.2013 00:39:12.243135] [00000x213e] (99)[trace]	0: New local solution found: 612.00
+
+[28.09.2013 00:39:12.382062] [00000x213e] (100)[trace]	0: New local solution found: 605.00
+
+[28.09.2013 00:39:12.497268] [00000x213e] (101)[trace]	0: New local solution found: 595.00
+
+[28.09.2013 00:39:12.497522] [00000x213e] (102)[trace]	0: New local solution found: 594.00
+
+[28.09.2013 00:39:12.554974] [00000x213e] (103)[trace]	0: New local solution found: 593.00
+
+[28.09.2013 00:39:12.629308] [00000x213e] (104)[trace]	0: New local solution found: 591.00
+
+[28.09.2013 00:39:12.632995] [00000x213e] (105)[trace]	0: New local solution found: 590.00
+
+[28.09.2013 00:39:12.779521] [00000x213e] (106)[trace]	0: New local solution found: 589.00
+
+[28.09.2013 00:39:12.816162] [00000x213e] (107)[trace]	0: New local solution found: 588.00
+
+[28.09.2013 00:39:12.835906] [00000x213e] (108)[trace]	0: New local solution found: 587.00
+
+[28.09.2013 00:39:12.883016] [00000x213e] (109)[trace]	0: New local solution found: 582.00
+
+[28.09.2013 00:39:12.887421] [00000x213e] (110)[trace]	0: New local solution found: 580.00
+
+[28.09.2013 00:39:12.963885] [00000x213e] (111)[trace]	0: New local solution found: 578.00
+
+[28.09.2013 00:39:13.076815] [00000x213e] (112)[trace]	0: New local solution found: 577.00
+
+[28.09.2013 00:39:13.099894] [00000x213e] (113)[trace]	0: New local solution found: 576.00
+
+[28.09.2013 00:39:13.144976] [00000x213e] (114)[trace]	0: New local solution found: 575.00
+
+[28.09.2013 00:39:13.195461] [00000x213e] (115)[trace]	0: New local solution found: 572.00
+
+[28.09.2013 00:39:13.350284] [00000x213e] (116)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:39:13.411156] [00000x213e] (117)[trace]	0: New local solution found: 570.00
+
+[28.09.2013 00:39:13.603113] [00000x213e] (118)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:39:13.811784] [00000x213e] (119)[trace]	0: New local solution found: 569.00
+
+[28.09.2013 00:39:13.963594] [00000x213e] (120)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:39:15.128904] [00000x213e] (121)[trace]	0: New local solution found: 563.00
+
+[28.09.2013 00:39:15.319801] [00000x213e] (122)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:39:26.794226] [00000x213e] (123)[trace]	0: New local solution found: 559.00
+
+[28.09.2013 00:39:26.980585] [00000x213e] (124)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:13.848886] [00000x213e] (125)[trace]	0: New local solution found: 546.00
+
+[28.09.2013 00:40:14.032539] [00000x213e] (126)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:14.073601] [00000x213e] (127)[trace]	0: New local solution found: 543.00
+
+[28.09.2013 00:40:14.208791] [00000x213e] (128)[trace]	0: New local solution found: 540.00
+
+[28.09.2013 00:40:14.377880] [00000x213e] (129)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:34.450225] [00000x213e] (130)[trace]	0: New local solution found: 538.00
+
+[28.09.2013 00:40:34.631353] [00000x213e] (131)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:34.631897] [00000x213e] (132)[trace]	0: New local solution found: 536.00
+
+[28.09.2013 00:40:34.768448] [00000x213e] (133)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:34.830652] [00000x213e] (134)[trace]	0: New local solution found: 530.00
+
+[28.09.2013 00:40:34.948012] [00000x213e] (135)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:44.931443] [00000x213e] (136)[trace]	0: New local solution found: 529.00
+
+[28.09.2013 00:40:45.022109] [00000x213e] (137)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:45.303898] [00000x213e] (138)[trace]	0: New local solution found: 528.00
+
+[28.09.2013 00:40:45.370021] [00000x213e] (139)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:45.863516] [00000x213e] (140)[trace]	0: New local solution found: 527.00
+
+[28.09.2013 00:40:45.902812] [00000x213e] (141)[trace]	0: New local solution found: 518.00
+
+[28.09.2013 00:40:45.963016] [00000x213e] (142)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:48.459610] [00000x213e] (143)[trace]	0: New local solution found: 517.00
+
+[28.09.2013 00:40:48.518873] [00000x213e] (144)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:48.593834] [00000x213e] (145)[trace]	0: New local solution found: 511.00
+
+[28.09.2013 00:40:48.650337] [00000x213e] (146)[trace]	Changed to neighborhood size l = 2
+[28.09.2013 00:40:48.666926] [00000x213e] (147)[trace]	0: New local solution found: 510.00
+
+[28.09.2013 00:40:48.719281] [00000x213e] (148)[trace]	Changed to neighborhood size l = 2

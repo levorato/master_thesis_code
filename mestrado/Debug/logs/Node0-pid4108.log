@@ -1,0 +1,303 @@
+[26.09.2013 22:19:12.507942] [00000x100c] (1)[info]	Resolution strategy is 0
+
+[26.09.2013 22:19:12.508217] [00000x100c] (2)[info]	Neighborhood size (l) is 1
+
+[26.09.2013 22:19:12.508237] [00000x100c] (3)[info]	Gain function type is 
+[26.09.2013 22:19:12.508257] [00000x100c] (4)[info]	min imbalance
+
+[26.09.2013 22:19:12.508268] [00000x100c] (5)[info]	First improvement on 1-opt neighborhood is enabled? true
+[26.09.2013 22:19:12.508284] [00000x100c] (6)[info]	Number of GRASP processes in parallel is 2
+
+[26.09.2013 22:19:12.508297] [00000x100c] (7)[info]	Input file dir is: /home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random
+
+[26.09.2013 22:19:12.508582] [00000x100c] (8)[info]	The number of VNS search slaves per master is 0
+
+[26.09.2013 22:19:12.508613] [00000x100c] (9)[info]	Alpha value is 0.80
+
+[26.09.2013 22:19:12.508644] [00000x100c] (10)[info]	Number of iterations is 400
+
+[26.09.2013 22:19:12.508664] [00000x100c] (11)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_10_5.g' ...
+
+[26.09.2013 22:19:21.727827] [00000x100c] (12)[info]	Alpha value is 0.80
+
+[26.09.2013 22:19:21.727960] [00000x100c] (13)[info]	Number of iterations is 400
+
+[26.09.2013 22:19:21.728011] [00000x100c] (14)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_80_2.g' ...
+
+[26.09.2013 22:19:24.833019] [00000x100c] (15)[info]	Alpha value is 0.80
+
+[26.09.2013 22:19:24.833077] [00000x100c] (16)[info]	Number of iterations is 400
+
+[26.09.2013 22:19:24.833112] [00000x100c] (17)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_20_8.g' ...
+
+[26.09.2013 22:19:27.440175] [00000x100c] (18)[info]	Alpha value is 0.80
+
+[26.09.2013 22:19:27.440232] [00000x100c] (19)[info]	Number of iterations is 400
+
+[26.09.2013 22:19:27.440266] [00000x100c] (20)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_20_8.g' ...
+
+[26.09.2013 22:19:30.782536] [00000x100c] (21)[info]	Alpha value is 0.80
+
+[26.09.2013 22:19:30.782592] [00000x100c] (22)[info]	Number of iterations is 400
+
+[26.09.2013 22:19:30.782626] [00000x100c] (23)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_50_5.g' ...
+
+[26.09.2013 22:19:34.732075] [00000x100c] (24)[info]	Alpha value is 0.80
+
+[26.09.2013 22:19:34.732132] [00000x100c] (25)[info]	Number of iterations is 400
+
+[26.09.2013 22:19:34.732168] [00000x100c] (26)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_80_8.g' ...
+
+[26.09.2013 22:19:47.053661] [00000x100c] (27)[info]	Alpha value is 0.80
+
+[26.09.2013 22:19:47.053721] [00000x100c] (28)[info]	Number of iterations is 400
+
+[26.09.2013 22:19:47.053757] [00000x100c] (29)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_80_5.g' ...
+
+[26.09.2013 22:20:01.369622] [00000x100c] (30)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:01.369769] [00000x100c] (31)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:01.369820] [00000x100c] (32)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_50_2.g' ...
+
+[26.09.2013 22:20:04.087139] [00000x100c] (33)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:04.087270] [00000x100c] (34)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:04.087320] [00000x100c] (35)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_50_8.g' ...
+
+[26.09.2013 22:20:05.171640] [00000x100c] (36)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:05.171742] [00000x100c] (37)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:05.171792] [00000x100c] (38)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_80_5.g' ...
+
+[26.09.2013 22:20:07.553244] [00000x100c] (39)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:07.553347] [00000x100c] (40)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:07.553397] [00000x100c] (41)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_80_5.g' ...
+
+[26.09.2013 22:20:10.433188] [00000x100c] (42)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:10.433306] [00000x100c] (43)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:10.433357] [00000x100c] (44)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_10_2.g' ...
+
+[26.09.2013 22:20:12.936230] [00000x100c] (45)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:12.936288] [00000x100c] (46)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:12.936323] [00000x100c] (47)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_80_2.g' ...
+
+[26.09.2013 22:20:17.478245] [00000x100c] (48)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:17.478290] [00000x100c] (49)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:17.478317] [00000x100c] (50)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_80_8.g' ...
+
+[26.09.2013 22:20:20.563780] [00000x100c] (51)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:20.563826] [00000x100c] (52)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:20.563852] [00000x100c] (53)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_80_8.g' ...
+
+[26.09.2013 22:20:45.277003] [00000x100c] (54)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:45.277049] [00000x100c] (55)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:45.277075] [00000x100c] (56)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_50_5.g' ...
+
+[26.09.2013 22:20:46.933886] [00000x100c] (57)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:46.933929] [00000x100c] (58)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:46.933955] [00000x100c] (59)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_50_8.g' ...
+
+[26.09.2013 22:20:58.046309] [00000x100c] (60)[info]	Alpha value is 0.80
+
+[26.09.2013 22:20:58.046354] [00000x100c] (61)[info]	Number of iterations is 400
+
+[26.09.2013 22:20:58.046381] [00000x100c] (62)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_50_5.g' ...
+
+[26.09.2013 22:21:05.951366] [00000x100c] (63)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:05.951426] [00000x100c] (64)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:05.951461] [00000x100c] (65)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_20_5.g' ...
+
+[26.09.2013 22:21:06.473937] [00000x100c] (66)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:06.473995] [00000x100c] (67)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:06.474029] [00000x100c] (68)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_20_2.g' ...
+
+[26.09.2013 22:21:07.308269] [00000x100c] (69)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:07.308327] [00000x100c] (70)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:07.308362] [00000x100c] (71)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_50_2.g' ...
+
+[26.09.2013 22:21:09.919496] [00000x100c] (72)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:09.919553] [00000x100c] (73)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:09.919588] [00000x100c] (74)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_50_2.g' ...
+
+[26.09.2013 22:21:15.154099] [00000x100c] (75)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:15.154158] [00000x100c] (76)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:15.154192] [00000x100c] (77)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_10_8.g' ...
+
+[26.09.2013 22:21:23.699753] [00000x100c] (78)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:23.699800] [00000x100c] (79)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:23.699833] [00000x100c] (80)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_50_8.g' ...
+
+[26.09.2013 22:21:30.331052] [00000x100c] (81)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:30.331097] [00000x100c] (82)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:30.331122] [00000x100c] (83)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_80_8.g' ...
+
+[26.09.2013 22:21:31.928970] [00000x100c] (84)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:31.929012] [00000x100c] (85)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:31.929038] [00000x100c] (86)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_20_8.g' ...
+
+[26.09.2013 22:21:32.463018] [00000x100c] (87)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:32.463061] [00000x100c] (88)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:32.463086] [00000x100c] (89)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_20_2.g' ...
+
+[26.09.2013 22:21:39.370133] [00000x100c] (90)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:39.370294] [00000x100c] (91)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:39.370347] [00000x100c] (92)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_80_2.g' ...
+
+[26.09.2013 22:21:45.194382] [00000x100c] (93)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:45.194426] [00000x100c] (94)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:45.194449] [00000x100c] (95)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_10_8.g' ...
+
+[26.09.2013 22:21:45.913424] [00000x100c] (96)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:45.913467] [00000x100c] (97)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:45.913491] [00000x100c] (98)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_20_5.g' ...
+
+[26.09.2013 22:21:47.231080] [00000x100c] (99)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:47.231123] [00000x100c] (100)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:47.231147] [00000x100c] (101)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_50_8.g' ...
+
+[26.09.2013 22:21:49.946068] [00000x100c] (102)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:49.946113] [00000x100c] (103)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:49.946138] [00000x100c] (104)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_20_8.g' ...
+
+[26.09.2013 22:21:57.941577] [00000x100c] (105)[info]	Alpha value is 0.80
+
+[26.09.2013 22:21:57.941636] [00000x100c] (106)[info]	Number of iterations is 400
+
+[26.09.2013 22:21:57.941672] [00000x100c] (107)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_20_5.g' ...
+
+[26.09.2013 22:22:02.160719] [00000x100c] (108)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:02.160778] [00000x100c] (109)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:02.160814] [00000x100c] (110)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_10_2.g' ...
+
+[26.09.2013 22:22:04.644907] [00000x100c] (111)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:04.644967] [00000x100c] (112)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:04.645003] [00000x100c] (113)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_80_2.g' ...
+
+[26.09.2013 22:22:05.485951] [00000x100c] (114)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:05.486011] [00000x100c] (115)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:05.486047] [00000x100c] (116)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_10_5.g' ...
+
+[26.09.2013 22:22:07.453490] [00000x100c] (117)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:07.453541] [00000x100c] (118)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:07.453567] [00000x100c] (119)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_10_2.g' ...
+
+[26.09.2013 22:22:08.391326] [00000x100c] (120)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:08.391385] [00000x100c] (121)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:08.391420] [00000x100c] (122)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_10_8.g' ...
+
+[26.09.2013 22:22:11.245314] [00000x100c] (123)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:11.245450] [00000x100c] (124)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:11.245499] [00000x100c] (125)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_10_5.g' ...
+
+[26.09.2013 22:22:12.139146] [00000x100c] (126)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:12.139201] [00000x100c] (127)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:12.139234] [00000x100c] (128)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_10_8.g' ...
+
+[26.09.2013 22:22:13.345515] [00000x100c] (129)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:13.345571] [00000x100c] (130)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:13.345605] [00000x100c] (131)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_10_5.g' ...
+
+[26.09.2013 22:22:17.395186] [00000x100c] (132)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:17.395232] [00000x100c] (133)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:17.395257] [00000x100c] (134)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_10_2.g' ...
+
+[26.09.2013 22:22:24.802606] [00000x100c] (135)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:24.802654] [00000x100c] (136)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:24.802681] [00000x100c] (137)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_50_5.g' ...
+
+[26.09.2013 22:22:26.406022] [00000x100c] (138)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:26.406067] [00000x100c] (139)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:26.406093] [00000x100c] (140)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_20_2.g' ...
+
+[26.09.2013 22:22:30.415576] [00000x100c] (141)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:30.415678] [00000x100c] (142)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:30.415728] [00000x100c] (143)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file500_20_5.g' ...
+
+[26.09.2013 22:22:39.793622] [00000x100c] (144)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:39.793680] [00000x100c] (145)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:39.793715] [00000x100c] (146)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file200_50_2.g' ...
+
+[26.09.2013 22:22:40.423542] [00000x100c] (147)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:40.423598] [00000x100c] (148)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:40.423632] [00000x100c] (149)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file400_80_5.g' ...
+
+[26.09.2013 22:22:45.674307] [00000x100c] (150)[info]	Alpha value is 0.80
+
+[26.09.2013 22:22:45.674439] [00000x100c] (151)[info]	Number of iterations is 400
+
+[26.09.2013 22:22:45.674491] [00000x100c] (152)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Random/file300_20_2.g' ...
+
+[26.09.2013 22:22:47.029710] [00000x100c] (153)[info]	Done.

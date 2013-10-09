@@ -1,0 +1,20 @@
+[26.09.2013 23:39:23.401066] [00000x158b] (1)[info]	Resolution strategy is 0
+
+[26.09.2013 23:39:23.419877] [00000x158b] (2)[info]	Neighborhood size (l) is 1
+
+[26.09.2013 23:39:23.420857] [00000x158b] (3)[info]	Gain function type is 
+[26.09.2013 23:39:23.421256] [00000x158b] (4)[info]	max positive-negative modularity
+
+[26.09.2013 23:39:23.421661] [00000x158b] (5)[info]	First improvement on 1-opt neighborhood is enabled? true
+[26.09.2013 23:39:23.422132] [00000x158b] (6)[info]	Number of GRASP processes in parallel is 1
+
+[26.09.2013 23:39:23.423614] [00000x158b] (7)[info]	Input file dir is: /home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Literatura/Formato PAJEK
+
+[26.09.2013 23:39:23.424312] [00000x158b] (8)[info]	The number of VNS search slaves per master is 2
+
+[26.09.2013 23:39:23.427890] [00000x158b] (9)[info]	Alpha value is 0.80
+
+[26.09.2013 23:39:23.430454] [00000x158b] (10)[info]	Number of iterations is 400
+
+[26.09.2013 23:39:23.432585] [00000x158b] (11)[info]	Reading input file: '/home/mlevorato/git/mestrado/mestrado/tests/Instances/Gisele/Literatura/Formato PAJEK/MPOS.NET' ...
+
