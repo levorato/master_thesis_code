@@ -8,7 +8,7 @@
 #include "include/Graph.h"
 #include <boost/config.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/graph/adjacency_matrix.hpp>
+#include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <cassert>
 #include <limits>
@@ -43,7 +43,7 @@ unsigned long SignedGraph::getN() {
 }
 
 unsigned long SignedGraph::getM() {
-	return graph.m_num_edges;
+	return num_edges(graph);
 }
 
 unsigned int SignedGraph::getId() {
@@ -58,29 +58,15 @@ void SignedGraph::addEdge(unsigned long a, unsigned long b, Edge edge) {
 	add_edge(a, b, edge, graph);
 }
 
-double SignedGraph::getEdge(const unsigned long &a, const unsigned long &b) {
-	return graph.get_edge(a, b).second.weight;
-}
-
-bool SignedGraph::isPositiveEdge(const unsigned long &a, const unsigned long &b) {
-	double value = getEdge(a, b);
-	return (value > 2 * std::numeric_limits<double>::epsilon());
-}
-
-bool SignedGraph::isNegativeEdge(const unsigned long &a, const unsigned long &b) {
-	 double value = getEdge(a, b);
-	 return (value < (-2) * std::numeric_limits<double>::epsilon());
-}
-
 unsigned long SignedGraph::getDegree(const unsigned long &a) {
-	return in_degree(a, graph);
+	return out_degree(a, graph);
 }
 
 unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
 	unsigned long sum = 0;
 	// O(n)
-	adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
-	for (boost::tie(f, l) = in_edges(a, graph); f != l; ++f) {
+	DirectedGraph::out_edge_iterator f, l;
+	for (boost::tie(f, l) = out_edges(a, graph); f != l; ++f) {
 		if(((Edge*)f->get_property())->weight < 0) {
 			++sum;
 		}
@@ -91,22 +77,13 @@ unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
 unsigned long SignedGraph::getPositiveDegree(const unsigned long &a) {
 	unsigned long sum = 0;
 	// O(n)
-	adjacency_matrix<directedS, no_property, Edge >::in_edge_iterator f, l;
-	for (boost::tie(f, l) = in_edges(a, graph); f != l; ++f) {
+	DirectedGraph::out_edge_iterator f, l;
+	for (boost::tie(f, l) = out_edges(a, graph); f != l; ++f) {
 		if(((Edge*)f->get_property())->weight > 0) {
 			++sum;
 		}
 	}
 	return sum;
-}
-
-void SignedGraph::printGraph() {
-	for(unsigned long i = 0; i < this->getN(); i++) {
-		for(unsigned long j = 0; j < this->getN(); j++) {
-			cout << this->getEdge(i, j) << "  ";
-		}
-		cout << endl;
-	}
 }
 
 void SignedGraph::setGraphAsText(string txt) {

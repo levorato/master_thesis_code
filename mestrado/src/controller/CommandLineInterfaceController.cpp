@@ -118,9 +118,6 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 		SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
-		if (debug) {
-			g->printGraph();
-		}
 
 		// Triggers the execution of the GRASP algorithm
 		ClusteringPtr c;

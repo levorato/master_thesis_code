@@ -8,11 +8,13 @@
 #include "include/CCProblem.h"
 #include "../graph/include/Clustering.h"
 #include <cmath>
+#include <boost/log/trivial.hpp>
 
 namespace problem {
 
 using namespace std;
 using namespace clusteringgraph;
+using namespace boost;
 
 CCProblem::CCProblem() {
 	// TODO Auto-generated constructor stub
@@ -36,9 +38,37 @@ Imbalance CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 	int nc = c->getNumberOfClusters();
 	int n = g->getN();
 
-	// cout << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
+	// For each vertex i
+	for(int i = 0; i < n; i++) {
+		DirectedGraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
+			double weight = ((Edge*)f->get_property())->weight;
+			int j = target(*f, g->graph);
+			bool sameCluster = false;
+			for(int k = 0; k < nc; k++) {
+				BoolArray cluster = c->getCluster(k);
+				if(cluster[i] && cluster[j]) {
+					sameCluster = true;
+					break;
+				}
+			}
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are in the same cluster
+				negativeSum += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				positiveSum += weight;
+			}
+		}
+	}
+
+
+
+	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
 	// c->printClustering();
 	// For each vertex i
+	/*
 	for(int i = 0; i < n; i++) {
 		// For each vertex j
 		for(int j = 0; j < n; j++) {
@@ -62,8 +92,8 @@ Imbalance CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 			}
 		}
 	}
-
-	// cout << "Valor calculado: " << (positiveSum + negativeSum) << endl;
+*/
+	BOOST_LOG_TRIVIAL(trace) << "Valor calculado: " << (positiveSum + negativeSum) << endl;
 	return Imbalance(positiveSum, negativeSum);
 }
 

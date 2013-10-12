@@ -138,8 +138,8 @@ Imbalance Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray&
 
 	// iterates over out-edges of vertex i
 	//typedef graph_traits<Graph> GraphTraits;
-	typename DirectedGraph::out_edge_iterator out_i, out_end;
-	typename DirectedGraph::edge_descriptor e;
+	DirectedGraph::out_edge_iterator out_i, out_end;
+	DirectedGraph::edge_descriptor e;
 
 	// std::cout << "out-edges of " << i << ": ";
 	for (tie(out_i, out_end) = out_edges(i, g.graph); out_i != out_end; ++out_i) {
@@ -159,9 +159,9 @@ Imbalance Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray&
 	}
 
 	// iterates over in-edges of vertex i
-	typename DirectedGraph::in_edge_iterator in_i, in_end;
+	DirectedGraph::in_edge_iterator in_i, in_end;
 	// std::cout << "in-edges of " << i << ": ";
-	for (tie(in_i, in_end) = in_edges(i,g.graph); in_i != in_end; ++in_i) {
+	for (tie(in_i, in_end) = in_edges(i, g.graph); in_i != in_end; ++in_i) {
 		e = *in_i;
 		Vertex src = source(e, g.graph), targ = target(e, g.graph);
 		double weight = ((Edge*)in_i->get_property())->weight;

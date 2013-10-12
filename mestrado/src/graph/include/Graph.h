@@ -9,7 +9,7 @@
 #define GRAPH_H_
 
 #include <boost/config.hpp>
-#include <boost/graph/adjacency_matrix.hpp>
+#include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -31,7 +31,7 @@ struct Vertex {
     Vertex() : id(0) { }
     Vertex(int w) : id(w) { }
 };
-typedef adjacency_matrix<directedS, Vertex, Edge > DirectedGraph;
+typedef adjacency_list<vecS, vecS, bidirectionalS, Vertex, Edge, no_property, vecS > DirectedGraph;
 
 class SignedGraph {
 public:
@@ -60,14 +60,6 @@ public:
 	 * equal to -1, 0 or 1.
 	 */
 	void addEdge(unsigned long a, unsigned long b, Edge edge);
-	/**
-	 * Returns the value of the corresponding edge.
-	 */
-	double getEdge(const unsigned long &a, const unsigned long &b);
-
-	bool isPositiveEdge(const unsigned long &a, const unsigned long &b);
-
-	bool isNegativeEdge(const unsigned long &a, const unsigned long &b);
 
 	/**
 	 * Returns the degree of vertex a.
@@ -81,8 +73,6 @@ public:
 	unsigned long getNegativeDegree(const unsigned long &a);
 
 	unsigned long getPositiveDegree(const unsigned long &a);
-
-	void printGraph();
 
 	string getGraphAsText();
 

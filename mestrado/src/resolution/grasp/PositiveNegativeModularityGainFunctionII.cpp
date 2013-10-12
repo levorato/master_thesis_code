@@ -31,6 +31,8 @@ void PositiveNegativeModularityGainFunctionII::calculateModularityMatrix() {
 		pos_degree[i] = graph->getPositiveDegree(i);
 	}
 
+	/*
+			 * TODO Alterar a maneira como as arestas sao varridas para esse calculo
 	for(int i = 0; i < numberOfNodes; i++) {
 		for(int j = 0; j < numberOfNodes; j++) {
 			double a = 0.0;
@@ -43,6 +45,7 @@ void PositiveNegativeModularityGainFunctionII::calculateModularityMatrix() {
 					( ( (neg_degree[i] * neg_degree[j]) - (pos_degree[i] * pos_degree[j]) ) / (2.0 * m) );
 		}
 	}
+	*/
 	modularityMatrixCalculated = true;
 }
 
