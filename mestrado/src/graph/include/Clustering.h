@@ -44,7 +44,7 @@ class Clustering {
 public:
 	static const int NEW_CLUSTER = -1;
 
-	Clustering();
+	Clustering(const double& alpha);
 
 	/**
 	 * Creates a Clustering object based on the clusterList.
@@ -136,7 +136,13 @@ public:
 		this->imbalance = imbalance;
 	}
 
+	const double getAlpha() {
+		return alpha;
+	}
+
 private:
+	/** Alpha - randomness factor used for cluster selection in GRASP construction phase */
+	double alpha;
 	/** the cluster list, with dimensions k x n */
 	ClusterList clusterList;
 	/** the value of the objective function corresponding to this cluster */

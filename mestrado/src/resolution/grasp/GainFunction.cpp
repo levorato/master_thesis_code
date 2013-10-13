@@ -10,7 +10,7 @@
 namespace resolution {
 namespace grasp {
 
-GainFunction::GainFunction(SignedGraph* g) : graph(g) {
+GainFunction::GainFunction(SignedGraph* g, const unsigned long& s) : graph(g), randomSeed(s) {
 	// TODO Auto-generated constructor stub
 
 }

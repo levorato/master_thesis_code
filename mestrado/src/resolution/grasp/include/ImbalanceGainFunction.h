@@ -15,7 +15,7 @@ namespace grasp {
 
 class ImbalanceGainFunction: public resolution::grasp::GainFunction {
 public:
-	ImbalanceGainFunction(SignedGraph* g);
+	ImbalanceGainFunction(SignedGraph* g, const unsigned long& randomSeed);
 	virtual ~ImbalanceGainFunction();
 
 	virtual GainCalculation& gain(const int &a);
@@ -27,6 +27,8 @@ public:
 	virtual int getType();
 
 	virtual GainFunction::GainFunctionComparison getComparator();
+
+	unsigned int chooseRandomNumber(int x);
 
 };
 

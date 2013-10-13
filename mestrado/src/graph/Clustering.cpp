@@ -21,14 +21,14 @@ using namespace boost;
 
 namespace clusteringgraph {
 
-Clustering::Clustering() : clusterList(),
+Clustering::Clustering(const double& a) : alpha(a), clusterList(),
 		imbalance(0.0, 0.0) {
 
 }
 
 // TODO test dimension attribution
 Clustering::Clustering(const Clustering& clustering) :
-		clusterList(), imbalance(clustering.imbalance) {
+		alpha(clustering.alpha), clusterList(), imbalance(clustering.imbalance) {
 	// deep copy of the clusterlist data
 	for(unsigned long i = 0; i < clustering.clusterList.size(); i++) {
 		BoolArray boolArray = clustering.clusterList.at(i);

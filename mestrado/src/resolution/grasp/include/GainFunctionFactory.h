@@ -28,7 +28,7 @@ public:
 	PositiveNegativeModularityGainFunctionII positiveNegativeModularityGainFunctionII;
 	PositiveNegativeModularityGainFunctionIII positiveNegativeModularityGainFunctionIII;
 
-	GainFunctionFactory(SignedGraph* graph);
+	GainFunctionFactory(SignedGraph* graph, const unsigned long& randomSeed);
 	virtual ~GainFunctionFactory();
 
 	GainFunction& build(int functionType) {

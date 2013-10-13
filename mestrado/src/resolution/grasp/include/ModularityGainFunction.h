@@ -20,7 +20,7 @@ typedef multi_array<double, 2> ModularityMatrix;
 
 class ModularityGainFunction: public resolution::grasp::GainFunction {
 public:
-	ModularityGainFunction(SignedGraph* g);
+	ModularityGainFunction(SignedGraph* g, const unsigned long& randomSeed);
 	virtual ~ModularityGainFunction();
 
 	virtual GainCalculation& gain(const int &a);

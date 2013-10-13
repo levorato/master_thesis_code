@@ -123,7 +123,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		ClusteringPtr c;
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
-		GainFunctionFactory functionFactory(g.get());
+		GainFunctionFactory functionFactory(g.get(), seed);
 		// medicao de tempo
 		boost::timer::cpu_timer timer;
 		timer.start();
@@ -439,7 +439,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 
 					// trigggers the local GRASP routine
-					GainFunctionFactory functionFactory(g.get());
+					GainFunctionFactory functionFactory(g.get(), seed);
 					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
 							imsgpg.l, imsgpg.firstImprovementOnOneNeig, problemFactory.build(imsgpg.problemType),

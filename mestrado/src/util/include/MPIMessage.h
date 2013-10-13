@@ -140,7 +140,7 @@ public:
 	unsigned long initialClusterIndex;
 	unsigned long finalClusterIndex;
 
-	InputMessageParallelVNS() : InputMessage(), clustering(),
+	InputMessageParallelVNS() : InputMessage(), clustering(1.0),
 			problemType(0), timeSpentSoFar(0.0), timeLimit(3600.0), initialClusterIndex(0),
 			finalClusterIndex(0) {
 
@@ -186,7 +186,7 @@ public:
 	Clustering clustering;
 
 
-	OutputMessage() : clustering() {
+	OutputMessage() : clustering(1.0) {
 
 	}
 

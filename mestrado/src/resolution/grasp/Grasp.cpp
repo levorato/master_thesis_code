@@ -175,21 +175,19 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 
 ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem& problem,
 		double alpha, int myRank) {
-	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
+	ClusteringPtr Cc = make_shared<Clustering>(alpha); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	BOOST_LOG_TRIVIAL(trace) << "GRASP construct clustering...\n";
 
 	while(lc.size() > 0) { // lc != empty
 		// cout << "Vertex list size is " << lc.size() << endl;
 
-		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-		// according to the value of the gain function
+		// 1. (Re)Compute L(Cc): every element of the VertexSet class (lc)
+		// has a destination cluster, according to the value of the gain function
 		gainFunction->calculateGainList(*(Cc.get()), lc.getVertexList());
-		lc.sort(gainFunction);
 
-		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
-		// (alpha x |lc|) is a rounded number
-		int i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
+		// 2. Choose i randomly among all the elements of lc
+		int i = lc.chooseRandomVertex(lc.size());
 		// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
 
 		// 3. Cc = C union {i}
