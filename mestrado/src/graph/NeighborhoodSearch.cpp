@@ -74,6 +74,7 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 						// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
 						cTemp->addNodeToCluster(*g, i, k2);
 						cTemp->removeNodeFromCluster(*g, i, k1);
+						numberOfTestedCombinations++;
 
 						// cTemp->printClustering();
 						Imbalance newImbalance = cTemp->getImbalance();
@@ -107,6 +108,7 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 				// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
 				cTemp->removeNodeFromCluster(*g, i, k1);
 				BoolArray cluster2 = cTemp->addCluster(*g, i);
+				numberOfTestedCombinations++;
 				// cTemp->printClustering();
 				Imbalance newImbalance = cTemp->getImbalance();
 				Imbalance bestImbalance = cBest->getImbalance();
@@ -314,6 +316,8 @@ ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Cluster
          // clustering->printClustering();
          ClusteringPtr cTemp = make_shared < Clustering > (*clustering);
          int nc = cTemp->getNumberOfClusters();
+	 // increments number of tested combinations
+	 numberOfTestedCombinations++;
          // the offset caused by cluster deletions
          // removes node i from cluster1 and inserts in cluster3
          // TODO check if the removal of node i destroys cluster1

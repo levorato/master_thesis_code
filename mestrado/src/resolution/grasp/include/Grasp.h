@@ -49,6 +49,8 @@ public:
 			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
 			const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
+	long getNumberOfTestedCombinations();
+
 protected:
 	/**
 	 * Constructs a clustering in a greedy ramdomized fashion,
@@ -121,6 +123,10 @@ protected:
 	 */
 	static const double timeMeasureInterval = 10.0;
 	double timeSum;
+	/**
+	 * Total number of tested combinations in GRASP local search.
+	 */
+	long numberOfTestedCombinations;
 	/** The best clustering found in all GRASP iterations. */
 	ClusteringPtr CBest, CBefore;
 };

@@ -34,6 +34,9 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig) {
 
+	// Resets the number of combinations tested on neighborhood search
+	numberOfTestedCombinations = 0;
+
 	// Splits the processing in (numberOfClusters / numberOfSearchSlaves) chunks,
 	// to be consumed by numberOfSearchSlaves processes
 	unsigned long sizeOfChunk = clustering->getNumberOfClusters() / numberOfSearchSlaves;
@@ -86,6 +89,9 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ": " <<
 					omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString()  << "\n";
 			// processes the result of the execution of process p(i)
+			// sums the number of tested combinations
+			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
+			// checks if the obj value improved
 			if(omsg.clustering.getImbalance().getValue() < bestValue) {
 				ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
 				bestClustering = clustering;

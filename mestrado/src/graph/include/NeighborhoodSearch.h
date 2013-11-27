@@ -27,7 +27,7 @@ namespace clusteringgraph {
 // Defines the neighborhood list
 class NeighborhoodSearch {
 public:
-        NeighborhoodSearch() {
+        NeighborhoodSearch() : numberOfTestedCombinations(0) {
 
         }
 
@@ -45,6 +45,9 @@ public:
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                         int myRank, bool firstImprovementOnOneNeig) = 0;
 
+	long getNumberOfTestedCombinations() {
+		return numberOfTestedCombinations;
+	}
 
 protected:
 
@@ -83,6 +86,9 @@ protected:
          */
         ClusteringPtr process2optCombination(SignedGraph& g, Clustering* clustering, int k1, int k2,
                         int k3, int k4, int n, int i, int j);
+
+	/* Number of tested combinations during neighborhood search */
+	long numberOfTestedCombinations;
 };
 
 } /* namespace clusteringgraph */

@@ -32,7 +32,7 @@ public:
 	static const int POSITIVE_NEGATIVE_MODULARITY_II = 4;
 	static const int POSITIVE_NEGATIVE_MODULARITY_III = 5;
 
-	GainFunction(SignedGraph* g, const unsigned long& randomSeed);
+	GainFunction(SignedGraph* g);
 	virtual ~GainFunction();
 
 	class GainFunctionComparison
@@ -50,24 +50,6 @@ public:
 					return function->gain(a).value < function->gain(b).value;
 				} else {
 					return function->gain(a).value > function->gain(b).value;
-				}
-			}
-	};
-
-	class GainCalculationComparison
-	{
-	private:
-	        bool ascendingOrder;
-	public:
-	        GainCalculationComparison(bool ascending) :
-			  ascendingOrder(ascending)
-			{   }
-
-			bool operator () ( const GainCalculation& a, const GainCalculation& b ) const {
-				if(ascendingOrder) {
-					return a.value < b.value;
-				} else {
-					return a.value > b.value;
 				}
 			}
 	};
@@ -92,8 +74,6 @@ protected:
 	SignedGraph* graph;
 	/** the map of nodes' gain value */
 	map<int, GainCalculation> gainMap;
-
-	unsigned long randomSeed;
 };
 
 } /* namespace grasp */

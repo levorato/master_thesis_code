@@ -17,7 +17,7 @@ namespace grasp {
 
 class PositiveNegativeModularityGainFunctionIII: public resolution::grasp::ModularityGainFunction {
 public:
-	PositiveNegativeModularityGainFunctionIII(SignedGraph* g, const unsigned long& randomSeed);
+	PositiveNegativeModularityGainFunctionIII(SignedGraph* g);
 	virtual ~PositiveNegativeModularityGainFunctionIII();
 
 	virtual int getType();

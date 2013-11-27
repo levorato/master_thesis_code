@@ -54,6 +54,9 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message received from process " << stat.source() << ": " <<
 				omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString();
 		// process the result of the execution of process i
+		// sums the total number of tested combinations
+		numberOfTestedCombinations += omsg.numberOfTestedCombinations;
+		// check if solution value has improved
 		if(omsg.clustering.getImbalance().getValue() < bestClustering->getImbalance().getValue()) {
 			ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
 			bestClustering.reset();

@@ -123,7 +123,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		ClusteringPtr c;
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
-		GainFunctionFactory functionFactory(g.get(), seed);
+		GainFunctionFactory functionFactory(g.get());
 		// medicao de tempo
 		boost::timer::cpu_timer timer;
 		timer.start();
@@ -439,7 +439,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 
 					// trigggers the local GRASP routine
-					GainFunctionFactory functionFactory(g.get(), seed);
+					GainFunctionFactory functionFactory(g.get());
 					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
 					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
 							imsgpg.l, imsgpg.firstImprovementOnOneNeig, problemFactory.build(imsgpg.problemType),
@@ -447,7 +447,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							imsgpg.numberOfSlaves, myRank, imsgpg.numberOfSearchSlaves);
 
 					// Sends the result back to the leader process
-					OutputMessage omsg(*bestClustering);
+					OutputMessage omsg(*bestClustering, resolution.getNumberOfTestedCombinations());
 					world.send(ParallelGrasp::LEADER_ID, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": GRASP Output Message sent to leader." << endl;
 
@@ -487,7 +487,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 					// Sends the result back to the leader process
 					int leader = stat.source();
-					OutputMessage omsg(*bestClustering);
+					OutputMessage omsg(*bestClustering, pnSearch.getNumberOfTestedCombinations());
 					world.send(leader, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VNS Output Message sent to grasp leader number "
 							<< leader << ". I(P) = " << bestClustering->getImbalance().getValue();

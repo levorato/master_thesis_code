@@ -140,7 +140,7 @@ public:
 	unsigned long initialClusterIndex;
 	unsigned long finalClusterIndex;
 
-	InputMessageParallelVNS() : InputMessage(), clustering(1.0),
+	InputMessageParallelVNS() : InputMessage(), clustering(),
 			problemType(0), timeSpentSoFar(0.0), timeLimit(3600.0), initialClusterIndex(0),
 			finalClusterIndex(0) {
 
@@ -184,13 +184,13 @@ class OutputMessage {
 public:
 	static const int TAG = 60;
 	Clustering clustering;
+	long numberOfTestedCombinations;
 
-
-	OutputMessage() : clustering(1.0) {
+	OutputMessage() : clustering() {
 
 	}
 
-	OutputMessage(Clustering &c) : clustering(c) {
+	OutputMessage(Clustering &c, long nc) : clustering(c), numberOfTestedCombinations(nc) {
 
 	}
 
@@ -199,6 +199,7 @@ public:
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & clustering;
+		ar & numberOfTestedCombinations;
 	}
 };
 

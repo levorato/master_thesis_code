@@ -17,6 +17,7 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig) {
 	unsigned long nc = clustering->getNumberOfClusters();
+	numberOfTestedCombinations = 0;
 	return SequentialNeighborhoodSearch::searchNeighborhood(l, g, clustering, problem,
 			timeSpentSoFar, timeLimit, randomSeed, myRank, 0, nc - 1, firstImprovementOnOneNeig);
 }

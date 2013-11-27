@@ -33,7 +33,8 @@ namespace resolution {
 namespace grasp {
 
 Grasp::Grasp(GainFunction* f, unsigned long seed) : timeSpentInGRASP(0.0),
-		gainFunction(f), randomSeed(seed), timeResults(), timeSum(0.0), CBest() {
+		gainFunction(f), randomSeed(seed), timeResults(), timeSum(0.0), CBest(), 
+		numberOfTestedCombinations(0) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -79,6 +80,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	stringstream iterationResults;
 	stringstream constructivePhaseResults;
 	int i = 0, totalIter = 0;
+	numberOfTestedCombinations = 0;
 
 	for (i = 0, totalIter = 0; i <= iter || iter < 0 ; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
 		BOOST_LOG_TRIVIAL(trace) << "GRASP iteration " << i;
@@ -155,7 +157,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			<< "," << CStar->getNumberOfClusters()
 			<< "," << (iterationValue+1)
 			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
-			<< "," << (totalIter+1) << endl;
+			<< "," << (totalIter+1) 
+			<< "," << numberOfTestedCombinations << endl;
 
 	constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << (initialImbalanceSum / (totalIter+1))
 			<< endl;
@@ -175,19 +178,21 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 
 ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem& problem,
 		double alpha, int myRank) {
-	ClusteringPtr Cc = make_shared<Clustering>(alpha); // Cc = empty
+	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	BOOST_LOG_TRIVIAL(trace) << "GRASP construct clustering...\n";
 
 	while(lc.size() > 0) { // lc != empty
 		// cout << "Vertex list size is " << lc.size() << endl;
 
-		// 1. (Re)Compute L(Cc): every element of the VertexSet class (lc)
-		// has a destination cluster, according to the value of the gain function
+		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
+		// according to the value of the gain function
 		gainFunction->calculateGainList(*(Cc.get()), lc.getVertexList());
+		lc.sort(gainFunction);
 
-		// 2. Choose i randomly among all the elements of lc
-		int i = lc.chooseRandomVertex(lc.size());
+		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
+		// (alpha x |lc|) is a rounded number
+		int i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
 		// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
 
 		// 3. Cc = C union {i}
@@ -236,10 +241,11 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		boost::timer::cpu_times start_time = timer.elapsed();
 
 		// N := Nl(C*)
-		// apply a local search in CStar using the k-neighborhood
-
+		// apply a local search in CStar using the k-neighborhood	
 		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
 				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig);
+		// sums the number of tested combinations on local search
+		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
 		if(Cl->getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error.";
 			break;
@@ -300,7 +306,7 @@ void Grasp::generateOutputFile(stringstream& fileContents, const string& rootFol
 		throw "Cannot open output file.";
 	}
 	// Writes the parameters to the output file
-	// Format: alpha,l,numberOfIterations
+	// Format: alpha,l,numberOfIterations,numberOfCombinations
 	os << std::setprecision(2) << alpha << "," << l << ","
 			<< numberOfIterations << "\n";
 	// Writes file contents to the output file
@@ -324,6 +330,10 @@ void Grasp::notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSe
 		CBest = CStar;
 		measureTimeResults(timeSpentOnLocalSearch, graspIteration);
 	}
+}
+
+long Grasp::getNumberOfTestedCombinations() {
+	return numberOfTestedCombinations;
 }
 
 } /* namespace grasp */

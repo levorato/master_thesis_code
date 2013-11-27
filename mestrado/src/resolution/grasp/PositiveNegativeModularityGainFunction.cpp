@@ -10,8 +10,8 @@
 namespace resolution {
 namespace grasp {
 
-PositiveNegativeModularityGainFunction::PositiveNegativeModularityGainFunction(SignedGraph* g, const unsigned long& s) :
-				ModularityGainFunction::ModularityGainFunction(g, s) {
+PositiveNegativeModularityGainFunction::PositiveNegativeModularityGainFunction(SignedGraph* g) :
+				ModularityGainFunction::ModularityGainFunction(g) {
 	// TODO Auto-generated constructor stub
 
 }
