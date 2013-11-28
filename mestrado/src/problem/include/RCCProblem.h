@@ -10,6 +10,7 @@
 
 #include "ClusteringProblem.h"
 #include "../../graph/include/Imbalance.h"
+#include "../../graph/include/Graph.h"
 
 using namespace clusteringgraph;
 
@@ -20,7 +21,14 @@ public:
 	RCCProblem();
 	virtual ~RCCProblem();
 
-	virtual Imbalance objectiveFunction(SignedGraph* g, Clustering *c) const;
+	virtual Imbalance objectiveFunction(SignedGraph& g, const ClusterList& c) const;
+
+	/**
+	 * Calculates the delta of the objective function caused by the
+	 * insertion of node i in cluster k.
+	 */
+	virtual Imbalance calculateDeltaObjectiveFunction(SignedGraph& g, const ClusterList& c,
+			const unsigned long& k, const unsigned long& i) const;
 
 	virtual int getType() const;
 };

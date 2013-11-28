@@ -26,7 +26,14 @@ int RCCProblem::getType() const {
 /**
  * Returns he Relaxed Imbalance of a partition P (RI(P)).
  */
-Imbalance RCCProblem::objectiveFunction(SignedGraph* g, Clustering *c) const {
+Imbalance RCCProblem::objectiveFunction(SignedGraph& g, const ClusterList& c) const {
+	cerr << "Unimplemented function called!!!n";
+	return Imbalance(0, 0);
+}
+
+// Calculates the delta of the objective function
+Imbalance RCCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, const ClusterList& c,
+		const unsigned long& k, const unsigned long& i) const {
 	cerr << "Unimplemented function called!!!n";
 	return Imbalance(0, 0);
 }

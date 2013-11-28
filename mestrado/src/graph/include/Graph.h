@@ -12,6 +12,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/dynamic_bitset.hpp>
+
+#include "../../util/serialization/dynamic_bitset.hpp"
 
 // Maximum number of nodes in a graph
 // #define MAX_NODES 200000
@@ -32,6 +35,17 @@ struct Vertex {
     Vertex(int w) : id(w) { }
 };
 typedef adjacency_list<vecS, vecS, bidirectionalS, Vertex, Edge, no_property, vecS > DirectedGraph;
+
+/**
+ *  uses dynamic_bitset for bool array, a high performance and space saving structure
+ *  based on real bits
+ *  the following array is initially empty and needs to be dynamically intialized.
+ */
+typedef dynamic_bitset<> BoolArray;
+
+// Defines the cluster list
+// the list is made of boolean arrays, indicating that node i is in the cluster
+typedef vector<BoolArray> ClusterList;
 
 class SignedGraph {
 public:

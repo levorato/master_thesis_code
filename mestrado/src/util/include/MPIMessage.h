@@ -149,7 +149,8 @@ public:
 	InputMessageParallelVNS(unsigned int i, int neig, string graphContents, Clustering c,
 			int pType, double timeSoFar, double tl, unsigned long startIdx,
 			unsigned long endIdx, unsigned int slaves, unsigned int searchSlaves) :
-			InputMessage(i, graphContents, neig, slaves, searchSlaves), clustering(c),
+			InputMessage(i, graphContents, neig, slaves, searchSlaves),
+			clustering(c),
 			problemType(pType), timeSpentSoFar(timeSoFar), timeLimit(tl),
 			initialClusterIndex(startIdx) , finalClusterIndex(endIdx) {
 

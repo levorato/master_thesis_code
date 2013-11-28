@@ -6,6 +6,7 @@
  */
 
 #include "include/Clustering.h"
+#include "../problem/include/ClusteringProblemFactory.h"
 #include "include/Graph.h"
 #include <limits>
 #include <iostream>
@@ -18,17 +19,18 @@
 
 using namespace std;
 using namespace boost;
+using namespace problem;
 
 namespace clusteringgraph {
 
 Clustering::Clustering() : clusterList(),
-		imbalance(0.0, 0.0) {
+		imbalance(0.0, 0.0), problemType(0) {
 
 }
 
 // TODO test dimension attribution
 Clustering::Clustering(const Clustering& clustering) :
-		clusterList(), imbalance(clustering.imbalance) {
+		clusterList(), imbalance(clustering.imbalance), problemType(clustering.problemType) {
 	// deep copy of the clusterlist data
 	for(unsigned long i = 0; i < clustering.clusterList.size(); i++) {
 		BoolArray boolArray = clustering.clusterList.at(i);
@@ -44,7 +46,7 @@ unsigned long Clustering::getNumberOfClusters() {
 	return this->clusterList.size();
 }
 
-BoolArray Clustering::addCluster(SignedGraph& g, const unsigned long& i) {
+BoolArray Clustering::addCluster(SignedGraph& g, const ClusteringProblem& p, const unsigned long& i) {
 	// 1. Create a new cluster in the list
 	BoolArray array(g.getN());
 
@@ -52,7 +54,7 @@ BoolArray Clustering::addCluster(SignedGraph& g, const unsigned long& i) {
 	// std::cout << "Adding vertex " << i << " to a new cluster."<< std::endl;
 	array[i] = true;
 	this->clusterList.push_back(array);
-	this->imbalance += calculateDeltaObjectiveFunction(g, array, i);
+	this->imbalance += p.calculateDeltaObjectiveFunction(g, clusterList, clusterList.size()-1, i);
 	return array;
 }
 
@@ -60,10 +62,10 @@ BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
 	return clusterList.at(clusterNumber);
 }
 
-void Clustering::addNodeToCluster(SignedGraph& g, unsigned long i, unsigned long k) {
+void Clustering::addNodeToCluster(SignedGraph& g, const ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
 	// std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
 	this->getCluster(k)[i] = true;
-	this->imbalance += calculateDeltaObjectiveFunction(g, this->getCluster(k), i);
+	this->imbalance += p.calculateDeltaObjectiveFunction(g, clusterList, k, i);
 }
 
 void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
@@ -77,11 +79,11 @@ unsigned long Clustering::clusterSize(unsigned long k) {
 	return this->getCluster(k).count();
 }
 
-void Clustering::removeNodeFromCluster(SignedGraph& g, unsigned long i, unsigned long k) {
+void Clustering::removeNodeFromCluster(SignedGraph& g, const ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
 	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
-	this->imbalance -= calculateDeltaObjectiveFunction(g, this->getCluster(k), i);
+	this->imbalance -= p.calculateDeltaObjectiveFunction(g, clusterList, k, i);
 	if(clusterSize(k) == 1) {
 		// cout << "Deleting cluster " << k << endl;
 		this->removeCluster(g, k);
@@ -129,82 +131,6 @@ bool Clustering::equals(Clustering& c) {
 		return true;
 	else
 		return false;
-}
-
-// Calculates the delta of the objective function
-Imbalance Clustering::calculateDeltaObjectiveFunction(SignedGraph& g, BoolArray& cluster, const unsigned long& i) {
-	double negativeSum = 0, positiveSum = 0;
-	// unsigned long n = g.getN();
-
-	// iterates over out-edges of vertex i
-	//typedef graph_traits<Graph> GraphTraits;
-	DirectedGraph::out_edge_iterator out_i, out_end;
-	DirectedGraph::edge_descriptor e;
-
-	// std::cout << "out-edges of " << i << ": ";
-	for (tie(out_i, out_end) = out_edges(i, g.graph); out_i != out_end; ++out_i) {
-		e = *out_i;
-		Vertex src = source(e, g.graph), targ = target(e, g.graph);
-		double weight = ((Edge*)out_i->get_property())->weight;
-		if(cluster[targ.id]) {
-			if(weight < 0) {
-				negativeSum += fabs(weight);
-			}
-		} else {
-			if(weight > 0) {
-				positiveSum += weight;
-			}
-		}
-		// std::cout << "(" << src.id << "," << targ.id << ") ";
-	}
-
-	// iterates over in-edges of vertex i
-	DirectedGraph::in_edge_iterator in_i, in_end;
-	// std::cout << "in-edges of " << i << ": ";
-	for (tie(in_i, in_end) = in_edges(i, g.graph); in_i != in_end; ++in_i) {
-		e = *in_i;
-		Vertex src = source(e, g.graph), targ = target(e, g.graph);
-		double weight = ((Edge*)in_i->get_property())->weight;
-		if(cluster[src.id]) {
-			if(weight < 0) {
-				negativeSum += fabs(weight);
-			}
-		} else {
-			if(weight > 0) {
-				positiveSum += weight;
-			}
-		}
-		// std::cout << "(" << src.id << "," << targ.id << ") ";
-	}
-
-/*
-	for(unsigned long b = 0; b < n; b++) {
-		if(b != i) {
-			if(cluster[b]) {
-				// nodes i and b are in the same cluster
-				// 1. calculates the change in the sum of internal
-				//    negative edges (within the same cluster)
-				if(g.isNegativeEdge(i, b)) {
-					negativeSum += fabs(g.getEdge(i, b));
-				}
-				if(g.isNegativeEdge(b, i)) {
-					negativeSum += fabs(g.getEdge(b, i));
-				}
-			} else {
-				// nodes i and b are in different clusters
-				// 2. calculates the change in the sum of external
-				//    positive edges (within different clusters)
-				if(g.isPositiveEdge(i, b)) {
-					positiveSum += g.getEdge(i, b);
-				}
-				if(g.isPositiveEdge(b, i)) {
-					positiveSum += g.getEdge(b, i);
-				}
-			}
-		}
-	}
-*/
-	return Imbalance(positiveSum, negativeSum);
 }
 
 } /* namespace clusteringgraph */

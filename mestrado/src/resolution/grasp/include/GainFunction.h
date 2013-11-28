@@ -10,6 +10,7 @@
 
 #include "../../../graph/include/Graph.h"
 #include "../../../graph/include/Clustering.h"
+#include "../../../problem/include/ClusteringProblem.h"
 
 #include <list>
 
@@ -61,7 +62,7 @@ public:
 	 */
 	virtual GainCalculation& gain(const int &a) = 0;
 
-	virtual void calculateGainList(Clustering &c, list<int>& nodeList) = 0;
+	virtual void calculateGainList(const ClusteringProblem& p, Clustering &c, list<int>& nodeList) = 0;
 
 	virtual GainFunctionComparison getComparator() {
 		return GainFunctionComparison(this, true);

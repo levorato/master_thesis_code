@@ -72,8 +72,8 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 						BoolArray cluster2 = cTemp->getCluster(k2);
 
 						// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
-						cTemp->addNodeToCluster(*g, i, k2);
-						cTemp->removeNodeFromCluster(*g, i, k1);
+						cTemp->addNodeToCluster(*g, problem, i, k2);
+						cTemp->removeNodeFromCluster(*g, problem, i, k1);
 						numberOfTestedCombinations++;
 
 						// cTemp->printClustering();
@@ -106,8 +106,8 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 				ClusteringPtr cTemp = make_shared < Clustering
 						> (*clustering);
 				// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
-				cTemp->removeNodeFromCluster(*g, i, k1);
-				BoolArray cluster2 = cTemp->addCluster(*g, i);
+				cTemp->removeNodeFromCluster(*g, problem, i, k1);
+				BoolArray cluster2 = cTemp->addCluster(*g, problem, i);
 				numberOfTestedCombinations++;
 				// cTemp->printClustering();
 				Imbalance newImbalance = cTemp->getImbalance();
@@ -191,7 +191,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 											// cluster(k4)
 											ClusteringPtr cTemp =
 													NeighborhoodSearch::process2optCombination(*g,
-															clustering, k1,
+															clustering, problem, k1,
 															k2, k3, k4, n,
 															i, j);
 											// cTemp->printClustering();
@@ -214,7 +214,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 									// cout << "Option 2" << endl;
 									ClusteringPtr cTemp =
 											NeighborhoodSearch::process2optCombination(*g,
-													clustering, k1, k2, k3,
+													clustering, problem, k1, k2, k3,
 													Clustering::NEW_CLUSTER,
 													n, i, j);
 									// cTemp->printClustering();
@@ -246,7 +246,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 									// cluster(k4)
 									ClusteringPtr cTemp =
 											NeighborhoodSearch::process2optCombination(*g,
-													clustering, k1, k2,
+													clustering, problem, k1, k2,
 													Clustering::NEW_CLUSTER,
 													k4, n, i, j);
 									// cTemp->printClustering();
@@ -273,7 +273,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 							// Option 4: nodes i and j are moved to new clusters, and left alone
 							// cout << "Option 4" << endl;
 							ClusteringPtr cTemp = NeighborhoodSearch::process2optCombination(*g,
-									clustering, k1, k2,
+									clustering, problem, k1, k2,
 									Clustering::NEW_CLUSTER,
 									Clustering::NEW_CLUSTER, n, i, j);
 							// cTemp->printClustering();
@@ -309,8 +309,8 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 	return cBest;
 }
 
-ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Clustering* clustering, int k1, int k2,
-                 int k3, int k4, int n, int i, int j) {
+ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Clustering* clustering,
+		const ClusteringProblem& problem, int k1, int k2, int k3, int k4, int n, int i, int j) {
 
          // cout << "2-opt-comb: " << k1 << ", " << k2 << ", " << k3 << ", " << k4 << ", " << i << ", " << j << endl;
          // clustering->printClustering();
@@ -322,7 +322,7 @@ ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Cluster
          // removes node i from cluster1 and inserts in cluster3
          // TODO check if the removal of node i destroys cluster1
          // cout << "k3" << endl;
-         cTemp->removeNodeFromCluster(g, i, k1);
+         cTemp->removeNodeFromCluster(g, problem, i, k1);
          // recalculates the number of clusters, as one of them may have been removed
          int newnc1 = cTemp->getNumberOfClusters();
          if(newnc1 < nc) {
@@ -333,14 +333,14 @@ ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Cluster
          }
          if (k3 > k1) {
                  // inserts i in existing cluster k3
-                 cTemp->addNodeToCluster(g, i, k3);
+                 cTemp->addNodeToCluster(g, problem, i, k3);
          } else {
                  // inserts i in a new cluster (alone)
-                 cTemp->addCluster(g, i);
+                 cTemp->addCluster(g, problem, i);
          }
          // cout << "k4" << endl;
          // removes node j from cluster2 and inserts in cluster4
-         cTemp->removeNodeFromCluster(g, j, k2);
+         cTemp->removeNodeFromCluster(g, problem, j, k2);
          int newnc2 = cTemp->getNumberOfClusters();
          if(newnc2 < newnc1) {
                  // cout << "cluster k2 has been removed" << endl;
@@ -349,10 +349,10 @@ ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Cluster
          // cout << "Node removed" << endl;
          if (k4 > k2) {
                  // inserts j in existing cluster k4
-                 cTemp->addNodeToCluster(g, j, k4);
+                 cTemp->addNodeToCluster(g, problem, j, k4);
          } else {
                  // inserts j in a new cluster (alone)
-                 cTemp->addCluster(g, j);
+                 cTemp->addCluster(g, problem, j);
          }
          // cout << "Return" << endl;
          return cTemp;

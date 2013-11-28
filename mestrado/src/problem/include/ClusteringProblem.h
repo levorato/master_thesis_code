@@ -8,7 +8,7 @@
 #ifndef CLUSTERINGPROBLEM_H_
 #define CLUSTERINGPROBLEM_H_
 
-#include "../../graph/include/Clustering.h"
+#include "../../graph/include/Graph.h"
 #include "../../graph/include/Imbalance.h"
 
 using namespace clusteringgraph;
@@ -22,7 +22,14 @@ public:
 	ClusteringProblem();
 	virtual ~ClusteringProblem();
 
-	virtual Imbalance objectiveFunction(SignedGraph* g, Clustering* c) const = 0;
+	virtual Imbalance objectiveFunction(SignedGraph& g, const ClusterList& c) const = 0;
+
+	/**
+	 * Calculates the delta of the objective function caused by the
+	 * insertion of node i in cluster k.
+	 */
+	virtual Imbalance calculateDeltaObjectiveFunction(SignedGraph& g, const ClusterList& c,
+			const unsigned long& k, const unsigned long& i) const = 0;
 
 	virtual int getType() const = 0;
 

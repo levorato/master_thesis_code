@@ -27,7 +27,7 @@ public:
 		} else if(problemType == ClusteringProblem::RCC_PROBLEM) {
 			return rccProblem;
 		}
-		cerr << "Unknown problem type to build!!! Returnin CC problem instance.\n";
+		cerr << "Unknown problem type to build!!! Returning CC problem instance.\n";
 		return ccProblem;
 	}
 };

@@ -6,7 +6,6 @@
  */
 
 #include "include/CCProblem.h"
-#include "../graph/include/Clustering.h"
 #include <cmath>
 #include <boost/log/trivial.hpp>
 
@@ -33,21 +32,23 @@ int CCProblem::getType() const {
  * The Imbalance of a partition P (I(P)) is defined as the total
  * weight of negative uncut arcs and positive cut arcs.
  */
-Imbalance CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
+Imbalance CCProblem::objectiveFunction(SignedGraph& g, const ClusterList& c) const {
 	double positiveSum = 0, negativeSum = 0;
-	int nc = c->getNumberOfClusters();
-	int n = g->getN();
+	int nc = c.size();
+	int n = g.getN();
+
+	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
 
 	// For each vertex i
 	for(int i = 0; i < n; i++) {
 		DirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			double weight = ((Edge*)f->get_property())->weight;
-			int j = target(*f, g->graph);
+			int j = target(*f, g.graph);
 			bool sameCluster = false;
 			for(int k = 0; k < nc; k++) {
-				BoolArray cluster = c->getCluster(k);
+				BoolArray cluster = c.at(k);
 				if(cluster[i] && cluster[j]) {
 					sameCluster = true;
 					break;
@@ -62,38 +63,57 @@ Imbalance CCProblem::objectiveFunction(SignedGraph* g, Clustering* c) const {
 			}
 		}
 	}
+	BOOST_LOG_TRIVIAL(trace) << "Valor calculado: " << (positiveSum + negativeSum) << endl;
+	return Imbalance(positiveSum, negativeSum);
+}
 
+// Calculates the delta of the objective function
+Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, const ClusterList& c,
+			const unsigned long& k, const unsigned long& i) const {
+	double negativeSum = 0, positiveSum = 0;
+	BoolArray cluster = c.at(k);
+	// unsigned long n = g.getN();
 
+	// iterates over out-edges of vertex i
+	//typedef graph_traits<Graph> GraphTraits;
+	DirectedGraph::out_edge_iterator out_i, out_end;
+	DirectedGraph::edge_descriptor e;
 
-	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
-	// c->printClustering();
-	// For each vertex i
-	/*
-	for(int i = 0; i < n; i++) {
-		// For each vertex j
-		for(int j = 0; j < n; j++) {
-			if(i != j) {
-				bool sameCluster = false;
-				for(int k = 0; k < nc; k++) {
-					BoolArray cluster = c->getCluster(k);
-					if(cluster[i] && cluster[j]) {
-						sameCluster = true;
-						break;
-					}
-				}
-				// cout <<  g->getEdge(i, j) << " " << sameCluster << " ";
-				if((g->isPositiveEdge(i, j)) && (not sameCluster)) {
-					// cout <<  g->getEdge(i, j) << " is pos edge.\n";
-					positiveSum += g->getEdge(i, j);
-				} else if((g->isNegativeEdge(i, j)) && sameCluster) {
-					// cout <<  g->getEdge(i, j) << " is neg edge.\n";
-					negativeSum += fabs(g->getEdge(i, j));
-				}
+	// std::cout << "out-edges of " << i << ": ";
+	for (tie(out_i, out_end) = out_edges(i, g.graph); out_i != out_end; ++out_i) {
+		e = *out_i;
+		Vertex src = source(e, g.graph), targ = target(e, g.graph);
+		double weight = ((Edge*)out_i->get_property())->weight;
+		if(cluster[targ.id]) {
+			if(weight < 0) {
+				negativeSum += fabs(weight);
+			}
+		} else {
+			if(weight > 0) {
+				positiveSum += weight;
 			}
 		}
+		// std::cout << "(" << src.id << "," << targ.id << ") ";
 	}
-*/
-	BOOST_LOG_TRIVIAL(trace) << "Valor calculado: " << (positiveSum + negativeSum) << endl;
+
+	// iterates over in-edges of vertex i
+	DirectedGraph::in_edge_iterator in_i, in_end;
+	// std::cout << "in-edges of " << i << ": ";
+	for (tie(in_i, in_end) = in_edges(i, g.graph); in_i != in_end; ++in_i) {
+		e = *in_i;
+		Vertex src = source(e, g.graph), targ = target(e, g.graph);
+		double weight = ((Edge*)in_i->get_property())->weight;
+		if(cluster[src.id]) {
+			if(weight < 0) {
+				negativeSum += fabs(weight);
+			}
+		} else {
+			if(weight > 0) {
+				positiveSum += weight;
+			}
+		}
+		// std::cout << "(" << src.id << "," << targ.id << ") ";
+	}
 	return Imbalance(positiveSum, negativeSum);
 }
 

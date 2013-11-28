@@ -187,7 +187,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 		// according to the value of the gain function
-		gainFunction->calculateGainList(*(Cc.get()), lc.getVertexList());
+		gainFunction->calculateGainList(problem, *(Cc.get()), lc.getVertexList());
 		lc.sort(gainFunction);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
@@ -202,10 +202,10 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		GainCalculation gainCalculation = gainFunction->gain(i);
 		if(gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
-			Cc->addCluster(*g, i);
+			Cc->addCluster(*g, problem, i);
 		} else {
 			// inserts i into existing cluster
-			Cc->addNodeToCluster(*g, i, gainCalculation.clusterNumber);
+			Cc->addNodeToCluster(*g, problem, i, gainCalculation.clusterNumber);
 		}
 
 		// 4. lc = lc - {i}
@@ -215,7 +215,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		// Cc->printClustering();
 	}
 	BOOST_LOG_TRIVIAL(trace) << myRank << ": Initial clustering completed.\n";
-	Cc->setImbalance(problem.objectiveFunction(g, Cc.get()));
+	Cc->setImbalance(problem.objectiveFunction(*g, Cc->getClusterList()));
 	// Cc->printClustering();
 	return Cc;
 }

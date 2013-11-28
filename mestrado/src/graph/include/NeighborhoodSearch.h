@@ -84,8 +84,9 @@ protected:
          * If parameter k3 == -1, inserts node i in a new cluster (alone).
          * If parameter k4 == -1, inserts node j in a new cluster (anlone).
          */
-        ClusteringPtr process2optCombination(SignedGraph& g, Clustering* clustering, int k1, int k2,
-                        int k3, int k4, int n, int i, int j);
+        ClusteringPtr process2optCombination(SignedGraph& g, Clustering* clustering,
+        		const ClusteringProblem& problem, int k1, int k2, int k3, int k4,
+        		int n, int i, int j);
 
 	/* Number of tested combinations during neighborhood search */
 	long numberOfTestedCombinations;

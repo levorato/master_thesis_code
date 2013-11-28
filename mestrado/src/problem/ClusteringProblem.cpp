@@ -10,7 +10,7 @@
 
 namespace problem {
 
-ClusteringProblem::ClusteringProblem() {
+ClusteringProblem::ClusteringProblem() : numberOfIterations(0) {
 	// TODO Auto-generated constructor stub
 
 }
