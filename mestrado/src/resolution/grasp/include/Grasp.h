@@ -49,7 +49,7 @@ public:
 			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
 			const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
-	long getNumberOfTestedCombinations();
+	unsigned long getNumberOfTestedCombinations();
 
 protected:
 	/**
@@ -85,7 +85,7 @@ protected:
 			const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
 	/**
-	 * TODO document this method
+	 * Generates CSV output file for GRASP local Search.
 	 */
 	void generateOutputFile(stringstream& fileContents, const string& rootFolder, const string& fileId, const string& timestamp,
 			const int &processNumber, const string& fileSuffix, const double& alpha, const int& l, const int& numberOfIterations);
@@ -126,7 +126,7 @@ protected:
 	/**
 	 * Total number of tested combinations in GRASP local search.
 	 */
-	long numberOfTestedCombinations;
+	unsigned long numberOfTestedCombinations;
 	/** The best clustering found in all GRASP iterations. */
 	ClusteringPtr CBest, CBefore;
 };

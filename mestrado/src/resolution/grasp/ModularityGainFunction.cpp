@@ -69,7 +69,7 @@ void ModularityGainFunction::calculateGainList(const ClusteringProblem &p, Clust
 
 		// For each cluster k...
 		int nc = c.getNumberOfClusters();
-		for(int k = 0; k < nc; k++) {
+		for(unsigned long k = 0; k < nc; k++) {
 				double sum = 0.0;
 				// Cluster(k)
 				BoolArray cluster = c.getCluster(k);

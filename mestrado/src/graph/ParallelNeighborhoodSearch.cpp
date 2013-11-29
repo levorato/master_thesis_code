@@ -32,7 +32,8 @@ ParallelNeighborhoodSearch::~ParallelNeighborhoodSearch() {
 
 ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
-		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig) {
+		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig,
+		unsigned long k) {
 
 	// Resets the number of combinations tested on neighborhood search
 	numberOfTestedCombinations = 0;
@@ -59,8 +60,8 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 		for(cont = 0; i < lastSlave; i++, cont++) {
 			InputMessageParallelVNS imsgpvns(g->getId(), l, g->getGraphAsText(), *clustering, problem.getType(),
 					timeSpentSoFar, timeLimit, cont * sizeOfChunk, (cont + 1) * sizeOfChunk - 1, numberOfSlaves,
-					numberOfSearchSlaves);
-			world.send(i, ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
+					numberOfSearchSlaves, k);
+			world.send(i, MPIMessage::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
 			BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk
 					<< ", " << (cont + 1) * sizeOfChunk - 1 << "]" << endl;
 		}
@@ -76,7 +77,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	if(remainingClusters > 0) {
 		bestClustering = this->searchNeighborhood(l, g, clustering,
 				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
-				cont * sizeOfChunk, cont * sizeOfChunk + remainingClusters - 1, false);
+				cont * sizeOfChunk, cont * sizeOfChunk + remainingClusters - 1, false, k);
 		bestValue = bestClustering->getImbalance().getValue();
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
@@ -85,7 +86,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	if(sizeOfChunk > 0) {
 		OutputMessage omsg;
 		for(i = firstSlave; i < lastSlave; i++) {
-			mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
+			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ": " <<
 					omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString()  << "\n";
 			// processes the result of the execution of process p(i)
@@ -102,16 +103,16 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 				// terminate other slaves' VNS search if 2-opt
 				if(l == 2) {
 					InputMessageParallelVNS imsg;
-					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] First improvement on 2-opt: killing VNS slaves "
+					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] First improvement on 2-opt: interrupting other VNS slaves "
 							<< firstSlave << " to " << (lastSlave - 1);
 					for(int pj = firstSlave; pj < lastSlave; pj++) {
-						world.send(pj, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg);
+						world.send(pj, MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg);
 					}
 				}
 			}
 		}
 	}
-	BOOST_LOG_TRIVIAL(debug) << "[Parallel VNS] Best solution found: I(P) = " << bestClustering->getImbalance().getValue() << endl;
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel VNS] Best solution found: Obj = " << bestClustering->getImbalance().getValue() << endl;
 	bestClustering->printClustering();
 	return bestClustering;
 }
@@ -119,7 +120,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialClusterIndex,
-		unsigned long finalClusterIndex, bool firstImprovementOnOneNeig) {
+		unsigned long finalClusterIndex, bool firstImprovementOnOneNeig, unsigned long k) {
 
 	assert(initialClusterIndex < clustering->getNumberOfClusters());
 	assert(finalClusterIndex < clustering->getNumberOfClusters());
@@ -128,12 +129,12 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 		// Parallel search always does best improvement in 1-opt
 		// Therefore, parameter firstImprovementOnOneNeig is ignored
 		return this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
-				myRank, initialClusterIndex, finalClusterIndex, false);
+				myRank, initialClusterIndex, finalClusterIndex, false, k);
 	} else {  // 2-opt
 		// TODO implement global first improvement in parallel 2-opt
 		// first improvement found in one process must break all other processes' loop
 		return this->search2opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
-				myRank, initialClusterIndex, finalClusterIndex, true);
+				myRank, initialClusterIndex, finalClusterIndex, true, k);
 	}
 }
 

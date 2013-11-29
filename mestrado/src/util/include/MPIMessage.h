@@ -139,20 +139,21 @@ public:
 	double timeLimit;
 	unsigned long initialClusterIndex;
 	unsigned long finalClusterIndex;
+	unsigned long k; /* number of max clusters (RCC Problem only) */
 
 	InputMessageParallelVNS() : InputMessage(), clustering(),
 			problemType(0), timeSpentSoFar(0.0), timeLimit(3600.0), initialClusterIndex(0),
-			finalClusterIndex(0) {
+			finalClusterIndex(0), k(0) {
 
 	}
 
 	InputMessageParallelVNS(unsigned int i, int neig, string graphContents, Clustering c,
 			int pType, double timeSoFar, double tl, unsigned long startIdx,
-			unsigned long endIdx, unsigned int slaves, unsigned int searchSlaves) :
+			unsigned long endIdx, unsigned int slaves, unsigned int searchSlaves, unsigned long _k) :
 			InputMessage(i, graphContents, neig, slaves, searchSlaves),
 			clustering(c),
 			problemType(pType), timeSpentSoFar(timeSoFar), timeLimit(tl),
-			initialClusterIndex(startIdx) , finalClusterIndex(endIdx) {
+			initialClusterIndex(startIdx) , finalClusterIndex(endIdx), k(_k) {
 
 	}
 
@@ -176,6 +177,7 @@ public:
 		ar & timeLimit;
 		ar & initialClusterIndex;
 		ar & finalClusterIndex;
+		ar & k;
 	}
 };
 
@@ -187,7 +189,7 @@ public:
 	Clustering clustering;
 	long numberOfTestedCombinations;
 
-	OutputMessage() : clustering() {
+	OutputMessage() : clustering(), numberOfTestedCombinations(0) {
 
 	}
 
@@ -206,6 +208,19 @@ public:
 
 class MPIMessage {
 public:
+	// Message with the number of grasp slaves
+	static const int INPUT_MSG_NUM_SLAVES_TAG = 40;
+	// Parallel Grasp message tag
+	static const int INPUT_MSG_PARALLEL_GRASP_TAG = 50;
+	static const int OUTPUT_MSG_PARALLEL_GRASP_TAG = 60;
+	// Parallel VNS message tag
+	static const int INPUT_MSG_PARALLEL_VNS_TAG = 70;
+	static const int OUTPUT_MSG_PARALLEL_VNS_TAG = 80;
+	static const int INTERRUPT_MSG_PARALLEL_VNS_TAG = 85;
+	// Other tags
+	static const int TERMINATE_MSG_TAG = 90;
+	static const int LEADER_ID = 0;
+
 	MPIMessage();
 	virtual ~MPIMessage();
 };

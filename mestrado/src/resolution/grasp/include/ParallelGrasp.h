@@ -18,19 +18,6 @@ namespace grasp {
 
 class ParallelGrasp : resolution::grasp::Grasp {
 public:
-	// Message with the number of grasp slaves
-	static const int INPUT_MSG_NUM_SLAVES_TAG = 40;
-	// Parallel Grasp message tag
-	static const int INPUT_MSG_PARALLEL_GRASP_TAG = 50;
-	static const int OUTPUT_MSG_PARALLEL_GRASP_TAG = 60;
-	// Parallel VNS message tag
-	static const int INPUT_MSG_PARALLEL_VNS_TAG = 70;
-	static const int OUTPUT_MSG_PARALLEL_VNS_TAG = 80;
-	static const int INTERRUPT_MSG_PARALLEL_VNS_TAG = 85;
-	// Other tags
-	static const int TERMINATE_MSG_TAG = 90;
-	static const int LEADER_ID = 0;
-
 	ParallelGrasp(GainFunction* f, unsigned long seed);
 	virtual ~ParallelGrasp();
 

@@ -38,7 +38,7 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphAsText(), iter, alpha, l,
 				problem.getType(), gainFunction->getType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
-		world.send(i, INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
+		world.send(i, MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message sent to process " << i;
 	}
 	// the leader does its part of the work
@@ -50,7 +50,7 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	// the leader receives the processing results
 	OutputMessage omsg;
 	for(int i = 1; i <= numberOfSlaves; i++) {
-		mpi::status stat = world.recv(mpi::any_source, OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
+		mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message received from process " << stat.source() << ": " <<
 				omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString();
 		// process the result of the execution of process i

@@ -47,7 +47,7 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, const ClusterList& c) con
 			double weight = ((Edge*)f->get_property())->weight;
 			int j = target(*f, g.graph);
 			bool sameCluster = false;
-			for(int k = 0; k < nc; k++) {
+			for(unsigned long k = 0; k < nc; k++) {
 				BoolArray cluster = c.at(k);
 				if(cluster[i] && cluster[j]) {
 					sameCluster = true;

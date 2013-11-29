@@ -34,7 +34,7 @@ void ImbalanceGainFunction::calculateGainList(const ClusteringProblem &p, Cluste
 
 		// For each cluster k...
 		int nc = c.getNumberOfClusters();
-		for(int k = 0; k < nc; k++) {
+		for(unsigned long k = 0; k < nc; k++) {
 			// cout << "Cluster " << k << endl;
 			Imbalance delta = p.calculateDeltaObjectiveFunction(*graph, c.getClusterList(), k, a);
 			if(delta.getValue() < min) {

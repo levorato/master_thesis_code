@@ -23,10 +23,10 @@ using namespace util;
 
 // probes for mpi VNS interrupt message (first improvement from other node) and returns if it exists
 #define MPI_IPROBE_RETURN(ret_val) \
-optional< mpi::status > stat = world.iprobe(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG); \
+optional< mpi::status > stat = world.iprobe(mpi::any_source, MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG); \
 if (stat) { \
 	InputMessageParallelVNS imsg; \
-	mpi::status stat = world.recv(mpi::any_source, ParallelGrasp::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg); \
+	mpi::status stat = world.recv(mpi::any_source, MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg); \
 	BOOST_LOG_TRIVIAL(trace) << "VNS interrupt message received."; \
     return ret_val; }
 
@@ -37,7 +37,7 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
                 Clustering* clustering, const ClusteringProblem& problem,
                 double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                 int myRank, unsigned long initialClusterIndex,
-        		unsigned long finalClusterIndex, bool firstImprovement) {
+        		unsigned long finalClusterIndex, bool firstImprovement, unsigned long k) {
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
 	timer.start();
@@ -103,22 +103,25 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 				// Option 2: node i is moved to a new cluster, alone
 				// removes node i from cluster1 and inserts in newCluster
 				// cout << "New clustering combination generated." << endl;
-				ClusteringPtr cTemp = make_shared < Clustering
-						> (*clustering);
-				// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
-				cTemp->removeNodeFromCluster(*g, problem, i, k1);
-				BoolArray cluster2 = cTemp->addCluster(*g, problem, i);
-				numberOfTestedCombinations++;
-				// cTemp->printClustering();
-				Imbalance newImbalance = cTemp->getImbalance();
-				Imbalance bestImbalance = cBest->getImbalance();
-				if (newImbalance < bestImbalance) {
-					// cout << "Better solution found in 1-neighborhood: " << setprecision(2) << objective << "\n";
-					// First improvement for 1-opt neighborhood
-					cBest.reset();
-					cBest = cTemp;
-					if(firstImprovement) {
-						return cBest;
+				if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
+						( (problem.getType() == ClusteringProblem::RCC_PROBLEM) && (clustering->getNumberOfClusters() < k) )) {
+					ClusteringPtr cTemp = make_shared < Clustering
+							> (*clustering);
+					// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
+					cTemp->removeNodeFromCluster(*g, problem, i, k1);
+					BoolArray cluster2 = cTemp->addCluster(*g, problem, i);
+					numberOfTestedCombinations++;
+					// cTemp->printClustering();
+					Imbalance newImbalance = cTemp->getImbalance();
+					Imbalance bestImbalance = cBest->getImbalance();
+					if (newImbalance < bestImbalance) {
+						// cout << "Better solution found in 1-neighborhood: " << setprecision(2) << objective << "\n";
+						// First improvement for 1-opt neighborhood
+						cBest.reset();
+						cBest = cTemp;
+						if(firstImprovement) {
+							return cBest;
+						}
 					}
 				}
 			}
@@ -138,7 +141,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
         Clustering* clustering, const ClusteringProblem& problem,
         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
         int myRank, unsigned long initialClusterIndex,
-		unsigned long finalClusterIndex, bool firstImprovement) {
+		unsigned long finalClusterIndex, bool firstImprovement, unsigned long k) {
 
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
@@ -185,7 +188,6 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 									// Option 1: node i is moved to another existing cluster k3 and
 									//           node j is moved to another existing cluster k4
 									// cout << "Option 1" << endl;
-									// TODO colocar laço aleatorio aqui! Verificar com o Yuri
 									for (unsigned long k4 = k3 + 1; k4 < totalNumberOfClusters; k4++) {
 										if (k2 != k4) {
 											// cluster(k4)
@@ -211,20 +213,24 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 										}
 									}
 									// Option 2: node j is moved to a new cluster, alone
-									// cout << "Option 2" << endl;
-									ClusteringPtr cTemp =
-											NeighborhoodSearch::process2optCombination(*g,
-													clustering, problem, k1, k2, k3,
-													Clustering::NEW_CLUSTER,
-													n, i, j);
-									// cTemp->printClustering();
-									Imbalance newImbalance = cTemp->getImbalance();
-									if (newImbalance < bestImbalance) {
-										// cout << "Better solution found in 2-neighborhood." << endl;
-										cBest.reset();
-										cBest = cTemp;
-										if(firstImprovement) {
-											return cBest;
+									if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
+															( (problem.getType() == ClusteringProblem::RCC_PROBLEM)
+																	&& (clustering->getNumberOfClusters() < k) )) {
+										// cout << "Option 2" << endl;
+										ClusteringPtr cTemp =
+												NeighborhoodSearch::process2optCombination(*g,
+														clustering, problem, k1, k2, k3,
+														Clustering::NEW_CLUSTER,
+														n, i, j);
+										// cTemp->printClustering();
+										Imbalance newImbalance = cTemp->getImbalance();
+										if (newImbalance < bestImbalance) {
+											// cout << "Better solution found in 2-neighborhood." << endl;
+											cBest.reset();
+											cBest = cTemp;
+											if(firstImprovement) {
+												return cBest;
+											}
 										}
 									}
 								}
@@ -240,50 +246,58 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 							}
 							// Option 3: node i is moved to a new cluster, alone, and
 							//           node j is moved to another existing cluster k4
-							// cout << "Option 3" << endl;
-							for (unsigned long k4 = uninc(), contk4 = 0; contk4 < numberOfClustersInInterval; contk4++) {
-								if (k2 != k4) {
-									// cluster(k4)
-									ClusteringPtr cTemp =
-											NeighborhoodSearch::process2optCombination(*g,
-													clustering, problem, k1, k2,
-													Clustering::NEW_CLUSTER,
-													k4, n, i, j);
-									// cTemp->printClustering();
-									Imbalance newImbalance = cTemp->getImbalance();
-									if (newImbalance < bestImbalance) {
-										// cout << "Better solution found in 2-neighborhood." << endl;
-										cBest.reset();
-										cBest = cTemp;
-										if(firstImprovement) {
-											return cBest;
+							if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
+									( (problem.getType() == ClusteringProblem::RCC_PROBLEM)
+											&& (clustering->getNumberOfClusters() < k) )) {
+								// cout << "Option 3" << endl;
+								for (unsigned long k4 = uninc(), contk4 = 0; contk4 < numberOfClustersInInterval; contk4++) {
+									if (k2 != k4) {
+										// cluster(k4)
+										ClusteringPtr cTemp =
+												NeighborhoodSearch::process2optCombination(*g,
+														clustering, problem, k1, k2,
+														Clustering::NEW_CLUSTER,
+														k4, n, i, j);
+										// cTemp->printClustering();
+										Imbalance newImbalance = cTemp->getImbalance();
+										if (newImbalance < bestImbalance) {
+											// cout << "Better solution found in 2-neighborhood." << endl;
+											cBest.reset();
+											cBest = cTemp;
+											if(firstImprovement) {
+												return cBest;
+											}
 										}
 									}
-								}
-								// return if time limit is exceeded
-								boost::timer::cpu_times end_time = timer.elapsed();
-								double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-								if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
-								// increment rule
-								k4++;
-								if(k4 >= totalNumberOfClusters) {
-									k4 = 0;
+									// return if time limit is exceeded
+									boost::timer::cpu_times end_time = timer.elapsed();
+									double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+									if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
+									// increment rule
+									k4++;
+									if(k4 >= totalNumberOfClusters) {
+										k4 = 0;
+									}
 								}
 							}
-							// Option 4: nodes i and j are moved to new clusters, and left alone
-							// cout << "Option 4" << endl;
-							ClusteringPtr cTemp = NeighborhoodSearch::process2optCombination(*g,
-									clustering, problem, k1, k2,
-									Clustering::NEW_CLUSTER,
-									Clustering::NEW_CLUSTER, n, i, j);
-							// cTemp->printClustering();
-							Imbalance newImbalance = cTemp->getImbalance();
-							if (newImbalance < bestImbalance) {
-								// cout << "Better solution found in 2-neighborhood." << endl;
-								cBest.reset();
-								cBest = cTemp;
-								if(firstImprovement) {
-									return cBest;
+							// Option 4: nodes i and j are moved to 2 new clusters, and left alone
+							if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
+									( (problem.getType() == ClusteringProblem::RCC_PROBLEM)
+											&& (clustering->getNumberOfClusters() + 2 <= k) )) {
+								// cout << "Option 4" << endl;
+								ClusteringPtr cTemp = NeighborhoodSearch::process2optCombination(*g,
+										clustering, problem, k1, k2,
+										Clustering::NEW_CLUSTER,
+										Clustering::NEW_CLUSTER, n, i, j);
+								// cTemp->printClustering();
+								Imbalance newImbalance = cTemp->getImbalance();
+								if (newImbalance < bestImbalance) {
+									// cout << "Better solution found in 2-neighborhood." << endl;
+									cBest.reset();
+									cBest = cTemp;
+									if(firstImprovement) {
+										return cBest;
+									}
 								}
 							}
 							// return if time limit is exceeded

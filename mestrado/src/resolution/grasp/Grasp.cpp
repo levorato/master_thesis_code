@@ -243,7 +243,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood	
 		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
-				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig);
+				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, 0);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
 		if(Cl->getImbalance().getValue() < 0.0) {
@@ -332,7 +332,7 @@ void Grasp::notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSe
 	}
 }
 
-long Grasp::getNumberOfTestedCombinations() {
+unsigned long Grasp::getNumberOfTestedCombinations() {
 	return numberOfTestedCombinations;
 }
 

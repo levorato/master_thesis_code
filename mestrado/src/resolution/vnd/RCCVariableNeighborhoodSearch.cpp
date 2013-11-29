@@ -2,10 +2,10 @@
  * RCCLocalSearch.cpp
  *
  *  Created on: 28/11/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
-#include "include/RCCLocalSearch.h"
+#include "include/RCCVariableNeighborhoodSearch.h"
 #include "../../graph/include/SequentialNeighborhoodSearch.h"
 #include "../../graph/include/ParallelNeighborhoodSearch.h"
 #include "../../problem/include/ClusteringProblem.h"
@@ -30,58 +30,55 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace vnd {
 
-RCCLocalSearch::RCCLocalSearch() : timeResults(), randomSeed(seed), timeSum(0.0), timeSpentInSearch(0.0)
-		numberOfTestedCombinations(0) {
+RCCVariableNeighborhoodSearch::RCCVariableNeighborhoodSearch(unsigned long seed) : timeResults(),
+		randomSeed(seed), timeSum(0.0), timeSpentInSearch(0.0),	numberOfTestedCombinations(0) {
 	// TODO Auto-generated constructor stub
 
 }
 
-RCCLocalSearch::~RCCLocalSearch() {
+RCCVariableNeighborhoodSearch::~RCCVariableNeighborhoodSearch() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr RCCLocalSearch::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const int& graspIteration,
-		const bool& firstImprovementOnOneNeig, const ClusteringProblem& problem,
-		NeighborhoodSearch &neig, const long& timeLimit, const int &numberOfSlaves,
-		const int& myRank, const int& numberOfSearchSlaves) {
-	// k is the current neighborhood distance in the local search
-	int k = 1, iteration = 0;
+ClusteringPtr RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clustering& Cc, const int &l,
+		const long unsigned int& k, const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
+		NeighborhoodSearch &neig, string& executionId, string& fileId, string& outputFolder,
+		const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves) {
+	// neighborhoodSize is the current neighborhood distance in the local search
+	int neighborhoodSize = 1, iteration = 0;
 	ClusteringPtr CStar = make_shared<Clustering>(Cc); // C* := Cc
 
 	double timeSpentOnLocalSearch = 0.0;
-	BOOST_LOG_TRIVIAL(trace) << "GRASP local search...\n";
-	BOOST_LOG_TRIVIAL(trace) << "Current neighborhood is " << k << endl;
+	BOOST_LOG_TRIVIAL(trace) << "RCC local search...\n";
+	BOOST_LOG_TRIVIAL(trace) << "Current neighborhood size is " << neighborhoodSize << endl;
 
-	while(k <= l && (timeSpentInSearch + timeSpentOnLocalSearch < timeLimit)) {
-		// cout << "Local search iteration " << iteration << endl;
+	while(neighborhoodSize <= l && (timeSpentInSearch + timeSpentOnLocalSearch < timeLimit)) {
 		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
 
 		// N := Nl(C*)
-		// apply a local search in CStar using the k-neighborhood
-		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
-				timeSpentInSearch + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig);
+		// apply a local search in CStar using the neighborhoodSize
+		ClusteringPtr Cl = neig.searchNeighborhood(neighborhoodSize, g, CStar.get(), problem,
+				timeSpentInSearch + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, k);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
+		// sanity check for obj function value
 		if(Cl->getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error.";
 			break;
 		}
-		// cout << "Comparing local solution value." << endl;
 		Imbalance il = Cl->getImbalance();
 		Imbalance ic = CStar->getImbalance();
 		if(il < ic) {
-			BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
-			// Cl->printClustering();
+			BOOST_LOG_TRIVIAL(trace) << myRank << ": New RCC solution found: " << setprecision(2) << il.getValue() << endl;
 			CStar.reset();
 			CStar = Cl;
-			k = 1;
+			neighborhoodSize = 1;
 		} else {  // no better result found in neighborhood
-			k++;
-			BOOST_LOG_TRIVIAL(trace) << "Changed to neighborhood size l = " << k;
+			neighborhoodSize++;
+			BOOST_LOG_TRIVIAL(trace) << "RCC Search: Changed to neighborhood size l = " << neighborhoodSize;
 		}
 		iteration++;
 
@@ -91,15 +88,32 @@ ClusteringPtr RCCLocalSearch::localSearch(SignedGraph *g, Clustering& Cc, const 
 		timeSpentOnLocalSearch += (end_time.wall - start_time.wall) / double(1000000000);
 
 		// Registers the best result at time intervals
-		notifyNewValue(CStar, timeSpentOnLocalSearch, graspIteration);
+		notifyNewValue(CStar, timeSpentOnLocalSearch, iteration);
 	}
-	BOOST_LOG_TRIVIAL(trace) << "GRASP local search done.\n";
+	stringstream iterationResults;
+	iterationResults << "Best value," << fixed << setprecision(4) << CStar->getImbalance().getValue()
+			<< "," << CStar->getImbalance().getPositiveValue()
+			<< "," << CStar->getImbalance().getNegativeValue()
+			<< setprecision(0)
+			<< "," << CStar->getNumberOfClusters()
+			<< "," << fixed << setprecision(4) << timeSpentInSearch
+			<< "," << (iteration+1)
+			<< "," << numberOfTestedCombinations << endl;
+
+	// CStar->printClustering();
+	CStar->printClustering(iterationResults);
+	generateOutputFile(iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), k, l);
+	// saves the best result to output time file
+	measureTimeResults(0.0, iteration);
+	generateOutputFile(timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), k, l);
+
+	BOOST_LOG_TRIVIAL(trace) << "RCC VNS done.\n";
 	return CStar;
 }
 
-void RCCLocalSearch::generateOutputFile(stringstream& fileContents, const string& rootFolder,
+void RCCVariableNeighborhoodSearch::generateOutputFile(stringstream& fileContents, const string& rootFolder,
 		const string& fileId, const string& executionId, const int &processNumber, const string& fileSuffix,
-		const double& alpha, const int& l, const int& numberOfIterations) {
+		const unsigned int& k, const int& l) {
 	namespace fs = boost::filesystem;
 	// Creates the output file (with the results of the execution)
 	if (!fs::exists(fs::path(rootFolder))) {
@@ -116,8 +130,8 @@ void RCCLocalSearch::generateOutputFile(stringstream& fileContents, const string
 	}
 	stringstream filename;
 	filename << outputFolder << fileId << "/" << executionId << "/"
-			<< "Node" << processNumber << "-l" << l << "a" << std::setprecision(2)
-			<< alpha << "-" << fileSuffix << ".csv";
+			<< "RCC-Node" << processNumber << "-l" << l << "-k"
+			<< k << "-" << fileSuffix << ".csv";
 	fs::path newFile(filename.str());
 	ofstream os;
 	os.open(newFile.c_str(), ios::out | ios::trunc);
@@ -126,33 +140,32 @@ void RCCLocalSearch::generateOutputFile(stringstream& fileContents, const string
 		throw "Cannot open output file.";
 	}
 	// Writes the parameters to the output file
-	// Format: alpha,l,numberOfIterations,numberOfCombinations
-	os << std::setprecision(2) << alpha << "," << l << ","
-			<< numberOfIterations << "\n";
+	// Format: k,l,numberOfIterations,numberOfCombinations
+	os << std::setprecision(2) << k << "," << l << "\n";
 	// Writes file contents to the output file
 	os << fileContents.str();
 
 	os.close();
 }
 
-void RCCLocalSearch::measureTimeResults(const double& timeSpentOnLocalSearch, const int& graspIteration) {
+void RCCVariableNeighborhoodSearch::measureTimeResults(const double& timeSpentOnLocalSearch, const int& iteration) {
 	Imbalance imbalance = CBest->getImbalance();
 	timeResults << fixed << setprecision(4) << (timeSpentInSearch + timeSpentOnLocalSearch) << "," << imbalance.getValue()
 			<< "," << imbalance.getPositiveValue()
 			<< "," << imbalance.getNegativeValue() << "," << CBest->getNumberOfClusters()
-			<< "," << (graspIteration+1) << "\n";
+			<< "," << (iteration+1) << "\n";
 }
 
-void RCCLocalSearch::notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& graspIteration) {
+void RCCVariableNeighborhoodSearch::notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& iteration) {
 	Imbalance i1 = CStar->getImbalance();
 	Imbalance i2 = CBest->getImbalance();
 	if(i1 < i2) {
 		CBest = CStar;
-		measureTimeResults(timeSpentOnLocalSearch, graspIteration);
+		measureTimeResults(timeSpentOnLocalSearch, iteration);
 	}
 }
 
-long RCCLocalSearch::getNumberOfTestedCombinations() {
+unsigned long RCCVariableNeighborhoodSearch::getNumberOfTestedCombinations() {
 	return numberOfTestedCombinations;
 }
 

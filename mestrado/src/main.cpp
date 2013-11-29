@@ -20,6 +20,8 @@ int main(int ac, char* av[])
 	mpi::environment env(ac, av);
 	mpi::communicator world;
 
+	cout << "init" << endl;
+
 	CommandLineInterfaceController controller;
 	int return_value = controller.processArgumentsAndExecute(ac, av, world.rank(), world.size());
 

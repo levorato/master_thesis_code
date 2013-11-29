@@ -43,7 +43,7 @@ public:
         virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
                         Clustering* clustering, const ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-                        int myRank, bool firstImprovementOnOneNeig) = 0;
+                        int myRank, bool firstImprovementOnOneNeig, unsigned long k) = 0;
 
 	long getNumberOfTestedCombinations() {
 		return numberOfTestedCombinations;
@@ -57,24 +57,25 @@ protected:
     	 * and adding it to any other cluster available (and also a new cluster). In the case
     	 * of 2-opt, the initial and final cluster indices only apply to the first vertex in
     	 * the search (not the second one).
+    	 * @param k the maximum number of clusters of RCC Problem (optional).
     	 */
     	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
     					Clustering* clustering, const ClusteringProblem& problem,
     					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
     					int myRank,	unsigned long initialClusterIndex, unsigned long finalClusterIndex,
-    					bool firstImprovementOnOneNeig) = 0;
+    					bool firstImprovementOnOneNeig, unsigned long k) = 0;
 
         virtual ClusteringPtr search1opt(SignedGraph* g,
                         Clustering* clustering, const ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                         int myRank, unsigned long initialClusterIndex,
-                		unsigned long finalClusterIndex, bool firstImprovement);
+                		unsigned long finalClusterIndex, bool firstImprovement, unsigned long k);
 
 		virtual ClusteringPtr search2opt(SignedGraph* g,
 						Clustering* clustering, const ClusteringProblem& problem,
 						double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 						int myRank, unsigned long initialClusterIndex,
-						unsigned long finalClusterIndex, bool firstImprovement);
+						unsigned long finalClusterIndex, bool firstImprovement, unsigned long k);
 
         /**
          * Generates a new cluster by swithcing the node i from cluster k1 to k3, and
