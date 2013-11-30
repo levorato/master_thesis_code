@@ -74,6 +74,10 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 						// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
 						cTemp->addNodeToCluster(*g, problem, i, k2);
 						cTemp->removeNodeFromCluster(*g, problem, i, k1);
+						// Full recalculation of objective value if RCC Problem
+						if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+							cTemp->setImbalance(problem.objectiveFunction(*g, cTemp->getClusterList()));
+						}
 						numberOfTestedCombinations++;
 
 						// cTemp->printClustering();
@@ -110,6 +114,10 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 					// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
 					cTemp->removeNodeFromCluster(*g, problem, i, k1);
 					BoolArray cluster2 = cTemp->addCluster(*g, problem, i);
+					// Full recalculation of objective value if RCC Problem
+					if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+						cTemp->setImbalance(problem.objectiveFunction(*g, cTemp->getClusterList()));
+					}
 					numberOfTestedCombinations++;
 					// cTemp->printClustering();
 					Imbalance newImbalance = cTemp->getImbalance();
@@ -369,6 +377,10 @@ ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Cluster
                  cTemp->addCluster(g, problem, j);
          }
          // cout << "Return" << endl;
+         // Full recalculation of objective value if RCC Problem
+         if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+        	 cTemp->setImbalance(problem.objectiveFunction(g, cTemp->getClusterList()));
+         }
          return cTemp;
  }
 

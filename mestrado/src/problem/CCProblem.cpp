@@ -41,19 +41,20 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, const ClusterList& c) con
 
 	// For each vertex i
 	for(int i = 0; i < n; i++) {
+		BoolArray cluster;
+		// Find out to which cluster vertex i belongs
+		for(unsigned long k = 0; k < nc; k++) {
+			cluster = c.at(k);
+			if(cluster[i]) {
+				break;
+			}
+		}
 		DirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			double weight = ((Edge*)f->get_property())->weight;
 			int j = target(*f, g.graph);
-			bool sameCluster = false;
-			for(unsigned long k = 0; k < nc; k++) {
-				BoolArray cluster = c.at(k);
-				if(cluster[i] && cluster[j]) {
-					sameCluster = true;
-					break;
-				}
-			}
+			bool sameCluster = cluster[j];
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
 				negativeSum += fabs(weight);

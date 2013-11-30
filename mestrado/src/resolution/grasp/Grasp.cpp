@@ -320,7 +320,7 @@ void Grasp::measureTimeResults(const double& timeSpentOnLocalSearch, const int& 
 	timeResults << fixed << setprecision(4) << (timeSpentInGRASP + timeSpentOnLocalSearch) << "," << imbalance.getValue()
 			<< "," << imbalance.getPositiveValue()
 			<< "," << imbalance.getNegativeValue() << "," << CBest->getNumberOfClusters()
-			<< "," << (graspIteration+1) << "\n";
+			<< "," << (graspIteration+1) << "," << numberOfTestedCombinations << "\n";
 }
 
 void Grasp::notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& graspIteration) {

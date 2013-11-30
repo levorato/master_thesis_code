@@ -55,7 +55,7 @@ private:
 	/**
 	 * Computes the best known RCC Search result at each time interval.
 	 */
-	void measureTimeResults(const double& timeSpentOnLocalSearch, const int& iteration);
+	void measureTimeResults(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& iteration);
 
 	void notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& iteration);
 
@@ -84,8 +84,6 @@ private:
 	 * Total number of tested combinations in RCC local search.
 	 */
 	unsigned long numberOfTestedCombinations;
-	/** The best clustering found considering all iterations. */
-	ClusteringPtr CBest, CBefore;
 };
 
 } /* namespace vnd */

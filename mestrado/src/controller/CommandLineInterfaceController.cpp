@@ -121,7 +121,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 		SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
 
-		ClusteringPtr c;
+		ClusteringPtr c = make_shared<Clustering>();
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
 
@@ -168,10 +168,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
  		// -------------------  R C C    S E A R C H     P R O C E S S I N G -------------------------
  		// 		Uses GRASP best result (cluster c) as input
  		if(RCCEnabled) {
+ 			BOOST_LOG_TRIVIAL(info) << "Starting RCC Search..." << endl;
 			// medicao de tempo do RCC
 			timer.start();
 			start_time = timer.elapsed();
-			ClusteringPtr RCCCluster;
 			// Chooses between the sequential or parallel VNS algorithm
 			NeighborhoodSearch* neig;
 			NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
@@ -182,7 +182,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				neig = nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 			}
 			RCCVariableNeighborhoodSearch vns(seed);
-			RCCCluster = vns.executeSearch(g.get(), *c, l, c->getNumberOfClusters(), firstImprovementOnOneNeig,
+			ClusteringPtr RCCCluster = vns.executeSearch(g.get(), *c, l, c->getNumberOfClusters(), firstImprovementOnOneNeig,
 									problemFactory.build(problemType), *neig, executionId, fileId, outputFolder,
 									timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 
