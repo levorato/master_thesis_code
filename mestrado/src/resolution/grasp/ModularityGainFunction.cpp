@@ -51,7 +51,7 @@ ModularityMatrix& ModularityGainFunction::getModularityMatrix() {
 	return modularityMatrix;
 }
 
-void ModularityGainFunction::calculateGainList(const ClusteringProblem &p, Clustering &c,
+void ModularityGainFunction::calculateGainList(ClusteringProblem &p, Clustering &c,
 		GainFunctionVertexSet& nodeList) {
 	gainMap.clear();
 	ModularityMatrix& modularityMatrix = getModularityMatrix();

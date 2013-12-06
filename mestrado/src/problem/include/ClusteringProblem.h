@@ -13,6 +13,10 @@
 
 using namespace clusteringgraph;
 
+namespace clusteringgraph{
+class Clustering;
+}
+
 namespace problem {
 
 class ClusteringProblem {
@@ -22,14 +26,14 @@ public:
 	ClusteringProblem();
 	virtual ~ClusteringProblem();
 
-	virtual Imbalance objectiveFunction(SignedGraph& g, const ClusterList& c) const = 0;
+	virtual Imbalance objectiveFunction(SignedGraph& g, Clustering& c) = 0;
 
 	/**
 	 * Calculates the delta of the objective function caused by the
 	 * insertion of node i in cluster k.
 	 */
-	virtual Imbalance calculateDeltaObjectiveFunction(SignedGraph& g, const ClusterList& c,
-			const unsigned long& k, const unsigned long& i) const = 0;
+	virtual Imbalance calculateDeltaObjectiveFunction(SignedGraph& g, Clustering& c,
+			const unsigned long& k, const unsigned long& i) = 0;
 
 	virtual int getType() const = 0;
 

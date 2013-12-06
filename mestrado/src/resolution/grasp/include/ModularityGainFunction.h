@@ -29,7 +29,7 @@ public:
 	 * Calculates the vertex gain list based on the modularity matrix
 	 * of the graph.
 	 */
-	virtual void calculateGainList(const ClusteringProblem &p, Clustering &c,
+	virtual void calculateGainList(ClusteringProblem &p, Clustering &c,
 			GainFunctionVertexSet& nodeList);
 
 	virtual bool operator () ( const int& a, const int& b );

@@ -45,7 +45,7 @@ public:
 	 * @param numberOfSearchSlaves number of slaves used for parallel VNS processing
 	 */
 	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
-			const bool& firstImprovementOnOneNeig, const ClusteringProblem& problem,
+			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
 			const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
@@ -62,7 +62,7 @@ protected:
 	 * @param ramdomSeed seed to be used in ramdom number generation
 	 * @return Clustering C(c)
 	 */
-	ClusteringPtr constructClustering(SignedGraph *g, const ClusteringProblem& problem,
+	ClusteringPtr constructClustering(SignedGraph *g, ClusteringProblem& problem,
 			double alpha, int myRank);
 
 	/**
@@ -81,7 +81,7 @@ protected:
 	 * @return Clustering C(l), the local optinum solution
 	 */
 	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l, const int& graspIteration,
-			const bool& firstImprovementOnOneNeig, const ClusteringProblem& problem, NeighborhoodSearch &neig,
+			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, NeighborhoodSearch &neig,
 			const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
 	/**

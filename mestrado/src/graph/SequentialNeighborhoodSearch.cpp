@@ -14,7 +14,7 @@ SequentialNeighborhoodSearch::SequentialNeighborhoodSearch() {
 }
 
 ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
-		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
+		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig,
 		unsigned long k) {
 	unsigned long nc = clustering->getNumberOfClusters();
@@ -24,7 +24,7 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 }
 
 ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
-		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
+		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialClusterIndex,
 		unsigned long finalClusterIndex, bool firstImprovementOnOneNeig, unsigned long k) {
 

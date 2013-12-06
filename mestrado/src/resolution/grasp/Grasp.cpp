@@ -44,7 +44,7 @@ Grasp::~Grasp() {
 }
 
 ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
-		const bool& firstImprovementOnOneNeig, const ClusteringProblem& problem, string& executionId,
+		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, string& executionId,
 		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
 	BOOST_LOG_TRIVIAL(debug) << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
@@ -176,7 +176,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	return CStar;
 }
 
-ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem& problem,
+ClusteringPtr Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem,
 		double alpha, int myRank) {
 	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
@@ -215,14 +215,14 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, const ClusteringProblem
 		// Cc->printClustering();
 	}
 	BOOST_LOG_TRIVIAL(trace) << myRank << ": Initial clustering completed.\n";
-	Cc->setImbalance(problem.objectiveFunction(*g, Cc->getClusterList()));
+	Cc->setImbalance(problem.objectiveFunction(*g, *Cc));
 	// Cc->printClustering();
 	return Cc;
 }
 
 ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		const int& graspIteration,
-		const bool& firstImprovementOnOneNeig, const ClusteringProblem& problem,
+		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 		NeighborhoodSearch &neig, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
 	// k is the current neighborhood distance in the local search

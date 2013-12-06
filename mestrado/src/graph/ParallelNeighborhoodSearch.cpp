@@ -31,7 +31,7 @@ ParallelNeighborhoodSearch::~ParallelNeighborhoodSearch() {
 }
 
 ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
-		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
+		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig,
 		unsigned long k) {
 
@@ -118,7 +118,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 }
 
 ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
-		Clustering* clustering, const ClusteringProblem& problem, double timeSpentSoFar,
+		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialClusterIndex,
 		unsigned long finalClusterIndex, bool firstImprovementOnOneNeig, unsigned long k) {
 

@@ -19,14 +19,14 @@ ImbalanceGainFunction::~ImbalanceGainFunction() {
 	// TODO Auto-generated destructor stub
 }
 
-void ImbalanceGainFunction::calculateGainList(const ClusteringProblem &p, Clustering &c,
+void ImbalanceGainFunction::calculateGainList(ClusteringProblem &p, Clustering &c,
 		GainFunctionVertexSet& nodeList) {
 	gainMap.clear();
 	// cout << "Calculating gain list..." << endl;
 	list<int, allocator<int> >::const_iterator pos;
 	unsigned int i = 0;
 	for(i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
-	    int a = *pos;
+	    unsigned long a = *pos;
 		// cout << "Vertex " << a << endl;
 		GainCalculation gainCalculation;
 		double min = std::numeric_limits<double>::max();
@@ -36,7 +36,7 @@ void ImbalanceGainFunction::calculateGainList(const ClusteringProblem &p, Cluste
 		int nc = c.getNumberOfClusters();
 		for(unsigned long k = 0; k < nc; k++) {
 			// cout << "Cluster " << k << endl;
-			Imbalance delta = p.calculateDeltaObjectiveFunction(*graph, c.getClusterList(), k, a);
+			Imbalance delta = p.calculateDeltaObjectiveFunction(*graph, c, k, a);
 			if(delta.getValue() < min) {
 				min = delta.getValue();
 				gainCalculation.clusterNumber = k;
@@ -46,9 +46,9 @@ void ImbalanceGainFunction::calculateGainList(const ClusteringProblem &p, Cluste
 		// cout << "New cluster" << endl;
 		BoolArray newCluster(graph->getN());
 		newCluster[a] = true;
-		ClusterList l;
-		l.push_back(newCluster);
-		Imbalance delta = p.calculateDeltaObjectiveFunction(*graph, l, 0, a);
+		Clustering cl;
+		cl.addCluster(newCluster);
+		Imbalance delta = p.calculateDeltaObjectiveFunction(*graph, cl, 0, a);
 		if(delta.getValue() < min) {
 			min = delta.getValue();
 			gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;

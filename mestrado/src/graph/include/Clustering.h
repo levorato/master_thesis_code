@@ -15,6 +15,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
 
 #include "Graph.h"
 #include "Imbalance.h"
@@ -23,6 +24,7 @@
 using namespace boost;
 using namespace std;
 using namespace problem;
+using namespace boost::numeric::ublas;
 
 namespace clusteringgraph {
 
@@ -34,6 +36,8 @@ namespace clusteringgraph {
 class Clustering {
 public:
 	static const int NEW_CLUSTER = -1;
+	/* Matrices used by RCC relaxed imbalance calculation */
+	matrix<double> positiveSum, negativeSum;
 
 	/**
 	 * Creates a Clustering object.
@@ -52,8 +56,13 @@ public:
 	 * Recalculates the objective function associated with
 	 * the clustering, based on the modification.
 	 */
-	BoolArray addCluster(SignedGraph& g, const ClusteringProblem& p,
+	BoolArray addCluster(SignedGraph& g, ClusteringProblem& p,
 			const unsigned long& i);
+
+	/**
+	 * Adds a new cluster based on the bool array passed as parameter.
+	 */
+	void addCluster(BoolArray b);
 
 	/**
 	 * Returns the n-th cluster of the list.
@@ -65,7 +74,7 @@ public:
 	 * function associated with the clustering, based on the
 	 * modification.
 	 */
-	void addNodeToCluster(SignedGraph& g, const ClusteringProblem& p,
+	void addNodeToCluster(SignedGraph& g, ClusteringProblem& p,
 			const unsigned long& i, const unsigned long& k);
 
 	/**
@@ -73,7 +82,7 @@ public:
 	 * function associated with the clustering, based on the
 	 * modification.
 	 */
-	void removeNodeFromCluster(SignedGraph& g, const ClusteringProblem& p,
+	void removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p,
 			const unsigned long& i, const unsigned long& k);
 
 	/**
@@ -89,7 +98,7 @@ public:
 	/**
 	 * Returns the number of clusters in this clustering configuration.
 	 */
-	unsigned long getNumberOfClusters();
+	unsigned long getNumberOfClusters() const;
 
 	/**
 	 * Removes the k-th cluster. Attention!!! This method DOES NOT
@@ -148,6 +157,8 @@ private:
 		ar & clusterList;
 		ar & imbalance;
 		ar & problemType;
+		ar & positiveSum;
+		ar & negativeSum;
 	}
 };
 

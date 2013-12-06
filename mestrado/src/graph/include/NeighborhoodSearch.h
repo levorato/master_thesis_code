@@ -41,7 +41,7 @@ public:
          * @return NeighborhoodList*
          */
         virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
-                        Clustering* clustering, const ClusteringProblem& problem,
+                        Clustering* clustering, ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                         int myRank, bool firstImprovementOnOneNeig, unsigned long k) = 0;
 
@@ -60,19 +60,19 @@ protected:
     	 * @param k the maximum number of clusters of RCC Problem (optional).
     	 */
     	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
-    					Clustering* clustering, const ClusteringProblem& problem,
+    					Clustering* clustering, ClusteringProblem& problem,
     					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
     					int myRank,	unsigned long initialClusterIndex, unsigned long finalClusterIndex,
     					bool firstImprovementOnOneNeig, unsigned long k) = 0;
 
         virtual ClusteringPtr search1opt(SignedGraph* g,
-                        Clustering* clustering, const ClusteringProblem& problem,
+                        Clustering* clustering, ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                         int myRank, unsigned long initialClusterIndex,
                 		unsigned long finalClusterIndex, bool firstImprovement, unsigned long k);
 
 		virtual ClusteringPtr search2opt(SignedGraph* g,
-						Clustering* clustering, const ClusteringProblem& problem,
+						Clustering* clustering, ClusteringProblem& problem,
 						double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 						int myRank, unsigned long initialClusterIndex,
 						unsigned long finalClusterIndex, bool firstImprovement, unsigned long k);
@@ -86,7 +86,7 @@ protected:
          * If parameter k4 == -1, inserts node j in a new cluster (anlone).
          */
         ClusteringPtr process2optCombination(SignedGraph& g, Clustering* clustering,
-        		const ClusteringProblem& problem, int k1, int k2, int k3, int k4,
+        		ClusteringProblem& problem, int k1, int k2, int k3, int k4,
         		int n, int i, int j);
 
 	/* Number of tested combinations during neighborhood search */

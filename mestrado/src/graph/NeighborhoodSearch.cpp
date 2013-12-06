@@ -34,7 +34,7 @@ if (stat) { \
 namespace clusteringgraph {
 
 ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
-                Clustering* clustering, const ClusteringProblem& problem,
+                Clustering* clustering, ClusteringProblem& problem,
                 double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                 int myRank, unsigned long initialClusterIndex,
         		unsigned long finalClusterIndex, bool firstImprovement, unsigned long k) {
@@ -76,7 +76,7 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 						cTemp->removeNodeFromCluster(*g, problem, i, k1);
 						// Full recalculation of objective value if RCC Problem
 						if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-							cTemp->setImbalance(problem.objectiveFunction(*g, cTemp->getClusterList()));
+							cTemp->setImbalance(problem.objectiveFunction(*g, *cTemp));
 						}
 						numberOfTestedCombinations++;
 
@@ -116,7 +116,7 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 					BoolArray cluster2 = cTemp->addCluster(*g, problem, i);
 					// Full recalculation of objective value if RCC Problem
 					if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-						cTemp->setImbalance(problem.objectiveFunction(*g, cTemp->getClusterList()));
+						cTemp->setImbalance(problem.objectiveFunction(*g, *cTemp));
 					}
 					numberOfTestedCombinations++;
 					// cTemp->printClustering();
@@ -146,7 +146,7 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 }
 
 ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
-        Clustering* clustering, const ClusteringProblem& problem,
+        Clustering* clustering, ClusteringProblem& problem,
         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
         int myRank, unsigned long initialClusterIndex,
 		unsigned long finalClusterIndex, bool firstImprovement, unsigned long k) {
@@ -332,7 +332,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 }
 
 ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Clustering* clustering,
-		const ClusteringProblem& problem, int k1, int k2, int k3, int k4, int n, int i, int j) {
+		ClusteringProblem& problem, int k1, int k2, int k3, int k4, int n, int i, int j) {
 
          // cout << "2-opt-comb: " << k1 << ", " << k2 << ", " << k3 << ", " << k4 << ", " << i << ", " << j << endl;
          // clustering->printClustering();
@@ -379,7 +379,7 @@ ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Cluster
          // cout << "Return" << endl;
          // Full recalculation of objective value if RCC Problem
          if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-        	 cTemp->setImbalance(problem.objectiveFunction(g, cTemp->getClusterList()));
+        	 cTemp->setImbalance(problem.objectiveFunction(g, *cTemp));
          }
          return cTemp;
  }

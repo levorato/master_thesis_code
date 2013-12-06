@@ -72,6 +72,7 @@ using namespace boost::mpi;
 #include <algorithm>
 #include <iterator>
 #include <iomanip>
+#include <vector>
 using namespace std;
 using namespace clusteringgraph;
 using namespace resolution::grasp;
@@ -83,7 +84,7 @@ namespace controller {
 
 // A helper function to simplify the main part.
 template<class T>
-ostream& operator<<(ostream& os, const vector<T>& v)
+ostream& operator<<(ostream& os, const std::vector<T>& v)
 {
     copy(v.begin(), v.end(), ostream_iterator<T>(os, " "));
     return os;
@@ -279,7 +280,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					  "neighborhood size")
 				("rcc", po::value<bool>(&RCCEnabled)->default_value(true), "Enable RCC Problem resolution after GRASP CC")
 				("time-limit", po::value<int>(&timeLimit)->default_value(1800), "maximum execution time")
-				("input-file", po::value< vector<string> >(), "input file")
+				("input-file", po::value< std::vector<string> >(), "input file")
 				("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
 				("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
 				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
@@ -348,10 +349,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 			BOOST_LOG_TRIVIAL(info) << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
 			cout << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
-			vector<fs::path> fileList;
+			std::vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
-				fs::path filePath (vm["input-file"].as< vector<string> >().at(0));
+				fs::path filePath (vm["input-file"].as< std::vector<string> >().at(0));
 				BOOST_LOG_TRIVIAL(info) << "Input file is: "
 									 << filePath.string() << "\n";
 				fileList.push_back(filePath);

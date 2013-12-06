@@ -8,6 +8,7 @@
 #include "include/CCProblem.h"
 #include <cmath>
 #include <boost/log/trivial.hpp>
+#include "../graph/include/Clustering.h"
 
 namespace problem {
 
@@ -32,9 +33,9 @@ int CCProblem::getType() const {
  * The Imbalance of a partition P (I(P)) is defined as the total
  * weight of negative uncut arcs and positive cut arcs.
  */
-Imbalance CCProblem::objectiveFunction(SignedGraph& g, const ClusterList& c) const {
+Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	double positiveSum = 0, negativeSum = 0;
-	int nc = c.size();
+	int nc = c.getNumberOfClusters();
 	int n = g.getN();
 
 	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
@@ -44,7 +45,7 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, const ClusterList& c) con
 		BoolArray cluster;
 		// Find out to which cluster vertex i belongs
 		for(unsigned long k = 0; k < nc; k++) {
-			cluster = c.at(k);
+			cluster = c.getCluster(k);
 			if(cluster[i]) {
 				break;
 			}
@@ -69,10 +70,10 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, const ClusterList& c) con
 }
 
 // Calculates the delta of the objective function
-Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, const ClusterList& c,
-			const unsigned long& k, const unsigned long& i) const {
+Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering& c,
+			const unsigned long& k, const unsigned long& i) {
 	double negativeSum = 0, positiveSum = 0;
-	BoolArray cluster = c.at(k);
+	BoolArray cluster = c.getCluster(k);
 	// unsigned long n = g.getN();
 
 	// iterates over out-edges of vertex i
