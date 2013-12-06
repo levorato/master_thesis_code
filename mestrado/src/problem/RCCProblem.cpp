@@ -38,8 +38,10 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	int n = g.getN();
 	// os valores de soma entre clusters devem compor uma matriz
 	// as diagnonais da matriz contem os valores das somas internas
-	c.positiveSum.resize(nc, nc);
-	c.negativeSum.resize(nc, nc);
+	c.positiveSum.resize(nc, nc, false);
+	c.negativeSum.resize(nc, nc, false);
+	c.positiveSum.assign(zero_matrix<double>(nc,nc));
+	c.negativeSum.assign(zero_matrix<double>(nc,nc));
 
 	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Disparando calculo da funcao objetivo." << endl;
 
@@ -103,6 +105,8 @@ Imbalance RCCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering
 	int n = g.getN();
 	// os valores de soma entre clusters devem compor uma matriz
 	// as diagnonais da matriz contem os valores das somas internas
+	c.positiveSum.resize(nc, nc);
+	c.negativeSum.resize(nc, nc);
 
 	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Disparando calculo do delta da funcao objetivo." << endl;
 

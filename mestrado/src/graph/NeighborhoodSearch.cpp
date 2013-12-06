@@ -76,7 +76,11 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 						cTemp->removeNodeFromCluster(*g, problem, i, k1);
 						// Full recalculation of objective value if RCC Problem
 						if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-							cTemp->setImbalance(problem.objectiveFunction(*g, *cTemp));
+							Imbalance imb = problem.objectiveFunction(*g, *cTemp);
+							if(imb.getValue() != cTemp->getImbalance().getValue()) {
+								BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
+							}
+							cTemp->setImbalance(imb);
 						}
 						numberOfTestedCombinations++;
 
@@ -116,7 +120,11 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 					BoolArray cluster2 = cTemp->addCluster(*g, problem, i);
 					// Full recalculation of objective value if RCC Problem
 					if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-						cTemp->setImbalance(problem.objectiveFunction(*g, *cTemp));
+						Imbalance imb = problem.objectiveFunction(*g, *cTemp);
+						if(imb.getValue() != cTemp->getImbalance().getValue()) {
+							BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
+						}
+						cTemp->setImbalance(imb);
 					}
 					numberOfTestedCombinations++;
 					// cTemp->printClustering();
@@ -379,8 +387,12 @@ ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Cluster
          // cout << "Return" << endl;
          // Full recalculation of objective value if RCC Problem
          if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-        	 cTemp->setImbalance(problem.objectiveFunction(g, *cTemp));
-         }
+			Imbalance imb = problem.objectiveFunction(g, *cTemp);
+			if(imb.getValue() != cTemp->getImbalance().getValue()) {
+				BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
+			}
+			cTemp->setImbalance(imb);
+		}
          return cTemp;
  }
 

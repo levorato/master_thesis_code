@@ -184,7 +184,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			}
 			RCCVariableNeighborhoodSearch vns(seed);
 			ClusteringPtr RCCCluster = vns.executeSearch(g.get(), *c, l, c->getNumberOfClusters(), firstImprovementOnOneNeig,
-									problemFactory.build(problemType), *neig, executionId, fileId, outputFolder,
+									problemFactory.build(ClusteringProblem::RCC_PROBLEM), *neig, executionId, fileId, outputFolder,
 									timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 
 			// Stops the timer and stores the elapsed time
