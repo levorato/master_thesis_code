@@ -462,7 +462,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 		while(true) {
 			try {
-				if(myRank <= numberOfSlaves) {  // GRASP slave
+				if(myRank % (numberOfSlaves+1) == 0) {  // GRASP slave
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " ready [GRASP slave process]." << endl;
 
 					// Receives a message with GRASP parameters and triggers local GRASP execution
