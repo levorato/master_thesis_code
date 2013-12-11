@@ -69,6 +69,16 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	return Imbalance(positiveSum, negativeSum);
 }
 
+Imbalance CCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Clustering& c,
+			const unsigned long& k, const unsigned long& i) {
+	return calculateDeltaObjectiveFunction(g, c, k, i);
+}
+
+Imbalance CCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clustering& c,
+			const unsigned long& k, const unsigned long& i) {
+	return calculateDeltaObjectiveFunction(g, c, k, i);
+}
+
 // Calculates the delta of the objective function
 Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering& c,
 			const unsigned long& k, const unsigned long& i) {

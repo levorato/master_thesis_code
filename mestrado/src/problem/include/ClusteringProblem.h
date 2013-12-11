@@ -32,7 +32,14 @@ public:
 	 * Calculates the delta of the objective function caused by the
 	 * insertion of node i in cluster k.
 	 */
-	virtual Imbalance calculateDeltaObjectiveFunction(SignedGraph& g, Clustering& c,
+	virtual Imbalance calculateDeltaPlusObjectiveFunction(SignedGraph& g, Clustering& c,
+			const unsigned long& k, const unsigned long& i) = 0;
+
+	/**
+	 * Calculates the delta of the objective function caused by the
+	 * removal of node i in cluster k.
+	 */
+	virtual Imbalance calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clustering& c,
 			const unsigned long& k, const unsigned long& i) = 0;
 
 	virtual int getType() const = 0;

@@ -36,7 +36,7 @@ void ImbalanceGainFunction::calculateGainList(ClusteringProblem &p, Clustering &
 		int nc = c.getNumberOfClusters();
 		for(unsigned long k = 0; k < nc; k++) {
 			// cout << "Cluster " << k << endl;
-			Imbalance delta = p.calculateDeltaObjectiveFunction(*graph, c, k, a);
+			Imbalance delta = p.calculateDeltaPlusObjectiveFunction(*graph, c, k, a);
 			if(delta.getValue() < min) {
 				min = delta.getValue();
 				gainCalculation.clusterNumber = k;
@@ -48,7 +48,7 @@ void ImbalanceGainFunction::calculateGainList(ClusteringProblem &p, Clustering &
 		newCluster[a] = true;
 		Clustering cl;
 		cl.addCluster(newCluster);
-		Imbalance delta = p.calculateDeltaObjectiveFunction(*graph, cl, 0, a);
+		Imbalance delta = p.calculateDeltaPlusObjectiveFunction(*graph, cl, 0, a);
 		if(delta.getValue() < min) {
 			min = delta.getValue();
 			gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
