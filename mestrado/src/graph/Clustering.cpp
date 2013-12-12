@@ -91,7 +91,7 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, con
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
 	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
-	this->imbalance -= p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+	this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
 	if(clusterSize(k) == 1) {
 		// cout << "Deleting cluster " << k << endl;
 		this->removeCluster(g, k);

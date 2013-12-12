@@ -444,13 +444,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		// Grasp slave: 1 < rank < numberOfSlaves; VNS slave: otherwise
 		unsigned int numberOfSlaves = 0;
 		world.recv(MPIMessage::LEADER_ID, mpi::any_tag, numberOfSlaves);
-		BOOST_LOG_TRIVIAL(trace) << "number of slaves received\n";
-		cout << "number of slaves received\n";
-		cout << "Process " << myRank << " ready [GRASP slave process]." << endl;
-		int numberOfSearchSlaves = 0;
-		if(numberOfSlaves > 0) {
-			numberOfSearchSlaves = calculateNumberOfSearchSlaves(np, numberOfSlaves);
-		}
+		BOOST_LOG_TRIVIAL(trace) << "number of slaves received: " << numberOfSlaves << "\n";
+		cout << "number of slaves received: " << numberOfSlaves << "\n";
+		cout << "Process " << myRank << " ready [slave process]." << endl;
+		int numberOfSearchSlaves = calculateNumberOfSearchSlaves(np, numberOfSlaves);
+
 		// Controls the number of messages received
 		unsigned int messageCount = 0;
 		// common slave variables
@@ -462,7 +460,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 		while(true) {
 			try {
-				if(myRank % (numberOfSlaves+1) == 0) {  // GRASP slave
+				if(myRank % (numberOfSearchSlaves+1) == 0) {  // GRASP slave
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " ready [GRASP slave process]." << endl;
 
 					// Receives a message with GRASP parameters and triggers local GRASP execution
