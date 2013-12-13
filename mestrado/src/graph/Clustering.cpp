@@ -32,8 +32,8 @@ Clustering::Clustering() : clusterList(),
 // TODO test dimension attribution
 Clustering::Clustering(const Clustering& clustering) :
 		clusterList(), imbalance(clustering.imbalance), problemType(clustering.problemType),
-		positiveSum(2,2),
-		negativeSum(2,2) {
+		positiveSum(clustering.positiveSum),
+		negativeSum(clustering.negativeSum) {
 	// deep copy of the clusterlist data
 	for(unsigned long i = 0; i < clustering.clusterList.size(); i++) {
 		BoolArray boolArray = clustering.clusterList.at(i);
@@ -57,7 +57,6 @@ BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const uns
 	// std::cout << "Adding vertex " << i << " to a new cluster."<< std::endl;
 	array[i] = true;
 	this->clusterList.push_back(array);
-	// TODO tratar possivel caso de calculo para adicao em separado ao de exclusao
 	this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
 	return array;
 }

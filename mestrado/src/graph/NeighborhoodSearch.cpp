@@ -79,6 +79,8 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 							Imbalance imb = problem.objectiveFunction(*g, *cTemp);
 							if(imb.getValue() != cTemp->getImbalance().getValue()) {
 								BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
+							} else {
+								BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta MATCH!";
 							}
 							cTemp->setImbalance(imb);
 						}
@@ -123,6 +125,8 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 						Imbalance imb = problem.objectiveFunction(*g, *cTemp);
 						if(imb.getValue() != cTemp->getImbalance().getValue()) {
 							BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
+						} else {
+							BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta MATCH!";
 						}
 						cTemp->setImbalance(imb);
 					}
