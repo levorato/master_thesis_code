@@ -200,10 +200,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			}
 
 			out << "RCC Global time spent: " << timeSpent << endl;
-			Imbalance imb = c->getImbalance();
+			Imbalance imb = RCCCluster->getImbalance();
 			out << "RI(P) = " << imb.getValue() << endl;
 			stringstream ss;
-			c->printClustering(ss);
+			RCCCluster->printClustering(ss);
 			out << ss.str();
 			out.close();
  		}

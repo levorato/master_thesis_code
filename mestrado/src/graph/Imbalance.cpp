@@ -37,6 +37,20 @@ Imbalance& Imbalance::operator-=(const Imbalance &i) {
 	return *this;
 }
 
+Imbalance Imbalance::operator+(const Imbalance& rhs) {
+	Imbalance result(0.00, 0.00);
+	result.setPositiveValue(getPositiveValue() + rhs.getPositiveValue());
+	result.setNegativeValue(getNegativeValue() + rhs.getNegativeValue());	
+	return result;
+}
+
+Imbalance Imbalance::operator-(const Imbalance& rhs) {
+	Imbalance result(0.00, 0.00);
+	result.setPositiveValue(getPositiveValue() - rhs.getPositiveValue());
+        result.setNegativeValue(getNegativeValue() - rhs.getNegativeValue());
+	return result;
+}
+
 bool operator> (Imbalance &i1, Imbalance &i2) {
 	return i1.getValue() > i2.getValue();
 }

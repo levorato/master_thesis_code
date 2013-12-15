@@ -54,10 +54,10 @@ BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const uns
 	BoolArray array(g.getN());
 
 	// Add i to the newly created cluster
-	// std::cout << "Adding vertex " << i << " to a new cluster."<< std::endl;
+	BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
 	array[i] = true;
 	this->clusterList.push_back(array);
-	this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
+	this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
 	return array;
 }
 
@@ -70,9 +70,9 @@ BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
 }
 
 void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
-	// std::cout << "Adding vertex " << i << " to cluster " << k << std::endl;
+	BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
 	this->getCluster(k)[i] = true;
-	this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+	this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
 }
 
 void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
@@ -89,10 +89,10 @@ unsigned long Clustering::clusterSize(unsigned long k) {
 void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
-	// std::cout << "Removing vertex " << i << " from cluster " << k << std::endl;
-	this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+	BOOST_LOG_TRIVIAL(trace) << "Removing vertex " << i << " from cluster " << k;
+	this->imbalance = p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
 	if(clusterSize(k) == 1) {
-		// cout << "Deleting cluster " << k << endl;
+		BOOST_LOG_TRIVIAL(trace) << "Deleting cluster " << k;
 		this->removeCluster(g, k);
 	} else {
 		this->getCluster(k)[i] = false;

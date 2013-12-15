@@ -71,26 +71,35 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 								> (*clustering);
 						BoolArray cluster2 = cTemp->getCluster(k2);
 
-						// cout << "Taking node " << i << " from " << k1 << " to " << k2 << endl;
-						cTemp->addNodeToCluster(*g, problem, i, k2);
+						BOOST_LOG_TRIVIAL(trace) << "Option 1: Taking node " << i << " from cluster " << k1 << " to cluster " << k2;
+						int nc = cTemp->getNumberOfClusters();
 						cTemp->removeNodeFromCluster(*g, problem, i, k1);
+						// recalculates the number of clusters, as one of them may have been removed
+						if((cTemp->getNumberOfClusters() < nc) && (k2 >= k1) ) {
+							// cluster k1 has been removed
+							cTemp->addNodeToCluster(*g, problem, i, k2 - 1);
+						} else {
+							cTemp->addNodeToCluster(*g, problem, i, k2);
+						}
 						// Full recalculation of objective value if RCC Problem
+						/*
 						if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-							Imbalance imb = problem.objectiveFunction(*g, *cTemp);
+							Imbalance imb = cTemp->getImbalance();
+							cTemp->setImbalance(problem.objectiveFunction(*g, *cTemp));
 							if(imb.getValue() != cTemp->getImbalance().getValue()) {
 								BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
 							} else {
 								BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta MATCH!";
 							}
 							cTemp->setImbalance(imb);
-						}
+						} */
 						numberOfTestedCombinations++;
 
 						// cTemp->printClustering();
 						Imbalance newImbalance = cTemp->getImbalance();
 						Imbalance bestImbalance = cBest->getImbalance();
 						if (newImbalance < bestImbalance) {
-							// cout << "Better solution found in 1-neighborhood: " << setprecision(2) << objective << "\n";
+							BOOST_LOG_TRIVIAL(trace) << "Better solution found in 1-neighborhood: " << setprecision(2) << newImbalance.getValue();
 							// First improvement for 1-opt neighborhood
 							cBest.reset();
 							cBest = cTemp;
@@ -117,25 +126,27 @@ ClusteringPtr NeighborhoodSearch::search1opt(SignedGraph* g,
 						( (problem.getType() == ClusteringProblem::RCC_PROBLEM) && (clustering->getNumberOfClusters() < k) )) {
 					ClusteringPtr cTemp = make_shared < Clustering
 							> (*clustering);
-					// cout << "Taking node " << i << " from " << k1 << " to new cluster." << endl;
+					BOOST_LOG_TRIVIAL(trace) << "Option 2: Taking node " << i << " from " << k1 << " to new cluster.";
 					cTemp->removeNodeFromCluster(*g, problem, i, k1);
 					BoolArray cluster2 = cTemp->addCluster(*g, problem, i);
 					// Full recalculation of objective value if RCC Problem
+					/*
 					if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-						Imbalance imb = problem.objectiveFunction(*g, *cTemp);
+						Imbalance imb = cTemp->getImbalance();
+                                                cTemp->setImbalance(problem.objectiveFunction(*g, *cTemp));
 						if(imb.getValue() != cTemp->getImbalance().getValue()) {
 							BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
 						} else {
 							BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta MATCH!";
 						}
 						cTemp->setImbalance(imb);
-					}
+					} */
 					numberOfTestedCombinations++;
 					// cTemp->printClustering();
 					Imbalance newImbalance = cTemp->getImbalance();
 					Imbalance bestImbalance = cBest->getImbalance();
 					if (newImbalance < bestImbalance) {
-						// cout << "Better solution found in 1-neighborhood: " << setprecision(2) << objective << "\n";
+						BOOST_LOG_TRIVIAL(trace) << "Better solution found in 1-neighborhood: " << setprecision(2) << newImbalance.getValue();
 						// First improvement for 1-opt neighborhood
 						cBest.reset();
 						cBest = cTemp;
@@ -168,7 +179,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
 
-	// cout << "Generating 2-opt neighborhood..." << endl;
+	BOOST_LOG_TRIVIAL(trace) << "Generating 2-opt neighborhood...";
 	mpi::communicator world;
 	unsigned long n = g->getN();
 	unsigned long numberOfClustersInInterval = finalClusterIndex - initialClusterIndex + 1;
@@ -207,10 +218,10 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 									// cluster(k3)
 									// Option 1: node i is moved to another existing cluster k3 and
 									//           node j is moved to another existing cluster k4
-									// cout << "Option 1" << endl;
 									for (unsigned long k4 = k3 + 1; k4 < totalNumberOfClusters; k4++) {
 										if (k2 != k4) {
 											// cluster(k4)
+											BOOST_LOG_TRIVIAL(trace) << "Option 1: node " << i << " into cluster " << k3 << " and node " << j << " into cluster " << k4;
 											ClusteringPtr cTemp =
 													NeighborhoodSearch::process2optCombination(*g,
 															clustering, problem, k1,
@@ -219,7 +230,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 											// cTemp->printClustering();
 											Imbalance newImbalance = cTemp->getImbalance();
 											if (newImbalance < bestImbalance) {
-												// cout << "Better solution found in 2-neighborhood." << endl;
+												BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
 												cBest.reset();
 												cBest = cTemp;
 												if(firstImprovement) {
@@ -236,7 +247,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 									if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
 															( (problem.getType() == ClusteringProblem::RCC_PROBLEM)
 																	&& (clustering->getNumberOfClusters() < k) )) {
-										// cout << "Option 2" << endl;
+										BOOST_LOG_TRIVIAL(trace) << "Option 2: node " << i << " into cluster " << k3 << " and node " << j << " into new cluster.";
 										ClusteringPtr cTemp =
 												NeighborhoodSearch::process2optCombination(*g,
 														clustering, problem, k1, k2, k3,
@@ -245,7 +256,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 										// cTemp->printClustering();
 										Imbalance newImbalance = cTemp->getImbalance();
 										if (newImbalance < bestImbalance) {
-											// cout << "Better solution found in 2-neighborhood." << endl;
+											BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
 											cBest.reset();
 											cBest = cTemp;
 											if(firstImprovement) {
@@ -269,19 +280,19 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 							if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
 									( (problem.getType() == ClusteringProblem::RCC_PROBLEM)
 											&& (clustering->getNumberOfClusters() < k) )) {
-								// cout << "Option 3" << endl;
 								for (unsigned long k4 = uninc(), contk4 = 0; contk4 < numberOfClustersInInterval; contk4++) {
 									if (k2 != k4) {
 										// cluster(k4)
+										BOOST_LOG_TRIVIAL(trace) << "Option 3: " << i << " into new cluster and " << j << " into cluster " << k4;
 										ClusteringPtr cTemp =
 												NeighborhoodSearch::process2optCombination(*g,
 														clustering, problem, k1, k2,
 														Clustering::NEW_CLUSTER,
 														k4, n, i, j);
-										// cTemp->printClustering();
+										//cTemp->printClustering();
 										Imbalance newImbalance = cTemp->getImbalance();
 										if (newImbalance < bestImbalance) {
-											// cout << "Better solution found in 2-neighborhood." << endl;
+											BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
 											cBest.reset();
 											cBest = cTemp;
 											if(firstImprovement) {
@@ -304,7 +315,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 							if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
 									( (problem.getType() == ClusteringProblem::RCC_PROBLEM)
 											&& (clustering->getNumberOfClusters() + 2 <= k) )) {
-								// cout << "Option 4" << endl;
+								BOOST_LOG_TRIVIAL(trace) << "Option 4: nodes " << i << " and " << j << " into new clusters.";
 								ClusteringPtr cTemp = NeighborhoodSearch::process2optCombination(*g,
 										clustering, problem, k1, k2,
 										Clustering::NEW_CLUSTER,
@@ -312,7 +323,7 @@ ClusteringPtr NeighborhoodSearch::search2opt(SignedGraph* g,
 								// cTemp->printClustering();
 								Imbalance newImbalance = cTemp->getImbalance();
 								if (newImbalance < bestImbalance) {
-									// cout << "Better solution found in 2-neighborhood." << endl;
+									BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
 									cBest.reset();
 									cBest = cTemp;
 									if(firstImprovement) {
@@ -390,13 +401,14 @@ ClusteringPtr NeighborhoodSearch::process2optCombination(SignedGraph& g, Cluster
          }
          // cout << "Return" << endl;
          // Full recalculation of objective value if RCC Problem
+	 /*
          if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
 			Imbalance imb = problem.objectiveFunction(g, *cTemp);
 			if(imb.getValue() != cTemp->getImbalance().getValue()) {
 				BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
 			}
 			cTemp->setImbalance(imb);
-		}
+		} */
          return cTemp;
  }
 

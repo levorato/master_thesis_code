@@ -38,7 +38,7 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
 
-	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Disparando calculo da funcao objetivo." << endl;
+	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Starting obj function calculation." << endl;
 
 	// For each vertex i
 	for(int i = 0; i < n; i++) {
@@ -65,18 +65,20 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 			}
 		}
 	}
-	BOOST_LOG_TRIVIAL(trace) << "Valor calculado: " << (positiveSum + negativeSum) << endl;
+	BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (positiveSum + negativeSum) << endl;
 	return Imbalance(positiveSum, negativeSum);
 }
 
 Imbalance CCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Clustering& c,
 			const unsigned long& k, const unsigned long& i) {
-	return calculateDeltaObjectiveFunction(g, c, k, i);
+	Imbalance imbalance(c.getImbalance());
+	return imbalance + calculateDeltaObjectiveFunction(g, c, k, i);
 }
 
 Imbalance CCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clustering& c,
 			const unsigned long& k, const unsigned long& i) {
-	return calculateDeltaObjectiveFunction(g, c, k, i);
+	Imbalance imbalance(c.getImbalance());
+	return imbalance - calculateDeltaObjectiveFunction(g, c, k, i);
 }
 
 // Calculates the delta of the objective function

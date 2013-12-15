@@ -49,6 +49,7 @@ ClusteringPtr RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clust
 	ClusteringPtr CStar = make_shared<Clustering>(Cc); // C* := Cc
 	// Calculates the initial relaxed imbalance of the clustering
 	CStar->setImbalance(problem.objectiveFunction(*g, *CStar));
+	CStar->printClustering();
 
 	double timeSpentOnLocalSearch = 0.0;
 	BOOST_LOG_TRIVIAL(trace) << "RCC local search...\n";
