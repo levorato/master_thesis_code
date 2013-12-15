@@ -296,7 +296,7 @@ void Grasp::generateOutputFile(stringstream& fileContents, const string& rootFol
 	}
 	stringstream filename;
 	filename << outputFolder << fileId << "/" << executionId << "/"
-			<< "Node" << processNumber << "-l" << l << "a" << std::setprecision(2)
+			<< "CC-Node" << processNumber << "-l" << l << "a" << std::setprecision(2)
 			<< alpha << "-" << fileSuffix << ".csv";
 	fs::path newFile(filename.str());
 	ofstream os;
