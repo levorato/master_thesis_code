@@ -38,7 +38,7 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphAsText(), iter, alpha, l,
 				problem.getType(), gainFunction->getType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
-		world.send(i, MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
+		world.send(i * (numberOfSearchSlaves + 1), MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message sent to process " << i;
 	}
 	// the leader does its part of the work
