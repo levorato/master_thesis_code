@@ -52,7 +52,7 @@ ClusteringPtr RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clust
 	CStar->printClustering();
 
 	double timeSpentOnLocalSearch = 0.0;
-	BOOST_LOG_TRIVIAL(trace) << "RCC local search...\n";
+	BOOST_LOG_TRIVIAL(info) << "RCC local search...";
 	BOOST_LOG_TRIVIAL(trace) << "Current neighborhood size is " << neighborhoodSize << endl;
 
 	while(neighborhoodSize <= l && (timeSpentInSearch + timeSpentOnLocalSearch < timeLimit)) {
@@ -110,7 +110,7 @@ ClusteringPtr RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clust
 	measureTimeResults(CStar, 0.0, iteration);
 	generateOutputFile(timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), k, l);
 
-	BOOST_LOG_TRIVIAL(trace) << "RCC VNS done.\n";
+	BOOST_LOG_TRIVIAL(info) << "RCC VNS done.";
 	return CStar;
 }
 

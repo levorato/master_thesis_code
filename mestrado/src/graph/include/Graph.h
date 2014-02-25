@@ -88,9 +88,9 @@ public:
 
 	unsigned long getPositiveDegree(const unsigned long &a);
 
-	string getGraphAsText();
+	string getGraphFileLocation();
 
-	void setGraphAsText(string txt);
+	void setGraphFileLocation(string txt);
 
 	DirectedGraph graph;
 private:
@@ -103,9 +103,9 @@ private:
 	unsigned int id;
 
 	/**
-	 * The text representation of the graph (for use on MPI messages).
+	 * The file location of the graph (for use on MPI messages).
 	 */
-	string graphAsText;
+	string graphFileLocation;
 };
 
 typedef boost::shared_ptr<SignedGraph> SignedGraphPtr;

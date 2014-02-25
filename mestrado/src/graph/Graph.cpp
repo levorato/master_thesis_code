@@ -86,12 +86,12 @@ unsigned long SignedGraph::getPositiveDegree(const unsigned long &a) {
 	return sum;
 }
 
-void SignedGraph::setGraphAsText(string txt) {
-	graphAsText = txt;
+void SignedGraph::setGraphFileLocation(string txt) {
+	graphFileLocation = txt;
 }
 
-string SignedGraph::getGraphAsText() {
-	return graphAsText;
+string SignedGraph::getGraphFileLocation() {
+	return graphFileLocation;
 }
 
 } /* namespace graph */

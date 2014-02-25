@@ -47,7 +47,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, string& executionId,
 		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
-	BOOST_LOG_TRIVIAL(debug) << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l << "...\n";
+	BOOST_LOG_TRIVIAL(info) << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l;
 	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
 
 	// 0. Triggers local processing time calculation
@@ -83,7 +83,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	numberOfTestedCombinations = 0;
 
 	for (i = 0, totalIter = 0; i <= iter || iter < 0 ; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
-		BOOST_LOG_TRIVIAL(trace) << "GRASP iteration " << i;
+		BOOST_LOG_TRIVIAL(debug) << "GRASP iteration " << i;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
 		//    Store initial solution value in corresponding results file
@@ -163,7 +163,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << (initialImbalanceSum / (totalIter+1))
 			<< endl;
 
-	BOOST_LOG_TRIVIAL(debug) << "GRASP procedure done." << endl;
+	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar->printClustering();
 	CStar->printClustering(iterationResults);
 	generateOutputFile(iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
@@ -180,7 +180,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, ClusteringProblem& prob
 		double alpha, int myRank) {
 	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
-	BOOST_LOG_TRIVIAL(trace) << "GRASP construct clustering...\n";
+	BOOST_LOG_TRIVIAL(debug) << "GRASP construct clustering...\n";
 
 	while(lc.size() > 0) { // lc != empty
 		// cout << "Vertex list size is " << lc.size() << endl;
@@ -214,7 +214,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, ClusteringProblem& prob
 
 		// Cc->printClustering();
 	}
-	BOOST_LOG_TRIVIAL(trace) << myRank << ": Initial clustering completed.\n";
+	BOOST_LOG_TRIVIAL(debug) << myRank << ": Initial clustering completed.\n";
 	Cc->setImbalance(problem.objectiveFunction(*g, *Cc));
 	// Cc->printClustering();
 	return Cc;
@@ -230,7 +230,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	ClusteringPtr CStar = make_shared<Clustering>(Cc); // C* := Cc
 	CBefore = CStar; // previous best solution
 	double timeSpentOnLocalSearch = 0.0;
-	BOOST_LOG_TRIVIAL(trace) << "GRASP local search...\n";
+	BOOST_LOG_TRIVIAL(debug) << "GRASP local search...\n";
 	BOOST_LOG_TRIVIAL(trace) << "Current neighborhood is " << k << endl;
 
 	while(k <= l && (timeSpentInGRASP + timeSpentOnLocalSearch < timeLimit)) {
@@ -254,14 +254,14 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		Imbalance il = Cl->getImbalance();
 		Imbalance ic = CStar->getImbalance();
 		if(il < ic) {
-			BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
+			BOOST_LOG_TRIVIAL(debug) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			// Cl->printClustering();
 			CStar.reset();
 			CStar = Cl;
 			k = 1;
 		} else {  // no better result found in neighborhood
 			k++;
-			BOOST_LOG_TRIVIAL(trace) << "Changed to neighborhood size l = " << k;
+			BOOST_LOG_TRIVIAL(debug) << "Changed to neighborhood size l = " << k;
 		}
 		iteration++;
 
@@ -273,7 +273,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// Registers the best result at time intervals
 		notifyNewValue(CStar, timeSpentOnLocalSearch, graspIteration);
 	}
-	BOOST_LOG_TRIVIAL(trace) << "GRASP local search done.\n";
+	BOOST_LOG_TRIVIAL(debug) << "GRASP local search done.\n";
 	return CStar;
 }
 

@@ -158,6 +158,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		    // TODO tratar excecao 
   		} 
 
+		BOOST_LOG_TRIVIAL(info) << "Global time spent: " << timeSpent << " s";
 		out << "Global time spent: " << timeSpent << endl;
 		Imbalance imb = c->getImbalance();
 		out << "I(P) = " << imb.getValue() << endl;
@@ -177,7 +178,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			NeighborhoodSearch* neig;
 			NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
 
-			if(numberOfSlaves == 0) {	// sequential version of RCC Search
+			if(numberOfSearchSlaves == 0) {	// sequential version of RCC Search
 				neig = nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 			} else {  // parallel version of RCC Search
 				neig = nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
@@ -199,6 +200,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				// TODO tratar excecao
 			}
 
+			BOOST_LOG_TRIVIAL(info) << "Global time spent: " << timeSpent << " s";
 			out << "RCC Global time spent: " << timeSpent << endl;
 			Imbalance imb = RCCCluster->getImbalance();
 			out << "RI(P) = " << imb.getValue() << endl;
@@ -206,6 +208,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			RCCCluster->printClustering(ss);
 			out << ss.str();
 			out.close();
+			BOOST_LOG_TRIVIAL(info) << "RCC Search done. Obj = " << imb.getValue();
  		}
 
 	} else {
@@ -250,61 +253,83 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 	// reads the system properties from ini file
 	this->readPropertiesFile();
-	// initializes the logging subsystem
-	this->initLogging(TimeDateUtil::generateRandomId(), myRank);
 
-	// codigo do processor lider
-	if(myRank == 0) {
-		cout << "Correlation clustering problem solver" << endl;
-		// id used for output folders
-		string executionId = TimeDateUtil::generateRandomId();
+	string s_alpha;
+	int numberOfIterations = 500, l = 1;
+	bool debug = false, profile = false, firstImprovementOnOneNeig = true, RCCEnabled = true;
+	string inputFileDir, outputFolder;
+	int timeLimit = 1800;
+	int problemType = ClusteringProblem::CC_PROBLEM, functionType = GainFunction::IMBALANCE;
+	int numberOfSlaves = np - 1;
+	string jobid;
+	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 
-		try {
-			string s_alpha;
-			int numberOfIterations = 500, l = 1;
-			bool debug = false, profile = false, firstImprovementOnOneNeig = true, RCCEnabled = true;
-			string inputFileDir, outputFolder;
-			int timeLimit = 1800;
-			int problemType = ClusteringProblem::CC_PROBLEM, functionType = GainFunction::IMBALANCE;
-			int numberOfSlaves = np - 1;
-			CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
+	po::options_description desc("Available options:");
+	desc.add_options()
+		("help", "show program options")
+		("alpha,a", po::value<string>(&s_alpha),
+			  "alpha - randomness factor")
+		("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
+			  "number of iterations")
+		("neighborhood_size,l", po::value<int>(&l)->default_value(1),
+			  "neighborhood size")
+		("rcc", po::value<bool>(&RCCEnabled)->default_value(true), "Enable RCC Problem resolution after GRASP CC")
+		("time-limit", po::value<int>(&timeLimit)->default_value(1800), "maximum execution time")
+		("input-file", po::value< std::vector<string> >(), "input file")
+		("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
+		("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
+		("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
+		("output-folder", po::value<string>(&outputFolder), "output folder for results files")
+		("gain-function-type", po::value<int>(&functionType),
+				"0 for min imbalance, 1 for max modularity gain function, 2 for max negative modularity gain function, "
+				"3 for max positive-negative modularity gain function, 4 for max pos-neg mod gain function II, "
+				"5 for max pos-neg mod gain function III")
+		("slaves,s", po::value<int>(&numberOfSlaves)->default_value(np - 1), "number of GRASP processes in parallel")
+		("firstImprovementOnOneNeig", po::value<bool>(&firstImprovementOnOneNeig)->default_value(true), "first improvement in 1-opt neighborhood (** sequential VNS only **)")
+		("jobid", po::value<string>(&jobid), "job identifier (string)")
+		/* TODO Resolver problema com o parametro da descricao
+		("strategy",
+					 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
+					 "Resolution strategy to be used. Accepted values: GRASP, GRASP_PR.") */
+	;
+	po::positional_options_description p;
+	p.add("input-file", -1);
+	po::variables_map vm;
+	po::store(po::command_line_parser(argc, argv).
+			  options(desc).positional(p).run(), vm);
+	po::notify(vm);
 
-			po::options_description desc("Available options:");
-			desc.add_options()
-				("help", "show program options")
-				("alpha,a", po::value<string>(&s_alpha),
-					  "alpha - randomness factor")
-				("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
-					  "number of iterations")
-				("neighborhood_size,l", po::value<int>(&l)->default_value(1),
-					  "neighborhood size")
-				("rcc", po::value<bool>(&RCCEnabled)->default_value(true), "Enable RCC Problem resolution after GRASP CC")
-				("time-limit", po::value<int>(&timeLimit)->default_value(1800), "maximum execution time")
-				("input-file", po::value< std::vector<string> >(), "input file")
-				("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
-				("profile", po::value<bool>(&profile)->default_value(false), "enable profile mode")
-				("input-file-dir", po::value<string>(&inputFileDir), "input file directory (processes all files inside)")
-				("output-folder", po::value<string>(&outputFolder), "output folder for results files")
-				("gain-function-type", po::value<int>(&functionType),
-						"0 for min imbalance, 1 for max modularity gain function, 2 for max negative modularity gain function, "
-						"3 for max positive-negative modularity gain function, 4 for max pos-neg mod gain function II, "
-						"5 for max pos-neg mod gain function III")
-				("slaves,s", po::value<int>(&numberOfSlaves)->default_value(np - 1), "number of GRASP processes in parallel")
-				("firstImprovementOnOneNeig", po::value<bool>(&firstImprovementOnOneNeig)->default_value(true), "first improvement in 1-opt neighborhood (** sequential VNS only **)")
-				/* TODO Resolver problema com o parametro da descricao
-				("strategy",
-							 po::typed_value<Resolution::StategyName, char *>(&strategy).default_value(strategy, "GRASP"),
-							 "Resolution strategy to be used. Accepted values: GRASP, GRASP_PR.") */
-			;
+	// job id is obtained through command line parameter from PBS Scheduler
+        cout << "Job id is " << jobid << "\n";
+        // initializes the logging subsystem
+        if(jobid.length() == 0) {
+                jobid = TimeDateUtil::generateRandomId();
+        } else {
+		jobid += "-" + TimeDateUtil::generateRandomId();
+	}
+	
+	try {
+        	this->initLogging(jobid, myRank);
+	}
+        catch(std::exception& e)
+        {
+                 cerr << "Fatal application error in log init.\n";
+                 cerr << "Abnormal program termination. Stracktrace: " << endl;
+                 cerr << e.what() << "\n";
+                 if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
+                         cerr << stack << endl;
+                 }
+                 cerr << diagnostic_information(e);
+                 return 1;
+         }
 
-			po::positional_options_description p;
-			p.add("input-file", -1);
+        // codigo do processor lider
+        if(myRank == 0) {
+                cout << "Correlation clustering problem solver" << endl;
+                // id used for output folders
+                string executionId = jobid;
 
-			po::variables_map vm;
-			po::store(po::command_line_parser(argc, argv).
-					  options(desc).positional(p).run(), vm);
-			po::notify(vm);
-
+                try {
 			if (vm.count("help")) {
 				cout << "Usage: MestradoMario [options]\n";
 				cout << desc;
@@ -347,8 +372,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				BOOST_LOG_TRIVIAL(info) << "RCC is disabled. Only GRASP CC will be executed." << endl;
 			}
 
+			BOOST_LOG_TRIVIAL(info) << "Total number of processes is " << np << endl;
+                        cout << "Total number of processes is " << np << endl;
 			BOOST_LOG_TRIVIAL(info) << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
 			cout << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
+			BOOST_LOG_TRIVIAL(info) << "Number of VNS processes in parallel is " << (np - numberOfSlaves) << endl;
+                        cout << "Number of VNS processes in parallel is " << (np - numberOfSlaves) << endl;
 			std::vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
@@ -410,17 +439,17 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			}
 
 			// ------------------ M P I    T E R M I N A T I O N ---------------------
+			BOOST_LOG_TRIVIAL(info) << "Terminating MPI slave processes...";
 			if(np > 1) {
 				mpi::communicator world;
-				int i = 1;
-				for(i = 1; i <= numberOfSlaves; i++) {
-					InputMessageParallelGrasp imsg;
-					world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsg);
-					BOOST_LOG_TRIVIAL(debug) << "Terminate message sent to process " << i << endl;
-				}
-				for(; i < np; i++) {
-					InputMessageParallelVNS imsg;
-					world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsg);
+				InputMessageParallelGrasp imsgpgrasp;
+                                InputMessageParallelVNS imsgpvns;
+				for(int i = 1; i < np; i++) {
+					if(i % (numberOfSearchSlaves + 1) == 0) {
+						world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpgrasp);
+					} else {
+						world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpvns);
+					}
 					BOOST_LOG_TRIVIAL(debug) << "Terminate message sent to process " << i << endl;
 				}
 			}
@@ -441,10 +470,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		mpi::communicator world;
 		// First message received from leader contains the number of GRASP slaves
 		// and is used for a process to discover if it is a GRASP slave or a VNS slave
-		// Grasp slave: 1 < rank < numberOfSlaves; VNS slave: otherwise
+		// Grasp slave: rank % (numberOfSearchSlaves+1) == 0; VNS slave: otherwise
 		unsigned int numberOfSlaves = 0;
 		world.recv(MPIMessage::LEADER_ID, mpi::any_tag, numberOfSlaves);
-		BOOST_LOG_TRIVIAL(trace) << "number of slaves received: " << numberOfSlaves << "\n";
+		BOOST_LOG_TRIVIAL(info) << "number of slaves received: " << numberOfSlaves << "\n";
 		cout << "number of slaves received: " << numberOfSlaves << "\n";
 		cout << "Process " << myRank << " ready [slave process]." << endl;
 		int numberOfSearchSlaves = calculateNumberOfSearchSlaves(np, numberOfSlaves);
@@ -458,20 +487,19 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		SignedGraphPtr g;
 		unsigned int previousId = 0;
 
-		while(true) {
-			try {
-				if(myRank % (numberOfSearchSlaves+1) == 0) {  // GRASP slave
-					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " ready [GRASP slave process]." << endl;
-
+		try {
+			if(myRank % (numberOfSearchSlaves+1) == 0) {  // GRASP slave
+				BOOST_LOG_TRIVIAL(info) << "Process " << myRank << " ready [GRASP slave process].";
+				while(true) {
 					// Receives a message with GRASP parameters and triggers local GRASP execution
 					InputMessageParallelGrasp imsgpg;
 					// receives a message of type ParallelGrasp::MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG or a terminate msg
 					mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgpg);
 					if(stat.tag() == MPIMessage::TERMINATE_MSG_TAG) {
-						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": terminate msg received.\n";
+						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": terminate message received.";
 						return 0;
 					}
-					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel GRASP]: Received message from leader." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel GRASP]: Received message from leader.";
 					messageCount++;
 
 					if(imsgpg.l == 0) {
@@ -480,9 +508,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 					// builds a new graph object only if it has changed (saves time)
 					if(previousId != imsgpg.id) {
-						// reconstructs the graph from its text representation
 						g.reset();
-						g = reader.readGraphFromString(imsgpg.graphInputFileContents);
+						// Reads the graph from the specified text file
+						g = reader.readGraphFromFile(imsgpg.graphInputFilePath);
 						previousId = imsgpg.id;
 					}
 
@@ -497,10 +525,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// Sends the result back to the leader process
 					OutputMessage omsg(*bestClustering, resolution.getNumberOfTestedCombinations());
 					world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": GRASP Output Message sent to leader." << endl;
+					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": GRASP Output Message sent to leader.";
 
-				} else {  // Parallel VNS slave
-					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " ready [VNS slave process]." << endl;
+				}
+			} else {  // Parallel VNS slave
+				BOOST_LOG_TRIVIAL(info) << "Process " << myRank << " ready [VNS slave process].";
+				while(true) {
 					// Receives a parallel VNS message with parameters and triggers local VNS execution
 					InputMessageParallelVNS imsgvns;
 					// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG or a terminate msg
@@ -508,7 +538,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel VNS]: Received message from leader." << endl;
 					messageCount++;
 					if(stat.tag() == MPIMessage::TERMINATE_MSG_TAG) {
-						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": terminate msg received.\n";
+						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": terminate msg received.\n";
 						return 0;
 					} else if(stat.tag() == MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG) {
 						// ignores interrupt message from previous VNS processing
@@ -522,9 +552,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 					// builds a new graph object only if it has changed (saves time)
 					if(previousId != imsgvns.id) {
-						// reconstructs the graph from its text representation
 						g.reset();
-						g = reader.readGraphFromString(imsgvns.graphInputFileContents);
+						g = reader.readGraphFromFile(imsgvns.graphInputFilePath);
 						previousId = imsgvns.id;
 					}
 
@@ -541,16 +570,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							<< leader << ". I(P) = " << bestClustering->getImbalance().getValue();
 				}
 			}
-			catch(std::exception& e)
-			{
-				BOOST_LOG_TRIVIAL(fatal) << "Abnormal program termination. Stracktrace: " << endl;
-				BOOST_LOG_TRIVIAL(fatal) << e.what() << "\n";
-				if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
-					BOOST_LOG_TRIVIAL(fatal) << stack << endl;
-				}
-				BOOST_LOG_TRIVIAL(fatal) << diagnostic_information(e);
-				return 1;
+		} catch(std::exception& e) {
+			BOOST_LOG_TRIVIAL(fatal) << "Abnormal program termination. Stracktrace: " << endl;
+			BOOST_LOG_TRIVIAL(fatal) << e.what() << "\n";
+			if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
+				BOOST_LOG_TRIVIAL(fatal) << stack << endl;
 			}
+			BOOST_LOG_TRIVIAL(fatal) << diagnostic_information(e);
+			return 1;
 		}
 	}
 	return 0;

@@ -33,20 +33,20 @@ class InputMessage {
 public:
 	// the identifier of the graph
 	unsigned int id;
-	string graphInputFileContents;
+	string graphInputFilePath;
 	int l;
 	// the number of grasp slave processes
 	unsigned int numberOfSlaves;
 	// the number of vns slave processes
 	unsigned int numberOfSearchSlaves;
 
-	InputMessage() : id(0), graphInputFileContents(), l(0), numberOfSlaves(0),
+	InputMessage() : id(0), graphInputFilePath(), l(0), numberOfSlaves(0),
 			numberOfSearchSlaves(0) {
 
 	}
 
-	InputMessage(unsigned int i, string graphContents, int nl, unsigned int slaves, unsigned int searchSlaves) :
-		id(i), graphInputFileContents(graphContents), l(nl), numberOfSlaves(slaves),
+	InputMessage(unsigned int i, string graphFilePath, int nl, unsigned int slaves, unsigned int searchSlaves) :
+		id(i), graphInputFilePath(graphFilePath), l(nl), numberOfSlaves(slaves),
 		numberOfSearchSlaves(searchSlaves) {
 
 	}
@@ -59,7 +59,7 @@ public:
 	void serialize(Archive & ar, unsigned int file_version)
 	{
 		ar & id;
-		ar & graphInputFileContents;
+		ar & graphInputFilePath;
 		ar & l;
 		ar & numberOfSlaves;
 		ar & numberOfSearchSlaves;
@@ -99,7 +99,7 @@ public:
 	string toString() {
 		stringstream ss;
 		ss << "Alpha: " << alpha << "; l = " << l << "; iter = " << iter << "; fileId = " <<
-				fileId << "; " << graphInputFileContents << "\n";
+				fileId << "; " << graphInputFilePath << "\n";
 		return ss.str();
 	}
 

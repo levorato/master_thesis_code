@@ -189,7 +189,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	                sscanf(vec.at(b).c_str(), "%lf", &value);
 					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 					// the following is to avoid duplicate couting of arcs in the objective function
-					if(b <= a)	g->addEdge(a, b, value);
+					g->addEdge(a, b, value);
 				} catch( boost::bad_lexical_cast const& ) {
 					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 				}
@@ -198,7 +198,6 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 		}
 	}
 	// g->printGraph();
-	g->setGraphAsText(graphContents);
 	boost::hash<std::string> string_hash;
 	g->setId(string_hash(graphContents));
 
@@ -207,7 +206,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(const string& filepath) {
 	BOOST_LOG_TRIVIAL(info) << "Reading input file: '" << filepath << "' ..." << endl;
-	return readGraphFromString(get_file_contents(filepath.c_str()));
+	SignedGraphPtr g = readGraphFromString(get_file_contents(filepath.c_str()));
+	g->setGraphFileLocation(filepath);
+	return g;
 }
 
 std::string SimpleTextGraphFileReader::get_file_contents(const char *filename)

@@ -47,18 +47,16 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	// the leader itself (myRank) does part of the work too
 	// The formulas below determine the first and last search slaves of this grasp slave process
 	// IMPORTANT! Process mapping:
-	// * 1..numberOfSlaves => p(i) GRASP slave processes (execute parellel GRASP iterations with MPI)
-	// * numberOfSlaves+1..numberOfSearchSlaves => VNS slave processes for p(0) (execute parallel VNS for p(0))
-	// * numberOfSlaves+1+i*numberOfSearchSlaves..numberOfSlaves+(i+1)*numberOfSearchSlaves => VNS slave processes for p(i)
-	// Here, p(i) is represented by myRank.
+	// * myRank * (numberOfSearchSlaves+1) == 0 => p(i) GRASP slave processes (execute parellel GRASP iterations with MPI)
+	// * 1..numberOfSearchSlaves => VNS slave processes for p(0) (execute parallel VNS for p(0))
+	// * [myRank+1]..[myRank + numberOfSearchSlaves] => VNS slave processes for p(i), where i = myRank
 	int i = 0, cont = 0;
-	int firstSlave = numberOfSlaves + 1 + myRank * numberOfSearchSlaves;
-	int lastSlave = numberOfSlaves + 1 + (myRank + 1) * numberOfSearchSlaves;
+	int firstSlave = myRank + 1;
+	int lastSlave = myRank + numberOfSearchSlaves;
 	if(sizeOfChunk > 0) {
-		i = firstSlave;
 		// Sends the parallel search (VNS) message to the slaves via MPI
-		for(cont = 0; i < lastSlave; i++, cont++) {
-			InputMessageParallelVNS imsgpvns(g->getId(), l, g->getGraphAsText(), *clustering, problem.getType(),
+		for(i = firstSlave, cont = 0; i <= lastSlave; i++, cont++) {
+			InputMessageParallelVNS imsgpvns(g->getId(), l, g->getGraphFileLocation(), *clustering, problem.getType(),
 					timeSpentSoFar, timeLimit, cont * sizeOfChunk, (cont + 1) * sizeOfChunk - 1, numberOfSlaves,
 					numberOfSearchSlaves, k);
 			world.send(i, MPIMessage::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
@@ -85,10 +83,11 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	// TODO implement global first improvement (l = 2-opt) in parallel VNS here!
 	if(sizeOfChunk > 0) {
 		OutputMessage omsg;
-		for(i = firstSlave; i < lastSlave; i++) {
+		for(i = firstSlave; i <= lastSlave; i++) {
 			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ": " <<
-					omsg.clustering.getImbalance().getValue() << endl << omsg.clustering.toString()  << "\n";
+			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ". Obj = " <<
+					omsg.clustering.getImbalance().getValue();
+			BOOST_LOG_TRIVIAL(trace) << omsg.clustering.toString();
 			// processes the result of the execution of process p(i)
 			// sums the number of tested combinations
 			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
@@ -104,8 +103,8 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 				if(l == 2) {
 					InputMessageParallelVNS imsg;
 					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] First improvement on 2-opt: interrupting other VNS slaves "
-							<< firstSlave << " to " << (lastSlave - 1);
-					for(int pj = firstSlave; pj < lastSlave; pj++) {
+							<< firstSlave << " to " << lastSlave;
+					for(int pj = firstSlave; pj <= lastSlave; pj++) {
 						world.send(pj, MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg);
 					}
 				}
