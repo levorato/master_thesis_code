@@ -86,10 +86,10 @@ public:
 
 	}
 
-	InputMessageParallelGrasp(unsigned int i, string graphContents, int it, double a, int neigh,
+	InputMessageParallelGrasp(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int slaves,
 			unsigned int searchSlaves, bool fiOneNeig) :
-				InputMessage(i, graphContents, neigh, slaves, searchSlaves),
+				InputMessage(i, graphFilePath, neigh, slaves, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig) {
@@ -147,10 +147,10 @@ public:
 
 	}
 
-	InputMessageParallelVNS(unsigned int i, int neig, string graphContents, Clustering c,
+	InputMessageParallelVNS(unsigned int i, int neig, string graphFilePath, Clustering c,
 			int pType, double timeSoFar, double tl, unsigned long startIdx,
 			unsigned long endIdx, unsigned int slaves, unsigned int searchSlaves, unsigned long _k) :
-			InputMessage(i, graphContents, neig, slaves, searchSlaves),
+			InputMessage(i, graphFilePath, neig, slaves, searchSlaves),
 			clustering(c),
 			problemType(pType), timeSpentSoFar(timeSoFar), timeLimit(tl),
 			initialClusterIndex(startIdx) , finalClusterIndex(endIdx), k(_k) {
