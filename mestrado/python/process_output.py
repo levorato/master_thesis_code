@@ -57,11 +57,11 @@ def main(argv):
    try:
       opts, args = getopt.getopt(argv,"hi:o:",["folder=","filter="])
    except getopt.GetoptError:
-      print 'process_output.py -i <folder> -f <filter>'
+      print 'process_output.py --folder <folder> --filter <filter>'
       sys.exit(2)
    for opt, arg in opts:
       if opt == '-h':
-         print 'process_output.py -i <folder> -f <filter>'
+         print 'process_output.py --folder <folder> --filter <filter>'
          sys.exit()
       elif opt in ("-i", "--folder"):
          folder = arg
@@ -99,6 +99,7 @@ def main(argv):
       if(len(files) and ''.join(root) != folder):
          file_list = []
          file_list.extend(glob.glob(root + "/CC*.csv"))
+         file_list.extend(glob.glob(root + "/Node*.csv"))
          count = len(file_list) - 1
          
 	 # Process CC results 
@@ -118,7 +119,7 @@ def main(argv):
 		 filename = (root[:root.rfind("/")])
 		 datetime = root[root.rfind("/")+1:]
 		 filename = filename[filename.rfind("/")+1:]
-		 text_file.write("Summary for graph file: %s\n"%filename)
+		 text_file.write("CC Summary for graph file: %s\n"%filename)
 		 local_avg_ip_const = 0
 		 local_avg_count = 0
 		 
@@ -224,6 +225,9 @@ def main(argv):
 		 previous_filename = filename
 	 # end process CC results
 
+   print "\nProcessing CC Results...\n"
+
+   # Print CC results on display
    result_file = open(folder + "/summary.txt", "w")
    print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
    result_file.write("Filename, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb\n")
@@ -231,22 +235,16 @@ def main(argv):
       print "%s, %s" % (key, all_files_summary[key])
       result_file.write("%s, %s\n" % (key, all_files_summary[key]))
    result_file.close()
-   result_file = open(folder + "/summary.txt", "w")
+   print "------ CC Best results:"
    print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
-   result_file.write("Filename, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb\n")
-   for key in sorted(all_files_summary.iterkeys()):
-      print "%s, %s" % (key, all_files_summary[key])
-      result_file.write("%s, %s\n" % (key, all_files_summary[key]))
-   result_file.close()
-   print "------ Best results:"
    for key in sorted(best_file_summary.iterkeys()):
       print "%s, %s" % (key, best_file_summary[key])
-   print "------ Average results:"
+   print "------ CC Average results:"
    print "Instance, Avg I(P) const, Avg I(P), Avg K, Avg Time(s), Avg Iter, Avg combinations, Num executions"
    for key in sorted(avg_file_summary.iterkeys()):
       print "%s, %s" % (key, avg_file_summary[key])
 
-
+   print "\nProcessing RCC Results...\n"
    # Process RCC results 
    for root, subFolders, files in os.walk(folder):
       # sort dirs and files
@@ -274,7 +272,7 @@ def main(argv):
                  filename = (root[:root.rfind("/")])
                  datetime = root[root.rfind("/")+1:]
                  filename = filename[filename.rfind("/")+1:]
-                 text_file.write("Summary for graph file: %s\n"%filename)
+                 text_file.write("RCC Summary for graph file: %s\n"%filename)
                  local_avg_count = 0
 
                  best_value = 1000000L
@@ -288,6 +286,7 @@ def main(argv):
                  while count >= 0:
 
                    content_file = open(file_list[count], 'r')
+                   # print "Processing file %s\n" % file_list[count]
                    try:
                     content = content_file.read()
 
@@ -361,15 +360,14 @@ def main(argv):
                     element = best_file_summary[filename]
                     value = float(element[0:element.find(',')-1])
                     if(best_value < value):
-                       RCC_best_file_summary[filename] = str(all_files_summary[filename+"/"+datetime])
+                       RCC_best_file_summary[filename] = str(RCC_all_files_summary[filename+"/"+datetime])
                  else:
-                    RCC_best_file_summary[filename] = str(all_files_summary[filename+"/"+datetime])
+                    RCC_best_file_summary[filename] = str(RCC_all_files_summary[filename+"/"+datetime])
 
                  previous_filename = filename
          # end process RCC results
 
-
-	 # varre os arquivos da pasta em busca dos intervalos de tempo	
+	 # varre os arquivos da pasta em busca dos intervalos de tempo	- DESATIVADO
 	 for filename in files:
 		filename = os.path.join(root, filename)
 		if "timeIntervals" in filename:
@@ -406,6 +404,23 @@ def main(argv):
 			timeInterval[time] = float(timeInterval.get(time, 0.0)) + float(time_list[last_time][1])
 			timeCount[time] = timeCount.get(time, 0.0) + 1
 			# str(last_time) + ", " + str(time_list[last_time][1]) + ", " + str(time_list[last_time])
+
+   # Print RCC results on display
+   result_file = open(folder + "/rcc-summary.txt", "w")
+   print "Instance, RI(P), RI(P)+, RI(P)-, k, Local time(s), Global time(s), Params, Total Iter, Total Comb"
+   result_file.write("Filename, RI(P), RI(P)+, RI(P)-, k, Local time(s), Global time(s), Params, Total Iter, Total Comb\n")
+   for key in sorted(RCC_all_files_summary.iterkeys()):
+      print "%s, %s" % (key, RCC_all_files_summary[key])
+      result_file.write("%s, %s\n" % (key, RCC_all_files_summary[key]))
+   result_file.close()
+   print "------ RCC Best results:"
+   print "Instance, RI(P), RI(P)+, RI(P)-, k, Local time(s), Global time(s), Params, Total Iter, Total Comb"
+   for key in sorted(RCC_best_file_summary.iterkeys()):
+      print "%s, %s" % (key, RCC_best_file_summary[key])
+   print "------ RCC Average results:"
+   print "Instance, Avg RI(P), Avg K, Avg Time(s), Avg Iter, Avg combinations, Num executions"
+   for key in sorted(RCC_avg_file_summary.iterkeys()):
+      print "%s, %s" % (key, RCC_avg_file_summary[key])
 
    if avg_count > 0:
       #print "storing " + previous_filename
