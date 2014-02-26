@@ -64,6 +64,7 @@ def pick_random_internal_edge(N, degree, k):
          a = pick_random_vertex(vertex_list, degree, k)
          if(a < 0): 
             return None
+         #print "1- Selected vertex %s" % str(a)
          # Selects a neighbour of a (= same cluster) with degree < k
          # print 'mycluster of {0} is {1}'.format(a, mycluster[a])
          neighbour_list = cluster_node_list[mycluster[a]]
@@ -104,90 +105,104 @@ def SG(c, n, k, p_in, p_minus, p_plus):
    # Variables used in graph generation
    N = n * c
    print 'Generating random graph with {0} vertices...'.format(str(N))
-   # Array that controls to which cluster a vertex belongs (size = N)
-   mycluster = [0 for x in xrange(N)]
-   # List of nodes inside a cluster
-   cluster_node_list = [[] for x in xrange(c)]
-   # Graph adjacency matrix (with dimensions N x N)
-   # Creates a list containing N lists initialized to 0 (index begins with 0)
-   matrix = [[0 for x in xrange(N)] for x in xrange(N)] 
-   # Array that controls the degree of each vertex
-   degree = [0 for x in range(N)]
-   
-   # builds a list with all the N vertices of the graph
-   vertex_list = range(N)
-   
-   # 1- randomly chooses n vertices to insert in each of the c clusters
-   print "Step 1: randomly chooses n vertices to insert in each of the c clusters..."
-   for cluster_number in xrange(c):
-        for i in xrange(n):
-             # randomly removes a vertex from the vertex_list
-             v = random.choice(vertex_list)
-             vertex_list.remove(v)
-             mycluster[v] = cluster_number
-             cluster_node_list[cluster_number].append(v)
-   
-   # assertion tests / sanity check
-   cluster_count = [0 for x in xrange(c)]
-   for v in xrange(N):
-        cluster_count[mycluster[v]] += 1
-   for x in xrange(c):
-        assert cluster_count[x] == n, "There must be n vertices in each cluster"
-        assert len(cluster_node_list[x]) == n, "There must be n vertices in each cluster"
-   assert len(vertex_list) == 0, "Vertex list must be empty after cluster-vertex distribution"
+   success = False
 
-   # 2- uses probability p_in to generate k edges (initially positive) connecting each of the vertices
-   # p_in % of the edges connect nodes of the same cluster
-   print "Step 2: uses probability p_in to generate k edges (initially positive) connecting each of the vertices..."
-   total_edges = (c * n * k) / 2
-   internal_edge_num = int(math.floor(total_edges * p_in))
-   external_edge_num = total_edges - internal_edge_num
-   print 'Number of total edges of the graph is {0}'.format(str(total_edges))
-   print 'Number of expected internal edges of the graph is {0}'.format(str(internal_edge_num))
-   print 'Number of expected external edges of the graph is {0}'.format(str(external_edge_num))
-   assert (internal_edge_num + external_edge_num == total_edges), "Sum of internal and external edges do not match"
-   
-   # Guarantees that each node has exactly k edges (in-degree + out-degree = k)
-   # Creates the internal edges (within same cluster)
-   count = 0
-   for i in xrange(internal_edge_num):
-        # Randomly picks a pair of nodes that belong to the same cluster
-        e = pick_random_internal_edge(N, degree, k)
-        if e == None:
-            break
-        matrix[e.x][e.y] = 1
-        matrix[e.y][e.x] = 1
-        degree[e.x] += 1
-        degree[e.y] += 1
-        count += 1
-        
-   print 'Generated {0} random internal edges.'.format(count)
-   internal_edge_num = count
-   external_edge_num = total_edges - internal_edge_num
+   while not success:
+	   # Array that controls to which cluster a vertex belongs (size = N)
+	   mycluster = [0 for x in xrange(N)]
+	   # List of nodes inside a cluster
+	   cluster_node_list = [[] for x in xrange(c)]
+	   # Graph adjacency matrix (with dimensions N x N)
+	   # Creates a list containing N lists initialized to 0 (index begins with 0)
+	   matrix = [[0 for x in xrange(N)] for x in xrange(N)] 
+	   # Array that controls the degree of each vertex
+	   degree = [0 for x in range(N)]
+	   
+	   # builds a list with all the N vertices of the graph
+	   vertex_list = range(N)
+	   
+	   # 1- randomly chooses n vertices to insert in each of the c clusters
+	   print "Step 1: randomly chooses n vertices to insert in each of the c clusters..."
+	   for cluster_number in xrange(c):
+		for i in xrange(n):
+		     # randomly removes a vertex from the vertex_list
+		     v = random.choice(vertex_list)
+		     vertex_list.remove(v)
+		     mycluster[v] = cluster_number
+		     cluster_node_list[cluster_number].append(v)
+	   
+	   # assertion tests / sanity check
+	   cluster_count = [0 for x in xrange(c)]
+	   for v in xrange(N):
+		cluster_count[mycluster[v]] += 1
+	   for x in xrange(c):
+		assert cluster_count[x] == n, "There must be n vertices in each cluster"
+		assert len(cluster_node_list[x]) == n, "There must be n vertices in each cluster"
+	   assert len(vertex_list) == 0, "Vertex list must be empty after cluster-vertex distribution"
 
-   # Creates the external edges (between different clusters)
-   count = 0
-   for i in xrange(external_edge_num):
-        # Randomly picks a pair of nodes that do not belong to the same cluster
-        e = pick_random_external_edge(N, degree, k)
-        if e == None:
-            print "Warn: no more external edge found."
-            break
-        matrix[e.x][e.y] = 1
-        matrix[e.y][e.x] = 1
-        degree[e.x] += 1
-        degree[e.y] += 1
-        count += 1
-        
-   print 'Generated {0} random external edges.'.format(count)
-   external_edge_num = count
-    
+	   # 2- uses probability p_in to generate k edges (initially positive) connecting each of the vertices
+	   # p_in % of the edges connect nodes of the same cluster
+	   print "Step 2: uses probability p_in to generate k edges (initially positive) connecting each of the vertices..."
+	   total_edges = int((c * n * k) / 2)
+	   internal_edge_num = int(math.floor(total_edges * p_in))
+	   external_edge_num = total_edges - internal_edge_num
+	   print 'Number of total edges of the graph is {0}'.format(str(total_edges))
+	   print 'Number of expected internal edges of the graph is {0}'.format(str(internal_edge_num))
+	   print 'Number of expected external edges of the graph is {0}'.format(str(external_edge_num))
+	   assert (internal_edge_num + external_edge_num == total_edges), "Sum of internal and external edges do not match"
+	   
+
+	   # Guarantees that each node has exactly k edges (in-degree + out-degree = k)
+	   # 2.1- Creates the internal edges (within same cluster)
+	   print "Generating internal edges..."
+	   count = 0
+	   for i in xrange(internal_edge_num):
+		# Randomly picks a pair of nodes that belong to the same cluster
+		e = pick_random_internal_edge(N, degree, k)
+		if e == None:
+		    print "Warn: no more internal edge found."
+		    break
+		# edges are directed
+		matrix[e.x][e.y] = 1
+		degree[e.x] += 1
+		degree[e.y] += 1
+		count += 1
+		
+	   print 'Generated {0} random internal edges.'.format(count)
+	   internal_edge_num = count
+	   external_edge_num = total_edges - internal_edge_num
+
+	   # 2.2- Creates the external edges (between different clusters)
+	   print "Generating external edges..."
+	   count = 0
+	   for i in xrange(external_edge_num):
+		# Randomly picks a pair of nodes that do not belong to the same cluster
+		e = pick_random_external_edge(N, degree, k)
+		if e == None:
+		    print "Warn: no more external edge found."
+		    break
+		# edges are directed
+		matrix[e.x][e.y] = 1
+		degree[e.x] += 1
+		degree[e.y] += 1
+		count += 1
+		
+	   print 'Generated {0} random external edges.'.format(count)
+	   external_edge_num = count
+
+	   # restarts graph generation until the correct number of edges is obtained
+	   success = True
+	   for v in range(N):
+		#assert degree[v] == k, "The degree of each vertex must be equal to k"
+		if degree[v] <> k:
+		    success = False
+                    print "\nRetrying...\n"
+		    break
+   # end while not success
+
    print 'Number of internal edges of the graph is {0}'.format(str(internal_edge_num))
    print 'Number of external edges of the graph is {0}'.format(str(external_edge_num))
 
-   # assertion tests / sanity check
-   for v in range(N):
-        assert degree[v] == k, "The degree of each vertex must be equal to k"
    total_internal_edges = 0
    for c1 in xrange(c):
         for v1 in cluster_node_list[c1]:
@@ -198,7 +213,8 @@ def SG(c, n, k, p_in, p_minus, p_plus):
    
    # 3- uses probability p- to generate the negative sign of the internal clusters' edges (connecting vertices inside a given cluster)
    print "Step 3: uses probability p- to generate the negative sign of the internal clusters' edges..."
-   neg_links_num = internal_edge_num * p_minus
+   neg_links_num = int(internal_edge_num * p_minus)
+   print "Creating %s random negative internal cluster edges." % str(neg_links_num)
    # Traverses all internal clusters' edges 
    count = neg_links_num
    for c1 in xrange(c):
@@ -207,24 +223,28 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                 if matrix[v1][v2] > 0:
                     if count > 0:
                         matrix[v1][v2] = -1
-                        matrix[v2][v1] = -1
                         count -= 1
-   assert count == 0, "There must be (c x n x k x pin x p-) negative links within communities"
+                    else:
+                        break
+   assert count == 0, "3. There must be (c x n x k x pin x p-) negative links within communities"
    
    # 4- uses probability p+ to generate the positive sign of the external clusters' edges (connecting vertices between different clusters)
    print "Step 4: uses probability p+ to generate the positive sign of the external clusters' edges..."
-   pos_links_num = external_edge_num * p_plus
+   pos_links_num = int(external_edge_num * p_plus)
+   print "Creating %s random positive external cluster edges." % str(pos_links_num)
    # Traverses all external clusters' edges 
    # Calculates how many external edges must be negative
    count = external_edge_num - pos_links_num
+   print "Creating %s random negative external cluster edges." % str(count)
    for v1 in xrange(N):
             for v2 in xrange(N):
-                if (matrix[v1][v2] > 0) and mycluster(v1) <> mycluster(v2):
+                if (matrix[v1][v2] > 0) and mycluster[v1] <> mycluster[v2]:
                     if count > 0:
                         matrix[v1][v2] = -1
-                        matrix[v2][v1] = -1
                         count -= 1
-   assert count == 0, "There must be (c x n x k x (1 - p_in) x p+) positive links outside communities"
+                    else:
+                        break
+   assert count == 0, "4. There must be (c x n x k x (1 - p_in) x p+) positive links outside communities"
    
    # Writes output file in XPRESS Mosel format (.mos)
    # --------------------------------------------------
@@ -251,7 +271,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                        edge_list += '({0},{1}){2} '.format(str(i+1), str(j+1), str(matrix[i][j]))
         g_file.write('Mrel: [ {0}]'.format(edge_list))
 
-   print "Output file successfully generated."
+   print "\nOutput file successfully generated."
 
 def main(argv):
 
