@@ -68,51 +68,28 @@ public:
 	static void populateListOfVNSSlaves(std::vector<int>& slaveList, const unsigned int& myRank,
 			const unsigned int& numberOfSlaves, const unsigned int& numberOfSearchSlaves) {
 		if(MACHINE_PROCESS_ALLOCATION_STRATEGY == ALL_GRASP_SLAVES_FIRST) {
-			// the leader distributes the work across the processors
-				// the leader itself (myRank) does part of the work too
-				// The formulas below determine the first and last search slaves of this grasp slave process
-				// IMPORTANT! Process mapping:
-				// * 1..numberOfSlaves => p(i) GRASP slave processes (execute parellel GRASP iterations with MPI)
-				// * numberOfSlaves+1..numberOfSearchSlaves => VNS slave processes for p(0) (execute parallel VNS for p(0))
-				// * numberOfSlaves+1+i*numberOfSearchSlaves..numberOfSlaves+(i+1)*numberOfSearchSlaves => VNS slave processes for p(i)
-				// Here, p(i) is represented by myRank.
-				int i = 0, cont = 0;
-				int firstSlave = numberOfSlaves + 1 + myRank * numberOfSearchSlaves;
-				int lastSlave = numberOfSlaves + 1 + (myRank + 1) * numberOfSearchSlaves;
-				if(sizeOfChunk > 0) {
-					i = firstSlave;
-					// Sends the parallel search (VNS) message to the slaves via MPI
-					for(cont = 0; i < lastSlave; i++, cont++) {
-						InputMessageParallelVNS imsgpvns(g->getId(), l, g->getGraphAsText(), *clustering, problem.getType(),
-								timeSpentSoFar, timeLimit, cont * sizeOfChunk, (cont + 1) * sizeOfChunk - 1, numberOfSlaves,
-								numberOfSearchSlaves);
-						world.send(i, ParallelGrasp::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
-						BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk
-								<< ", " << (cont + 1) * sizeOfChunk - 1 << "]" << endl;
-					}
-				}
+			// The formulas below determine the first and last search slaves of this grasp slave process
+			// IMPORTANT! Process mapping:
+			// * 1..numberOfSlaves => p(i) GRASP slave processes (execute parellel GRASP iterations with MPI)
+			// * numberOfSlaves+1..numberOfSearchSlaves => VNS slave processes for p(0) (execute parallel VNS for p(0))
+			// * numberOfSlaves+1+i*numberOfSearchSlaves..numberOfSlaves+(i+1)*numberOfSearchSlaves => VNS slave processes for p(i)
+			// Here, p(i) is represented by myRank.
+			int firstSlave = numberOfSlaves + 1 + myRank * numberOfSearchSlaves;
+			int lastSlave = numberOfSlaves + 1 + (myRank + 1) * numberOfSearchSlaves;
+			for(int i = firstSlave; i <= lastSlave; i++) {
+				slaveList.push_back(i);
+			}
 		} else { // if(MACHINE_PROCESS_ALLOCATION_STRATEGY == GRASP_SLAVE_AND_VNS_SLAVES_TOGETHER)
-			// the leader distributes the work across the processors
-				// the leader itself (myRank) does part of the work too
-				// The formulas below determine the first and last search slaves of this grasp slave process
-				// IMPORTANT! Process mapping:
-				// * myRank * (numberOfSearchSlaves+1) == 0 => p(i) GRASP slave processes (execute parellel GRASP iterations with MPI)
-				// * 1..numberOfSearchSlaves => VNS slave processes for p(0) (execute parallel VNS for p(0))
-				// * [myRank+1]..[myRank + numberOfSearchSlaves] => VNS slave processes for p(i), where i = myRank
-				int i = 0, cont = 0;
-				int firstSlave = myRank + 1;
-				int lastSlave = myRank + numberOfSearchSlaves;
-				if(sizeOfChunk > 0) {
-					// Sends the parallel search (VNS) message to the slaves via MPI
-					for(i = firstSlave, cont = 0; i <= lastSlave; i++, cont++) {
-						InputMessageParallelVNS imsgpvns(g->getId(), l, g->getGraphFileLocation(), *clustering, problem.getType(),
-								timeSpentSoFar, timeLimit, cont * sizeOfChunk, (cont + 1) * sizeOfChunk - 1, numberOfSlaves,
-								numberOfSearchSlaves, k);
-						world.send(i, MPIMessage::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
-						BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk
-								<< ", " << (cont + 1) * sizeOfChunk - 1 << "]" << endl;
-					}
-				}
+			// The formulas below determine the first and last search slaves of this grasp slave process
+			// IMPORTANT! Process mapping:
+			// * myRank * (numberOfSearchSlaves+1) == 0 => p(i) GRASP slave processes (execute parellel GRASP iterations with MPI)
+			// * 1..numberOfSearchSlaves => VNS slave processes for p(0) (execute parallel VNS for p(0))
+			// * [myRank+1]..[myRank + numberOfSearchSlaves] => VNS slave processes for p(i), where i = myRank
+			int firstSlave = myRank + 1;
+			int lastSlave = myRank + numberOfSearchSlaves;
+			for(int i = firstSlave; i <= lastSlave; i++) {
+				slaveList.push_back(i);
+			}
 		}
 	}
 

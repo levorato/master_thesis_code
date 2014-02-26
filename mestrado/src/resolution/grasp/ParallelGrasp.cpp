@@ -40,7 +40,7 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	// the leader itself (i = 0) does part of the work too
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfGRASPSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
-	for(int i = 1; i <= numberOfSlaves; i++) {
+	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, alpha, l,
 				problem.getType(), gainFunction->getType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
@@ -55,7 +55,7 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 
 	// the leader receives the processing results
 	OutputMessage omsg;
-	for(int i = 1; i <= numberOfSlaves; i++) {
+	for(int i = 0; i < numberOfSlaves; i++) {
 		mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message received from process " << stat.source() << ". Obj = " <<
 				omsg.clustering.getImbalance().getValue();

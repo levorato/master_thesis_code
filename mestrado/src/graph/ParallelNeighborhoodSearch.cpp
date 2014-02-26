@@ -8,6 +8,7 @@
 #include "include/ParallelNeighborhoodSearch.h"
 #include "include/SequentialNeighborhoodSearch.h"
 #include "../util/include/MPIMessage.h"
+#include "../util/parallel/include/MPIUtil.h"
 #include "../resolution/grasp/include/ParallelGrasp.h"
 #include <boost/mpi/communicator.hpp>
 #include <boost/log/trivial.hpp>
@@ -19,6 +20,7 @@ namespace grasp {
 
 using namespace boost::mpi;
 using namespace util;
+using namespace util::parallel;
 using namespace std;
 
 ParallelNeighborhoodSearch::ParallelNeighborhoodSearch(unsigned int offset, unsigned int numproc) :
@@ -45,23 +47,18 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	mpi::communicator world;
 	// the leader distributes the work across the processors
 	// the leader itself (myRank) does part of the work too
-	// The formulas below determine the first and last search slaves of this grasp slave process
-	// IMPORTANT! Process mapping:
-	// * myRank * (numberOfSearchSlaves+1) == 0 => p(i) GRASP slave processes (execute parellel GRASP iterations with MPI)
-	// * 1..numberOfSearchSlaves => VNS slave processes for p(0) (execute parallel VNS for p(0))
-	// * [myRank+1]..[myRank + numberOfSearchSlaves] => VNS slave processes for p(i), where i = myRank
-	int i = 0, cont = 0;
-	int firstSlave = myRank + 1;
-	int lastSlave = myRank + numberOfSearchSlaves;
+	int i = 0;
+	std::vector<int> slaveList;
 	if(sizeOfChunk > 0) {
-		// Sends the parallel search (VNS) message to the slaves via MPI
-		for(i = firstSlave, cont = 0; i <= lastSlave; i++, cont++) {
+		MPIUtil::populateListOfVNSSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
+		// Sends the parallel search (VNS) message to the search slaves via MPI
+		for(i = 0; i < numberOfSearchSlaves; i++) {
 			InputMessageParallelVNS imsgpvns(g->getId(), l, g->getGraphFileLocation(), *clustering, problem.getType(),
-					timeSpentSoFar, timeLimit, cont * sizeOfChunk, (cont + 1) * sizeOfChunk - 1, numberOfSlaves,
+					timeSpentSoFar, timeLimit, i * sizeOfChunk, (i + 1) * sizeOfChunk - 1, numberOfSlaves,
 					numberOfSearchSlaves, k);
-			world.send(i, MPIMessage::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
-			BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << i << "; [" << cont * sizeOfChunk
-					<< ", " << (cont + 1) * sizeOfChunk - 1 << "]" << endl;
+			world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
+			BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << slaveList[i] << "; [" << i * sizeOfChunk
+					<< ", " << (i + 1) * sizeOfChunk - 1 << "]" << endl;
 		}
 	}
 	// the leader (me) does its part of the work too
@@ -75,7 +72,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	if(remainingClusters > 0) {
 		bestClustering = this->searchNeighborhood(l, g, clustering,
 				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
-				cont * sizeOfChunk, cont * sizeOfChunk + remainingClusters - 1, false, k);
+				i * sizeOfChunk, i * sizeOfChunk + remainingClusters - 1, false, k);
 		bestValue = bestClustering->getImbalance().getValue();
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
@@ -83,7 +80,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	// TODO implement global first improvement (l = 2-opt) in parallel VNS here!
 	if(sizeOfChunk > 0) {
 		OutputMessage omsg;
-		for(i = firstSlave; i <= lastSlave; i++) {
+		for(i = 0; i < numberOfSearchSlaves; i++) {
 			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ". Obj = " <<
 					omsg.clustering.getImbalance().getValue();
@@ -102,10 +99,9 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 				// terminate other slaves' VNS search if 2-opt
 				if(l == 2) {
 					InputMessageParallelVNS imsg;
-					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] First improvement on 2-opt: interrupting other VNS slaves "
-							<< firstSlave << " to " << lastSlave;
-					for(int pj = firstSlave; pj <= lastSlave; pj++) {
-						world.send(pj, MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg);
+					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] First improvement on 2-opt: interrupting other VNS slaves.";
+					for(int j = 0; j < numberOfSearchSlaves; j++) {
+						world.send(slaveList[j], MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg);
 					}
 				}
 			}
