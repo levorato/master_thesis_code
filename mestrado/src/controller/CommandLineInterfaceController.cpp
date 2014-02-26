@@ -239,6 +239,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	// used for debugging purpose
 	std::set_terminate( handler );
 
+	mpi::communicator world;
 	cout << "Correlation clustering problem solver" << endl;
 
 	// random seed used in grasp
@@ -411,7 +412,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 			unsigned int numberOfSearchSlaves = MPIUtil::calculateNumberOfSearchSlaves(np, numberOfSlaves);
 			if(np > 1) {
-				mpi::communicator world;
 				// broadcasts the numberOfSlaves to all processes
 				// mpi::broadcast(world, numberOfSlaves, 0);
 				for(int i = 1; i < np; i++) {
@@ -443,7 +443,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			// ------------------ M P I    T E R M I N A T I O N ---------------------
 			BOOST_LOG_TRIVIAL(info) << "Terminating MPI slave processes...";
 			if(np > 1) {
-				mpi::communicator world;
 				InputMessageParallelGrasp imsgpgrasp;
                                 InputMessageParallelVNS imsgpvns;
 				for(int i = 1; i < np; i++) {
@@ -469,7 +468,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			return 1;
 		}
 	} else { // slave processes
-		mpi::communicator world;
 		// First message received from leader contains the number of GRASP slaves
 		// and is used for a process to discover if it is a GRASP slave or a VNS slave
 		// Grasp slave: rank % (numberOfSearchSlaves+1) == 0; VNS slave: otherwise

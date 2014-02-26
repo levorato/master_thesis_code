@@ -20,7 +20,7 @@ int main(int ac, char* av[])
 	mpi::environment env(ac, av);
 	mpi::communicator world;
 
-	cout << "init" << endl;
+	cout << "I am rank " << world.rank() << " of " << world.size() << " running on machine " << env.processor_name() << endl;
 
 	CommandLineInterfaceController controller;
 	int return_value = controller.processArgumentsAndExecute(ac, av, world.rank(), world.size());
