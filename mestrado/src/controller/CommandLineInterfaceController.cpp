@@ -186,7 +186,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				neig = nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 			}
 			RCCVariableNeighborhoodSearch vns(seed);
-			ClusteringPtr RCCCluster = vns.executeSearch(g.get(), *c, l, c->getNumberOfClusters(), firstImprovementOnOneNeig,
+			// IMPORTANT: Runs RCC local search with firstImprovementOnOneNeig = false
+			ClusteringPtr RCCCluster = vns.executeSearch(g.get(), *c, l, c->getNumberOfClusters(), false,
 									problemFactory.build(ClusteringProblem::RCC_PROBLEM), *neig, executionId, fileId, outputFolder,
 									timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 

@@ -96,8 +96,8 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 				BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] Better value found for objective function in node "
 						<< stat.source() << ": " <<
 						omsg.clustering.getImbalance().getValue() << endl;
-				// terminate other slaves' VNS search if 2-opt
-				if(l == 2) {
+				// IMPORTANT: Terminate other slaves' VNS search if 2-opt and CC Problem
+				if( (l == 2) and (problem.getType() == ClusteringProblem::CC_PROBLEM) ) {
 					InputMessageParallelVNS imsg;
 					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] First improvement on 2-opt: interrupting other VNS slaves.";
 					for(int j = 0; j < numberOfSearchSlaves; j++) {
@@ -128,8 +128,16 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	} else {  // 2-opt
 		// TODO implement global first improvement in parallel 2-opt
 		// first improvement found in one process must break all other processes' loop
+		// IMPORTANT: Parallel VNS does first improvement on 2-opt if CC Problem
+		// Or best improvement on 2-opt if RCC Problem
+		bool firstImprovementOn2Opt = true;
+		if(problem.getType() == ClusteringProblem::CC_PROBLEM) {
+			firstImprovementOn2Opt = true;
+		} else if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+			firstImprovementOn2Opt = false;
+		}
 		return this->search2opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
-				myRank, initialClusterIndex, finalClusterIndex, true, k);
+				myRank, initialClusterIndex, finalClusterIndex, firstImprovementOn2Opt, k);
 	}
 }
 

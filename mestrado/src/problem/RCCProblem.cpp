@@ -94,10 +94,8 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 				assert(kj < nc);
 				if(weight > 0) { // positive edge
 					c.positiveSum(ki, kj) += weight;
-					c.positiveSum(kj, ki) += weight;
 				} else { // negative edge
 					c.negativeSum(ki, kj) += fabs(weight);
-					c.negativeSum(kj, ki) += fabs(weight);
 				}
 			}
 		}
@@ -105,8 +103,11 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	double internalSum = 0.0, externalSum = 0.0;
 	for(unsigned long k1 = 0; k1 < nc; k1++) {
 		internalSum += min(c.positiveSum(k1, k1), c.negativeSum(k1, k1));
-		for(unsigned long k2 = 0; k2 < k1; k2++) {
-			externalSum += min(c.positiveSum(k1, k2), c.negativeSum(k1, k2));
+		for(unsigned long k2 = 0; k2 < nc; k2++) {
+			if(k1 < k2) {
+				externalSum += min(c.positiveSum(k1, k2) + c.positiveSum(k2, k1),
+						c.negativeSum(k1, k2) + c.negativeSum(k2, k1));
+			}
 		}
 	}
 	
@@ -201,15 +202,14 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 			assert(kj < nc);
 			if(weight > 0) { // positive edge
 				c.positiveSum(ki, kj) += weight;
-				c.positiveSum(kj, ki) += weight;
 			} else { // negative edge
 				c.negativeSum(ki, kj) += fabs(weight);
-				c.negativeSum(kj, ki) += fabs(weight);
 			}
 		}
 	}
 	DirectedGraph::in_edge_iterator f2, l2;
 	// For each in edge of i => edge (j, i)
+
 	for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {
 		double weight = ((Edge*)f2->get_property())->weight;
 		Vertex src = source(*f2, g.graph), targ = target(*f2, g.graph);
@@ -240,19 +240,21 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 			assert(kj < nc);
 			if(weight > 0) { // positive edge
 				c.positiveSum(kj, ki) += weight;
-				c.positiveSum(ki, kj) += weight;
 			} else { // negative edge
 				c.negativeSum(kj, ki) += fabs(weight);
-				c.negativeSum(ki, kj) += fabs(weight);
 			}
 		}
 	}
+
 	// recalculates the imbalance based on the matrices
 	double internalSum = 0.0, externalSum = 0.0;
 	for(unsigned long k1 = 0; k1 < nc; k1++) {
 		internalSum += min(c.positiveSum(k1, k1), c.negativeSum(k1, k1));
-		for(unsigned long k2 = 0; k2 < k1; k2++) {
-			externalSum += min(c.positiveSum(k1, k2), c.negativeSum(k1, k2));
+		for(unsigned long k2 = 0; k2 < nc; k2++) {
+			if(k1 < k2) {
+				externalSum += min(c.positiveSum(k1, k2) + c.positiveSum(k2, k1),
+										c.negativeSum(k1, k2) + c.negativeSum(k2, k1));
+			}
 		}
 	}
 
@@ -317,14 +319,13 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 			assert(kj < nc);
 			if(weight > 0) { // positive edge
 				c.positiveSum(ki, kj) -= weight;
-				c.positiveSum(kj, ki) -= weight;
 			} else { // negative edge
 				c.negativeSum(ki, kj) -= fabs(weight);
-				c.negativeSum(kj, ki) -= fabs(weight);
 			}
 		}
 	}
 	// For each in edge of i => edge (j, i)
+
 	DirectedGraph::in_edge_iterator f2, l2;
 	for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {
 		double weight = ((Edge*)f2->get_property())->weight;
@@ -354,13 +355,12 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 			assert(kj < nc);
 			if(weight > 0) { // positive edge
 				c.positiveSum(kj, ki) -= weight;
-				c.positiveSum(ki, kj) -= weight;
 			} else { // negative edge
 				c.negativeSum(kj, ki) -= fabs(weight);
-				c.negativeSum(ki, kj) -= fabs(weight);
 			}
 		}
 	}
+
         // If cluster k has only vertex i, it will be deleted...
         if(currentCluster.count() == 1) {
                 // remove line and column corresponding to the cluster being removed (cluster k)
@@ -399,8 +399,11 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 	double internalSum = 0.0, externalSum = 0.0;
 	for(unsigned long k1 = 0; k1 < c.positiveSum.size1(); k1++) {
 		internalSum += min(c.positiveSum(k1, k1), c.negativeSum(k1, k1));
-		for(unsigned long k2 = 0; k2 < k1; k2++) {
-			externalSum += min(c.positiveSum(k1, k2), c.negativeSum(k1, k2));
+		for(unsigned long k2 = 0; k2 < c.positiveSum.size1(); k2++) {
+			if(k1 < k2) {
+				externalSum += min(c.positiveSum(k1, k2) + c.positiveSum(k2, k1),
+										c.negativeSum(k1, k2) + c.negativeSum(k2, k1));
+			}
 		}
 	}
 
