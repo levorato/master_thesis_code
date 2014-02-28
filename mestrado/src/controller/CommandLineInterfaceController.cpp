@@ -304,36 +304,36 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	po::notify(vm);
 
 	// job id is obtained through command line parameter from PBS Scheduler
-        cout << "Job id is " << jobid << "\n";
-        // initializes the logging subsystem
-        if(jobid.length() == 0) {
-                jobid = TimeDateUtil::generateRandomId();
-        } else {
-		jobid += "-" + TimeDateUtil::generateRandomId();
+	cout << "Job id is " << jobid << "\n";
+	// initializes the logging subsystem
+	if(jobid.length() == 0) {
+		jobid = TimeDateUtil::generateRandomId();
+	} else {
+		jobid += "-" + TimeDateUtil::getDateAndTime();
 	}
 	
 	try {
-        	this->initLogging(jobid, myRank);
+        this->initLogging(jobid, myRank);
 	}
-        catch(std::exception& e)
-        {
-                 cerr << "Fatal application error in log init.\n";
-                 cerr << "Abnormal program termination. Stracktrace: " << endl;
-                 cerr << e.what() << "\n";
-                 if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
-                         cerr << stack << endl;
-                 }
-                 cerr << diagnostic_information(e);
-                 return 1;
-         }
+	catch(std::exception& e)
+	{
+	     cerr << "Fatal application error in log init.\n";
+		 cerr << "Abnormal program termination. Stracktrace: " << endl;
+		 cerr << e.what() << "\n";
+		 if ( std::string const *stack = boost::get_error_info<stack_info>(e) ) {
+			 cerr << stack << endl;
+		 }
+		 cerr << diagnostic_information(e);
+		 return 1;
+	 }
 
-        // codigo do processor lider
-        if(myRank == 0) {
-                cout << "Correlation clustering problem solver" << endl;
-                // id used for output folders
-                string executionId = jobid;
+	// codigo do processor lider
+	if(myRank == 0) {
+		cout << "Correlation clustering problem solver" << endl;
+		// id used for output folders
+		string executionId = jobid;
 
-                try {
+		try {
 			if (vm.count("help")) {
 				cout << "Usage: MestradoMario [options]\n";
 				cout << desc;
@@ -377,11 +377,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			}
 
 			BOOST_LOG_TRIVIAL(info) << "Total number of processes is " << np << endl;
-                        cout << "Total number of processes is " << np << endl;
-			BOOST_LOG_TRIVIAL(info) << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
-			cout << "Number of GRASP processes in parallel is " << numberOfSlaves << endl;
-			BOOST_LOG_TRIVIAL(info) << "Number of VNS processes in parallel is " << (np - numberOfSlaves) << endl;
-                        cout << "Number of VNS processes in parallel is " << (np - numberOfSlaves) << endl;
+            cout << "Total number of processes is " << np << endl;
+			BOOST_LOG_TRIVIAL(info) << "Number of GRASP processes (masters) in parallel is " << (numberOfSlaves + 1);
+			cout << "Number of GRASP processes (masters) in parallel is " << (numberOfSlaves + 1) << endl;
+			BOOST_LOG_TRIVIAL(info) << "Number of VNS processes in parallel is " << (np - numberOfSlaves - 1) << endl;
+            cout << "Number of VNS processes in parallel is " << (np - numberOfSlaves - 1) << endl;
 			std::vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {

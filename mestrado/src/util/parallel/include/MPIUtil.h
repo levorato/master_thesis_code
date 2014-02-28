@@ -75,7 +75,7 @@ public:
 			// * numberOfSlaves+1+i*numberOfSearchSlaves..numberOfSlaves+(i+1)*numberOfSearchSlaves => VNS slave processes for p(i)
 			// Here, p(i) is represented by myRank.
 			int firstSlave = numberOfSlaves + 1 + myRank * numberOfSearchSlaves;
-			int lastSlave = numberOfSlaves + 1 + (myRank + 1) * numberOfSearchSlaves;
+			int lastSlave = numberOfSlaves + (myRank + 1) * numberOfSearchSlaves;
 			for(int i = firstSlave; i <= lastSlave; i++) {
 				slaveList.push_back(i);
 			}
@@ -95,7 +95,7 @@ public:
 
 	// Machine x process allocation stategies
 	static const int ALL_GRASP_SLAVES_FIRST = 0;
-	static const int GRASP_SLAVE_AND_VNS_SLAVES_TOGETHER = 0;
+	static const int GRASP_SLAVE_AND_VNS_SLAVES_TOGETHER = 1;
 
 	// The following variable defines the strategy for machine x process allocation
 	static const int MACHINE_PROCESS_ALLOCATION_STRATEGY = ALL_GRASP_SLAVES_FIRST;

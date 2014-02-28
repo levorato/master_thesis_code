@@ -19,6 +19,7 @@ public:
 
 	static std::string FormatTime(boost::posix_time::ptime now);
 	static std::string generateRandomId();
+	static std::string getDateAndTime();
 };
 
 } /* namespace util */
