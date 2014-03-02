@@ -447,9 +447,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				InputMessageParallelGrasp imsgpgrasp;
                                 InputMessageParallelVNS imsgpvns;
 				for(int i = 1; i < np; i++) {
-					if(i % (numberOfSearchSlaves + 1) == 0) {
+					if(MPIUtil::isGRASPSlave(i, numberOfSlaves, numberOfSearchSlaves)) {  // GRASP slave
 						world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpgrasp);
-					} else {
+					} else {  // VNS slave
 						world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpvns);
 					}
 					BOOST_LOG_TRIVIAL(debug) << "Terminate message sent to process " << i << endl;
