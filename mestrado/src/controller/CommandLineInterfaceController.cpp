@@ -483,7 +483,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		unsigned int messageCount = 0;
 		// common slave variables
 		ClusteringProblemFactory problemFactory;
-		ParallelNeighborhoodSearch pnSearch(numberOfSlaves, numberOfSearchSlaves);
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 		SignedGraphPtr g;
 		unsigned int previousId = 0;
@@ -559,6 +558,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 
 					// triggers the local partial VNS search to be done between initial and final cluster indices
+					ParallelNeighborhoodSearch pnSearch(numberOfSlaves, numberOfSearchSlaves);
 					ClusteringPtr bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
 							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
 							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex, false, imsgvns.k);
