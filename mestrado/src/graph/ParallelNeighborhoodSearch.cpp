@@ -81,7 +81,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	if(sizeOfChunk > 0) {
 		OutputMessage omsg;
 		for(i = 0; i < numberOfSearchSlaves; i++) {
-			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
+			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_VNS_TAG, omsg);
 			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ". Obj = " <<
 					omsg.clustering.getImbalance().getValue();
 			BOOST_LOG_TRIVIAL(trace) << omsg.clustering.toString();
