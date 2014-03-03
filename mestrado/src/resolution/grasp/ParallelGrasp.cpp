@@ -48,7 +48,8 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	ClusteringPtr bestClustering = Grasp::executeGRASP(g, iter, alpha,
+	Grasp resolution(gainFunction, randomSeed);
+    ClusteringPtr bestClustering = resolution.executeGRASP(g, iter, alpha,
 			l, firstImprovementOnOneNeig, problem, executionId, fileId,
 			outputFolder, timeLimit, numberOfSlaves,
 			myRank, numberOfSearchSlaves);
