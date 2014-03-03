@@ -566,7 +566,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// Sends the result back to the leader process
 					int leader = stat.source();
 					OutputMessage omsg(*bestClustering, pnSearch.getNumberOfTestedCombinations());
-					world.send(leader, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
+					world.send(leader, MPIMessage::OUTPUT_MSG_PARALLEL_VNS_TAG, omsg);
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VNS Output Message sent to grasp leader number "
 							<< leader << ". I(P) = " << bestClustering->getImbalance().getValue();
 				}
