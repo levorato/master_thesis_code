@@ -494,7 +494,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// Receives a message with GRASP parameters and triggers local GRASP execution
 					InputMessageParallelGrasp imsgpg;
 					// receives a message of type ParallelGrasp::MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG or a terminate msg
-					mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgpg);
+					mpi::status stat = world.recv(MPIMessage::LEADER_ID, mpi::any_tag, imsgpg);
 					if(stat.tag() == MPIMessage::TERMINATE_MSG_TAG) {
 						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": terminate message received.";
 						return 0;
