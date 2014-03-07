@@ -253,13 +253,13 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		Imbalance il = Cl.getImbalance();
 		Imbalance ic = CStar.getImbalance();
 		if(il < ic) {
-			BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
+			// BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			// Cl->printClustering();
 			CStar = Cl;
 			k = 1;
 		} else {  // no better result found in neighborhood
 			k++;
-			BOOST_LOG_TRIVIAL(debug) << "Changed to neighborhood size l = " << k;
+			// BOOST_LOG_TRIVIAL(debug) << "Changed to neighborhood size l = " << k;
 		}
 		iteration++;
 
