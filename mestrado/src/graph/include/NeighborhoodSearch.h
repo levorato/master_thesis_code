@@ -40,7 +40,7 @@ public:
          * for the best value of objective function.
          * @return NeighborhoodList*
          */
-        virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
+        virtual Clustering searchNeighborhood(int l, SignedGraph* g,
                         Clustering* clustering, ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                         int myRank, bool firstImprovementOnOneNeig, unsigned long k) = 0;
@@ -59,20 +59,20 @@ protected:
     	 * the search (not the second one).
     	 * @param k the maximum number of clusters of RCC Problem (optional).
     	 */
-    	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
+    	virtual Clustering searchNeighborhood(int l, SignedGraph* g,
     					Clustering* clustering, ClusteringProblem& problem,
     					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
     					int myRank,	unsigned long initialClusterIndex, unsigned long finalClusterIndex,
     					bool firstImprovementOnOneNeig, unsigned long k) = 0;
 
-        virtual ClusteringPtr search1opt(SignedGraph* g,
+        virtual Clustering search1opt(SignedGraph* g,
                         Clustering* clustering, ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                         int myRank, unsigned long initialClusterIndex,
                 		unsigned long finalClusterIndex, bool firstImprovement, unsigned long k);
 
-		virtual ClusteringPtr search2opt(SignedGraph* g,
-						Clustering* clustering, ClusteringProblem& problem,
+		virtual Clustering search2opt(SignedGraph* g,
+						Clustering* clustering, ClusteringProblem* problem,
 						double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 						int myRank, unsigned long initialClusterIndex,
 						unsigned long finalClusterIndex, bool firstImprovement, unsigned long k);
@@ -85,9 +85,65 @@ protected:
          * If parameter k3 == -1, inserts node i in a new cluster (alone).
          * If parameter k4 == -1, inserts node j in a new cluster (anlone).
          */
-        ClusteringPtr process2optCombination(SignedGraph& g, Clustering* clustering,
-        		ClusteringProblem& problem, int k1, int k2, int k3, int k4,
-        		int n, int i, int j);
+        void process2optCombination(SignedGraph& g, Clustering& clustering,
+        		ClusteringProblem* problem,
+        		int k1, int k2, int k3, int k4,
+        		int n, int i, int j) {
+
+			//return;
+			 // cout << "2-opt-comb: " << k1 << ", " << k2 << ", " << k3 << ", " << k4 << ", " << i << ", " << j << endl;
+			 // clustering->printClustering();
+			 // ClusteringPtr cTemp = make_shared < Clustering > (*clustering);
+			 int nc = clustering.getNumberOfClusters();
+			 // increments number of tested combinations
+			 numberOfTestedCombinations++;
+			 // the offset caused by cluster deletions
+			 // removes node i from cluster1 and inserts in cluster3
+			 // TODO check if the removal of node i destroys cluster1
+			 // cout << "k3" << endl;
+			 clustering.removeNodeFromCluster(g, *problem, i, k1);
+			 // recalculates the number of clusters, as one of them may have been removed
+			 int newnc1 = clustering.getNumberOfClusters();
+			 if(newnc1 < nc) {
+					 // cluster k1 has been removed
+					 if(k2 >= k1) { k2--; assert(k2 >= 0); }
+					 if(k3 >= k1) { k3--; assert(k3 >= 0); }
+					 if(k4 >= k1) { k4--; /* assert(k4 >= 0); */ }
+			 }
+			 if (k3 > k1) {
+					 // inserts i in existing cluster k3
+					 clustering.addNodeToCluster(g, *problem, i, k3);
+			 } else {
+					 // inserts i in a new cluster (alone)
+					 clustering.addCluster(g, *problem, i);
+			 }
+			 // cout << "k4" << endl;
+			 // removes node j from cluster2 and inserts in cluster4
+			 clustering.removeNodeFromCluster(g, *problem, j, k2);
+			 int newnc2 = clustering.getNumberOfClusters();
+			 if(newnc2 < newnc1) {
+					 // cout << "cluster k2 has been removed" << endl;
+					 if(k4 >= k2) { k4--; assert(k4 >= 0); }
+			 }
+			 // cout << "Node removed" << endl;
+			 if (k4 > k2) {
+					 // inserts j in existing cluster k4
+					 clustering.addNodeToCluster(g, *problem, j, k4);
+			 } else {
+					 // inserts j in a new cluster (alone)
+					 clustering.addCluster(g, *problem, j);
+			 }
+			 // Full recalculation of objective value if RCC Problem
+			/*
+			 if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+				Imbalance imb = problem.objectiveFunction(g, *cTemp);
+				if(imb.getValue() != cTemp->getImbalance().getValue()) {
+					BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
+				}
+				cTemp->setImbalance(imb);
+			} */
+			// return  make_shared < Clustering > (*clustering);
+		}
 
 	/* Number of tested combinations during neighborhood search */
 	long numberOfTestedCombinations;

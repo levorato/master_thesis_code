@@ -124,7 +124,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 		SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
 
-		ClusteringPtr c = make_shared<Clustering>();
+		Clustering c;
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
 
@@ -162,10 +162,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 
 		BOOST_LOG_TRIVIAL(info) << "Global time spent: " << timeSpent << " s";
 		out << "Global time spent: " << timeSpent << endl;
-		Imbalance imb = c->getImbalance();
+		Imbalance imb = c.getImbalance();
 		out << "I(P) = " << imb.getValue() << endl;
 		stringstream ss;
-		c->printClustering(ss);
+		c.printClustering(ss);
 		out << ss.str();
  		out.close();
 
@@ -187,7 +187,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			}
 			RCCVariableNeighborhoodSearch vns(seed);
 			// IMPORTANT: Runs RCC local search with firstImprovementOnOneNeig = false
-			ClusteringPtr RCCCluster = vns.executeSearch(g.get(), *c, l, c->getNumberOfClusters(), false,
+			Clustering RCCCluster = vns.executeSearch(g.get(), c, l, c.getNumberOfClusters(), false,
 									problemFactory.build(ClusteringProblem::RCC_PROBLEM), *neig, executionId, fileId, outputFolder,
 									timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 
@@ -205,10 +205,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 
 			BOOST_LOG_TRIVIAL(info) << "Global time spent: " << timeSpent << " s";
 			out << "RCC Global time spent: " << timeSpent << endl;
-			Imbalance imb = RCCCluster->getImbalance();
+			Imbalance imb = RCCCluster.getImbalance();
 			out << "RI(P) = " << imb.getValue() << endl;
 			stringstream ss;
-			RCCCluster->printClustering(ss);
+			RCCCluster.printClustering(ss);
 			out << ss.str();
 			out.close();
 			BOOST_LOG_TRIVIAL(info) << "RCC Search done. Obj = " << imb.getValue();
@@ -517,13 +517,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// trigggers the local GRASP routine
 					GainFunctionFactory functionFactory(g.get());
 					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
-					ClusteringPtr bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
+					Clustering bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
 							imsgpg.l, imsgpg.firstImprovementOnOneNeig, problemFactory.build(imsgpg.problemType),
 							imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, imsgpg.timeLimit,
 							imsgpg.numberOfSlaves, myRank, imsgpg.numberOfSearchSlaves);
 
 					// Sends the result back to the leader process
-					OutputMessage omsg(*bestClustering, resolution.getNumberOfTestedCombinations());
+					OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());
 					world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": GRASP Output Message sent to leader.";
 
@@ -559,16 +559,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 					// triggers the local partial VNS search to be done between initial and final cluster indices
 					ParallelNeighborhoodSearch pnSearch(numberOfSlaves, numberOfSearchSlaves);
-					ClusteringPtr bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
+					Clustering bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
 							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
 							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex, false, imsgvns.k);
 
 					// Sends the result back to the leader process
 					int leader = stat.source();
-					OutputMessage omsg(*bestClustering, pnSearch.getNumberOfTestedCombinations());
+					OutputMessage omsg(bestClustering, pnSearch.getNumberOfTestedCombinations());
 					world.send(leader, MPIMessage::OUTPUT_MSG_PARALLEL_VNS_TAG, omsg);
 					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VNS Output Message sent to grasp leader number "
-							<< leader << ". I(P) = " << bestClustering->getImbalance().getValue();
+							<< leader << ". I(P) = " << bestClustering.getImbalance().getValue();
 				}
 			}
 		} catch(std::exception& e) {

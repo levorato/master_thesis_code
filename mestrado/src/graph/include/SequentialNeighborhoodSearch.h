@@ -17,7 +17,7 @@ public:
 	SequentialNeighborhoodSearch();
 	virtual ~SequentialNeighborhoodSearch();
 
-	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
+	virtual Clustering searchNeighborhood(int l, SignedGraph* g,
 				Clustering* clustering, ClusteringProblem& problem,
 				double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 				int myRank, bool firstImprovementOnOneNeig, unsigned long k);
@@ -31,7 +31,7 @@ private:
 	 * the search (not the second one).
 	 * The sequential search does first improvement for 1-opt and 2-opt searches.
 	 */
-	virtual ClusteringPtr searchNeighborhood(int l, SignedGraph* g,
+	virtual Clustering searchNeighborhood(int l, SignedGraph* g,
 					Clustering* clustering, ClusteringProblem& problem,
 					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 					int myRank,	unsigned long initialClusterIndex, unsigned long finalClusterIndex,

@@ -43,7 +43,7 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
+Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, string& executionId,
 		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
@@ -54,7 +54,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
-	ClusteringPtr CStar = constructClustering(g, problem, alpha, myRank);
+	Clustering CStar = constructClustering(g, problem, alpha, myRank);
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
@@ -62,10 +62,10 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	timer.resume();
 	start_time = timer.elapsed();
 
-	ClusteringPtr previousCc = CStar;
+	Clustering previousCc = CStar;
 	CBest = CStar;
-	ClusteringPtr Cc = CStar;
-	Imbalance bestValue = CStar->getImbalance();
+	Clustering Cc = CStar;
+	Imbalance bestValue = CStar.getImbalance();
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0.0;
 	double initialImbalanceSum = 0.0;
@@ -82,24 +82,24 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	int i = 0, totalIter = 0;
 	numberOfTestedCombinations = 0;
 
-	for (i = 0, totalIter = 0; i <= iter || iter < 0 ; i++, totalIter++, previousCc.reset(), previousCc = Cc) {
+	for (i = 0, totalIter = 0; i <= iter || iter < 0 ; i++, totalIter++, previousCc = Cc) {
 		BOOST_LOG_TRIVIAL(debug) << "GRASP iteration " << i;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
 		//    Store initial solution value in corresponding results file
-		constructivePhaseResults << (totalIter+1) << "," << Cc->getImbalance().getValue() << "," << Cc->getImbalance().getPositiveValue()
-						<< "," << Cc->getImbalance().getNegativeValue() << "," << Cc->getNumberOfClusters()
+		constructivePhaseResults << (totalIter+1) << "," << Cc.getImbalance().getValue() << "," << Cc.getImbalance().getPositiveValue()
+						<< "," << Cc.getImbalance().getNegativeValue() << "," << Cc.getNumberOfClusters()
 						<< "," << fixed << setprecision(4) << timeSpentInConstruction << "\n";
-		initialImbalanceSum += Cc->getImbalance().getValue();
+		initialImbalanceSum += Cc.getImbalance().getValue();
 		// Registers the Cc result
 		notifyNewValue(Cc, 0.0, totalIter);
 
 		// 2. Execute local search algorithm
-		ClusteringPtr Cl = localSearch(g, *Cc, l, totalIter, firstImprovementOnOneNeig,
+		Clustering Cl = localSearch(g, Cc, l, totalIter, firstImprovementOnOneNeig,
 				problem, *neig, timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
-		Imbalance newValue = Cl->getImbalance();
+		Imbalance newValue = Cl.getImbalance();
 
 		// 4. Stops the timer and stores the elapsed time
 		timer.stop();
@@ -110,14 +110,13 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 		// TODO melhorar formatacao do tempo
 		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
 		iterationResults << (totalIter+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
-				<< "," << newValue.getNegativeValue() << "," << CStar->getNumberOfClusters()
+				<< "," << newValue.getNegativeValue() << "," << CStar.getNumberOfClusters()
 				<< "," << fixed << setprecision(4) << timeSpentInGRASP << "\n";
 		timer.resume();
 		start_time = timer.elapsed();
 
 		if(newValue < bestValue) {
 			// cout << "A better solution was found." << endl;
-			CStar.reset();
 			CStar = Cl;
 			bestValue = newValue;
 			iterationValue = totalIter;
@@ -154,7 +153,7 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			<< "," << bestValue.getPositiveValue()
 			<< "," << bestValue.getNegativeValue()
 			<< setprecision(0)
-			<< "," << CStar->getNumberOfClusters()
+			<< "," << CStar.getNumberOfClusters()
 			<< "," << (iterationValue+1)
 			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
 			<< "," << (totalIter+1) 
@@ -164,8 +163,8 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 			<< endl;
 
 	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
-	// CStar->printClustering();
-	CStar->printClustering(iterationResults);
+	// CStar.printClustering();
+	CStar.printClustering(iterationResults);
 	generateOutputFile(iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
@@ -176,9 +175,9 @@ ClusteringPtr Grasp::executeGRASP(SignedGraph *g, const int& iter, const double&
 	return CStar;
 }
 
-ClusteringPtr Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem,
+Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem,
 		double alpha, int myRank) {
-	ClusteringPtr Cc = make_shared<Clustering>(); // Cc = empty
+	Clustering Cc; // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	BOOST_LOG_TRIVIAL(debug) << "GRASP construct clustering...\n";
 
@@ -187,7 +186,7 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, ClusteringProblem& prob
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 		// according to the value of the gain function
-		gainFunction->calculateGainList(problem, *(Cc.get()), lc.getVertexList());
+		gainFunction->calculateGainList(problem, Cc, lc.getVertexList());
 		lc.sort(gainFunction);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
@@ -202,10 +201,10 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, ClusteringProblem& prob
 		GainCalculation gainCalculation = gainFunction->gain(i);
 		if(gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
-			Cc->addCluster(*g, problem, i);
+			Cc.addCluster(*g, problem, i);
 		} else {
 			// inserts i into existing cluster
-			Cc->addNodeToCluster(*g, problem, i, gainCalculation.clusterNumber);
+			Cc.addNodeToCluster(*g, problem, i, gainCalculation.clusterNumber);
 		}
 
 		// 4. lc = lc - {i}
@@ -215,23 +214,23 @@ ClusteringPtr Grasp::constructClustering(SignedGraph *g, ClusteringProblem& prob
 		// Cc->printClustering();
 	}
 	BOOST_LOG_TRIVIAL(debug) << myRank << ": Initial clustering completed.\n";
-	Cc->setImbalance(problem.objectiveFunction(*g, *Cc));
-	// Cc->printClustering();
+	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
+	// Cc.printClustering();
 	return Cc;
 }
 
-ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
+Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		const int& graspIteration,
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 		NeighborhoodSearch &neig, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
 	// k is the current neighborhood distance in the local search
 	int k = 1, iteration = 0;
-	ClusteringPtr CStar = make_shared<Clustering>(Cc); // C* := Cc
+	Clustering CStar = Cc; // C* := Cc
 	CBefore = CStar; // previous best solution
 	double timeSpentOnLocalSearch = 0.0;
 	BOOST_LOG_TRIVIAL(debug) << "GRASP local search...\n";
-	BOOST_LOG_TRIVIAL(trace) << "Current neighborhood is " << k << endl;
+	BOOST_LOG_TRIVIAL(debug) << "Current neighborhood is " << k << endl;
 
 	while(k <= l && (timeSpentInGRASP + timeSpentOnLocalSearch < timeLimit)) {
 		// cout << "Local search iteration " << iteration << endl;
@@ -242,21 +241,20 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood	
-		ClusteringPtr Cl = neig.searchNeighborhood(k, g, CStar.get(), problem,
+		Clustering Cl = neig.searchNeighborhood(k, g, &CStar, problem,
 				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, 0);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
-		if(Cl->getImbalance().getValue() < 0.0) {
+		if(Cl.getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error.";
 			break;
 		}
 		// cout << "Comparing local solution value." << endl;
-		Imbalance il = Cl->getImbalance();
-		Imbalance ic = CStar->getImbalance();
+		Imbalance il = Cl.getImbalance();
+		Imbalance ic = CStar.getImbalance();
 		if(il < ic) {
-			BOOST_LOG_TRIVIAL(debug) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
+			BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			// Cl->printClustering();
-			CStar.reset();
 			CStar = Cl;
 			k = 1;
 		} else {  // no better result found in neighborhood
@@ -273,7 +271,7 @@ ClusteringPtr Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// Registers the best result at time intervals
 		notifyNewValue(CStar, timeSpentOnLocalSearch, graspIteration);
 	}
-	BOOST_LOG_TRIVIAL(debug) << "GRASP local search done.\n";
+	BOOST_LOG_TRIVIAL(debug) << "GRASP local search done. Time spent: " << timeSpentOnLocalSearch;
 	return CStar;
 }
 
@@ -316,20 +314,11 @@ void Grasp::generateOutputFile(stringstream& fileContents, const string& rootFol
 }
 
 void Grasp::measureTimeResults(const double& timeSpentOnLocalSearch, const int& graspIteration) {
-	Imbalance imbalance = CBest->getImbalance();
+	Imbalance imbalance = CBest.getImbalance();
 	timeResults << fixed << setprecision(4) << (timeSpentInGRASP + timeSpentOnLocalSearch) << "," << imbalance.getValue()
 			<< "," << imbalance.getPositiveValue()
-			<< "," << imbalance.getNegativeValue() << "," << CBest->getNumberOfClusters()
+			<< "," << imbalance.getNegativeValue() << "," << CBest.getNumberOfClusters()
 			<< "," << (graspIteration+1) << "," << numberOfTestedCombinations << "\n";
-}
-
-void Grasp::notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& graspIteration) {
-	Imbalance i1 = CStar->getImbalance();
-	Imbalance i2 = CBest->getImbalance();
-	if(i1 < i2) {
-		CBest = CStar;
-		measureTimeResults(timeSpentOnLocalSearch, graspIteration);
-	}
 }
 
 unsigned long Grasp::getNumberOfTestedCombinations() {

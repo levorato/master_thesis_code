@@ -32,7 +32,7 @@ ParallelNeighborhoodSearch::~ParallelNeighborhoodSearch() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
+Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig,
 		unsigned long k) {
@@ -68,12 +68,12 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 	BOOST_LOG_TRIVIAL(trace) << "RemainingClusters is " << remainingClusters << endl;
 
 	double bestValue = numeric_limits<double>::infinity();
-	ClusteringPtr bestClustering;
+	Clustering bestClustering;
 	if(remainingClusters > 0) {
 		bestClustering = this->searchNeighborhood(l, g, clustering,
 				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
 				i * sizeOfChunk, i * sizeOfChunk + remainingClusters - 1, false, k);
-		bestValue = bestClustering->getImbalance().getValue();
+		bestValue = bestClustering.getImbalance().getValue();
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
 	// the leader receives the processing results, if that is the case
@@ -90,7 +90,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
 			// checks if the obj value improved
 			if(omsg.clustering.getImbalance().getValue() < bestValue) {
-				ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
+				Clustering clustering = omsg.clustering;
 				bestClustering = clustering;
 				bestValue = omsg.clustering.getImbalance().getValue();
 				BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] Better value found for objective function in node "
@@ -107,12 +107,12 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 			}
 		}
 	}
-	BOOST_LOG_TRIVIAL(debug) << "[Parallel VNS] Best solution found: Obj = " << bestClustering->getImbalance().getValue() << endl;
-	bestClustering->printClustering();
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel VNS] Best solution found: Obj = " << bestClustering.getImbalance().getValue() << endl;
+	bestClustering.printClustering();
 	return bestClustering;
 }
 
-ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
+Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialClusterIndex,
 		unsigned long finalClusterIndex, bool firstImprovementOnOneNeig, unsigned long k) {
@@ -136,7 +136,7 @@ ClusteringPtr ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph*
 		} else if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
 			firstImprovementOn2Opt = false;
 		}
-		return this->search2opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
+		return this->search2opt(g, clustering, &problem, timeSpentSoFar, timeLimit, randomSeed,
 				myRank, initialClusterIndex, finalClusterIndex, firstImprovementOn2Opt, k);
 	}
 }

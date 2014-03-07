@@ -131,6 +131,7 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 		const unsigned long& k, const unsigned long& i) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
+
 	// matrix constains summation of values between pairs of clusters
 	// matrix diagonal contains internal sum values
 	assert(nc >= c.positiveSum.size1());

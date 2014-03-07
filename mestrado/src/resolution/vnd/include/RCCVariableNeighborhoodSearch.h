@@ -38,7 +38,7 @@ public:
 	 * @param timeLimit Maximum processing time in seconds.
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	ClusteringPtr executeSearch(SignedGraph *g, Clustering& Cc, const int &l,
+	Clustering executeSearch(SignedGraph *g, Clustering& Cc, const int &l,
 			const long unsigned int& k, const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 			NeighborhoodSearch &neig, string& executionId, string& fileId, string& outputFolder,
 			const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
@@ -55,9 +55,9 @@ private:
 	/**
 	 * Computes the best known RCC Search result at each time interval.
 	 */
-	void measureTimeResults(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& iteration);
+	void measureTimeResults(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& iteration);
 
-	void notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& iteration);
+	void notifyNewValue(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& iteration);
 
 	/**
 	 * Time spent so far in the RCC Search in seconds.

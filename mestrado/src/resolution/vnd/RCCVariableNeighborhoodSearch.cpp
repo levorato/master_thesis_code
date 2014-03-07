@@ -40,16 +40,16 @@ RCCVariableNeighborhoodSearch::~RCCVariableNeighborhoodSearch() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clustering& Cc, const int &l,
+Clustering RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		const long unsigned int& k, const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 		NeighborhoodSearch &neig, string& executionId, string& fileId, string& outputFolder,
 		const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves) {
 	// neighborhoodSize is the current neighborhood distance in the local search
 	int neighborhoodSize = 1, iteration = 0;
-	ClusteringPtr CStar = make_shared<Clustering>(Cc); // C* := Cc
+	Clustering CStar = Cc; // C* := Cc
 	// Calculates the initial relaxed imbalance of the clustering
-	CStar->setImbalance(problem.objectiveFunction(*g, *CStar));
-	CStar->printClustering();
+	CStar.setImbalance(problem.objectiveFunction(*g, CStar));
+	CStar.printClustering();
 
 	double timeSpentOnLocalSearch = 0.0;
 	BOOST_LOG_TRIVIAL(info) << "RCC local search...";
@@ -63,20 +63,19 @@ ClusteringPtr RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clust
 
 		// N := Nl(C*)
 		// apply a local search in CStar using the neighborhoodSize
-		ClusteringPtr Cl = neig.searchNeighborhood(neighborhoodSize, g, CStar.get(), problem,
+		Clustering Cl = neig.searchNeighborhood(neighborhoodSize, g, &CStar, problem,
 				timeSpentInSearch + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, k);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
 		// sanity check for obj function value
-		if(Cl->getImbalance().getValue() < 0.0) {
+		if(Cl.getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error.";
 			break;
 		}
-		Imbalance il = Cl->getImbalance();
-		Imbalance ic = CStar->getImbalance();
+		Imbalance il = Cl.getImbalance();
+		Imbalance ic = CStar.getImbalance();
 		if(il < ic) {
 			BOOST_LOG_TRIVIAL(trace) << myRank << ": New RCC solution found: " << setprecision(2) << il.getValue() << endl;
-			CStar.reset();
 			CStar = Cl;
 			neighborhoodSize = 1;
 		} else {  // no better result found in neighborhood
@@ -94,17 +93,17 @@ ClusteringPtr RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clust
 		notifyNewValue(CStar, timeSpentOnLocalSearch, iteration);
 	}
 	stringstream iterationResults;
-	iterationResults << "Best value," << fixed << setprecision(4) << CStar->getImbalance().getValue()
-			<< "," << CStar->getImbalance().getPositiveValue()
-			<< "," << CStar->getImbalance().getNegativeValue()
+	iterationResults << "Best value," << fixed << setprecision(4) << CStar.getImbalance().getValue()
+			<< "," << CStar.getImbalance().getPositiveValue()
+			<< "," << CStar.getImbalance().getNegativeValue()
 			<< setprecision(0)
-			<< "," << CStar->getNumberOfClusters()
+			<< "," << CStar.getNumberOfClusters()
 			<< "," << fixed << setprecision(4) << timeSpentInSearch
 			<< "," << (iteration+1)
 			<< "," << numberOfTestedCombinations << endl;
 
 	// CStar->printClustering();
-	CStar->printClustering(iterationResults);
+	CStar.printClustering(iterationResults);
 	generateOutputFile(iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), k, l);
 	// saves the best result to output time file
 	measureTimeResults(CStar, 0.0, iteration);
@@ -151,15 +150,15 @@ void RCCVariableNeighborhoodSearch::generateOutputFile(stringstream& fileContent
 	os.close();
 }
 
-void RCCVariableNeighborhoodSearch::measureTimeResults(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& iteration) {
-	Imbalance imbalance = CStar->getImbalance();
+void RCCVariableNeighborhoodSearch::measureTimeResults(Clustering &CStar, const double& timeSpentOnLocalSearch, const int& iteration) {
+	Imbalance imbalance = CStar.getImbalance();
 	timeResults << fixed << setprecision(4) << (timeSpentInSearch + timeSpentOnLocalSearch) << "," << imbalance.getValue()
 			<< "," << imbalance.getPositiveValue()
-			<< "," << imbalance.getNegativeValue() << "," << CStar->getNumberOfClusters()
+			<< "," << imbalance.getNegativeValue() << "," << CStar.getNumberOfClusters()
 			<< "," << (iteration+1) << "\n";
 }
 
-void RCCVariableNeighborhoodSearch::notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& iteration) {
+void RCCVariableNeighborhoodSearch::notifyNewValue(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& iteration) {
 	measureTimeResults(CStar, timeSpentOnLocalSearch, iteration);
 }
 

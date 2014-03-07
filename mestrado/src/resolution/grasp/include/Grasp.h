@@ -44,7 +44,7 @@ public:
 	 * @param myRank processor rank (when running with MPI)
 	 * @param numberOfSearchSlaves number of slaves used for parallel VNS processing
 	 */
-	ClusteringPtr executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
+	Clustering executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
 			const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
@@ -62,7 +62,7 @@ protected:
 	 * @param ramdomSeed seed to be used in ramdom number generation
 	 * @return Clustering C(c)
 	 */
-	ClusteringPtr constructClustering(SignedGraph *g, ClusteringProblem& problem,
+	Clustering constructClustering(SignedGraph *g, ClusteringProblem& problem,
 			double alpha, int myRank);
 
 	/**
@@ -80,7 +80,7 @@ protected:
 	 * @param timeLimit Maximum processing time in seconds.
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	ClusteringPtr localSearch(SignedGraph *g, Clustering& Cc, const int &l, const int& graspIteration,
+	Clustering localSearch(SignedGraph *g, Clustering& Cc, const int &l, const int& graspIteration,
 			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, NeighborhoodSearch &neig,
 			const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
@@ -95,7 +95,14 @@ protected:
 	 */
 	void measureTimeResults(const double& timeSpentOnLocalSearch, const int& graspIteration);
 
-	void notifyNewValue(ClusteringPtr CStar, const double& timeSpentOnLocalSearch, const int& graspIteration);
+	void notifyNewValue(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& graspIteration) {
+		Imbalance i1 = CStar.getImbalance();
+		Imbalance i2 = CBest.getImbalance();
+		if(i1 < i2) {
+			CBest = CStar;
+			measureTimeResults(timeSpentOnLocalSearch, graspIteration);
+		}
+	}
 
 	/**
 	 * Time spent so far in the GRASP in seconds.
@@ -128,7 +135,7 @@ protected:
 	 */
 	unsigned long numberOfTestedCombinations;
 	/** The best clustering found in all GRASP iterations. */
-	ClusteringPtr CBest, CBefore;
+	Clustering CBest, CBefore;
 };
 
 } /* namespace grasp */

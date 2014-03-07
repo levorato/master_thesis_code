@@ -29,7 +29,7 @@ ParallelGrasp::~ParallelGrasp() {
 	// TODO Auto-generated destructor stub
 }
 
-ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
+Clustering ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 		ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
 		const long& timeLimit, const int& numberOfSlaves, const int& myRank,
@@ -45,11 +45,11 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 				problem.getType(), gainFunction->getType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
-		BOOST_LOG_TRIVIAL(trace) << "[Parallel GRASP] Message sent to process " << slaveList[i];
+		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
 	Grasp resolution(gainFunction, randomSeed);
-    ClusteringPtr bestClustering = resolution.executeGRASP(g, iter, alpha,
+        Clustering bestClustering = resolution.executeGRASP(g, iter, alpha,
 			l, firstImprovementOnOneNeig, problem, executionId, fileId,
 			outputFolder, timeLimit, numberOfSlaves,
 			myRank, numberOfSearchSlaves);
@@ -64,16 +64,15 @@ ClusteringPtr ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 		// sums the total number of tested combinations
 		numberOfTestedCombinations += omsg.numberOfTestedCombinations;
 		// check if solution value has improved
-		if(omsg.clustering.getImbalance().getValue() < bestClustering->getImbalance().getValue()) {
-			ClusteringPtr clustering = make_shared<Clustering>(omsg.clustering);
-			bestClustering.reset();
+		if(omsg.clustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
+			Clustering clustering = omsg.clustering;
 			bestClustering = clustering;
 			BOOST_LOG_TRIVIAL(trace) << "*** [Parallel GRASP] Better value found for objective function in node " << stat.source() << ": " <<
 					omsg.clustering.getImbalance().getValue();
 		}
 	}
-	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Best solution found: I(P) = " << bestClustering->getImbalance().getValue();
-	bestClustering->printClustering();
+	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
+	bestClustering.printClustering();
 	return bestClustering;
 }
 

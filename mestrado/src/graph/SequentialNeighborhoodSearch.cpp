@@ -13,7 +13,7 @@ SequentialNeighborhoodSearch::SequentialNeighborhoodSearch() {
 
 }
 
-ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
+Clustering SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig,
 		unsigned long k) {
@@ -23,7 +23,7 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 			timeSpentSoFar, timeLimit, randomSeed, myRank, 0, nc - 1, firstImprovementOnOneNeig, k);
 }
 
-ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
+Clustering SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialClusterIndex,
 		unsigned long finalClusterIndex, bool firstImprovementOnOneNeig, unsigned long k) {
@@ -36,7 +36,7 @@ ClusteringPtr SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGrap
 		return this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
 				myRank, initialClusterIndex, finalClusterIndex, firstImprovementOnOneNeig, k);
 	} else {  // 2-opt is always first improvement
-		return this->search2opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
+		return this->search2opt(g, clustering, &problem, timeSpentSoFar, timeLimit, randomSeed,
 				myRank, initialClusterIndex, finalClusterIndex, true, k);
 	}
 }

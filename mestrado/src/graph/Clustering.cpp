@@ -25,7 +25,8 @@ namespace clusteringgraph {
 
 Clustering::Clustering() : clusterList(),
 		imbalance(0.0, 0.0), problemType(0), positiveSum(),
-		negativeSum() {
+		negativeSum()
+{
 
 }
 
@@ -33,7 +34,8 @@ Clustering::Clustering() : clusterList(),
 Clustering::Clustering(const Clustering& clustering) :
 		clusterList(), imbalance(clustering.imbalance), problemType(clustering.problemType),
 		positiveSum(clustering.positiveSum),
-		negativeSum(clustering.negativeSum) {
+		negativeSum(clustering.negativeSum)
+{
 	// deep copy of the clusterlist data
 	for(unsigned long i = 0; i < clustering.clusterList.size(); i++) {
 		BoolArray boolArray = clustering.clusterList.at(i);
@@ -54,7 +56,7 @@ BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const uns
 	BoolArray array(g.getN());
 
 	// Add i to the newly created cluster
-	BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
+	////BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
 	array[i] = true;
 	this->clusterList.push_back(array);
 	this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
@@ -70,7 +72,7 @@ BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
 }
 
 void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
-	BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
+	//BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
 	this->getCluster(k)[i] = true;
 	this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
 }
@@ -89,10 +91,10 @@ unsigned long Clustering::clusterSize(unsigned long k) {
 void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
-	BOOST_LOG_TRIVIAL(trace) << "Removing vertex " << i << " from cluster " << k;
+	//BOOST_LOG_TRIVIAL(trace) << "Removing vertex " << i << " from cluster " << k;
 	this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
 	if(clusterSize(k) == 1) {
-		BOOST_LOG_TRIVIAL(trace) << "Deleting cluster " << k;
+		//BOOST_LOG_TRIVIAL(trace) << "Deleting cluster " << k;
 		this->removeCluster(g, k);
 	} else {
 		this->getCluster(k)[i] = false;
@@ -100,9 +102,9 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, con
 }
 
 void Clustering::printClustering() {
-	BOOST_LOG_TRIVIAL(trace) << "Clustering configuration: I(P) = " << fixed << setprecision(2)
-			<< this->imbalance.getValue();
-	BOOST_LOG_TRIVIAL(trace) << toString();
+	//BOOST_LOG_TRIVIAL(trace) << "Clustering configuration: I(P) = " << fixed << setprecision(2)
+			//<< this->imbalance.getValue();
+	//BOOST_LOG_TRIVIAL(trace) << toString();
 }
 
 void Clustering::printClustering(ostream& os) {
