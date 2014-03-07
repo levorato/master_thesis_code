@@ -127,11 +127,11 @@ public:
 	/**
 	 * Returns the value of the objective function corresponding to this cluster.
 	 */
-	const Imbalance& getImbalance() const {
+	Imbalance& getImbalance() {
 		return imbalance;
 	}
 
-	void setImbalance(const Imbalance& imbalance) {
+	void setImbalance(Imbalance imbalance) {
 		this->imbalance = imbalance;
 	}
 
