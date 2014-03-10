@@ -53,7 +53,7 @@ Clustering RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clusteri
 
 	double timeSpentOnLocalSearch = 0.0;
 	BOOST_LOG_TRIVIAL(info) << "RCC local search...";
-	BOOST_LOG_TRIVIAL(trace) << "Current neighborhood size is " << neighborhoodSize << endl;
+	BOOST_LOG_TRIVIAL(trace) << "Current neighborhood size is " << neighborhoodSize;
 
 	while(neighborhoodSize <= l && (timeSpentInSearch + timeSpentOnLocalSearch < timeLimit)) {
 		// 0. Triggers local processing time calculation
@@ -75,12 +75,12 @@ Clustering RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clusteri
 		Imbalance il = Cl.getImbalance();
 		Imbalance ic = CStar.getImbalance();
 		if(il < ic) {
-			BOOST_LOG_TRIVIAL(trace) << myRank << ": New RCC solution found: " << setprecision(2) << il.getValue() << endl;
+			// BOOST_LOG_TRIVIAL(trace) << myRank << ": New RCC solution found: " << setprecision(2) << il.getValue() << endl;
 			CStar = Cl;
 			neighborhoodSize = 1;
 		} else {  // no better result found in neighborhood
 			neighborhoodSize++;
-			BOOST_LOG_TRIVIAL(trace) << "RCC Search: Changed to neighborhood size l = " << neighborhoodSize;
+			// BOOST_LOG_TRIVIAL(trace) << "RCC Search: Changed to neighborhood size l = " << neighborhoodSize;
 		}
 		iteration++;
 
