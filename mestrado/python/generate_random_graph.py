@@ -15,6 +15,8 @@ from array import *
 import random
 import argparse
 import collections
+from random import randint
+from time import sleep
 
 # Global variables
 mycluster = []
@@ -108,6 +110,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
    success = False
 
    while not success:
+
 	   # Array that controls to which cluster a vertex belongs (size = N)
 	   mycluster = [0 for x in xrange(N)]
 	   # List of nodes inside a cluster
@@ -198,6 +201,11 @@ def SG(c, n, k, p_in, p_minus, p_plus):
 		    success = False
                     print "\nRetrying...\n"
 		    break
+           if not success:
+                # sleep a random number of seconds (between 0s and 3s)
+                wait_time = randint(0,2)
+                print "Waiting {0} second(s)...".format(str(wait_time))
+                sleep(wait_time)
    # end while not success
 
    print 'Number of internal edges of the graph is {0}'.format(str(internal_edge_num))
