@@ -59,7 +59,11 @@ BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const uns
 	////BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
 	array[i] = true;
 	this->clusterList.push_back(array);
-	this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
+	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+		this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
+	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+		this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
+	}
 	return array;
 }
 
@@ -74,7 +78,11 @@ BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
 void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
 	//BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
 	this->getCluster(k)[i] = true;
-	this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+		this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+		this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+	}
 }
 
 void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
@@ -92,7 +100,11 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, con
 	// verifica se o cluster eh unitario
 	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
 	//BOOST_LOG_TRIVIAL(trace) << "Removing vertex " << i << " from cluster " << k;
-	this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+		this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+		this->imbalance = p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+	}
 	if(clusterSize(k) == 1) {
 		//BOOST_LOG_TRIVIAL(trace) << "Deleting cluster " << k;
 		this->removeCluster(g, k);
