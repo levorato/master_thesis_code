@@ -60,20 +60,13 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 		trim(line);
 		BOOST_LOG_TRIVIAL(trace) << "Line: " << line << endl;
 
-		if(line.find("people") != string::npos) {
+		if(line.find("people") != string::npos) {  // xpress files
 			BOOST_LOG_TRIVIAL(trace) << "Format type is 0" << endl;
-			string number = line.substr(line.find(":") + 1);
+			string firstLine = lines.at(0);
+			string number = line.substr(line.find("people:") + 7);
 			trim(number);
 			n = boost::lexical_cast<int>(number);
 			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
-			// ignore the next 2 lines of the file
-			lines.erase(lines.begin());
-			lines.erase(lines.begin());
-			// reads the first line
-			// removes the Mrel: [  from the first graph file line
-			string firstLine = lines.at(0);
-			lines.erase(lines.begin());
-			lines.push_back(firstLine.substr(firstLine.find("[") + 1));
 			formatType = 0;
 		} else if(line.find("Vertices") != string::npos) {
 			BOOST_LOG_TRIVIAL(trace) << "Format type is 1" << endl;
@@ -100,8 +93,10 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				formatType = 2;
 			}
 		}
-	} catch( boost::bad_lexical_cast const& ) {
+	} catch( boost::bad_lexical_cast const& e ) {
 	    std::cerr << "Error: input string was not valid" << std::endl;
+	    cerr << e.what() << "\n";
+	    BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 	}
 
 	SignedGraphPtr g = boost::make_shared<SignedGraph>(n);
@@ -119,8 +114,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			vec.assign(tokens2.begin(),tokens2.end());
 
 			if (vec.size() < 3) continue;
-			if(vec.at(2).rfind('\n') != string::npos)
-				BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+			//if(vec.at(2).rfind('\n') != string::npos)
+			//	BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
 			try {
 				int a = boost::lexical_cast<int>(vec.at(0));
@@ -143,27 +138,30 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			}
 
 		}
-	} else if(formatType == 0) {
-		char_separator<char> sep3(" (),\t");
-		while (not lines.empty()) {
-			string line = lines.back();
-			trim(line);
-			lines.pop_back();
-			if(line.find("]") != string::npos)  continue;
-			tokenizer< char_separator<char> > tokens2(line, sep3);
-			vector<string> vec;
-			vec.assign(tokens2.begin(),tokens2.end());
-			// cout << "Line is: " << line << " vec.size = " << vec.size() << endl;
+	} else if(formatType == 0) {  // xpress files
+		char_separator<char> sep3(" (),\t\r\n[]");
+		string temp = graphContents.substr(graphContents.find("Mrel:") + 5);
+		tokenizer< char_separator<char> > tokens2(temp, sep3);
+		vector<string> vec2;
+		vec2.assign(tokens2.begin(),tokens2.end());
+		while(vec2.at(0).length() == 0) {
+			vec2.erase(vec2.begin());
+		}
+		while(vec2.back().length() == 0) {
+			vec2.pop_back();
+		}
 
-			if (vec.size() < 3) continue;
-			if(vec.at(2).rfind('\n') != string::npos)
-				BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
-
+		int size = vec2.size();
+		if (size % 3 != 0) {
+			BOOST_LOG_TRIVIAL(fatal) << "Error: invalid XPRESS file format!" << std::endl;
+		}
+		for(int i = 0; i + 2 < size; i = i + 3) {
 			try {
-				int a = boost::lexical_cast<int>(vec.at(0));
-				int b = boost::lexical_cast<int>(vec.at(1));
+				// std::cout << "Processing line " << vec2.at(i) << " " << vec2.at(i+1) << " " << vec2.at(i+2) << std::endl;
+				int a = boost::lexical_cast<int>(vec2.at(i));
+				int b = boost::lexical_cast<int>(vec2.at(i + 1));
 				double value = 0.0;
-                                sscanf(vec.at(2).c_str(), "%lf", &value);
+				sscanf(vec2.at(i + 2).c_str(), "%lf", &value);
 				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 				g->addEdge(a - 1, b - 1, value);
 				// g->addEdge(b - 1, a - 1, value);
