@@ -98,7 +98,7 @@ public:
 	static const int GRASP_SLAVE_AND_VNS_SLAVES_TOGETHER = 1;
 
 	// The following variable defines the strategy for machine x process allocation
-	static const int MACHINE_PROCESS_ALLOCATION_STRATEGY = ALL_GRASP_SLAVES_FIRST;
+	static const int MACHINE_PROCESS_ALLOCATION_STRATEGY = GRASP_SLAVE_AND_VNS_SLAVES_TOGETHER;
 };
 
 } /* namespace parallel */
