@@ -55,6 +55,8 @@ void ModularityGainFunction::calculateGainList(ClusteringProblem &p, Clustering 
 		GainFunctionVertexSet& nodeList) {
 	gainMap.clear();
 	ModularityMatrix& modularityMatrix = getModularityMatrix();
+	std::vector<unsigned long> cluster = c.getVertexInClusterVector();
+	std::vector<unsigned long> clusterIdList = c.getClusterIdList();
 	int n = graph->getN();
 	// cout << "Calculating gain list..." << endl;
 	// For each vertex a
@@ -72,10 +74,10 @@ void ModularityGainFunction::calculateGainList(ClusteringProblem &p, Clustering 
 		for(unsigned long k = 0; k < nc; k++) {
 				double sum = 0.0;
 				// Cluster(k)
-				BoolArray cluster = c.getCluster(k);
+				unsigned long idk = clusterIdList[k];
 				// j in Cluster(k)
 				for(int j = 0; j < n; j++) {
-						if(cluster[j]) {
+						if(cluster[j] == idk) {
 								sum += 2 * modularityMatrix[a][j];
 						}
 				}

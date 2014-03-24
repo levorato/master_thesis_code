@@ -40,6 +40,9 @@ int RCCProblem::getType() const {
 Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
+	std::vector<unsigned long> cluster = c.getVertexInClusterVector();
+	std::vector<unsigned long> clusterIdList = c.getClusterIdList();
+	std::vector<unsigned long>::iterator it;
 	// os valores de soma entre clusters devem compor uma matriz
 	// as diagnonais da matriz contem os valores das somas internas
 	const matrix<double> posSum(c.positiveSum);
@@ -49,23 +52,16 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	c.positiveSum.assign(zero_matrix<double>(nc,nc));
 	c.negativeSum.assign(zero_matrix<double>(nc,nc));
 
-	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation." << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation." << endl;
 	// c.printClustering();
 
 	// For each vertex i
 	for(int i = 0; i < n; i++) {
-		BoolArray clusterI;
-		unsigned long ki;
-		// Find out to which cluster vertex i belongs
-		for(ki = 0; ki < nc; ki++) {
-			clusterI = c.getCluster(ki);
-			if(clusterI[i]) {
-				break;
-			}
-		}
-		assert(ki < nc);
 		DirectedGraph::out_edge_iterator f, l;
 		DirectedGraph::edge_descriptor e;
+		it = find(clusterIdList.begin(),clusterIdList.end(), cluster[i]);
+		unsigned long ki = std::distance(clusterIdList.begin(), it);
+		assert(ki < nc);
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			double weight = ((Edge*)f->get_property())->weight;
@@ -73,8 +69,8 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 			Vertex dest = target(e, g.graph);
 			int j = dest.id;
 			// ignores edge loops
-                	if(i == j)  continue;
-			bool sameCluster = clusterI[j];
+            if(i == j)  continue;
+			bool sameCluster = cluster[i] == cluster[j];
 			if(sameCluster) {
 				if(weight > 0) { // positive edge
 					c.positiveSum(ki, ki) += weight;
@@ -82,15 +78,9 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 					c.negativeSum(ki, ki) += fabs(weight);
 				}
 			} else {
-			    // Find out to which cluster vertex j belongs
-				unsigned long kj = 0;
-				BoolArray clusterJ;
-				for(kj = 0; kj < nc; kj++) {
-					clusterJ = c.getCluster(kj);
-					if(clusterJ[j]) {
-						break;
-					}
-				}
+			    // Finds out to which cluster vertex j belongs
+				it = find(clusterIdList.begin(),clusterIdList.end(), cluster[j]);
+				unsigned long kj = std::distance(clusterIdList.begin(), it);
 				assert(kj < nc);
 				if(weight > 0) { // positive edge
 					c.positiveSum(ki, kj) += weight;
@@ -111,10 +101,10 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 		}
 	}
 	
-	BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
-
+	// BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
+	/*
 	const double epsilon = std::numeric_limits<double>::epsilon();
 	if(posSum.size1() > 0) {
 		if(equals(c.positiveSum, posSum, epsilon, epsilon) and equals(c.negativeSum, negSum, epsilon, epsilon)) {
@@ -122,15 +112,19 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 		} else {
 			BOOST_LOG_TRIVIAL(trace) << "Obj function calculation DOES NOT MATCH.";
 		}
-	}
+	} */
 
 	return Imbalance(internalSum, externalSum);
 }
 
+// TODO consertar aqui!
 Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Clustering& c,
 		const unsigned long& k, const unsigned long& i) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
+	std::vector<unsigned long> cluster = c.getVertexInClusterVector();
+	std::vector<unsigned long> clusterIdList = c.getClusterIdList();
+	std::vector<unsigned long>::iterator it;
 
 	// matrix constains summation of values between pairs of clusters
 	// matrix diagonal contains internal sum values
@@ -138,8 +132,8 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 	// If a new cluster has been created...
 	if(nc > c.positiveSum.size1()) {
 		int previousSize = c.positiveSum.size1();
-		BOOST_LOG_TRIVIAL(trace) << "Resizing matrix from dim " << previousSize << " to dim " << nc;
-		BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum before resize: " << c.positiveSum << endl;
+		//BOOST_LOG_TRIVIAL(trace) << "Resizing matrix from dim " << previousSize << " to dim " << nc;
+		//BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum before resize: " << c.positiveSum << endl;
 
 		c.positiveSum.resize(nc, nc);
 		c.negativeSum.resize(nc, nc);
@@ -152,23 +146,15 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 				c.negativeSum(j, i) = 0.0;
 			}
 		}
-		BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum after resize: " << c.positiveSum << endl;
+		//BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum after resize: " << c.positiveSum << endl;
 	}
-	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting delta plus obj function calculation. k = " << k;
+	//BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting delta plus obj function calculation. k = " << k;
 	// c.printClustering();
 
-	BoolArray currentCluster;
-	unsigned long ki;
-	// Find out to which cluster vertex i belongs (currentCluster)
-	for(ki = 0; ki < nc; ki++) {
-		currentCluster = c.getCluster(ki);
-		if(currentCluster[i]) {
-			break;
-		}
-	}
+	// Finds out to which cluster vertex i belongs (currentCluster)
+	it = find(clusterIdList.begin(),clusterIdList.end(), cluster[i]);
+	unsigned long ki = std::distance(clusterIdList.begin(), it);
 	assert(ki < nc);
-	// gets vertex i's new cluster
-	BoolArray newCluster = c.getCluster(k);
 
 	DirectedGraph::out_edge_iterator f, l;
 	DirectedGraph::edge_descriptor e;
@@ -176,14 +162,14 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 	for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 		double weight = ((Edge*)f->get_property())->weight;
 		e = *f;
-                Vertex dest = target(e, g.graph);
-                int j = dest.id;
+        Vertex dest = target(e, g.graph);
+        int j = dest.id;
 		// ignores edge loops
-                if(i == j)  continue;		
+        if(i == j)  continue;
 
 		// vertex i is being moved to cluster k
 		// if applicable, adds the values corresponding to vertex i in its new currentCluster (k)
-		bool sameCluster = newCluster[j];
+		bool sameCluster = cluster[i] == cluster[j];
 		// INTERNAL AND EXTERNAL SUM RECALCULATION - STEP 2 (ADDITION) -----------------
 		if(sameCluster) {
 			if(weight > 0) { // positive edge
@@ -193,13 +179,8 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 			}
 		} else {
 			// Find out to which cluster vertex j belongs
-			unsigned long kj = 0;
-			for(kj = 0; kj < nc; kj++) {
-				BoolArray cluster = c.getCluster(kj);
-				if(cluster[j]) {
-					break;
-				}
-			}
+			it = find(clusterIdList.begin(),clusterIdList.end(), cluster[j]);
+			unsigned long kj = std::distance(clusterIdList.begin(), it);
 			assert(kj < nc);
 			if(weight > 0) { // positive edge
 				c.positiveSum(ki, kj) += weight;
@@ -210,18 +191,17 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 	}
 	DirectedGraph::in_edge_iterator f2, l2;
 	// For each in edge of i => edge (j, i)
-
 	for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {
 		double weight = ((Edge*)f2->get_property())->weight;
 		Vertex src = source(*f2, g.graph), targ = target(*f2, g.graph);
-                int j = src.id;
-                // ignores edge loops
-                if(i == j)  continue;
-                assert(i == targ.id);
+		int j = src.id;
+		// ignores edge loops
+		if(i == j)  continue;
+		assert(i == targ.id);
 
 		// vertex i is being moved to cluster k
 		// if applicable, adds the values corresponding to vertex i in its new currentCluster (k)
-		bool sameCluster = newCluster[j];
+		bool sameCluster = cluster[i] == cluster[j];
 		// INTERNAL AND EXTERNAL SUM RECALCULATION - STEP 2 (ADDITION) -----------------
 		if(sameCluster) {
 			if(weight > 0) { // positive edge
@@ -231,13 +211,8 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 			}
 		} else {
 			// Find out to which cluster vertex j belongs
-			unsigned long kj = 0;
-			for(kj = 0; kj < nc; kj++) {
-				BoolArray cluster = c.getCluster(kj);
-				if(cluster[j]) {
-					break;
-				}
-			}
+			it = find(clusterIdList.begin(),clusterIdList.end(), cluster[j]);
+			unsigned long kj = std::distance(clusterIdList.begin(), it);
 			assert(kj < nc);
 			if(weight > 0) { // positive edge
 				c.positiveSum(kj, ki) += weight;
@@ -259,9 +234,9 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 		}
 	}
 
-	BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
+	//BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
+	//BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
+	//BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
 
 	return Imbalance(internalSum, externalSum);
 }
@@ -270,24 +245,19 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 		const unsigned long& k, const unsigned long& i) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
+	std::vector<unsigned long> cluster = c.getVertexInClusterVector();
+	std::vector<unsigned long> clusterIdList = c.getClusterIdList();
+	std::vector<unsigned long>::iterator it;
 	// os valores de soma entre clusters devem compor uma matriz
 	// as diagnonais da matriz contem os valores das somas internas
 	assert(nc <= c.positiveSum.size1());
-	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting delta minus obj function calculation. k = " << k;
+	//BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting delta minus obj function calculation. k = " << k;
 	// c.printClustering();
 
-	BoolArray currentCluster;
-	unsigned long ki;
 	// Find out to which cluster vertex i belongs (currentCluster)
-	for(ki = 0; ki < nc; ki++) {
-		currentCluster = c.getCluster(ki);
-		if(currentCluster[i]) {
-			break;
-		}
-	}
+	it = find(clusterIdList.begin(),clusterIdList.end(), cluster[i]);
+	unsigned long ki = std::distance(clusterIdList.begin(), it);
 	assert(ki < nc);
-	// gets vertex i's new cluster
-	BoolArray newCluster = c.getCluster(k);
 
 	DirectedGraph::out_edge_iterator f, l;
 	DirectedGraph::edge_descriptor e;
@@ -295,13 +265,13 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 	for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 		double weight = ((Edge*)f->get_property())->weight;
 		e = *f;
-                Vertex dest = target(e, g.graph);
-                int j = dest.id;
+        Vertex dest = target(e, g.graph);
+        int j = dest.id;
 		// ignores edge loops
-                if(i == j)  continue;
+        if(i == j)  continue;
 		// INTERNAL AND EXTERNAL SUM RECALCULATION - STEP 1 (SUBTRACTION) -----------------
 		// if applicable, subtracts the values corresponding to vertex i in its current currentCluster (ki)
-		bool sameCluster = currentCluster[j];
+		bool sameCluster = cluster[i] == cluster[j];
 		if(sameCluster) {
 			if(weight > 0) { // positive edge
 				c.positiveSum(ki, ki) -= weight;
@@ -310,13 +280,8 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 			}
 		} else {
 			// Find out to which cluster vertex j belongs
-			unsigned long kj = 0;
-			for(kj = 0; kj < nc; kj++) {
-				BoolArray cluster = c.getCluster(kj);
-				if(cluster[j]) {
-					break;
-				}
-			}
+			it = find(clusterIdList.begin(),clusterIdList.end(), cluster[j]);
+			unsigned long kj = std::distance(clusterIdList.begin(), it);
 			assert(kj < nc);
 			if(weight > 0) { // positive edge
 				c.positiveSum(ki, kj) -= weight;
@@ -326,18 +291,17 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 		}
 	}
 	// For each in edge of i => edge (j, i)
-
 	DirectedGraph::in_edge_iterator f2, l2;
 	for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {
 		double weight = ((Edge*)f2->get_property())->weight;
 		Vertex src = source(*f2, g.graph), targ = target(*f2, g.graph);
-                int j = src.id;
+        int j = src.id;
 		// ignores edge loops
 		if(i == j)  continue;
-                assert(i == targ.id);
+        assert(i == targ.id);
 		// INTERNAL AND EXTERNAL SUM RECALCULATION - STEP 1 (SUBTRACTION) -----------------
 		// if applicable, subtracts the values corresponding to vertex i in its current currentCluster (ki)
-		bool sameCluster = currentCluster[j];
+		bool sameCluster = cluster[i] == cluster[j];
 		if(sameCluster) {
 			if(weight > 0) { // positive edge
 				c.positiveSum(ki, ki) -= weight;
@@ -346,13 +310,8 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 			}
 		} else {
 			// Find out to which cluster vertex j belongs
-			unsigned long kj = 0;
-			for(kj = 0; kj < nc; kj++) {
-				BoolArray cluster = c.getCluster(kj);
-				if(cluster[j]) {
-					break;
-				}
-			}
+			it = find(clusterIdList.begin(),clusterIdList.end(), cluster[j]);
+			unsigned long kj = std::distance(clusterIdList.begin(), it);
 			assert(kj < nc);
 			if(weight > 0) { // positive edge
 				c.positiveSum(kj, ki) -= weight;
@@ -362,40 +321,40 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 		}
 	}
 
-        // If cluster k has only vertex i, it will be deleted...
-        if(currentCluster.count() == 1) {
-                // remove line and column corresponding to the cluster being removed (cluster k)
-                matrix<double> tempPos(c.positiveSum);
-                matrix<double> tempNeg(c.negativeSum);
-                BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum before shrink: " << c.positiveSum << endl;
+    // If cluster k has only vertex i, it will be deleted...
+    if(c.getClusterSize(k) == 1) {
+		// remove line and column corresponding to the cluster being removed (cluster k)
+		matrix<double> tempPos(c.positiveSum);
+		matrix<double> tempNeg(c.negativeSum);
+		//BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum before shrink: " << c.positiveSum << endl;
 		nc--;
 
-                c.positiveSum.resize(nc, nc, false);
-                for(int i = 0, aux_i = 0; i < tempPos.size1(); i++) {
-                        if(i != k) {
-                                for(int j = 0, aux_j = 0; j < tempPos.size2(); j++) {
-                                        if(j != k) {
-                                                c.positiveSum(aux_i, aux_j) = tempPos(i, j);
-                                                aux_j++;
-                                        }
-                                }
-                                aux_i++;
-                        }
-                }
-                c.negativeSum.resize(nc, nc, false);
-                for(int i = 0, aux_i = 0; i < tempNeg.size1(); i++) {
-                        if(i != k) {
-                                for(int j = 0, aux_j = 0; j < tempNeg.size2(); j++) {
-                                        if(j != k) {
-                                                c.negativeSum(aux_i, aux_j) = tempNeg(i, j);
-                                                aux_j++;
-                                        }
-                                }
-                                aux_i++;
-                        }
-                }
-		BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum after shrink: " << c.positiveSum << endl;
-        }
+		c.positiveSum.resize(nc, nc, false);
+		for(int i = 0, aux_i = 0; i < tempPos.size1(); i++) {
+				if(i != k) {
+						for(int j = 0, aux_j = 0; j < tempPos.size2(); j++) {
+								if(j != k) {
+										c.positiveSum(aux_i, aux_j) = tempPos(i, j);
+										aux_j++;
+								}
+						}
+						aux_i++;
+				}
+		}
+		c.negativeSum.resize(nc, nc, false);
+		for(int i = 0, aux_i = 0; i < tempNeg.size1(); i++) {
+				if(i != k) {
+						for(int j = 0, aux_j = 0; j < tempNeg.size2(); j++) {
+								if(j != k) {
+										c.negativeSum(aux_i, aux_j) = tempNeg(i, j);
+										aux_j++;
+								}
+						}
+						aux_i++;
+				}
+		}
+		//BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum after shrink: " << c.positiveSum << endl;
+    }
 	// recalculates the imbalance based on the positive and negative matrices
 	double internalSum = 0.0, externalSum = 0.0;
 	for(unsigned long k1 = 0; k1 < c.positiveSum.size1(); k1++) {
@@ -408,9 +367,9 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 		}
 	}
 
-	BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
+	//BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
+	//BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
+	//BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
 
 	return Imbalance(internalSum, externalSum);
 }

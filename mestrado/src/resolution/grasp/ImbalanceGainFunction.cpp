@@ -44,13 +44,10 @@ void ImbalanceGainFunction::calculateGainList(ClusteringProblem &p, Clustering &
 		}
 		// For a new cluster k+1
 		// cout << "New cluster" << endl;
-		BoolArray newCluster(graph->getN());
-		newCluster[a] = true;
-		Clustering cl;
-		cl.addCluster(newCluster);
-		Imbalance delta = p.calculateDeltaPlusObjectiveFunction(*graph, cl, 0, a);
-		if(delta.getValue() < min) {
-			min = delta.getValue();
+		Clustering cl(c);
+		c.addCluster(*graph, p, a);
+		if(c.getImbalance().getValue() < min) {
+			min = c.getImbalance().getValue();
 			gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
 		}
 		gainCalculation.value = min;

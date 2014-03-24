@@ -68,7 +68,7 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 	BOOST_LOG_TRIVIAL(trace) << "RemainingClusters is " << remainingClusters << endl;
 
 	double bestValue = numeric_limits<double>::infinity();
-	Clustering bestClustering;
+	Clustering bestClustering(1);
 	if(remainingClusters > 0) {
 		bestClustering = this->searchNeighborhood(l, g, clustering,
 				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,

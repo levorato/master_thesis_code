@@ -33,8 +33,8 @@ namespace resolution {
 namespace grasp {
 
 Grasp::Grasp(GainFunction* f, unsigned long seed) : timeSpentInGRASP(0.0),
-		gainFunction(f), randomSeed(seed), timeResults(), timeSum(0.0), CBest(), 
-		numberOfTestedCombinations(0) {
+		gainFunction(f), randomSeed(seed), timeResults(), timeSum(0.0),
+		numberOfTestedCombinations(0), CBest(1), CBefore(1) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -177,7 +177,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 
 Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem,
 		double alpha, int myRank) {
-	Clustering Cc; // Cc = empty
+	Clustering Cc(g->getN()); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	BOOST_LOG_TRIVIAL(debug) << "GRASP construct clustering...\n";
 
@@ -213,7 +213,7 @@ Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem
 
 		// Cc->printClustering();
 	}
-	BOOST_LOG_TRIVIAL(debug) << myRank << ": Initial clustering completed.\n";
+	BOOST_LOG_TRIVIAL(debug) << "Initial clustering completed.";
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
 	// Cc.printClustering();
 	return Cc;

@@ -124,7 +124,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 		SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
 
-		Clustering c;
+		Clustering c(1);
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
 

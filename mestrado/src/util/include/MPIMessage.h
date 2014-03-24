@@ -141,7 +141,7 @@ public:
 	unsigned long finalClusterIndex;
 	unsigned long k; /* number of max clusters (RCC Problem only) */
 
-	InputMessageParallelVNS() : InputMessage(), clustering(),
+	InputMessageParallelVNS() : InputMessage(), clustering(1),
 			problemType(0), timeSpentSoFar(0.0), timeLimit(3600.0), initialClusterIndex(0),
 			finalClusterIndex(0), k(0) {
 
@@ -189,7 +189,7 @@ public:
 	Clustering clustering;
 	long numberOfTestedCombinations;
 
-	OutputMessage() : clustering(), numberOfTestedCombinations(0) {
+	OutputMessage() : clustering(1), numberOfTestedCombinations(0) {
 
 	}
 

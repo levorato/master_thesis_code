@@ -37,25 +37,19 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	double positiveSum = 0, negativeSum = 0;
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
+	const std::vector<unsigned long>& cluster = c.getVertexInClusterVector();
+	const std::vector<unsigned long>& clusterIdList = c.getClusterIdList();
 
 	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Starting obj function calculation." << endl;
 
 	// For each vertex i
 	for(int i = 0; i < n; i++) {
-		BoolArray cluster;
-		// Find out to which cluster vertex i belongs
-		for(unsigned long k = 0; k < nc; k++) {
-			cluster = c.getCluster(k);
-			if(cluster[i]) {
-				break;
-			}
-		}
 		DirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			double weight = ((Edge*)f->get_property())->weight;
 			int j = target(*f, g.graph);
-			bool sameCluster = cluster[j];
+			bool sameCluster = cluster[i] == cluster[j];
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
 				negativeSum += fabs(weight);
@@ -83,7 +77,8 @@ Imbalance CCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Cluste
 Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering& c,
 			const unsigned long& k, const unsigned long& i) {
 	double negativeSum = 0, positiveSum = 0;
-	BoolArray cluster = c.getCluster(k);
+	const std::vector<unsigned long>& cluster = c.getVertexInClusterVector();
+
 	// unsigned long n = g.getN();
 
 	// iterates over out-edges of vertex i
@@ -96,7 +91,7 @@ Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering&
 		e = *out_i;
 		Vertex src = source(e, g.graph), targ = target(e, g.graph);
 		double weight = ((Edge*)out_i->get_property())->weight;
-		if(cluster[targ.id]) {
+		if(cluster[targ.id] == k) {
 			if(weight < 0) {
 				negativeSum += fabs(weight);
 			}
@@ -115,7 +110,7 @@ Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering&
 		e = *in_i;
 		Vertex src = source(e, g.graph), targ = target(e, g.graph);
 		double weight = ((Edge*)in_i->get_property())->weight;
-		if(cluster[src.id]) {
+		if(cluster[src.id] == k) {
 			if(weight < 0) {
 				negativeSum += fabs(weight);
 			}

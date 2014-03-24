@@ -40,9 +40,9 @@ public:
 	matrix<double> positiveSum, negativeSum;
 
 	/**
-	 * Creates a Clustering object.
+	 * Creates a Clustering object with n vertices.
 	 */
-	Clustering();
+	Clustering(int n);
 
 	/**
 	 * Creates a Clustering object based on the clusterList.
@@ -56,18 +56,8 @@ public:
 	 * Recalculates the objective function associated with
 	 * the clustering, based on the modification.
 	 */
-	BoolArray addCluster(SignedGraph& g, ClusteringProblem& p,
+	void addCluster(SignedGraph& g, ClusteringProblem& p,
 			const unsigned long& i);
-
-	/**
-	 * Adds a new cluster based on the bool array passed as parameter.
-	 */
-	void addCluster(BoolArray b);
-
-	/**
-	 * Returns the n-th cluster of the list.
-	 */
-	BoolArray& getCluster(unsigned long clusterNumber);
 
 	/**
 	 * Adds a node i in cluster k. Recalculates the objective
@@ -108,9 +98,9 @@ public:
 	void removeCluster(SignedGraph& g, unsigned long k);
 
 	/**
-	 * Calculates the size of the k-th cluster.
+	 * Returns the size of the k-th cluster.
 	 */
-	unsigned long clusterSize(unsigned long k);
+	unsigned long getClusterSize(unsigned long k);
 
 	Imbalance getObjectiveFunctionValue();
 
@@ -135,13 +125,31 @@ public:
 		this->imbalance = imbalance;
 	}
 
-	const ClusterList& getClusterList() {
-		return clusterList;
+	/**
+	 * Returns the clusterId number to which a vertex vertexId belongs.
+	 * TODO: return real cluster position!!!
+	 */
+	unsigned long getVertexClusterIdNumber(int vertexId) const {
+		return vertexInClusterId.at(vertexId);
+	}
+
+	const std::vector<unsigned long>& getVertexInClusterVector() const {
+		return vertexInClusterId;
+	}
+
+	const std::vector<unsigned long>& getClusterIdList() const {
+		return clusterIdList;
 	}
 
 private:
-	/** the cluster list, with dimensions k x n */
-	ClusterList clusterList;
+	/** indicates to which cluster a vertex belongs */
+	std::vector<unsigned long> vertexInClusterId;
+	/** contains the list of IDs of each existing cluster */
+	std::vector<unsigned long> clusterIdList;
+	/** cluster id counter - always incremented when a new cluster is created */
+	unsigned long clusterIdCount;
+	/** contains the number of vertices in each cluster */
+	std::vector<unsigned long> clusterSize;
 	/** the value of the objective function corresponding to this cluster */
 	Imbalance imbalance;
 	/** The problem type this clustering refers to (CC, RCC) */
@@ -154,7 +162,10 @@ private:
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		ar & clusterList;
+		ar & vertexInClusterId;
+		ar & clusterIdList;
+		ar & clusterIdCount,
+		ar & clusterSize,
 		ar & imbalance;
 		ar & problemType;
 		ar & positiveSum;
