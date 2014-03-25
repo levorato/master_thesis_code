@@ -110,7 +110,7 @@ public:
 	/**
 	 * Calculates the size of the k-th cluster.
 	 */
-	unsigned long clusterSize(unsigned long k);
+	unsigned long getClusterSize(unsigned long k);
 
 	Imbalance getObjectiveFunctionValue();
 
@@ -142,6 +142,8 @@ public:
 private:
 	/** the cluster list, with dimensions k x n */
 	ClusterList clusterList;
+	/** the size of each cluster */
+	std::vector<unsigned long> clusterSize;
 	/** the value of the objective function corresponding to this cluster */
 	Imbalance imbalance;
 	/** The problem type this clustering refers to (CC, RCC) */
@@ -155,6 +157,7 @@ private:
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & clusterList;
+		ar & clusterSize;
 		ar & imbalance;
 		ar & problemType;
 		ar & positiveSum;

@@ -169,28 +169,33 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		out << ss.str();
  		out.close();
 
- 		// -------------------  R C C    S E A R C H     P R O C E S S I N G -------------------------
- 		// 		Uses GRASP best result (cluster c) as input
+ 		// -------------------  R C C    G R A S P     P R O C E S S I N G -------------------------
+ 		// 		TODO: Uses GRASP best result (cluster c) - number of clusters as input (k)
  		if(RCCEnabled) {
- 			BOOST_LOG_TRIVIAL(info) << "Starting RCC Search..." << endl;
+ 			BOOST_LOG_TRIVIAL(info) << "Starting RCC GRASP..." << endl;
 			// medicao de tempo do RCC
 			timer.start();
 			start_time = timer.elapsed();
-			// Chooses between the sequential or parallel VNS algorithm
-			NeighborhoodSearch* neig;
-			NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
+			Clustering RCCCluster;
 
-			if(numberOfSearchSlaves == 0) {	// sequential version of RCC Search
-				neig = nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-			} else {  // parallel version of RCC Search
-				neig = nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
+			GainFunctionFactory functionFactory(g.get());
+			if(numberOfSlaves == 0) {	// sequential version of GRASP
+				Grasp resolution(&functionFactory.build(functionType), seed);
+				RCCCluster = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
+						problemFactory.build(ClusteringProblem::RCC_PROBLEM), executionId, fileId, outputFolder,
+						timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
+			} else {  // parallel version
+				// distributes GRASP processing among numberOfSlaves processes and summarizes the result
+				ParallelGrasp parallelResolution(&functionFactory.build(functionType), seed);
+				RCCCluster = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
+						problemFactory.build(ClusteringProblem::RCC_PROBLEM), executionId, fileId, outputFolder, timeLimit,
+						numberOfSlaves, myRank, numberOfSearchSlaves);
 			}
-			RCCVariableNeighborhoodSearch vns(seed);
-			// IMPORTANT: Runs RCC local search with firstImprovementOnOneNeig = false
+			/*
 			Clustering RCCCluster = vns.executeSearch(g.get(), c, l, c.getNumberOfClusters(), false,
 									problemFactory.build(ClusteringProblem::RCC_PROBLEM), *neig, executionId, fileId, outputFolder,
 									timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
-
+			*/
 			// Stops the timer and stores the elapsed time
 			timer.stop();
 			end_time = timer.elapsed();
@@ -206,7 +211,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			BOOST_LOG_TRIVIAL(info) << "Global time spent: " << timeSpent << " s";
 			out << "RCC Global time spent: " << timeSpent << endl;
 			Imbalance imb = RCCCluster.getImbalance();
-			out << "RI(P) = " << imb.getValue() << endl;
+			out << "SRI(P) = " << imb.getValue() << endl;
 			stringstream ss;
 			RCCCluster.printClustering(ss);
 			out << ss.str();

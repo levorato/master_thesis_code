@@ -23,24 +23,20 @@ using namespace problem;
 
 namespace clusteringgraph {
 
-Clustering::Clustering() : clusterList(),
+Clustering::Clustering() : clusterList(), clusterSize(),
 		imbalance(0.0, 0.0), problemType(0), positiveSum(),
 		negativeSum()
 {
 
 }
 
-// TODO test dimension attribution
 Clustering::Clustering(const Clustering& clustering) :
-		clusterList(), imbalance(clustering.imbalance), problemType(clustering.problemType),
+		clusterList(clustering.clusterList.begin(), clustering.clusterList.end()),
+		clusterSize(clustering.clusterSize.begin(), clustering.clusterSize.end()),
+		imbalance(clustering.imbalance), problemType(clustering.problemType),
 		positiveSum(clustering.positiveSum),
-		negativeSum(clustering.negativeSum)
-{
-	// deep copy of the clusterlist data
-	for(unsigned long i = 0; i < clustering.clusterList.size(); i++) {
-		BoolArray boolArray = clustering.clusterList.at(i);
-		this->clusterList.push_back(BoolArray(boolArray));
-	}
+		negativeSum(clustering.negativeSum) {
+
 }
 
 Clustering::~Clustering() {
@@ -59,6 +55,7 @@ BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const uns
 	////BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
 	array[i] = true;
 	this->clusterList.push_back(array);
+	this->clusterSize.push_back(1);
 	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
 		this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
 	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
@@ -69,6 +66,7 @@ BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const uns
 
 void Clustering::addCluster(BoolArray b) {
 	clusterList.push_back(b);
+	clusterSize.push_back(1);
 }
 
 BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
@@ -78,6 +76,7 @@ BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
 void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
 	//BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
 	this->getCluster(k)[i] = true;
+	this->clusterSize[k]++;
 	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
 		this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
 	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
@@ -90,10 +89,11 @@ void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 	//swap(clusterList[k], clusterList[clusterList.size() - 1]);
 	//clusterList.erase(clusterList.end() - 1);
 	clusterList.erase(clusterList.begin()+k);
+	clusterSize.erase(clusterSize.begin()+k);
 }
 
-unsigned long Clustering::clusterSize(unsigned long k) {
-	return this->getCluster(k).count();
+unsigned long Clustering::getClusterSize(unsigned long k) {
+	return this->clusterSize[k];
 }
 
 void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
@@ -105,11 +105,12 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, con
 	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
 		this->imbalance = p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
 	}
-	if(clusterSize(k) == 1) {
+	if(clusterSize[k] == 1) {
 		//BOOST_LOG_TRIVIAL(trace) << "Deleting cluster " << k;
 		this->removeCluster(g, k);
 	} else {
 		this->getCluster(k)[i] = false;
+		this->clusterSize[k]--;
 	}
 }
 
@@ -128,7 +129,7 @@ void Clustering::print(std::ostream& os, ClusterList& l)
 {
 	unsigned long numberOfClusters = l.size();
 	for(unsigned long k = 0; k < numberOfClusters; k++) {
-    	os << " Partition " << k << " (" << clusterSize(k) <<  "): [ ";
+    	os << " Partition " << k << " (" << getClusterSize(k) <<  "): [ ";
     	BoolArray array = l.at(k);
     	for(unsigned long i = 0; i < array.size(); i++) {
     		if(array[i]) {

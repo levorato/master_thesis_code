@@ -25,6 +25,7 @@ void ImbalanceGainFunction::calculateGainList(ClusteringProblem &p, Clustering &
 	// cout << "Calculating gain list..." << endl;
 	list<int, allocator<int> >::const_iterator pos;
 	unsigned int i = 0;
+	Clustering cTemp = c;
 	for(i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
 	    unsigned long a = *pos;
 		// cout << "Vertex " << a << endl;
@@ -36,21 +37,22 @@ void ImbalanceGainFunction::calculateGainList(ClusteringProblem &p, Clustering &
 		int nc = c.getNumberOfClusters();
 		for(unsigned long k = 0; k < nc; k++) {
 			// cout << "Cluster " << k << endl;
-			Imbalance delta = p.calculateDeltaPlusObjectiveFunction(*graph, c, k, a);
-			if(delta.getValue() < min) {
-				min = delta.getValue();
+			cTemp = c;
+			cTemp.addNodeToCluster(*graph, p, a, k);
+			Imbalance imb = cTemp.getImbalance();
+			if(imb.getValue() < min) {
+				min = imb.getValue();
 				gainCalculation.clusterNumber = k;
 			}
 		}
 		// For a new cluster k+1
 		// cout << "New cluster" << endl;
-		BoolArray newCluster(graph->getN());
-		newCluster[a] = true;
-		Clustering cl;
-		cl.addCluster(newCluster);
-		Imbalance delta = p.calculateDeltaPlusObjectiveFunction(*graph, cl, 0, a);
-		if(delta.getValue() < min) {
-			min = delta.getValue();
+
+		cTemp = c;
+		cTemp.addCluster(*graph, p, a);
+		Imbalance imb = cTemp.getImbalance();
+		if(imb.getValue() < min) {
+			min = imb.getValue();
 			gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
 		}
 		gainCalculation.value = min;

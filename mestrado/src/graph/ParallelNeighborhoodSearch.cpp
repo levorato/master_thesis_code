@@ -134,7 +134,8 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		if(problem.getType() == ClusteringProblem::CC_PROBLEM) {
 			firstImprovementOn2Opt = true;
 		} else if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-			firstImprovementOn2Opt = false;
+			// TODO check if this is still necessary with GRASP RCC
+			// firstImprovementOn2Opt = false;
 		}
 		return this->search2opt(g, clustering, &problem, timeSpentSoFar, timeLimit, randomSeed,
 				myRank, initialClusterIndex, finalClusterIndex, firstImprovementOn2Opt, k);

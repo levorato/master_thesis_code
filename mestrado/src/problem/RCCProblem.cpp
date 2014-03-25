@@ -200,11 +200,13 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 					break;
 				}
 			}
-			assert(kj < nc);
-			if(weight > 0) { // positive edge
-				c.positiveSum(ki, kj) += weight;
-			} else { // negative edge
-				c.negativeSum(ki, kj) += fabs(weight);
+			// treats the cases where not all vertices are in the clusters (e.g. construct clustering)
+			if(kj < nc) {
+				if(weight > 0) { // positive edge
+					c.positiveSum(ki, kj) += weight;
+				} else { // negative edge
+					c.negativeSum(ki, kj) += fabs(weight);
+				}
 			}
 		}
 	}
@@ -238,11 +240,13 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 					break;
 				}
 			}
-			assert(kj < nc);
-			if(weight > 0) { // positive edge
-				c.positiveSum(kj, ki) += weight;
-			} else { // negative edge
-				c.negativeSum(kj, ki) += fabs(weight);
+			// treats the cases where not all vertices are in the clusters (e.g. construct clustering)
+			if(kj < nc) {
+				if(weight > 0) { // positive edge
+					c.positiveSum(kj, ki) += weight;
+				} else { // negative edge
+					c.negativeSum(kj, ki) += fabs(weight);
+				}
 			}
 		}
 	}
