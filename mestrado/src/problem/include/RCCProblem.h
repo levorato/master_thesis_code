@@ -38,8 +38,9 @@ public:
 	virtual Imbalance calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clustering& c,
 			const unsigned long& k, const unsigned long& i);
 
-
 	virtual int getType() const;
+
+	virtual string getName();
 };
 
 } /* namespace problem */

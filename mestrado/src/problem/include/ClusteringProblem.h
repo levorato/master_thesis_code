@@ -44,6 +44,8 @@ public:
 
 	virtual int getType() const = 0;
 
+	virtual string getName() = 0;
+
 	int getNumberOfIterations() const {
 		return numberOfIterations;
 	}

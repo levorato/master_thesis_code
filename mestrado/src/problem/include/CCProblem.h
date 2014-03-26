@@ -41,6 +41,8 @@ public:
 			const unsigned long& k, const unsigned long& i);
 
 	virtual int getType() const;
+
+	virtual string getName();
 };
 
 } /* namespace problem */

@@ -29,6 +29,10 @@ int CCProblem::getType() const {
 	return ClusteringProblem::CC_PROBLEM;
 }
 
+string CCProblem::getName() {
+	return "CC";
+}
+
 /**
  * The Imbalance of a partition P (I(P)) is defined as the total
  * weight of negative uncut arcs and positive cut arcs.

@@ -47,7 +47,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, string& executionId,
 		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
-	BOOST_LOG_TRIVIAL(info) << "Initializing GRASP procedure for alpha = " << alpha << " and l = " << l;
+	BOOST_LOG_TRIVIAL(info) << "Initializing GRASP "<< problem.getName() << " procedure for alpha = " << alpha << " and l = " << l;
 	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
 
 	// 0. Triggers local processing time calculation
@@ -165,12 +165,12 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults);
-	generateOutputFile(iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
+	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), alpha, l, iter);
+	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), alpha, l, iter);
 	// saves the initial solutions data to file
-	generateOutputFile(constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), alpha, l, iter);
+	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), alpha, l, iter);
 
 	return CStar;
 }
@@ -275,7 +275,7 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	return CStar;
 }
 
-void Grasp::generateOutputFile(stringstream& fileContents, const string& rootFolder,
+void Grasp::generateOutputFile(ClusteringProblem& problem, stringstream& fileContents, const string& rootFolder,
 		const string& fileId, const string& executionId, const int &processNumber, const string& fileSuffix,
 		const double& alpha, const int& l, const int& numberOfIterations) {
 	namespace fs = boost::filesystem;
@@ -294,7 +294,7 @@ void Grasp::generateOutputFile(stringstream& fileContents, const string& rootFol
 	}
 	stringstream filename;
 	filename << outputFolder << fileId << "/" << executionId << "/"
-			<< "CC-Node" << processNumber << "-l" << l << "a" << std::setprecision(2)
+			<< problem.getName() << "-Node" << processNumber << "-l" << l << "a" << std::setprecision(2)
 			<< alpha << "-" << fileSuffix << ".csv";
 	fs::path newFile(filename.str());
 	ofstream os;

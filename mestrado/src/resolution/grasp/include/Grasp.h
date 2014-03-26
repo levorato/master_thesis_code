@@ -87,8 +87,9 @@ protected:
 	/**
 	 * Generates CSV output file for GRASP local Search.
 	 */
-	void generateOutputFile(stringstream& fileContents, const string& rootFolder, const string& fileId, const string& timestamp,
-			const int &processNumber, const string& fileSuffix, const double& alpha, const int& l, const int& numberOfIterations);
+	void generateOutputFile(ClusteringProblem& problem, stringstream& fileContents, const string& rootFolder,
+			const string& fileId, const string& timestamp, const int &processNumber, const string& fileSuffix,
+			const double& alpha, const int& l, const int& numberOfIterations);
 
 	/**
 	 * Computes the best known GRASP result at each time interval.

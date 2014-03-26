@@ -34,6 +34,10 @@ int RCCProblem::getType() const {
 	return ClusteringProblem::RCC_PROBLEM;
 }
 
+string RCCProblem::getName() {
+	return "RCC";
+}
+
 /**
  * Returns he Relaxed Imbalance of a partition P (RI(P)).
  */
