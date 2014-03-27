@@ -1,0 +1,10 @@
+1,1,1
+1,7,7,0,4,0.0046
+2,8.0000,7.0000,1.0000,5,0.0059
+Best value,7.0000,7.0000,0.0000,5,1,0.0046,3
+Clustering configuration: 
+ Partition 0 (6): [ 2 3 5 9 11 15 ] 
+ Partition 1 (4): [ 6 7 8 12 ] 
+ Partition 2 (5): [ 1 16 17 18 19 ] 
+ Partition 3 (3): [ 0 10 14 ] 
+ Partition 4 (2): [ 4 13 ] 

@@ -1,0 +1,2 @@
+RCC Summary for graph file: SAMPLE2.NET
+RCC-Node0-l2-k3-iterations.csv Best value0.00000.00000.000030.00003116

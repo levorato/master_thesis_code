@@ -1,0 +1,2 @@
+CC Summary for graph file: haddate.dat
+CC-Node0-l2a0.8-iterations.csv Best value17.000015.00002.0000580.23214093451789

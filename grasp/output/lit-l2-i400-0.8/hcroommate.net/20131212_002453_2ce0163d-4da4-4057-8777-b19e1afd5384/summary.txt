@@ -1,0 +1,2 @@
+CC Summary for graph file: hcroommate.net
+Node0-l2a0.8-iterations.csv Best value18.000012.00006.00003170.14804181634582

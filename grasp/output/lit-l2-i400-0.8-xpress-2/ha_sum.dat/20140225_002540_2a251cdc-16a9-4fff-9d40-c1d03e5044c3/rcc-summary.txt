@@ -1,0 +1,2 @@
+RCC Summary for graph file: ha_sum.dat
+RCC-Node0-l2-k4-iterations.csv Best value16.00000.000016.0000160.00003147909

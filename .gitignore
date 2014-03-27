@@ -1,0 +1,13 @@
+build
+logs
+Build_Oscar
+nbproject
+.project
+.cproject
+Debug
+*.zip
+*.tar.gz
+*.tar.bz2
+.settings
+.waf*
+

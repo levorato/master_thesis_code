@@ -1,0 +1,2 @@
+RCC Summary for graph file: hcroommate.dat
+RCC-Node0-l2-k3-iterations.csv Best value3.00001.00002.0000110.00002032811

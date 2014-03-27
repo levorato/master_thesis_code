@@ -1,0 +1,2 @@
+CC Summary for graph file: McKiney.net
+CC-Node0-l2a0.8-iterations.csv Best value102.000015.000087.0000210.33834021373888

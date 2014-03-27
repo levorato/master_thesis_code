@@ -1,0 +1,2 @@
+Summary for graph file: sample9.dat
+RCC-Node0-l2-k10-iterations.csv Best value0.00000.00000.0000100.000034923

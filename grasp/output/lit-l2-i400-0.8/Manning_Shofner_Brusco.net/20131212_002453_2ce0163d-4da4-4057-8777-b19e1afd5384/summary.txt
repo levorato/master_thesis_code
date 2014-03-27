@@ -1,0 +1,2 @@
+CC Summary for graph file: Manning_Shofner_Brusco.net
+Node0-l2a0.8-iterations.csv Best value770.0000502.0000268.0000910.07504027838169

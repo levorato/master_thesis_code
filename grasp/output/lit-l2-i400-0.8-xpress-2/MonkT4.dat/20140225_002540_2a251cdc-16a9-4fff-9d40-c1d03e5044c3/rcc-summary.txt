@@ -1,0 +1,2 @@
+RCC Summary for graph file: MonkT4.dat
+RCC-Node0-l2-k13-iterations.csv Best value0.00000.00000.0000130.0000320554

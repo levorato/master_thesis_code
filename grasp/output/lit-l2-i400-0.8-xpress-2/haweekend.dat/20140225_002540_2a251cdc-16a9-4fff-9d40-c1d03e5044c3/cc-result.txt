@@ -1,0 +1,8 @@
+Global time spent: 13.0404
+I(P) = 14
+Clustering configuration: 
+ Partition 0 (4): [ 6 7 14 20 ] 
+ Partition 1 (2): [ 2 17 ] 
+ Partition 2 (10): [ 0 1 4 5 8 9 10 12 15 16 ] 
+ Partition 3 (3): [ 11 13 19 ] 
+ Partition 4 (2): [ 3 18 ] 

@@ -1,0 +1,2 @@
+CC Summary for graph file: hb_sum.net
+Node0-l2a0.8-iterations.csv Best value81.000061.000020.0000410.00784021102056

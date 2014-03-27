@@ -1,0 +1,2 @@
+CC Summary for graph file: MediatorN1_Modif.dat
+CC-Node0-l2a0.8-iterations.csv Best value0.00000.00000.0000410.006011712

@@ -1,0 +1,19 @@
+Global time spent: 0.13579
+I(P) = 345
+Clustering configuration: 
+ Partition 0 (4): [ 4 30 33 47 ] 
+ Partition 1 (3): [ 5 9 45 ] 
+ Partition 2 (4): [ 1 7 8 20 ] 
+ Partition 3 (5): [ 0 6 14 26 36 ] 
+ Partition 4 (3): [ 31 41 44 ] 
+ Partition 5 (4): [ 3 22 28 39 ] 
+ Partition 6 (4): [ 10 12 42 43 ] 
+ Partition 7 (5): [ 24 35 38 40 48 ] 
+ Partition 8 (4): [ 17 21 34 46 ] 
+ Partition 9 (2): [ 19 25 ] 
+ Partition 10 (2): [ 32 37 ] 
+ Partition 11 (2): [ 13 18 ] 
+ Partition 12 (2): [ 11 23 ] 
+ Partition 13 (2): [ 27 29 ] 
+ Partition 14 (1): [ 2 ] 
+ Partition 15 (3): [ 15 16 49 ] 

@@ -1,0 +1,2 @@
+CC Summary for graph file: hc_sum.dat
+CC-Node0-l2a0.8-iterations.csv Best value58.000051.00007.0000410.01724021640560

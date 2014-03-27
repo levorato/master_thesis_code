@@ -1,0 +1,2 @@
+RCC Summary for graph file: MPOS.NET
+RCC-Node0-l2-k2-iterations.csv Best value0.00000.00000.000070.0000192780

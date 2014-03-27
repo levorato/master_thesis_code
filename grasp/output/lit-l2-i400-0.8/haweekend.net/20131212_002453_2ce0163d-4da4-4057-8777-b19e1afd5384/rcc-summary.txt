@@ -1,0 +1,2 @@
+RCC Summary for graph file: haweekend.net
+RCC-Node0-l2-k5-iterations.csv Best value0.00000.00000.000080.00001310073

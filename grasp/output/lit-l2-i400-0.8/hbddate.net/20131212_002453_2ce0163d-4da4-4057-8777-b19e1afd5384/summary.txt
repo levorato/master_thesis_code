@@ -1,0 +1,2 @@
+CC Summary for graph file: hbddate.net
+Node0-l2a0.8-iterations.csv Best value18.000017.00001.0000410.00994021041079

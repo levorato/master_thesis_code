@@ -1,0 +1,2 @@
+CC Summary for graph file: hafriend.net
+Node0-l2a0.8-iterations.csv Best value15.000012.00003.0000450.05514061965794
