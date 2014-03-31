@@ -9,7 +9,6 @@
 #define VERTEXSET_H_
 
 #include <list>
-#include <boost/shared_ptr.hpp>
 
 #include "GainFunction.h"
 #include "../../../graph/include/Clustering.h"
@@ -21,8 +20,6 @@ using namespace std;
 using namespace boost;
 using namespace clusteringgraph;
 
-typedef list<int> GainFunctionVertexSet;
-typedef boost::shared_ptr<GainFunctionVertexSet> GainFunctionVertexSetPtr;
 
 class VertexSet {
 public:
@@ -37,18 +34,18 @@ public:
 	 */
 	int size();
 	/**
-	 * Removes the specified vertex from the list.
-	 */
-	void removeVertex(int i);
-	/**
-	 * Picks a random vertex among the first x elements.
+	 * Picks a random vertex among the first x elements and removes it.
 	 */
 	int chooseRandomVertex(int x);
+	/**
+	 * Returns the first element from the list and removes it.
+	 */
+	int chooseFirstElement();
 
 	/**
 	 * Sorts the list according to the gain function.
 	 */
-	void sort(GainFunction* function);
+	void sort(GainFunction& function);
 
 	list<int>& getVertexList();
 private:
@@ -57,8 +54,7 @@ private:
 	 */
 	unsigned long seed;
 
-	GainFunctionVertexSetPtr vertexSetPtr;
-
+	list<int> vertexSet;
 };
 
 } /* namespace grasp */

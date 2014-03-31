@@ -136,13 +136,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		boost::timer::cpu_times start_time = timer.elapsed();
 
 		if(numberOfSlaves == 0) {	// sequential version of GRASP
-			Grasp resolution(&functionFactory.build(functionType), seed);
+			Grasp resolution(functionFactory.build(functionType), seed);
 			c = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
 					problemFactory.build(problemType), executionId, fileId, outputFolder,
 					timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 		} else {  // parallel version
 			// distributes GRASP processing among numberOfSlaves processes and summarizes the result
-			ParallelGrasp parallelResolution(&functionFactory.build(functionType), seed);
+			ParallelGrasp parallelResolution(functionFactory.build(functionType), seed);
 			c = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
 					problemFactory.build(problemType), executionId, fileId, outputFolder, timeLimit,
 					numberOfSlaves, myRank, numberOfSearchSlaves);
@@ -180,13 +180,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 
 			GainFunctionFactory functionFactory(g.get());
 			if(numberOfSlaves == 0) {	// sequential version of GRASP
-				Grasp resolution(&functionFactory.build(functionType), seed);
+				Grasp resolution(functionFactory.build(functionType), seed);
 				RCCCluster = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
 						problemFactory.build(ClusteringProblem::RCC_PROBLEM), executionId, fileId, outputFolder,
 						timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
 			} else {  // parallel version
 				// distributes GRASP processing among numberOfSlaves processes and summarizes the result
-				ParallelGrasp parallelResolution(&functionFactory.build(functionType), seed);
+				ParallelGrasp parallelResolution(functionFactory.build(functionType), seed);
 				RCCCluster = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
 						problemFactory.build(ClusteringProblem::RCC_PROBLEM), executionId, fileId, outputFolder, timeLimit,
 						numberOfSlaves, myRank, numberOfSearchSlaves);
@@ -521,7 +521,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 					// trigggers the local GRASP routine
 					GainFunctionFactory functionFactory(g.get());
-					Grasp resolution(&functionFactory.build(imsgpg.gainFunctionType), seed);
+					Grasp resolution(functionFactory.build(imsgpg.gainFunctionType), seed);
 					Clustering bestClustering = resolution.executeGRASP(g.get(), imsgpg.iter, imsgpg.alpha,
 							imsgpg.l, imsgpg.firstImprovementOnOneNeig, problemFactory.build(imsgpg.problemType),
 							imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, imsgpg.timeLimit,

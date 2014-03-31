@@ -32,7 +32,7 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace grasp {
 
-Grasp::Grasp(GainFunction* f, unsigned long seed) : timeSpentInGRASP(0.0),
+Grasp::Grasp(GainFunction& f, unsigned long seed) : timeSpentInGRASP(0.0),
 		gainFunction(f), randomSeed(seed), timeResults(), timeSum(0.0), CBest(), 
 		numberOfTestedCombinations(0) {
 	// TODO Auto-generated constructor stub
@@ -186,19 +186,28 @@ Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem
 
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 		// according to the value of the gain function
-		gainFunction->calculateGainList(problem, Cc, lc.getVertexList());
+		gainFunction.calculateGainList(problem, Cc, lc.getVertexList());
 		lc.sort(gainFunction);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
-		int i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
+		// IMPORTANT: if alpha < 0, the constructClustering method will always
+		//             choose the first vertex in the gainFunction list, that is,
+		//             the one that minimizes the objective (VOTE algorithm).
+		int i = 0;
+		if(alpha <= 0.0) {
+			i = lc.chooseFirstElement();
+		} else {
+			i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
+		}
 		// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
 
 		// 3. Cc = C union {i}
 		// Adds the vertex i to the partial clustering C, in a way so defined by
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
-		GainCalculation gainCalculation = gainFunction->gain(i);
+		GainCalculation gainCalculation = gainFunction.gain(i);
+		// cout << "Selected vertex is " << i << endl;
 		if(gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
 			Cc.addCluster(*g, problem, i);
@@ -209,8 +218,7 @@ Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem
 
 		// 4. lc = lc - {i}
 		// the removal of vertex i automatically recalculates the gain function
-		lc.removeVertex(i);
-
+		// Removal already done by the chooseVertex methods above
 		// Cc->printClustering();
 	}
 	BOOST_LOG_TRIVIAL(debug) << myRank << ": Initial clustering completed.\n";

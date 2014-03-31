@@ -25,7 +25,7 @@ namespace grasp {
 
 class Grasp: public ResolutionStrategy {
 public:
-	Grasp(GainFunction* f, unsigned long seed);
+	Grasp(GainFunction& f, unsigned long seed);
 	virtual ~Grasp();
 
 	/**
@@ -35,7 +35,9 @@ public:
 	 * and localSearch.
 	 * @param g the graph to be used as the base
 	 * @param iter maximum number of iterations
-	 * @param alpha ramdom seed belonging to the interval (0, 1)
+	 * @param alpha randomness factor belonging to the interval (0, 1); if alpha < 0, the
+	 * constructClustering method will always choose the first vertex in the gainFunction list,
+	 * that is, the one that minimizes the objective (VOTE algorithm).
 	 * @param l the size of the neighborhood
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param fileId string representing the identification of the input graph file
@@ -113,7 +115,7 @@ protected:
 	/**
 	 * The gain function to be used in the construction phase.
 	 */
-	GainFunction* gainFunction;
+	GainFunction& gainFunction;
 
 	/**
 	 * Random seed.
