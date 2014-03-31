@@ -1,11 +1,11 @@
 /*
- * Grasp.cpp
+ * ILS.cpp
  *
- *  Created on: 30/04/2013
- *      Author: czt0
+ *  Created on: 31/03/2014
+ *      Author: Mario Levorato
  */
 
-#include "include/Grasp.h"
+#include "include/ILS.h"
 #include "../construction/include/VertexSet.h"
 #include "../../graph/include/SequentialNeighborhoodSearch.h"
 #include "../../graph/include/ParallelNeighborhoodSearch.h"
@@ -30,24 +30,24 @@ using namespace boost;
 using namespace clusteringgraph;
 
 namespace resolution {
-namespace grasp {
+namespace ils {
 
-Grasp::Grasp(GainFunction& f, unsigned long seed) : timeSpentInGRASP(0.0),
+ILS::ILS(GainFunction& f, unsigned long seed) : timeSpentInILS(0.0),
 		gainFunction(f), randomSeed(seed), timeResults(), timeSum(0.0), CBest(), 
 		numberOfTestedCombinations(0) {
 	// TODO Auto-generated constructor stub
 
 }
 
-Grasp::~Grasp() {
+ILS::~ILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
+Clustering ILS::executeILS(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, string& executionId,
 		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
-	BOOST_LOG_TRIVIAL(info) << "Initializing GRASP "<< problem.getName() << " procedure for alpha = " << alpha << " and l = " << l;
+	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = " << alpha << " and l = " << l;
 	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
 
 	// 0. Triggers local processing time calculation
@@ -58,7 +58,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
-	timeSpentInGRASP += timeSpentInConstruction;
+	timeSpentInILS += timeSpentInConstruction;
 	timer.resume();
 	start_time = timer.elapsed();
 
@@ -83,7 +83,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 	numberOfTestedCombinations = 0;
 
 	for (i = 0, totalIter = 0; i <= iter || iter < 0 ; i++, totalIter++, previousCc = Cc) {
-		BOOST_LOG_TRIVIAL(debug) << "GRASP iteration " << i;
+		BOOST_LOG_TRIVIAL(debug) << "ILS iteration " << i;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
 		//    Store initial solution value in corresponding results file
@@ -108,10 +108,10 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 		// 5. Write the results into ostream os, using csv format
 		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
 		// TODO melhorar formatacao do tempo
-		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
+		timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
 		iterationResults << (totalIter+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
 				<< "," << newValue.getNegativeValue() << "," << CStar.getNumberOfClusters()
-				<< "," << fixed << setprecision(4) << timeSpentInGRASP << "\n";
+				<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
 		timer.resume();
 		start_time = timer.elapsed();
 
@@ -120,16 +120,16 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 			CStar = Cl;
 			bestValue = newValue;
 			iterationValue = totalIter;
-			timeSpentOnBestSolution = timeSpentInGRASP;
+			timeSpentOnBestSolution = timeSpentInILS;
 			i = 0;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue.getValue() == 0)  break;
 		}
 		timer.stop();
 		end_time = timer.elapsed();
-		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
+		timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
 		// if elapsed time is bigger than timeLimit, break
-		if(timeSpentInGRASP >= timeLimit) {
+		if(timeSpentInILS >= timeLimit) {
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
@@ -146,7 +146,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 		timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
 		timer.resume();
 
-		// guarantees at least one execution of the GRASP when the number of iterations is smaller than one
+		// guarantees at least one execution of the ILS when the number of iterations is smaller than one
 		if(iter <= 0) {  break;  }
 	}
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
@@ -162,7 +162,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 	constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << (initialImbalanceSum / (totalIter+1))
 			<< endl;
 
-	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
+	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults);
 	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
@@ -175,11 +175,11 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 	return CStar;
 }
 
-Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem,
+Clustering ILS::constructClustering(SignedGraph *g, ClusteringProblem& problem,
 		double alpha, int myRank) {
 	Clustering Cc; // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
-	BOOST_LOG_TRIVIAL(debug) << "GRASP construct clustering...\n";
+	BOOST_LOG_TRIVIAL(debug) << "ILS construct clustering...\n";
 
 	while(lc.size() > 0) { // lc != empty
 		// cout << "Vertex list size is " << lc.size() << endl;
@@ -227,8 +227,8 @@ Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem
 	return Cc;
 }
 
-Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const int& graspIteration,
+Clustering ILS::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
+		const int& ILSIteration,
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 		NeighborhoodSearch &neig, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
@@ -237,10 +237,10 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 	Clustering CStar = Cc; // C* := Cc
 	CBefore = CStar; // previous best solution
 	double timeSpentOnLocalSearch = 0.0;
-	BOOST_LOG_TRIVIAL(debug) << "GRASP local search...\n";
+	BOOST_LOG_TRIVIAL(debug) << "ILS local search...\n";
 	BOOST_LOG_TRIVIAL(debug) << "Current neighborhood is " << k << endl;
 
-	while(k <= l && (timeSpentInGRASP + timeSpentOnLocalSearch < timeLimit)) {
+	while(k <= l && (timeSpentInILS + timeSpentOnLocalSearch < timeLimit)) {
 		// cout << "Local search iteration " << iteration << endl;
 		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
@@ -250,7 +250,7 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood	
 		Clustering Cl = neig.searchNeighborhood(k, g, &CStar, problem,
-				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, 0);
+				timeSpentInILS + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, 0);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
 		if(Cl.getImbalance().getValue() < 0.0) {
@@ -277,13 +277,13 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		timeSpentOnLocalSearch += (end_time.wall - start_time.wall) / double(1000000000);
 
 		// Registers the best result at time intervals
-		notifyNewValue(CStar, timeSpentOnLocalSearch, graspIteration);
+		notifyNewValue(CStar, timeSpentOnLocalSearch, ILSIteration);
 	}
-	BOOST_LOG_TRIVIAL(debug) << "GRASP local search done. Time spent: " << timeSpentOnLocalSearch;
+	BOOST_LOG_TRIVIAL(debug) << "ILS local search done. Time spent: " << timeSpentOnLocalSearch;
 	return CStar;
 }
 
-void Grasp::generateOutputFile(ClusteringProblem& problem, stringstream& fileContents, const string& rootFolder,
+void ILS::generateOutputFile(ClusteringProblem& problem, stringstream& fileContents, const string& rootFolder,
 		const string& fileId, const string& executionId, const int &processNumber, const string& fileSuffix,
 		const double& alpha, const int& l, const int& numberOfIterations) {
 	namespace fs = boost::filesystem;
@@ -321,17 +321,17 @@ void Grasp::generateOutputFile(ClusteringProblem& problem, stringstream& fileCon
 	os.close();
 }
 
-void Grasp::measureTimeResults(const double& timeSpentOnLocalSearch, const int& graspIteration) {
+void ILS::measureTimeResults(const double& timeSpentOnLocalSearch, const int& ILSIteration) {
 	Imbalance imbalance = CBest.getImbalance();
-	timeResults << fixed << setprecision(4) << (timeSpentInGRASP + timeSpentOnLocalSearch) << "," << imbalance.getValue()
+	timeResults << fixed << setprecision(4) << (timeSpentInILS + timeSpentOnLocalSearch) << "," << imbalance.getValue()
 			<< "," << imbalance.getPositiveValue()
 			<< "," << imbalance.getNegativeValue() << "," << CBest.getNumberOfClusters()
-			<< "," << (graspIteration+1) << "," << numberOfTestedCombinations << "\n";
+			<< "," << (ILSIteration+1) << "," << numberOfTestedCombinations << "\n";
 }
 
-unsigned long Grasp::getNumberOfTestedCombinations() {
+unsigned long ILS::getNumberOfTestedCombinations() {
 	return numberOfTestedCombinations;
 }
 
-} /* namespace grasp */
+} /* namespace ILS */
 } /* namespace resolution */

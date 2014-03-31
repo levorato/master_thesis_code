@@ -8,7 +8,7 @@
 #include "include/ModularityGainFunction.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 ModularityGainFunction::ModularityGainFunction(SignedGraph* g) :
 		GainFunction::GainFunction(g),

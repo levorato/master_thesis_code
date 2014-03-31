@@ -8,7 +8,7 @@
 #include "include/ImbalanceGainFunction.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 ImbalanceGainFunction::ImbalanceGainFunction(SignedGraph* g) : GainFunction::GainFunction(g) {
 	// TODO Auto-generated constructor stub

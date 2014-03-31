@@ -8,7 +8,7 @@
 #include "include/PositiveNegativeModularityGainFunction.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 PositiveNegativeModularityGainFunction::PositiveNegativeModularityGainFunction(SignedGraph* g) :
 				ModularityGainFunction::ModularityGainFunction(g) {

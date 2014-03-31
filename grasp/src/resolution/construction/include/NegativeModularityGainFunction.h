@@ -12,9 +12,9 @@
 #include "ModularityGainFunction.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
-class NegativeModularityGainFunction: public resolution::grasp::ModularityGainFunction {
+class NegativeModularityGainFunction: public resolution::construction::ModularityGainFunction {
 public:
 	NegativeModularityGainFunction(SignedGraph* g);
 	virtual ~NegativeModularityGainFunction();

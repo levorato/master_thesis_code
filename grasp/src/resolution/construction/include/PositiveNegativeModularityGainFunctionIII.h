@@ -13,9 +13,9 @@
 
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
-class PositiveNegativeModularityGainFunctionIII: public resolution::grasp::ModularityGainFunction {
+class PositiveNegativeModularityGainFunctionIII: public resolution::construction::ModularityGainFunction {
 public:
 	PositiveNegativeModularityGainFunctionIII(SignedGraph* g);
 	virtual ~PositiveNegativeModularityGainFunctionIII();

@@ -1,27 +1,27 @@
 /*
- * PositiveNegativeModularityGainFunctionII.cpp
+ * PositiveNegativeModularityGainFunctionIII.cpp
  *
  *  Created on: Jul 18, 2013
  *      Author: mario
  */
 
-#include "include/PositiveNegativeModularityGainFunctionII.h"
+#include "include/PositiveNegativeModularityGainFunctionIII.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
-PositiveNegativeModularityGainFunctionII::PositiveNegativeModularityGainFunctionII(SignedGraph* g) :
+PositiveNegativeModularityGainFunctionIII::PositiveNegativeModularityGainFunctionIII(SignedGraph* g) :
 				ModularityGainFunction::ModularityGainFunction(g) {
 	// TODO Auto-generated constructor stub
 
 }
 
-PositiveNegativeModularityGainFunctionII::~PositiveNegativeModularityGainFunctionII() {
+PositiveNegativeModularityGainFunctionIII::~PositiveNegativeModularityGainFunctionIII() {
 	// TODO Auto-generated destructor stub
 }
 
 // TODO calculate the modularity matrix of weighed graphs
-void PositiveNegativeModularityGainFunctionII::calculateModularityMatrix() {
+void PositiveNegativeModularityGainFunctionIII::calculateModularityMatrix() {
 	int m = graph->getM();
 	int numberOfNodes = graph->getN();
 	double pos_degree[numberOfNodes], neg_degree[numberOfNodes];
@@ -30,7 +30,6 @@ void PositiveNegativeModularityGainFunctionII::calculateModularityMatrix() {
 		neg_degree[i] = graph->getNegativeDegree(i);
 		pos_degree[i] = graph->getPositiveDegree(i);
 	}
-
 	/*
 			 * TODO Alterar a maneira como as arestas sao varridas para esse calculo
 	for(int i = 0; i < numberOfNodes; i++) {
@@ -38,19 +37,22 @@ void PositiveNegativeModularityGainFunctionII::calculateModularityMatrix() {
 			double a = 0.0;
 			if(graph->getEdge(i, j) > 0) {
 				a = 1.0;
+				modularityMatrix[i][j] = a + (neg_degree[i] * neg_degree[j]) / (2.0 * m);
 			} else if(graph->getEdge(i, j) < 0) {
 				a = -1.0;
+				modularityMatrix[i][j] = a - (pos_degree[i] * pos_degree[j]) / (2.0 * m);
+			} else {  // a(i,j) == zero
+				modularityMatrix[i][j] = a +
+									( ( (neg_degree[i] * neg_degree[j]) - (pos_degree[i] * pos_degree[j]) ) / (2.0 * m) );
 			}
-			modularityMatrix[i][j] = a +
-					( ( (neg_degree[i] * neg_degree[j]) - (pos_degree[i] * pos_degree[j]) ) / (2.0 * m) );
 		}
 	}
 	*/
 	modularityMatrixCalculated = true;
 }
 
-int PositiveNegativeModularityGainFunctionII::getType() {
-	return GainFunction::POSITIVE_NEGATIVE_MODULARITY_II;
+int PositiveNegativeModularityGainFunctionIII::getType() {
+	return GainFunction::POSITIVE_NEGATIVE_MODULARITY_III;
 }
 
 } /* namespace grasp */

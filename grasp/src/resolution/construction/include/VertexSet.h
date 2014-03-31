@@ -14,7 +14,7 @@
 #include "../../../graph/include/Clustering.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 using namespace std;
 using namespace boost;

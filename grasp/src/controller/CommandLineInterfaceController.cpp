@@ -19,8 +19,8 @@
 #include "../util/include/MPIMessage.h"
 #include "../util/parallel/include/MPIUtil.h"
 #include "../problem/include/ClusteringProblemFactory.h"
-#include "../resolution/grasp/include/GainFunctionFactory.h"
-#include "../resolution/grasp/include/GainFunction.h"
+#include "../resolution/construction/include/GainFunctionFactory.h"
+#include "../resolution/construction/include/GainFunction.h"
 #include "../graph/include/NeighborhoodSearchFactory.h"
 #include "../graph/include/ParallelNeighborhoodSearch.h"
 #include "../graph/include/SequentialNeighborhoodSearch.h"
@@ -76,6 +76,7 @@ using namespace boost::mpi;
 #include <vector>
 using namespace std;
 using namespace clusteringgraph;
+using namespace resolution::construction;
 using namespace resolution::grasp;
 using namespace resolution::vnd;
 using namespace problem;

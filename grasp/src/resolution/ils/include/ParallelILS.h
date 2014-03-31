@@ -1,12 +1,12 @@
 /*
- * ParallelGrasp.h
+ * ParallelILS.h
  *
- *  Created on: May 27, 2013
- *      Author: mario
+ *  Created on: Mar 31, 2014
+ *      Author: Mario Levorato
  */
 
-#ifndef PARALLELGRASP_H_
-#define PARALLELGRASP_H_
+#ifndef PARALLELILS_H_
+#define PARALLELILS_H_
 
 #include "Grasp.h"
 #include <mpi.h>
@@ -15,22 +15,22 @@ using namespace problem;
 using namespace resolution::construction;
 
 namespace resolution {
-namespace grasp {
+namespace ils {
 
-class ParallelGrasp : resolution::grasp::Grasp {
+class ParallelILS : resolution::ils::ILS {
 public:
 	ParallelGrasp(GainFunction& f, unsigned long seed);
 	virtual ~ParallelGrasp();
 
 	/**
-	 * Triggers the parallel execution of the GRASP algorithm using MPI.
+	 * Triggers the parallel execution of the ILS algorithm using MPI.
 	 */
-	Clustering executeGRASP(SignedGraph *g, const int& iter, const double& alpha,
+	Clustering executeILS(SignedGraph *g, const int& iter, const double& alpha,
 			const int& l, const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
 			const int& numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 };
 
-} /* namespace grasp */
+} /* namespace ils */
 } /* namespace resolution */
-#endif /* PARALLELGRASP_H_ */
+#endif /* PARALLELILS_H_ */

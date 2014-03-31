@@ -15,7 +15,7 @@
 #include "include/VertexSet.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 VertexSet::VertexSet(unsigned long randomSeed, int n) : seed(randomSeed),
 		vertexSet() {

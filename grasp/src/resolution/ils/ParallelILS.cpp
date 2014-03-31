@@ -1,11 +1,11 @@
 /*
- * ParallelGrasp.cpp
+ * ParallelILS.cpp
  *
- *  Created on: May 27, 2013
- *      Author: mario
+ *  Created on: Mar 31, 2014
+ *      Author: Mario Levorato
  */
 
-#include "include/ParallelGrasp.h"
+#include "include/ParallelILS.h"
 #include "../../util/include/MPIMessage.h"
 #include "../../util/parallel/include/MPIUtil.h"
 #include <cstring>
@@ -14,7 +14,7 @@
 #include <boost/log/trivial.hpp>
 
 namespace resolution {
-namespace grasp {
+namespace ils {
 
 using namespace std;
 using namespace util;
@@ -22,15 +22,15 @@ using namespace util::parallel;
 using namespace resolution::construction;
 namespace mpi = boost::mpi;
 
-ParallelGrasp::ParallelGrasp(GainFunction& f, unsigned long seed) : Grasp(f, seed) {
+ParallelILS::ParallelILS(GainFunction& f, unsigned long seed) : ILS(f, seed) {
 
 }
 
-ParallelGrasp::~ParallelGrasp() {
+ParallelILS::~ParallelILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
+Clustering ParallelILS::executeGRASP(SignedGraph *g, const int& iter,
 		const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 		ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
 		const long& timeLimit, const int& numberOfSlaves, const int& myRank,
@@ -42,15 +42,15 @@ Clustering ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfGRASPSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
-		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, alpha, l,
+		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, alpha, l,
 				problem.getType(), gainFunction.getType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Grasp resolution(gainFunction, randomSeed);
-        Clustering bestClustering = resolution.executeGRASP(g, iter, alpha,
+	ILS resolution(gainFunction, randomSeed);
+        Clustering bestClustering = resolution.executeILS(g, iter, alpha,
 			l, firstImprovementOnOneNeig, problem, executionId, fileId,
 			outputFolder, timeLimit, numberOfSlaves,
 			myRank, numberOfSearchSlaves);

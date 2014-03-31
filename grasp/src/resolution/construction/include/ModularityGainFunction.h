@@ -13,12 +13,12 @@
 #include <boost/multi_array.hpp>
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 // the modularity matrix: a matrix of double
 typedef multi_array<double, 2> ModularityMatrix;
 
-class ModularityGainFunction: public resolution::grasp::GainFunction {
+class ModularityGainFunction: public resolution::construction::GainFunction {
 public:
 	ModularityGainFunction(SignedGraph* g);
 	virtual ~ModularityGainFunction();

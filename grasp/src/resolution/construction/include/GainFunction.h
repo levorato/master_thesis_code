@@ -17,7 +17,7 @@
 using namespace clusteringgraph;
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 typedef list<int> GainFunctionVertexSet;
 

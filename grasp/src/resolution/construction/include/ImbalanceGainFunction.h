@@ -11,9 +11,9 @@
 #include "GainFunction.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
-class ImbalanceGainFunction: public resolution::grasp::GainFunction {
+class ImbalanceGainFunction: public resolution::construction::GainFunction {
 public:
 	ImbalanceGainFunction(SignedGraph* g);
 	virtual ~ImbalanceGainFunction();

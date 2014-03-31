@@ -17,7 +17,7 @@
 #include "GainFunction.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 class GainFunctionFactory {
 public:

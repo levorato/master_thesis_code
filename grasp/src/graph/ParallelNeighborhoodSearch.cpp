@@ -21,6 +21,7 @@ namespace grasp {
 using namespace boost::mpi;
 using namespace util;
 using namespace util::parallel;
+using namespace resolution::construction;
 using namespace std;
 
 ParallelNeighborhoodSearch::ParallelNeighborhoodSearch(unsigned int offset, unsigned int numproc) :

@@ -8,7 +8,7 @@
 #include "include/GainFunctionFactory.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 GainFunctionFactory::GainFunctionFactory(SignedGraph* g) :
 		imbalanceFunction(g), modularityFunction(g), negativeModularityGainFunction(g),

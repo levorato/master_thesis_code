@@ -8,7 +8,7 @@
 #include "include/GainFunction.h"
 
 namespace resolution {
-namespace grasp {
+namespace construction {
 
 GainFunction::GainFunction(SignedGraph* g) : graph(g) {
 	// TODO Auto-generated constructor stub
