@@ -380,6 +380,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			} else {
 				BOOST_LOG_TRIVIAL(info) << "RCC is disabled. Only GRASP CC will be executed." << endl;
 			}
+			if(alpha <= 0.0) {
+				BOOST_LOG_TRIVIAL(info) << "VOTE is enabled. Will always choose best-gain vertex on constructionPhase." << endl;
+			}
 
 			BOOST_LOG_TRIVIAL(info) << "Total number of processes is " << np << endl;
             cout << "Total number of processes is " << np << endl;
