@@ -12,8 +12,7 @@
 #include "ParallelNeighborhoodSearch.h"
 #include "NeighborhoodSearch.h"
 
-namespace resolution {
-namespace grasp {
+namespace clusteringgraph {
 
 class NeighborhoodSearchFactory {
 public:
@@ -34,6 +33,5 @@ public:
 	}
 };
 
-} /* namespace grasp */
-} /* namespace resolution */
+} /* namespace graph */
 #endif /* NEIGHBORHOODSEARCHFACTORY_H_ */

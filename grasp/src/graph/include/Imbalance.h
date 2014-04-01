@@ -2,7 +2,7 @@
  * Imbalance.h
  *
  *  Created on: 13/06/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #ifndef IMBALANCE_H_

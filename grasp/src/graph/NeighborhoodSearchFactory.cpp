@@ -7,8 +7,7 @@
 
 #include "include/NeighborhoodSearchFactory.h"
 
-namespace resolution {
-namespace grasp {
+namespace clusteringgraph {
 
 NeighborhoodSearchFactory::NeighborhoodSearchFactory(unsigned long numberOfSlaves,
 		unsigned long numberOfSearchSlaves) : sequentialNeighborhoodSearch(),
@@ -20,5 +19,5 @@ NeighborhoodSearchFactory::~NeighborhoodSearchFactory() {
 	// TODO Auto-generated destructor stub
 }
 
-} /* namespace grasp */
-} /* namespace resolution */
+} /* namespace graph */
+

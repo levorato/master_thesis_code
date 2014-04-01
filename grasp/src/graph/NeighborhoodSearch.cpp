@@ -21,12 +21,12 @@ using namespace resolution::grasp;
 using namespace std;
 using namespace util;
 
-// probes for mpi VNS interrupt message (first improvement from other node) and returns if it exists
+// probes for mpi VND interrupt message (first improvement from other node) and returns if it exists
 #define MPI_IPROBE_RETURN(ret_val) \
-optional< mpi::status > stat = world.iprobe(mpi::any_source, MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG); \
+optional< mpi::status > stat = world.iprobe(mpi::any_source, MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG); \
 if (stat) { \
-        InputMessageParallelVNS imsg; \
-        mpi::status stat = world.recv(mpi::any_source, MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg); \
+        InputMessageParallelVND imsg; \
+        mpi::status stat = world.recv(mpi::any_source, MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG, imsg); \
     return (ret_val); }
 
 

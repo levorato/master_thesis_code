@@ -69,7 +69,7 @@ Clustering ILS::executeILS(SignedGraph *g, const int& iter, const double& alpha,
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0.0;
 	double initialImbalanceSum = 0.0;
-	// Chooses between the sequential or parallel VNS algorithm
+	// Chooses between the sequential or parallel VND algorithm
 	NeighborhoodSearch* neig;
 	NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
 	if(numberOfSearchSlaves > 0) {

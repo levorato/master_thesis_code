@@ -10,8 +10,7 @@
 
 #include "NeighborhoodSearch.h"
 
-namespace resolution {
-namespace grasp {
+namespace clusteringgraph {
 
 class ParallelNeighborhoodSearch: public clusteringgraph::NeighborhoodSearch {
 public:
@@ -47,12 +46,11 @@ private:
 	 */
 	unsigned int numberOfSlaves;
 	/**
-	 * Number of slave processes that will execute the parallel search (parallel VNS).
+	 * Number of slave processes that will execute the parallel search (parallel VND).
 	 */
 	unsigned int numberOfSearchSlaves;
 
 };
 
-} /* namespace grasp */
-} /* namespace resolution */
+} /* namespace graph */
 #endif /* PARALLELNEIGHBORHOODSEARCH_H_ */

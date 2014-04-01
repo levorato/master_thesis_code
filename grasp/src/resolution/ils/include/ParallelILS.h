@@ -8,7 +8,7 @@
 #ifndef PARALLELILS_H_
 #define PARALLELILS_H_
 
-#include "Grasp.h"
+#include "ILS.h"
 #include <mpi.h>
 
 using namespace problem;
@@ -19,8 +19,8 @@ namespace ils {
 
 class ParallelILS : resolution::ils::ILS {
 public:
-	ParallelGrasp(GainFunction& f, unsigned long seed);
-	virtual ~ParallelGrasp();
+	ParallelILS(GainFunction& f, unsigned long seed);
+	virtual ~ParallelILS();
 
 	/**
 	 * Triggers the parallel execution of the ILS algorithm using MPI.

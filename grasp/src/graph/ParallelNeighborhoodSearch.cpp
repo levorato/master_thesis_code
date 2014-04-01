@@ -15,8 +15,7 @@
 
 #include <limits>
 
-namespace resolution {
-namespace grasp {
+namespace clusteringgraph {
 
 using namespace boost::mpi;
 using namespace util;
@@ -51,20 +50,20 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 	int i = 0;
 	std::vector<int> slaveList;
 	if(sizeOfChunk > 0) {
-		MPIUtil::populateListOfVNSSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
-		// Sends the parallel search (VNS) message to the search slaves via MPI
+		MPIUtil::populateListOfVNDSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
+		// Sends the parallel search (VND) message to the search slaves via MPI
 		for(i = 0; i < numberOfSearchSlaves; i++) {
-			InputMessageParallelVNS imsgpvns(g->getId(), l, g->getGraphFileLocation(), *clustering, problem.getType(),
+			InputMessageParallelVND imsgpvns(g->getId(), l, g->getGraphFileLocation(), *clustering, problem.getType(),
 					timeSpentSoFar, timeLimit, i * sizeOfChunk, (i + 1) * sizeOfChunk - 1, numberOfSlaves,
 					numberOfSearchSlaves, k);
-			world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_VNS_TAG, imsgpvns);
-			BOOST_LOG_TRIVIAL(trace) << "VNS Message sent to process " << slaveList[i] << "; [" << i * sizeOfChunk
+			world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_VND_TAG, imsgpvns);
+			BOOST_LOG_TRIVIAL(trace) << "VND Message sent to process " << slaveList[i] << "; [" << i * sizeOfChunk
 					<< ", " << (i + 1) * sizeOfChunk - 1 << "]" << endl;
 		}
 	}
 	// the leader (me) does its part of the work too
 	BOOST_LOG_TRIVIAL(trace) << "Total number of clusters is " << clustering->getNumberOfClusters() << endl;
-	BOOST_LOG_TRIVIAL(trace) << "VNS Parallelization status: " << numberOfSearchSlaves <<
+	BOOST_LOG_TRIVIAL(trace) << "VND Parallelization status: " << numberOfSearchSlaves <<
 			" search slaves will process " << sizeOfChunk << " clusters each one." << endl;
 	BOOST_LOG_TRIVIAL(trace) << "RemainingClusters is " << remainingClusters << endl;
 
@@ -78,11 +77,11 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
 	// the leader receives the processing results, if that is the case
-	// TODO implement global first improvement (l = 2-opt) in parallel VNS here!
+	// TODO implement global first improvement (l = 2-opt) in parallel VND here!
 	if(sizeOfChunk > 0) {
 		OutputMessage omsg;
 		for(i = 0; i < numberOfSearchSlaves; i++) {
-			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_VNS_TAG, omsg);
+			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_VND_TAG, omsg);
 			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ". Obj = " <<
 					omsg.clustering.getImbalance().getValue();
 			BOOST_LOG_TRIVIAL(trace) << omsg.clustering.toString();
@@ -94,21 +93,21 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 				Clustering clustering = omsg.clustering;
 				bestClustering = clustering;
 				bestValue = omsg.clustering.getImbalance().getValue();
-				BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] Better value found for objective function in node "
+				BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VND] Better value found for objective function in node "
 						<< stat.source() << ": " <<
 						omsg.clustering.getImbalance().getValue() << endl;
-				// IMPORTANT: Terminate other slaves' VNS search if 2-opt and CC Problem
+				// IMPORTANT: Terminate other slaves' VND search if 2-opt and CC Problem
 				if( (l == 2) and (problem.getType() == ClusteringProblem::CC_PROBLEM) ) {
-					InputMessageParallelVNS imsg;
-					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VNS] First improvement on 2-opt: interrupting other VNS slaves.";
+					InputMessageParallelVND imsg;
+					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VND] First improvement on 2-opt: interrupting other VND slaves.";
 					for(int j = 0; j < numberOfSearchSlaves; j++) {
-						world.send(slaveList[j], MPIMessage::INTERRUPT_MSG_PARALLEL_VNS_TAG, imsg);
+						world.send(slaveList[j], MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG, imsg);
 					}
 				}
 			}
 		}
 	}
-	BOOST_LOG_TRIVIAL(debug) << "[Parallel VNS] Best solution found: Obj = " << bestClustering.getImbalance().getValue() << endl;
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel VND] Best solution found: Obj = " << bestClustering.getImbalance().getValue() << endl;
 	bestClustering.printClustering();
 	return bestClustering;
 }
@@ -129,7 +128,7 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 	} else {  // 2-opt
 		// TODO implement global first improvement in parallel 2-opt
 		// first improvement found in one process must break all other processes' loop
-		// IMPORTANT: Parallel VNS does first improvement on 2-opt if CC Problem
+		// IMPORTANT: Parallel VND does first improvement on 2-opt if CC Problem
 		// Or best improvement on 2-opt if RCC Problem
 		bool firstImprovementOn2Opt = true;
 		if(problem.getType() == ClusteringProblem::CC_PROBLEM) {
@@ -144,5 +143,4 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 }
 
 
-} /* namespace grasp */
-} /* namespace resolution */
+} /* namespace graph */

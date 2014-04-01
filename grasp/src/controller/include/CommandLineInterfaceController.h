@@ -26,7 +26,7 @@ public:
 	CommandLineInterfaceController();
 	virtual ~CommandLineInterfaceController();
 
-	enum StategyName {GRASP, GRASP_PR};
+	enum StategyName {GRASP, ILS};
 	string getTimeAndDateAsString();
 	int processArgumentsAndExecute(int argc, char *argv[],
 			const unsigned int &myRank, const int &np);
@@ -36,8 +36,8 @@ private:
 			const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 			const int& numberOfIterations, const long& timeLimit,
 			const int& numberOfSlaves, const int& numberOfSearchSlaves, const int& myRank,
-			const int& problemType, const int& functionType, const unsigned long& seed,
-			const bool& RCCEnabled);
+			const int& functionType, const unsigned long& seed,
+			const bool& CCEnabled, const bool& RCCEnabled, const StategyName& resolutionStrategy);
 
 	void readPropertiesFile();
 

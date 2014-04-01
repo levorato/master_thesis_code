@@ -2,7 +2,7 @@
  * GraspPR.h
  *
  *  Created on: 30/04/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #ifndef GRASPPR_H_

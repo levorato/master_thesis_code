@@ -2,7 +2,7 @@
  * Grasp.cpp
  *
  *  Created on: 30/04/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #include "include/Grasp.h"
@@ -47,7 +47,8 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, string& executionId,
 		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
-	BOOST_LOG_TRIVIAL(info) << "Initializing GRASP "<< problem.getName() << " procedure for alpha = " << alpha << " and l = " << l;
+	BOOST_LOG_TRIVIAL(info) << "Initializing " << problem.getName() << " GRASP "<< problem.getName() <<
+			" procedure for alpha = " << alpha << " and l = " << l;
 	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
 
 	// 0. Triggers local processing time calculation
@@ -69,7 +70,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0.0;
 	double initialImbalanceSum = 0.0;
-	// Chooses between the sequential or parallel VNS algorithm
+	// Chooses between the sequential or parallel VND algorithm
 	NeighborhoodSearch* neig;
 	NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
 	if(numberOfSearchSlaves > 0) {

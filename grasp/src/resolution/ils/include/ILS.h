@@ -45,7 +45,7 @@ public:
 	 * @param timeLimit Maximum processing time in seconds
 	 * @param numberOfSlaves number of slaves used for parallel ILS processing
 	 * @param myRank processor rank (when running with MPI)
-	 * @param numberOfSearchSlaves number of slaves used for parallel VNS processing
+	 * @param numberOfSearchSlaves number of slaves used for parallel VND processing
 	 */
 	Clustering executeILS(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,

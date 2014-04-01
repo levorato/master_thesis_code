@@ -2,7 +2,7 @@
  * Imbalance.cpp
  *
  *  Created on: 13/06/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #include "include/Imbalance.h"

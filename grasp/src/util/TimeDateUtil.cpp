@@ -2,7 +2,7 @@
  * TimeDateUtil.cpp
  *
  *  Created on: 23/05/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #include <boost/date_time/posix_time/posix_time.hpp>

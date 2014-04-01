@@ -2,7 +2,7 @@
  * TimeDateUtil.h
  *
  *  Created on: 23/05/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #ifndef TIMEDATEUTIL_H_

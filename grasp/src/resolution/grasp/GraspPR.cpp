@@ -2,7 +2,7 @@
  * GraspPR.cpp
  *
  *  Created on: 30/04/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #include "include/GraspPR.h"

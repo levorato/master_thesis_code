@@ -109,7 +109,7 @@ Clustering RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clusteri
 	measureTimeResults(CStar, 0.0, iteration);
 	generateOutputFile(timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), k, l);
 
-	BOOST_LOG_TRIVIAL(info) << "RCC VNS done.";
+	BOOST_LOG_TRIVIAL(info) << "RCC VND done.";
 	return CStar;
 }
 

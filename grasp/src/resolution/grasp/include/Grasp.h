@@ -2,7 +2,7 @@
  * Grasp.h
  *
  *  Created on: 30/04/2013
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #ifndef GRASP_H_
@@ -45,7 +45,7 @@ public:
 	 * @param timeLimit Maximum processing time in seconds
 	 * @param numberOfSlaves number of slaves used for parallel GRASP processing
 	 * @param myRank processor rank (when running with MPI)
-	 * @param numberOfSearchSlaves number of slaves used for parallel VNS processing
+	 * @param numberOfSearchSlaves number of slaves used for parallel VND processing
 	 */
 	Clustering executeGRASP(SignedGraph *g, const int& iter, const double& alpha, const int& l,
 			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,

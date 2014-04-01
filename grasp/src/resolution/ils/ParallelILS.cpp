@@ -30,23 +30,23 @@ ParallelILS::~ParallelILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ParallelILS::executeGRASP(SignedGraph *g, const int& iter,
+Clustering ParallelILS::executeILS(SignedGraph *g, const int& iter,
 		const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 		ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
 		const long& timeLimit, const int& numberOfSlaves, const int& myRank,
 		const int& numberOfSearchSlaves) {
 	mpi::communicator world;
-	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Initiating parallel GRASP...";
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Initiating parallel ILS...";
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	std::vector<int> slaveList;
-	MPIUtil::populateListOfGRASPSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
+	MPIUtil::populateListOfMasters(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, alpha, l,
 				problem.getType(), gainFunction.getType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
-		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
-		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
+		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
 	ILS resolution(gainFunction, randomSeed);
@@ -58,8 +58,8 @@ Clustering ParallelILS::executeGRASP(SignedGraph *g, const int& iter,
 	// the leader receives the processing results
 	OutputMessage omsg;
 	for(int i = 0; i < numberOfSlaves; i++) {
-		mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message received from process " << stat.source() << ". Obj = " <<
+		mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message received from process " << stat.source() << ". Obj = " <<
 				omsg.clustering.getImbalance().getValue();
 		// process the result of the execution of process i
 		// sums the total number of tested combinations
@@ -68,11 +68,11 @@ Clustering ParallelILS::executeGRASP(SignedGraph *g, const int& iter,
 		if(omsg.clustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
 			Clustering clustering = omsg.clustering;
 			bestClustering = clustering;
-			BOOST_LOG_TRIVIAL(trace) << "*** [Parallel GRASP] Better value found for objective function in node " << stat.source() << ": " <<
+			BOOST_LOG_TRIVIAL(trace) << "*** [Parallel ILS] Better value found for objective function in node " << stat.source() << ": " <<
 					omsg.clustering.getImbalance().getValue();
 		}
 	}
-	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
 	bestClustering.printClustering();
 	return bestClustering;
 }

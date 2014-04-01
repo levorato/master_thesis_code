@@ -2,7 +2,7 @@
  * MPIUtil.cpp
  *
  *  Created on: 25/02/2014
- *      Author: czt0
+ *      Author: Mario Levorato
  */
 
 #include "include/MPIUtil.h"

@@ -40,7 +40,7 @@ Clustering ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	std::vector<int> slaveList;
-	MPIUtil::populateListOfGRASPSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
+	MPIUtil::populateListOfMasters(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, alpha, l,
 				problem.getType(), gainFunction.getType(), executionId, fileId, outputFolder, timeLimit,
