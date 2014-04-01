@@ -53,7 +53,7 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	c.positiveSum.assign(zero_matrix<double>(nc,nc));
 	c.negativeSum.assign(zero_matrix<double>(nc,nc));
 
-	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation." << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation." << endl;
 	// c.printClustering();
 
 	// For each vertex i
@@ -115,18 +115,18 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 		}
 	}
 	
-	BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
 
-	const double epsilon = std::numeric_limits<double>::epsilon();
-	if(posSum.size1() > 0) {
-		if(equals(c.positiveSum, posSum, epsilon, epsilon) and equals(c.negativeSum, negSum, epsilon, epsilon)) {
-			BOOST_LOG_TRIVIAL(trace) << "Obj function calculation MATCH.";
-		} else {
-			BOOST_LOG_TRIVIAL(trace) << "Obj function calculation DOES NOT MATCH.";
-		}
-	}
+	//const double epsilon = std::numeric_limits<double>::epsilon();
+	//if(posSum.size1() > 0) {
+	//	if(equals(c.positiveSum, posSum, epsilon, epsilon) and equals(c.negativeSum, negSum, epsilon, epsilon)) {
+			// BOOST_LOG_TRIVIAL(trace) << "Obj function calculation MATCH.";
+	//	} else {
+			// BOOST_LOG_TRIVIAL(trace) << "Obj function calculation DOES NOT MATCH.";
+	//	}
+	//}
 
 	return Imbalance(internalSum, externalSum);
 }
@@ -142,8 +142,8 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 	// If a new cluster has been created...
 	if(nc > c.positiveSum.size1()) {
 		int previousSize = c.positiveSum.size1();
-		BOOST_LOG_TRIVIAL(trace) << "Resizing matrix from dim " << previousSize << " to dim " << nc;
-		BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum before resize: " << c.positiveSum << endl;
+		// BOOST_LOG_TRIVIAL(trace) << "Resizing matrix from dim " << previousSize << " to dim " << nc;
+		// BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum before resize: " << c.positiveSum << endl;
 
 		c.positiveSum.resize(nc, nc);
 		c.negativeSum.resize(nc, nc);
@@ -156,9 +156,9 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 				c.negativeSum(j, i) = 0.0;
 			}
 		}
-		BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum after resize: " << c.positiveSum << endl;
+		// BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum after resize: " << c.positiveSum << endl;
 	}
-	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting delta plus obj function calculation. k = " << k;
+	// BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting delta plus obj function calculation. k = " << k;
 	// c.printClustering();
 
 	BoolArray currentCluster;
@@ -267,9 +267,9 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g, Cluste
 		}
 	}
 
-	BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
 
 	return Imbalance(internalSum, externalSum);
 }
@@ -281,7 +281,7 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 	// os valores de soma entre clusters devem compor uma matriz
 	// as diagnonais da matriz contem os valores das somas internas
 	assert(nc <= c.positiveSum.size1());
-	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting delta minus obj function calculation. k = " << k;
+	// BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting delta minus obj function calculation. k = " << k;
 	// c.printClustering();
 
 	BoolArray currentCluster;
@@ -375,7 +375,7 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
                 // remove line and column corresponding to the cluster being removed (cluster k)
                 matrix<double> tempPos(c.positiveSum);
                 matrix<double> tempNeg(c.negativeSum);
-                BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum before shrink: " << c.positiveSum << endl;
+                // BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum before shrink: " << c.positiveSum << endl;
 		nc--;
 
                 c.positiveSum.resize(nc, nc, false);
@@ -402,7 +402,7 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
                                 aux_i++;
                         }
                 }
-		BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum after shrink: " << c.positiveSum << endl;
+		// BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum after shrink: " << c.positiveSum << endl;
         }
 	// recalculates the imbalance based on the positive and negative matrices
 	double internalSum = 0.0, externalSum = 0.0;
@@ -416,9 +416,9 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clust
 		}
 	}
 
-	BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
-	BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Calculated value: " << (internalSum + externalSum) << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Matrix positiveSum: " << c.positiveSum << endl;
+	// BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
 
 	return Imbalance(internalSum, externalSum);
 }
