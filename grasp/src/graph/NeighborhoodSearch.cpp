@@ -119,8 +119,8 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 				// Option 2: node i is moved to a new cluster, alone
 				// removes node i from cluster1 and inserts in newCluster
 				// cout << "New clustering combination generated." << endl;
-				if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
-						( (problem.getType() == ClusteringProblem::RCC_PROBLEM) && (clustering->getNumberOfClusters() < k) )) {
+				//if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
+				//		( (problem.getType() == ClusteringProblem::RCC_PROBLEM) && (clustering->getNumberOfClusters() < k) )) {
 					Clustering cTemp = *clustering;
 					//BOOST_LOG_TRIVIAL(trace) << "Option 2: Taking node " << i << " from " << k1 << " to new cluster.";
 					cTemp.removeNodeFromCluster(*g, problem, i, k1);
@@ -149,7 +149,7 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 							return cBest;
 						}
 					}
-				}
+				//}
 			}
 		}
 		// increment rule
@@ -240,9 +240,9 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 									}
 									// Option 2: node j is moved to a new cluster, alone
 									
-									if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
-															( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
-																	&& (clustering->getNumberOfClusters() < k) )) {
+									//if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
+									//						( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
+									//								&& (clustering->getNumberOfClusters() < k) )) {
 										//BOOST_LOG_TRIVIAL(trace) << "Option 2: node " << i << " into cluster " << k3 << " and node " << j << " into new cluster.";
 										cTemp = *clustering;
 										NeighborhoodSearch::process2optCombination(*g,
@@ -259,7 +259,7 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 												return cBest;
 											}
 										}
-									}
+									//}
 								}
 								// return if time limit is exceeded
 								boost::timer::cpu_times end_time = timer.elapsed();
@@ -274,9 +274,9 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 							// Option 3: node i is moved to a new cluster, alone, and
 							//           node j is moved to another existing cluster k4
 							
-							if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
-									( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
-											&& (clustering->getNumberOfClusters() < k) )) {
+							//if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
+							//		( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
+							//				&& (clustering->getNumberOfClusters() < k) )) {
 								for (unsigned long k4 = uninc(), contk4 = 0; contk4 < numberOfClustersInInterval; contk4++) {
 									if (k2 != k4) {
 										// cluster(k4)
@@ -307,12 +307,12 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 										k4 = 0;
 									}
 								}
-							} 
+							//}
 							// Option 4: nodes i and j are moved to 2 new clusters, and left alone
 							
-							if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
-									( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
-											&& (clustering->getNumberOfClusters() + 2 <= k) )) {
+							//if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
+							//		( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
+							//				&& (clustering->getNumberOfClusters() + 2 <= k) )) {
 								//BOOST_LOG_TRIVIAL(trace) << "Option 4: nodes " << i << " and " << j << " into new clusters.";
 								cTemp = *clustering;
 								NeighborhoodSearch::process2optCombination(*g,
@@ -329,7 +329,7 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 										return cBest;
 									}
 								}
-							}
+							//}
 							// return if time limit is exceeded
 							boost::timer::cpu_times end_time = timer.elapsed();
 							double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
