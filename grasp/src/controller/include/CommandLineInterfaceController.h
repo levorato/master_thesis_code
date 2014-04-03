@@ -36,8 +36,8 @@ private:
 			const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 			const int& numberOfIterations, const long& timeLimit,
 			const int& numberOfSlaves, const int& numberOfSearchSlaves, const int& myRank,
-			const int& functionType, const unsigned long& seed,
-			const bool& CCEnabled, const bool& RCCEnabled, const StategyName& resolutionStrategy);
+			const int& functionType, const unsigned long& seed,	const bool& CCEnabled,
+			const bool& RCCEnabled, long k, const StategyName& resolutionStrategy);
 
 	void readPropertiesFile();
 

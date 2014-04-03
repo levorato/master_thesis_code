@@ -40,7 +40,7 @@ public:
 	/**
 	 * Returns the first element from the list and removes it.
 	 */
-	int chooseFirstElement();
+	int chooseFirstElement(GainFunction &function);
 
 	/**
 	 * Sorts the list according to the gain function.

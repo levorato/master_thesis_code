@@ -20,7 +20,7 @@ public:
 	virtual Clustering searchNeighborhood(int l, SignedGraph* g,
 				Clustering* clustering, ClusteringProblem& problem,
 				double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-				int myRank, bool firstImprovementOnOneNeig, unsigned long k);
+				int myRank, bool firstImprovementOnOneNeig);
 
 private:
 	/**

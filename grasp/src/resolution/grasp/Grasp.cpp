@@ -83,7 +83,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 	int i = 0, totalIter = 0;
 	numberOfTestedCombinations = 0;
 
-	for (i = 0, totalIter = 0; i <= iter || iter < 0 ; i++, totalIter++, previousCc = Cc) {
+	while(i <= iter || iter < 0) {
 		BOOST_LOG_TRIVIAL(debug) << "GRASP iteration " << i;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
@@ -135,20 +135,27 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter, const double& al
 			break;
 		}
 
-		// 0. Triggers local processing time calculation
-		timer.resume();
-		start_time = timer.elapsed();
-
-		// 1. Construct the next clustering
-		Cc = constructClustering(g, problem, alpha, myRank);
-
-		timer.stop();
-		end_time = timer.elapsed();
-		timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
-		timer.resume();
+		// Increment to next loop
+		i++, totalIter++, previousCc = Cc;
 
 		// guarantees at least one execution of the GRASP when the number of iterations is smaller than one
+		// used in vote/boem tests
 		if(iter <= 0) {  break;  }
+
+		// Avoids constructClustering if loop break condition is met
+		if(i <= iter) {
+			// 0. Triggers local processing time calculation
+			timer.resume();
+			start_time = timer.elapsed();
+
+			// 1. Construct the next clustering
+			Cc = constructClustering(g, problem, alpha, myRank);
+
+			timer.stop();
+			end_time = timer.elapsed();
+			timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+			timer.resume();
+		}
 	}
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
 			<< "," << bestValue.getPositiveValue()
@@ -188,7 +195,6 @@ Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 		// according to the value of the gain function
 		gainFunction.calculateGainList(problem, Cc, lc.getVertexList());
-		lc.sort(gainFunction);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
@@ -197,8 +203,13 @@ Clustering Grasp::constructClustering(SignedGraph *g, ClusteringProblem& problem
 		//             the one that minimizes the objective (VOTE algorithm).
 		int i = 0;
 		if(alpha <= 0.0) {
-			i = lc.chooseFirstElement();
+			// chooses first element (min) without ordering (saves time)
+			i = lc.chooseFirstElement(gainFunction);
+		} else if(alpha == 1.0) {
+			// alpha = 1.0 (completely random) does not need sorting (saves time)
+			i = lc.chooseRandomVertex(lc.size());
 		} else {
+			lc.sort(gainFunction);
 			i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
 		}
 		// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
@@ -234,14 +245,14 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		NeighborhoodSearch &neig, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
 	// k is the current neighborhood distance in the local search
-	int k = 1, iteration = 0;
+	int r = 1, iteration = 0;
 	Clustering CStar = Cc; // C* := Cc
 	CBefore = CStar; // previous best solution
 	double timeSpentOnLocalSearch = 0.0;
 	BOOST_LOG_TRIVIAL(debug) << "GRASP local search...\n";
-	BOOST_LOG_TRIVIAL(debug) << "Current neighborhood is " << k << endl;
+	BOOST_LOG_TRIVIAL(debug) << "Current neighborhood is " << r << endl;
 
-	while(k <= l && (timeSpentInGRASP + timeSpentOnLocalSearch < timeLimit)) {
+	while(r <= l && (timeSpentInGRASP + timeSpentOnLocalSearch < timeLimit)) {
 		// cout << "Local search iteration " << iteration << endl;
 		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
@@ -250,12 +261,12 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood	
-		Clustering Cl = neig.searchNeighborhood(k, g, &CStar, problem,
-				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, 0);
+		Clustering Cl = neig.searchNeighborhood(r, g, &CStar, problem,
+				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
 		if(Cl.getImbalance().getValue() < 0.0) {
-			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error.";
+			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Obj = " << Cl.getImbalance().getValue();
 			break;
 		}
 		// cout << "Comparing local solution value." << endl;
@@ -265,9 +276,9 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 			// BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			// Cl->printClustering();
 			CStar = Cl;
-			k = 1;
+			r = 1;
 		} else {  // no better result found in neighborhood
-			k++;
+			r++;
 			// BOOST_LOG_TRIVIAL(debug) << "Changed to neighborhood size l = " << k;
 		}
 		iteration++;
@@ -280,7 +291,7 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// Registers the best result at time intervals
 		notifyNewValue(CStar, timeSpentOnLocalSearch, graspIteration);
 	}
-	BOOST_LOG_TRIVIAL(debug) << "GRASP local search done. Time spent: " << timeSpentOnLocalSearch;
+	BOOST_LOG_TRIVIAL(debug) << "GRASP local search done. Time spent: " << timeSpentOnLocalSearch << " s";
 	return CStar;
 }
 

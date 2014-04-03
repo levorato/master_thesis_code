@@ -21,7 +21,7 @@ using boost::numeric::ublas::matrix;
 
 namespace problem {
 
-RCCProblem::RCCProblem() {
+RCCProblem::RCCProblem() : k(0) {
 	// TODO Auto-generated constructor stub
 
 }

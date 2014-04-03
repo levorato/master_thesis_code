@@ -120,7 +120,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		string& executionId, const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 		const int& numberOfIterations, const long& timeLimit, const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed,
-		const bool& CCEnabled, const bool& RCCEnabled, const StategyName& resolutionStrategy) {
+		const bool& CCEnabled, const bool& RCCEnabled, long k, const StategyName& resolutionStrategy) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -192,8 +192,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		}
 
  		// -------------------  R C C     P R O C E S S I N G -------------------------
- 		// 		TODO: Uses GRASP best result (cluster c) - number of clusters as input (k)
  		if(RCCEnabled) {
+ 			// 	If k = 0 (not specified), uses CC best result (cluster c) number of clusters as input (k)
+ 			if(k == 0) {
+ 				k = c.getNumberOfClusters();
+ 				BOOST_LOG_TRIVIAL(info) << "RCC Problem: Using CC solution number of clusters as RCC k value: " << k << ".";
+ 			}
+
  			// medicao de tempo do RCC
 			timer.start();
 			start_time = timer.elapsed();
@@ -204,13 +209,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution(functionFactory.build(functionType), seed);
 					RCCCluster = resolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM), executionId, fileId, outputFolder,
+							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), executionId, fileId, outputFolder,
 							timeLimit, numberOfMasters, myRank, numberOfSearchSlaves);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfMasters processes and summarizes the result
 					ParallelGrasp parallelResolution(functionFactory.build(functionType), seed);
 					RCCCluster = parallelResolution.executeGRASP(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM), executionId, fileId, outputFolder, timeLimit,
+							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), executionId, fileId, outputFolder, timeLimit,
 							numberOfMasters, myRank, numberOfSearchSlaves);
 				}
 			} else if(resolutionStrategy == ILS) {
@@ -218,13 +223,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution(functionFactory.build(functionType), seed);
 					RCCCluster = resolution.executeILS(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM), executionId, fileId, outputFolder,
+							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), executionId, fileId, outputFolder,
 							timeLimit, numberOfMasters, myRank, numberOfSearchSlaves);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(functionFactory.build(functionType), seed);
 					RCCCluster = parallelResolution.executeILS(g.get(), numberOfIterations, alpha, l, firstImprovementOnOneNeig,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM), executionId, fileId, outputFolder, timeLimit,
+							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), executionId, fileId, outputFolder, timeLimit,
 							numberOfMasters, myRank, numberOfSearchSlaves);
 				}
 			}
@@ -297,6 +302,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 	string s_alpha;
 	int numberOfIterations = 500, l = 1;
+	long k = 0;
 	bool debug = false, profile = false, firstImprovementOnOneNeig = true, CCEnabled = true, RCCEnabled = true;
 	string inputFileDir, outputFolder;
 	int timeLimit = 1800;
@@ -316,6 +322,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			  "neighborhood size")
 		("cc", po::value<bool>(&CCEnabled)->default_value(true), "Enable CC Problem resolution")
 		("rcc", po::value<bool>(&RCCEnabled)->default_value(true), "Enable RCC Problem resolution")
+		("k", po::value<long>(&k)->default_value(0), "RCC Problem k parameter (max number of clusters)")
 		("time-limit", po::value<int>(&timeLimit)->default_value(1800), "maximum execution time")
 		("input-file", po::value< std::vector<string> >(), "input file")
 		("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
@@ -417,6 +424,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			}
 			if (RCCEnabled) {
 				BOOST_LOG_TRIVIAL(info) << "RCC is enabled.";
+				// if k parameter was not informed, CC problem should be enabled
+				// if CC is not enabled, issue an error
+				if((k == -1) and (not CCEnabled)) {
+					BOOST_LOG_TRIVIAL(fatal) << "Please specify RCC k value or enable CC Problem resolution.";
+					return 1;
+				} else if(k > 0) {
+					BOOST_LOG_TRIVIAL(info) << "RCC k value is " << k << ".";
+				}
 			} else {
 				BOOST_LOG_TRIVIAL(info) << "RCC is disabled.";
 			}
@@ -477,14 +492,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 							numberOfIterations, timeLimit, numberOfMasters, numberOfSearchSlaves,
-							myRank, functionType, seed, CCEnabled, RCCEnabled, strategy);
+							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, numberOfMasters, numberOfSearchSlaves,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, strategy);
+								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy);
 					}
 				}
 			}

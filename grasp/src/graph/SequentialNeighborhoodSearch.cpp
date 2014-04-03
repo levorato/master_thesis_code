@@ -6,6 +6,8 @@
  */
 
 #include "include/SequentialNeighborhoodSearch.h"
+#include "../problem/include/CCProblem.h"
+#include "../problem/include/RCCProblem.h"
 
 namespace clusteringgraph {
 
@@ -15,10 +17,15 @@ SequentialNeighborhoodSearch::SequentialNeighborhoodSearch() {
 
 Clustering SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
-		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig,
-		unsigned long k) {
+		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig) {
 	unsigned long nc = clustering->getNumberOfClusters();
 	numberOfTestedCombinations = 0;
+	// max number of clusters (RCC Problem Only)
+	long k = 0;
+	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		k = rp.getK();
+	}
 	return SequentialNeighborhoodSearch::searchNeighborhood(l, g, clustering, problem,
 			timeSpentSoFar, timeLimit, randomSeed, myRank, 0, nc - 1, firstImprovementOnOneNeig, k);
 }

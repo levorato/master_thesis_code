@@ -10,6 +10,9 @@
 #include "../util/include/MPIMessage.h"
 #include "../util/parallel/include/MPIUtil.h"
 #include "../resolution/grasp/include/ParallelGrasp.h"
+#include "../problem/include/CCProblem.h"
+#include "../problem/include/RCCProblem.h"
+
 #include <boost/mpi/communicator.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -34,11 +37,16 @@ ParallelNeighborhoodSearch::~ParallelNeighborhoodSearch() {
 
 Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
-		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig,
-		unsigned long k) {
+		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig) {
 
 	// Resets the number of combinations tested on neighborhood search
 	numberOfTestedCombinations = 0;
+	// max number of clusters (RCC Problem Only)
+	long k = 0;
+	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		k = rp.getK();
+	}
 
 	// Splits the processing in (numberOfClusters / numberOfSearchSlaves) chunks,
 	// to be consumed by numberOfSearchSlaves processes

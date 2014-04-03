@@ -56,9 +56,10 @@ int VertexSet::chooseRandomVertex(int x) {
 	return selectedVertex;
 }
 
-int VertexSet::chooseFirstElement() {
-	int x = vertexSet.front();
-	vertexSet.pop_front();
+int VertexSet::chooseFirstElement(GainFunction &function) {
+	list<int, allocator<int> >::iterator pos = std::min_element(vertexSet.begin(), vertexSet.end(), function.getComparator());
+	int x = *pos;
+	vertexSet.erase(pos);
 	return x;
 }
 

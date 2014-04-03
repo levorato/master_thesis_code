@@ -41,6 +41,17 @@ public:
 	virtual int getType() const;
 
 	virtual string getName();
+
+	void setK(long _k) {
+		k = _k;
+	}
+
+	long getK() {
+		return k;
+	}
+
+private:
+	unsigned long k;
 };
 
 } /* namespace problem */

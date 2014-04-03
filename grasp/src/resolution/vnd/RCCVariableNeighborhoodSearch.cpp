@@ -64,7 +64,7 @@ Clustering RCCVariableNeighborhoodSearch::executeSearch(SignedGraph *g, Clusteri
 		// N := Nl(C*)
 		// apply a local search in CStar using the neighborhoodSize
 		Clustering Cl = neig.searchNeighborhood(neighborhoodSize, g, &CStar, problem,
-				timeSpentInSearch + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, k);
+				timeSpentInSearch + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
 		// sanity check for obj function value

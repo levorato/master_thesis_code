@@ -187,7 +187,6 @@ Clustering ILS::constructClustering(SignedGraph *g, ClusteringProblem& problem,
 		// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 		// according to the value of the gain function
 		gainFunction.calculateGainList(problem, Cc, lc.getVertexList());
-		lc.sort(gainFunction);
 
 		// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
@@ -196,8 +195,13 @@ Clustering ILS::constructClustering(SignedGraph *g, ClusteringProblem& problem,
 		//             the one that minimizes the objective (VOTE algorithm).
 		int i = 0;
 		if(alpha <= 0.0) {
-			i = lc.chooseFirstElement();
+			// chooses first element (min) without ordering (saves time)
+			i = lc.chooseFirstElement(gainFunction);
+		} else if(alpha == 1.0) {
+			// alpha = 1.0 (completely random) does not need sorting (saves time)
+			i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
 		} else {
+			lc.sort(gainFunction);
 			i = lc.chooseRandomVertex(boost::math::iround(alpha * lc.size()));
 		}
 		// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
@@ -250,7 +254,7 @@ Clustering ILS::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood	
 		Clustering Cl = neig.searchNeighborhood(k, g, &CStar, problem,
-				timeSpentInILS + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig, 0);
+				timeSpentInILS + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
 		if(Cl.getImbalance().getValue() < 0.0) {

@@ -21,10 +21,11 @@ public:
 	ClusteringProblemFactory();
 	virtual ~ClusteringProblemFactory();
 
-	ClusteringProblem& build(int problemType) {
+	ClusteringProblem& build(int problemType, long k = 0) {
 		if(problemType == ClusteringProblem::CC_PROBLEM) {
 			return ccProblem;
 		} else if(problemType == ClusteringProblem::RCC_PROBLEM) {
+			rccProblem.setK(k);
 			return rccProblem;
 		}
 		cerr << "Unknown problem type to build!!! Returning CC problem instance.\n";
