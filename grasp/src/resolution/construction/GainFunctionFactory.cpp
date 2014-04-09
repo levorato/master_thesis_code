@@ -10,10 +10,7 @@
 namespace resolution {
 namespace construction {
 
-GainFunctionFactory::GainFunctionFactory(SignedGraph* g) :
-		imbalanceFunction(g), modularityFunction(g), negativeModularityGainFunction(g),
-		positiveNegativeModularityGainFunction(g), positiveNegativeModularityGainFunctionII(g),
-		positiveNegativeModularityGainFunctionIII(g) {
+GainFunctionFactory::GainFunctionFactory(SignedGraph* g) : graph(g) {
 	// TODO Auto-generated constructor stub
 
 }

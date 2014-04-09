@@ -115,7 +115,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 			if (vec.size() < 3) continue;
 			//if(vec.at(2).rfind('\n') != string::npos)
-			//	BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+			// BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
 			try {
 				int a = boost::lexical_cast<int>(vec.at(0));
@@ -196,8 +196,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 		}
 	}
 	// g->printGraph();
-	boost::hash<std::string> string_hash;
-	g->setId(string_hash(graphContents));
+	BOOST_LOG_TRIVIAL(info) << "Successfully read graph file.";
 
 	return g;
 }
@@ -206,6 +205,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(const string& filepa
 	BOOST_LOG_TRIVIAL(info) << "Reading input file: '" << filepath << "' ..." << endl;
 	SignedGraphPtr g = readGraphFromString(get_file_contents(filepath.c_str()));
 	g->setGraphFileLocation(filepath);
+	boost::hash<std::string> string_hash;
+	g->setId(string_hash(filepath));
+
 	return g;
 }
 

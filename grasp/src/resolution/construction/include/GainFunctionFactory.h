@@ -21,31 +21,27 @@ namespace construction {
 
 class GainFunctionFactory {
 public:
-	ImbalanceGainFunction imbalanceFunction;
-	ModularityGainFunction modularityFunction;
-	NegativeModularityGainFunction negativeModularityGainFunction;
-	PositiveNegativeModularityGainFunction positiveNegativeModularityGainFunction;
-	PositiveNegativeModularityGainFunctionII positiveNegativeModularityGainFunctionII;
-	PositiveNegativeModularityGainFunctionIII positiveNegativeModularityGainFunctionIII;
-
 	GainFunctionFactory(SignedGraph* graph);
 	virtual ~GainFunctionFactory();
 
-	GainFunction& build(int functionType) {
+	GainFunction* build(int functionType) {
 		if(functionType == GainFunction::MODULARITY) {
-			return modularityFunction;
+			return new ModularityGainFunction(graph);
 		} else if(functionType == GainFunction::IMBALANCE) {
-			return imbalanceFunction;
+			return new ImbalanceGainFunction(graph);
 		} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY) {
-			return positiveNegativeModularityGainFunction;
+			return new PositiveNegativeModularityGainFunction(graph);
 		} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY_II) {
-			return positiveNegativeModularityGainFunctionII;
+			return new PositiveNegativeModularityGainFunctionII(graph);
 		} else if(functionType == GainFunction::POSITIVE_NEGATIVE_MODULARITY_III) {
-			return positiveNegativeModularityGainFunctionIII;
+			return new PositiveNegativeModularityGainFunctionIII(graph);
 		} else {
-			return negativeModularityGainFunction;
+			return new NegativeModularityGainFunction(graph);
 		}
 	}
+
+private:
+	SignedGraph* graph;
 };
 
 } /* namespace grasp */

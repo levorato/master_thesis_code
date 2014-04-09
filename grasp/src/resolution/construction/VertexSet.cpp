@@ -18,9 +18,13 @@ namespace resolution {
 namespace construction {
 
 VertexSet::VertexSet(unsigned long randomSeed, int n) : seed(randomSeed),
-		vertexSet() {
+		gain() {
 	for(int i = 0; i < n; i++) {
-		vertexSet.push_back(i);
+		GainCalculation v;
+		v.vertex = i;
+		v.clusterNumber = 0;
+		v.gainValue = 0.0;
+		gain.push_back(v);
 	}
 }
 
@@ -29,11 +33,11 @@ VertexSet::~VertexSet() {
 }
 
 int VertexSet::size() {
-	return vertexSet.size();
+	return gain.size();
 }
 
 // TODO aceitar parametro seed para a geracao do numero aleatorio
-int VertexSet::chooseRandomVertex(int x) {
+GainCalculation VertexSet::chooseRandomVertex(int x) {
 
 	// Generates a random number between 1 and x
 	// boost::random::mt19937 generator;  TODO Adaptar para o modo debug
@@ -46,31 +50,32 @@ int VertexSet::chooseRandomVertex(int x) {
 	generator.seed(boost::random::random_device()());
 	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uni(generator, dist);
 	unsigned int selectedVertexSetIndex = uni();
-	int selectedVertex = 0;
+	GainCalculation selectedVertex;
 
 	// Finds the Vertex
-	list<int, allocator<int> >::iterator pos = vertexSet.begin();
+	list<GainCalculation, allocator<GainCalculation> >::iterator pos = gain.begin();
 	std::advance(pos, selectedVertexSetIndex);
 	selectedVertex = *pos;
-	vertexSet.erase(pos);
+	gain.erase(pos);
 	return selectedVertex;
 }
 
-int VertexSet::chooseFirstElement(GainFunction &function) {
-	list<int, allocator<int> >::iterator pos = std::min_element(vertexSet.begin(), vertexSet.end(), function.getComparator());
-	int x = *pos;
-	vertexSet.erase(pos);
+GainCalculation VertexSet::chooseFirstElement(GainFunction *function) {
+	list<GainCalculation, allocator<GainCalculation> >::iterator pos =
+			std::min_element(gain.begin(), gain.end(), function->getComparator());
+	GainCalculation x = *pos;
+	gain.erase(pos);
 	return x;
 }
 
-void VertexSet::sort(GainFunction &function) {
-	vertexSet.sort(function.getComparator());
-	// cout << "Vertex set sorting:" << vertexSetPtr->front() << ", " << function->gain(vertexSetPtr->front()).value << endl;
-	// cout << "Vertex set sorting:" << vertexSetPtr->back() << ", " << function->gain(vertexSetPtr->back()).value << endl;
+void VertexSet::sort(GainFunction *function) {
+	gain.sort(function->getComparator());
+	// cout << "Vertex set sorting:" << gainPtr->front() << ", " << function->gain(gainPtr->front()).value << endl;
+	// cout << "Vertex set sorting:" << gainPtr->back() << ", " << function->gain(gainPtr->back()).value << endl;
 }
 
-list<int>& VertexSet::getVertexList() {
-	return vertexSet;
+list<GainCalculation>& VertexSet::getVertexList() {
+	return gain;
 }
 
 } /* namespace grasp */

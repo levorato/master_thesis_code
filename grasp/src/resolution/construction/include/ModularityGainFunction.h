@@ -23,16 +23,16 @@ public:
 	ModularityGainFunction(SignedGraph* g);
 	virtual ~ModularityGainFunction();
 
-	virtual GainCalculation& gain(const int &a);
+	virtual GainCalculation calculateIndividualGain(ClusteringProblem& p,
+			Clustering& c, int i);
 
 	/**
 	 * Calculates the vertex gain list based on the modularity matrix
 	 * of the graph.
 	 */
 	virtual void calculateGainList(ClusteringProblem &p, Clustering &c,
-			GainFunctionVertexSet& nodeList);
+			list<GainCalculation>& nodeList);
 
-	virtual bool operator () ( const int& a, const int& b );
 
 	virtual int getType();
 

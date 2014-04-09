@@ -19,7 +19,7 @@ namespace grasp {
 
 class ParallelGrasp : resolution::grasp::Grasp {
 public:
-	ParallelGrasp(GainFunction& f, unsigned long seed);
+	ParallelGrasp(GainFunction* f, unsigned long seed);
 	virtual ~ParallelGrasp();
 
 	/**

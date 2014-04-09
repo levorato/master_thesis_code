@@ -19,7 +19,7 @@ namespace ils {
 
 class ParallelILS : resolution::ils::ILS {
 public:
-	ParallelILS(GainFunction& f, unsigned long seed);
+	ParallelILS(GainFunction* f, unsigned long seed);
 	virtual ~ParallelILS();
 
 	/**

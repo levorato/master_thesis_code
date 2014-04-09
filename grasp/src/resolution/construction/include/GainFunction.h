@@ -13,16 +13,19 @@
 #include "../../../problem/include/ClusteringProblem.h"
 
 #include <list>
+#include <vector>
 
 using namespace clusteringgraph;
+using namespace std;
 
 namespace resolution {
 namespace construction {
 
-typedef list<int> GainFunctionVertexSet;
-
 typedef struct {
-	double value;
+	int vertex;
+	// stores the best solution value and cluster number for the vertex
+	// to be inserted
+	double gainValue;
 	int clusterNumber;
 } GainCalculation;
 
@@ -36,36 +39,31 @@ public:
 	GainFunction(SignedGraph* g);
 	virtual ~GainFunction();
 
-	class GainFunctionComparison
-	{
+	class GainFunctionComparison {
 	private:
-	        GainFunction* function;
-	        bool ascendingOrder;
+		bool ascendingOrder;
 	public:
-			GainFunctionComparison(GainFunction *f, bool ascending) :
-			  function(f), ascendingOrder(ascending)
-			{   }
+		GainFunctionComparison(bool ascending) :
+				ascendingOrder(ascending) {
+		}
 
-			bool operator () ( const int& a, const int& b ) const {
-				if(ascendingOrder) {
-					return function->gain(a).value < function->gain(b).value;
-				} else {
-					return function->gain(a).value > function->gain(b).value;
-				}
+		bool operator ()(const GainCalculation& a, const GainCalculation& b) const {
+			if (ascendingOrder) {
+				return a.gainValue < b.gainValue;
+			} else {
+				return a.gainValue > b.gainValue;
 			}
+		}
 	};
 
-	/**
-	 * Returns the gain of a given vertex
-	 * and the number of the cluster where the insertion of the vertex
-	 * brings the best gain possible (return type is GainCalculation).
-	 */
-	virtual GainCalculation& gain(const int &a) = 0;
+	virtual GainCalculation calculateIndividualGain(ClusteringProblem& p,
+			Clustering& c, int i) = 0;
 
-	virtual void calculateGainList(ClusteringProblem& p, Clustering &c, list<int>& nodeList) = 0;
+	virtual void calculateGainList(ClusteringProblem& p, Clustering &c,
+			list<GainCalculation>& nodeList) = 0;
 
 	virtual GainFunctionComparison getComparator() {
-		return GainFunctionComparison(this, true);
+		return GainFunctionComparison(true);
 	}
 
 	virtual int getType() = 0;
@@ -73,8 +71,6 @@ public:
 protected:
 	/** the graph this gain function refers to */
 	SignedGraph* graph;
-	/** the map of nodes' gain value */
-	map<int, GainCalculation> gainMap;
 };
 
 } /* namespace grasp */

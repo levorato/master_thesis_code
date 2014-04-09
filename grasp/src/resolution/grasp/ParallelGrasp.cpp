@@ -22,7 +22,7 @@ using namespace util::parallel;
 using namespace resolution::construction;
 namespace mpi = boost::mpi;
 
-ParallelGrasp::ParallelGrasp(GainFunction& f, unsigned long seed) : Grasp(f, seed) {
+ParallelGrasp::ParallelGrasp(GainFunction* f, unsigned long seed) : Grasp(f, seed) {
 
 }
 
@@ -43,14 +43,13 @@ Clustering ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	MPIUtil::populateListOfMasters(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, alpha, l,
-				problem.getType(), gainFunction.getType(), executionId, fileId, outputFolder, timeLimit,
+				problem.getType(), gainFunction->getType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Grasp resolution(gainFunction, randomSeed);
-        Clustering bestClustering = resolution.executeGRASP(g, iter, alpha,
+	Clustering bestClustering = Grasp::executeGRASP(g, iter, alpha,
 			l, firstImprovementOnOneNeig, problem, executionId, fileId,
 			outputFolder, timeLimit, numberOfSlaves,
 			myRank, numberOfSearchSlaves);

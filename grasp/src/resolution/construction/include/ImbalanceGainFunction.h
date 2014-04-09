@@ -18,12 +18,11 @@ public:
 	ImbalanceGainFunction(SignedGraph* g);
 	virtual ~ImbalanceGainFunction();
 
-	virtual GainCalculation& gain(const int &a);
+	virtual GainCalculation calculateIndividualGain(ClusteringProblem& p,
+			Clustering& c, int i);
 
 	virtual void calculateGainList(ClusteringProblem &p, Clustering &c,
-			GainFunctionVertexSet& nodeList);
-
-	virtual bool operator () ( const int& a, const int& b );
+			list<GainCalculation>& nodeList);
 
 	virtual int getType();
 

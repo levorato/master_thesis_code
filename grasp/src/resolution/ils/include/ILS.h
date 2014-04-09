@@ -26,7 +26,7 @@ namespace ils {
 
 class ILS: public ResolutionStrategy {
 public:
-	ILS(GainFunction& f, unsigned long seed);
+	ILS(GainFunction* f, unsigned long seed);
 	virtual ~ILS();
 
 	/**
@@ -116,7 +116,7 @@ protected:
 	/**
 	 * The gain function to be used in the construction phase.
 	 */
-	GainFunction& gainFunction;
+	boost::shared_ptr<GainFunction> gainFunction;
 
 	/**
 	 * Random seed.
