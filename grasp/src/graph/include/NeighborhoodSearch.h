@@ -90,7 +90,6 @@ protected:
         		int k1, int k2, int k3, int k4,
         		int n, int i, int j) {
 
-			//return;
 			 // cout << "2-opt-comb: " << k1 << ", " << k2 << ", " << k3 << ", " << k4 << ", " << i << ", " << j << endl;
 			 // clustering->printClustering();
 			 // ClusteringPtr cTemp = make_shared < Clustering > (*clustering);

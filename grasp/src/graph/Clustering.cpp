@@ -115,9 +115,9 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, con
 }
 
 void Clustering::printClustering() {
-	//BOOST_LOG_TRIVIAL(trace) << "Clustering configuration: I(P) = " << fixed << setprecision(2)
-			//<< this->imbalance.getValue();
-	//BOOST_LOG_TRIVIAL(trace) << toString();
+	BOOST_LOG_TRIVIAL(trace) << "Clustering configuration: I(P) = " << fixed << setprecision(2)
+			<< this->imbalance.getValue();
+	BOOST_LOG_TRIVIAL(trace) << toString();
 }
 
 void Clustering::printClustering(ostream& os) {

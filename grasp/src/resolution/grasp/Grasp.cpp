@@ -222,6 +222,7 @@ Clustering Grasp::constructClustering(SignedGraph *g,
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
 		// cout << "Selected vertex is " << i << endl;
+		// TODO ensure no clusters of size > k are created if RCC Problem
 		if (gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
 			Cc.addCluster(*g, problem, gainCalculation.vertex);
@@ -262,13 +263,13 @@ Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
 		boost::timer::cpu_times start_time = timer.elapsed();
 
 		// N := Nl(C*)
-		// apply a local search in CStar using the k-neighborhood	
+		// apply a local search in CStar using the r-neighborhood	
 		Clustering Cl = neig.searchNeighborhood(r, g, &CStar, problem,
 				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit,
 				randomSeed, myRank, firstImprovementOnOneNeig);
 		// sums the number of tested combinations on local search
 		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
-		if (Cl.getImbalance().getValue() < 0.0) {
+		if (Cl.getImbalance().getValue() < 0.0000001) {
 			BOOST_LOG_TRIVIAL(error)<< myRank << ": Objective function below zero. Obj = " << Cl.getImbalance().getValue();
 			break;
 		}

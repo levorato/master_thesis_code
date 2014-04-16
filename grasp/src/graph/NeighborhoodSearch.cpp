@@ -57,6 +57,11 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 
 	for (unsigned long k1 = uninc(), cont1 = 0; cont1 < numberOfClustersInInterval; cont1++) {
 		// cluster(k1)
+		// RCC Problem: must have exactly k clusters -> Cannot remove node from standalone cluster
+		unsigned long s = clustering->getClusterSize(k1);
+		if((problem.getType() == ClusteringProblem::RCC_PROBLEM) && (s == 1)) {
+			continue;
+		}
 		BoolArray cluster1 = clustering->getCluster(k1);
 		// For each node i in cluster(k1)
 		for (unsigned long i = uniN(), cont2 = 0; cont2 < n; cont2++, i = (i + 1) % n) {
@@ -73,24 +78,14 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 						int nc = cTemp.getNumberOfClusters();
 						cTemp.removeNodeFromCluster(*g, problem, i, k1);
 						// recalculates the number of clusters, as one of them may have been removed
-						if((cTemp.getNumberOfClusters() < nc) && (k2 >= k1) ) {
+						if(cTemp.getNumberOfClusters() < nc) {
 							// cluster k1 has been removed
-							cTemp.addNodeToCluster(*g, problem, i, k2 - 1);
+							if(k2 >= k1) {
+								cTemp.addNodeToCluster(*g, problem, i, k2 - 1);
+							}
 						} else {
 							cTemp.addNodeToCluster(*g, problem, i, k2);
 						}
-						// Full recalculation of objective value if RCC Problem
-						/*
-						if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-							Imbalance imb = cTemp->getImbalance();
-							cTemp->setImbalance(problem.objectiveFunction(*g, *cTemp));
-							if(imb.getValue() != cTemp->getImbalance().getValue()) {
-								//BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
-							} else {
-								//BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta MATCH!";
-							}
-							cTemp->setImbalance(imb);
-						} */
 						numberOfTestedCombinations++;
 
 						// cTemp->printClustering();
@@ -119,24 +114,13 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 				// Option 2: node i is moved to a new cluster, alone
 				// removes node i from cluster1 and inserts in newCluster
 				// cout << "New clustering combination generated." << endl;
-				if((problem.getType() == ClusteringProblem::CC_PROBLEM) ||
-						( (problem.getType() == ClusteringProblem::RCC_PROBLEM) && (clustering->getNumberOfClusters() < k) )) {
+				if((problem.getType() == ClusteringProblem::CC_PROBLEM) && (s > 1)) {
+					// this code is not executed for RCC Problem, as it must have exactly k clusters
+					// this code is not executed if node i is to be moved from a standalone cluster to another standalone cluster (s == 1)
 					Clustering cTemp = *clustering;
 					//BOOST_LOG_TRIVIAL(trace) << "Option 2: Taking node " << i << " from " << k1 << " to new cluster.";
 					cTemp.removeNodeFromCluster(*g, problem, i, k1);
 					BoolArray cluster2 = cTemp.addCluster(*g, problem, i);
-					// Full recalculation of objective value if RCC Problem
-					/*
-					if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-						Imbalance imb = cTemp->getImbalance();
-                                                cTemp->setImbalance(problem.objectiveFunction(*g, *cTemp));
-						if(imb.getValue() != cTemp->getImbalance().getValue()) {
-							//BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
-						} else {
-							//BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta MATCH!";
-						}
-						cTemp->setImbalance(imb);
-					} */
 					numberOfTestedCombinations++;
 					// cTemp->printClustering();
 					Imbalance newImbalance = cTemp.getImbalance();
@@ -194,9 +178,19 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 	Imbalance bestImbalance = cBest.getImbalance();
 	for (unsigned long k1 = uninc(), contk1 = 0; contk1 < numberOfClustersInInterval; contk1++) {
 		// cluster(k1)
+		unsigned long s1 = clustering->getClusterSize(k1);
+		if((problem->getType() == ClusteringProblem::RCC_PROBLEM) && (s1 == 1)) {
+			// no clusters can be removed if RCC Problem
+			continue;
+		}
 		BoolArray cluster1 = clustering->getCluster(k1);
 		for (unsigned long k2 = uninc(), contk2 = 0; contk2 < totalNumberOfClusters; contk2++) {
 			// cluster(k2)
+			unsigned long s2 = clustering->getClusterSize(k2);
+			if((problem->getType() == ClusteringProblem::RCC_PROBLEM) && (s2 == 1)) {
+				// no clusters can be removed if RCC Problem
+				continue;
+			}
 			BoolArray cluster2 = clustering->getCluster(k2);
 			// For each node i in cluster(k1)
 			for (unsigned long i = uniN(), conti = 0; conti < n; conti++, i = (i + 1) % n) {
@@ -239,9 +233,9 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 										}
 									}
 									// Option 2: node j is moved to a new cluster, alone
-									if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
-															( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
-																	&& (clustering->getNumberOfClusters() < k) )) {
+									if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s2 > 1)) {
+										// this code is not executed in RCC Problem, as it must have exactly k clusters
+										// this code is not executed if node j is to be moved from a standalone cluster to another standalone cluster
 										//BOOST_LOG_TRIVIAL(trace) << "Option 2: node " << i << " into cluster " << k3 << " and node " << j << " into new cluster.";
 										cTemp = *clustering;
 										NeighborhoodSearch::process2optCombination(*g,
@@ -272,10 +266,9 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 							}
 							// Option 3: node i is moved to a new cluster, alone, and
 							//           node j is moved to another existing cluster k4
-							
-							if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
-									( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
-											&& (clustering->getNumberOfClusters() < k) )) {
+							if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s1 > 1)) {
+								// this code is not executed in RCC Problem, as it must have exactly k clusters
+								// this code is not executed if node i is to be moved from a standalone cluster to another standalone cluster
 								for (unsigned long k4 = uninc(), contk4 = 0; contk4 < numberOfClustersInInterval; contk4++) {
 									if (k2 != k4) {
 										// cluster(k4)
@@ -308,10 +301,9 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 								}
 							}
 							// Option 4: nodes i and j are moved to 2 new clusters, and left alone
-							
-							if((problem->getType() == ClusteringProblem::CC_PROBLEM) ||
-									( (problem->getType() == ClusteringProblem::RCC_PROBLEM)
-											&& (clustering->getNumberOfClusters() + 2 <= k) )) {
+							if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s1 > 1) && (s2 > 1)) {
+								// this code is not executed in RCC Problem, as it must have exactly k clusters
+								// this code is not executed if node i and/or j is to be moved from a standalone cluster to another standalone cluster
 								//BOOST_LOG_TRIVIAL(trace) << "Option 4: nodes " << i << " and " << j << " into new clusters.";
 								cTemp = *clustering;
 								NeighborhoodSearch::process2optCombination(*g,
