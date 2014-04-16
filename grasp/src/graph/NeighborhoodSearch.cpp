@@ -78,11 +78,9 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 						int nc = cTemp.getNumberOfClusters();
 						cTemp.removeNodeFromCluster(*g, problem, i, k1);
 						// recalculates the number of clusters, as one of them may have been removed
-						if(cTemp.getNumberOfClusters() < nc) {
+						if((cTemp.getNumberOfClusters() < nc) && (k2 >= k1)) {
 							// cluster k1 has been removed
-							if(k2 >= k1) {
-								cTemp.addNodeToCluster(*g, problem, i, k2 - 1);
-							}
+							cTemp.addNodeToCluster(*g, problem, i, k2 - 1);
 						} else {
 							cTemp.addNodeToCluster(*g, problem, i, k2);
 						}
