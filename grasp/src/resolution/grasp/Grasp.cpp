@@ -156,7 +156,9 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter,
 			timer.stop();
 			end_time = timer.elapsed();
 			timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+			timeSpentInGRASP += timeSpentInConstruction;
 			timer.resume();
+			start_time = timer.elapsed();
 		}
 	}
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
