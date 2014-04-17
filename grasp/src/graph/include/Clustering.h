@@ -70,6 +70,11 @@ public:
 	BoolArray& getCluster(unsigned long clusterNumber);
 
 	/**
+	 * Returns the biggest cluster (index) of the cluster (the one with more elements).
+	 */
+	int getBiggestClusterIndex();
+
+	/**
 	 * Adds a node i in cluster k. Recalculates the objective
 	 * function associated with the clustering, based on the
 	 * modification.
@@ -112,6 +117,8 @@ public:
 	 */
 	unsigned long getClusterSize(unsigned long k);
 
+	void setClusterSize(unsigned long k, unsigned long size);
+
 	Imbalance getObjectiveFunctionValue();
 
 	void setObjectiveFunctionValue(Imbalance f);
@@ -138,6 +145,23 @@ public:
 	const ClusterList& getClusterList() {
 		return clusterList;
 	}
+
+	class ClusterSizeComparison {
+	private:
+		bool ascendingOrder;
+	public:
+		ClusterSizeComparison(bool ascending) :
+				ascendingOrder(ascending) {
+		}
+
+		bool operator ()(const BoolArray& a, const BoolArray& b) const {
+			if (ascendingOrder) {
+				return a.count() < b.count();
+			} else {
+				return a.count() > b.count();
+			}
+		}
+	};
 
 private:
 	/** the cluster list, with dimensions k x n */

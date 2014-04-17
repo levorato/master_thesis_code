@@ -25,9 +25,15 @@ public:
 	list<GainCalculation> gain;
 
 	/**
+	 * Creates an empty set.
+	 */
+	VertexSet(unsigned long randomSeed);
+
+	/**
 	 * Creates a vertex set containing nodes 0..n-1.
 	 */
 	VertexSet(unsigned long randomSeed, int n);
+
 	virtual ~VertexSet();
 
 	/**
@@ -49,6 +55,12 @@ public:
 	void sort(GainFunction* function);
 
 	list<GainCalculation>& getVertexList();
+
+	/**
+	 * Adds a vertex to the set.
+	 */
+	void addVertex(int i);
+
 private:
 	/**
 	 * The random seed used by random vertex choose.

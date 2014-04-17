@@ -17,6 +17,10 @@
 namespace resolution {
 namespace construction {
 
+VertexSet::VertexSet(unsigned long randomSeed) : seed(randomSeed) {
+	// Empty set
+}
+
 VertexSet::VertexSet(unsigned long randomSeed, int n) : seed(randomSeed),
 		gain() {
 	for(int i = 0; i < n; i++) {
@@ -76,6 +80,14 @@ void VertexSet::sort(GainFunction *function) {
 
 list<GainCalculation>& VertexSet::getVertexList() {
 	return gain;
+}
+
+void VertexSet::addVertex(int i) {
+	GainCalculation v;
+	v.vertex = i;
+	v.clusterNumber = 0;
+	v.gainValue = 0.0;
+	gain.push_back(v);
 }
 
 } /* namespace grasp */

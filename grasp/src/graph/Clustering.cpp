@@ -12,6 +12,8 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <algorithm>
+#include <vector>
 
 #include <boost/log/trivial.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
@@ -66,11 +68,17 @@ BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const uns
 
 void Clustering::addCluster(BoolArray b) {
 	clusterList.push_back(b);
-	clusterSize.push_back(1);
+	clusterSize.push_back(b.count());
 }
 
 BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
 	return clusterList.at(clusterNumber);
+}
+
+int Clustering::getBiggestClusterIndex() {
+	ClusterList::iterator pos = std::min_element(clusterList.begin(), clusterList.end(),
+			ClusterSizeComparison(false));
+	return std::distance(clusterList.begin(), pos);
 }
 
 void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
@@ -94,6 +102,10 @@ void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 
 unsigned long Clustering::getClusterSize(unsigned long k) {
 	return this->clusterSize[k];
+}
+
+void Clustering::setClusterSize(unsigned long k, unsigned long size) {
+	this->clusterSize[k] = size;
 }
 
 void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {

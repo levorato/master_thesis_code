@@ -11,12 +11,14 @@
 #include "../../graph/include/ParallelNeighborhoodSearch.h"
 #include "../../problem/include/ClusteringProblem.h"
 #include "../../problem/include/CCProblem.h"
+#include "../../problem/include/RCCProblem.h"
 #include "../../graph/include/NeighborhoodSearchFactory.h"
 #include "../../graph/include/Imbalance.h"
 
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -238,7 +240,45 @@ Clustering Grasp::constructClustering(SignedGraph *g,
 		// Removal already done by the chooseVertex methods above
 		// Cc->printClustering();
 	}
-	BOOST_LOG_TRIVIAL(debug)<< myRank << ": Initial clustering completed.\n";
+	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
+	// Post-processing phase, only for RCC Problem
+	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		unsigned long k = rp.getK();
+		int n = g->getN();
+		// Repartitions the clustering so that initial clustering has exactly k clusters
+		while(Cc.getNumberOfClusters() < k) {
+			// BOOST_LOG_TRIVIAL(debug)<< "Cc less than k clusters detected.";
+			// Splits a cluster in two new clusters
+			// 1. Selects the cluster that has more nodes
+			int c = Cc.getBiggestClusterIndex();
+			BoolArray& cl = Cc.getCluster(c);
+			// 2. Randomly selects half of the nodes of cl to move to a new cluster
+			//    2.1. Populates a vertex set with the vertices in cluster cl
+			VertexSet set(randomSeed);
+			for(int i = 0; i < n; i++) {
+				if(cl[i]) {
+					set.addVertex(i);
+				}
+			}
+			//    2.2. Randomly chooses count/2 vertices, removing them from cluster cl
+			//         and adding to new cluster cln
+			BoolArray cln(n);
+			int half = boost::math::iround(set.size() / 2.0);
+			for(int i = 0; i < half; i++) {
+				GainCalculation v = set.chooseRandomVertex(set.size());
+				// BOOST_LOG_TRIVIAL(debug)<< "Selecionou " << v.vertex << ", size = " << set.size();
+				cl[v.vertex] = false;
+				cln[v.vertex] = true;
+			}
+			Cc.setClusterSize(c, set.size());
+			Cc.addCluster(cln);
+			// Cc.printClustering();
+		}
+		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";
+		// Cc.printClustering();
+	}
+	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed.\n";
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
 	// Cc.printClustering();
 	return Cc;
