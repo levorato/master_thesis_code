@@ -303,20 +303,21 @@ def main(argv):
                           pos_value = float(column[2])
                           neg_value = float(column[3])
                           K = long(column[4])
-                          time = float(column[5])
-                          total_iter = long(column[6])
-                          total_comb = long(column[7])
+			  iteration = long(column[5])
+                          time = float(column[6])
+                          total_iter = long(column[7])
+                          total_comb = long(column[8])
                           if value < best_value :
                              best_value = value
                              best_pos_value = pos_value
                              best_neg_value = neg_value
                              best_K = K
-                             best_iteration = total_iter
+                             best_iteration = iteration
                              best_time = time
                              best_param = filepath[filepath.rfind("/")+1:]
-                          elif value == best_value and total_iter < best_iteration :
+                          elif value == best_value and iteration < best_iteration :
                              best_K = K
-                             best_iteration = total_iter
+                             best_iteration = iteration
                              best_time = time
                              best_param = filepath[filepath.rfind("/")+1:]
                              best_pos_value = pos_value
