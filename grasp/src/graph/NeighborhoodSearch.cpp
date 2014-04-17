@@ -182,6 +182,7 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 			continue;
 		}
 		BoolArray cluster1 = clustering->getCluster(k1);
+		// if(problem->getType() == ClusteringProblem::RCC_PROBLEM) assert(cluster1.size() > 1);
 		for (unsigned long k2 = uninc(), contk2 = 0; contk2 < totalNumberOfClusters; contk2++) {
 			// cluster(k2)
 			unsigned long s2 = clustering->getClusterSize(k2);
@@ -189,7 +190,17 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 				// no clusters can be removed if RCC Problem
 				continue;
 			}
+			if(k1 == k2) {  // vertices i and j are being removed from the same cluster k1
+				if((problem->getType() == ClusteringProblem::RCC_PROBLEM) && (s2 <= 2)) {
+					// no clusters can be removed if RCC Problem
+					continue;
+				} else if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s2 < 2)) {
+					// cluster k1 must have at least 2 elements
+					continue;
+				}
+			}
 			BoolArray cluster2 = clustering->getCluster(k2);
+			// if(problem->getType() == ClusteringProblem::RCC_PROBLEM) assert(cluster2.size() > 1);
 			// For each node i in cluster(k1)
 			for (unsigned long i = uniN(), conti = 0; conti < n; conti++, i = (i + 1) % n) {
 				if (cluster1[i]) {
@@ -208,13 +219,20 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 									for (unsigned long k4 = k3 + 1; k4 < totalNumberOfClusters; k4++) {
 										if (k2 != k4) {
 											// cluster(k4)
-											//BOOST_LOG_TRIVIAL(trace) << "Option 1: node " << i << " into cluster " << k3 << " and node " << j << " into cluster " << k4;
+											// BOOST_LOG_TRIVIAL(trace) << "Option 1: node " << i << " into cluster " << k3 << " and node " << j << " into cluster " << k4;
 											cTemp = *clustering;
-											NeighborhoodSearch::process2optCombination(*g,
+											bool success = NeighborhoodSearch::process2optCombination(*g,
 															cTemp, problem, k1,
 															k2, k3, k4, n,
 															i, j);
 											// cTemp->printClustering();
+											if(not success) {
+												continue;
+											}
+											if((problem->getType() == ClusteringProblem::RCC_PROBLEM) && (cTemp.getNumberOfClusters() > clustering->getNumberOfClusters())) {
+												BOOST_LOG_TRIVIAL(error) << "Cluster with more than k clusters generated!";
+											}
+
 											Imbalance newImbalance = cTemp.getImbalance();
 											if (newImbalance < bestImbalance) {
 												//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";

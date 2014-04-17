@@ -105,7 +105,7 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, con
 	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
 		this->imbalance = p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
 	}
-	if(clusterSize[k] == 1) {
+	if(clusterSize[k] <= 1) {
 		//BOOST_LOG_TRIVIAL(trace) << "Deleting cluster " << k;
 		this->removeCluster(g, k);
 	} else {

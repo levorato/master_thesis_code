@@ -84,8 +84,9 @@ protected:
          * The parameter n represents the number of nodes in the graph / clustering.
          * If parameter k3 == -1, inserts node i in a new cluster (alone).
          * If parameter k4 == -1, inserts node j in a new cluster (anlone).
+         * Returns false if processing failed (e.g. cluster created in RCC Problem).
          */
-        void process2optCombination(SignedGraph& g, Clustering& clustering,
+        bool process2optCombination(SignedGraph& g, Clustering& clustering,
         		ClusteringProblem* problem,
         		int k1, int k2, int k3, int k4,
         		int n, int i, int j) {
@@ -114,9 +115,12 @@ protected:
 					 clustering.addNodeToCluster(g, *problem, i, k3);
 			 } else {
 					 // inserts i in a new cluster (alone)
+				 	 if(problem->getType() == ClusteringProblem::RCC_PROBLEM) {
+						 return false;
+					 }
 					 clustering.addCluster(g, *problem, i);
 			 }
-			 // cout << "k4" << endl;
+			  // cout << "k4" << endl;
 			 // removes node j from cluster2 and inserts in cluster4
 			 clustering.removeNodeFromCluster(g, *problem, j, k2);
 			 int newnc2 = clustering.getNumberOfClusters();
@@ -124,24 +128,17 @@ protected:
 					 // cout << "cluster k2 has been removed" << endl;
 					 if(k4 >= k2) { k4--; assert(k4 >= 0); }
 			 }
-			 // cout << "Node removed" << endl;
 			 if (k4 > k2) {
 					 // inserts j in existing cluster k4
 					 clustering.addNodeToCluster(g, *problem, j, k4);
 			 } else {
 					 // inserts j in a new cluster (alone)
+				 	 if(problem->getType() == ClusteringProblem::RCC_PROBLEM) {
+				 		 return false;
+				 	 }
 					 clustering.addCluster(g, *problem, j);
 			 }
-			 // Full recalculation of objective value if RCC Problem
-			/*
-			 if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-				Imbalance imb = problem.objectiveFunction(g, *cTemp);
-				if(imb.getValue() != cTemp->getImbalance().getValue()) {
-					BOOST_LOG_TRIVIAL(error) << "RCC obj function and delta do not match!";
-				}
-				cTemp->setImbalance(imb);
-			} */
-			// return  make_shared < Clustering > (*clustering);
+			 return true;
 		}
 
 	/* Number of tested combinations during neighborhood search */

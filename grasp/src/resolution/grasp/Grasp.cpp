@@ -49,7 +49,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter,
 		string& executionId, string& fileId, string& outputFolder,
 		const long& timeLimit, const int &numberOfSlaves, const int& myRank,
 		const int& numberOfSearchSlaves) {
-	BOOST_LOG_TRIVIAL(info)<< "Initializing " << problem.getName() << " GRASP "<< problem.getName() <<
+	BOOST_LOG_TRIVIAL(info)<< "Initializing " << " GRASP "<< problem.getName() <<
 	" procedure for alpha = " << alpha << " and l = " << l;
 	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
 
@@ -198,7 +198,7 @@ Clustering Grasp::constructClustering(SignedGraph *g,
 		if (alpha == 1.0) {
 			// alpha = 1.0 (completely random): no need to calculate all gains (saves time)
 			int i = lc.chooseRandomVertex(lc.size()).vertex;
-			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc,	i);
+			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc, i);
 		} else {
 			// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 			// according to the value of the gain function
@@ -224,7 +224,7 @@ Clustering Grasp::constructClustering(SignedGraph *g,
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
 		// cout << "Selected vertex is " << i << endl;
-		// TODO ensure no clusters of size > k are created if RCC Problem
+		// The gain function ensures no clusters of size > k are created if RCC Problem
 		if (gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
 			Cc.addCluster(*g, problem, gainCalculation.vertex);
