@@ -133,4 +133,72 @@ Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering&
 	return Imbalance(positiveSum, negativeSum);
 }
 
+/**
+  * Contabilizar, para cada vertice, o total de arestas que estao contribuindo para o 
+  * desequilibrio (positivo + negativo). Assim a gente vai poder comparar quem tem 
+  * mais relacoes em desequilibrio e quem sabe tirar alguma conclusao disso.
+  * Esse script será executado sobre os resultados de todos os grafos de intâncias reais.
+*/
+string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
+	int nc = c.getNumberOfClusters();
+	int n = g.getN();
+	stringstream ss1, ss2;
+	DirectedGraph::edge_descriptor e;
+
+	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Starting imbalance analysis." << endl;
+	ss1 << "Imbalance analysis (out edges contribution):" << endl;
+	ss1 << "Vertex,PositiveSum,NegativeSum" << endl;
+	ss2 << "Imbalance analysis (in edges contribution):" << endl;
+	ss2 << "Vertex,PositiveSum,NegativeSum" << endl;
+
+	// For each vertex i
+	for(int i = 0; i < n; i++) {
+		BoolArray cluster;
+		// Find out to which cluster vertex i belongs
+		for(unsigned long k = 0; k < nc; k++) {
+			cluster = c.getCluster(k);
+			if(cluster[i]) {
+				break;
+			}
+		}
+		DirectedGraph::out_edge_iterator f, l;
+		double positiveSum = 0, negativeSum = 0;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+			e = *f;
+			Vertex src = source(e, g.graph), targ = target(e, g.graph);
+			double weight = ((Edge*)f->get_property())->weight;
+			bool sameCluster = cluster[targ.id];
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are in the same cluster
+				negativeSum += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				positiveSum += weight;
+			}
+		}
+		ss1 << i << "," << positiveSum << "," << negativeSum << endl;
+		
+		DirectedGraph::in_edge_iterator f2, l2;
+		positiveSum = 0, negativeSum = 0;
+		// For each in edge of i
+		for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {
+			e = *f2;
+			Vertex src = source(e, g.graph), targ = target(e, g.graph);
+			double weight = ((Edge*)f2->get_property())->weight;
+			bool sameCluster = cluster[src.id];
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are in the same cluster
+				negativeSum += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				positiveSum += weight;
+			}
+		}
+		ss2 << i << "," << positiveSum << "," << negativeSum << endl;
+	}
+	
+	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Graph analysis done." << endl;
+	return ss1.str() + ss2.str();
+}
 } /* namespace problem */

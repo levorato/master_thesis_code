@@ -188,6 +188,11 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			stringstream ss;
 			c.printClustering(ss);
 			out << ss.str();
+			// Outputs additional graph analysis data
+			CCProblem& ccp = static_cast<CCProblem&>(problemFactory.build(ClusteringProblem::CC_PROBLEM));
+			string analysis = ccp.analyzeImbalance(*g, c);
+			out << analysis << endl;
+			// Closes the file
 			out.close();
 		}
 
@@ -252,6 +257,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			stringstream ss;
 			RCCCluster.printClustering(ss);
 			out << ss.str();
+			
+			// Closes the file
 			out.close();
 			BOOST_LOG_TRIVIAL(info) << "RCC Solve done. Obj = " << imb.getValue();
  		}

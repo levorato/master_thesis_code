@@ -43,6 +43,8 @@ public:
 	virtual int getType() const;
 
 	virtual string getName();
+	
+	string analyzeImbalance(SignedGraph& g, Clustering& c);
 };
 
 } /* namespace problem */
