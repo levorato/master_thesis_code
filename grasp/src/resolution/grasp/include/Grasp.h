@@ -15,6 +15,7 @@
 #include "../../../graph/include/Clustering.h"
 #include "../../../problem/include/ClusteringProblem.h"
 #include "../../../graph/include/NeighborhoodSearch.h"
+#include "../../../util/include/ExecutionInfo.h"
 
 #include <iostream>
 
@@ -22,6 +23,7 @@ using namespace clusteringgraph;
 using namespace problem;
 using namespace resolution::construction;
 using namespace resolution::vnd;
+using namespace util;
 
 namespace resolution {
 namespace grasp {
@@ -43,12 +45,10 @@ public:
 	 * constructClustering method will always choose the first vertex in the gainFunction list,
 	 * that is, the one that minimizes the objective (VOTE algorithm).
 	 * @param problem the ClusteringProblem (objective function) to be used
-	 * @param fileId string representing the identification of the input graph file
-	 * @param myRank processor rank (when running with MPI)
+	 * @param executionInfo auxiliary data about execution
 	 */
 	Clustering executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-			SignedGraph *g, const int& iter, ClusteringProblem& problem,
-			string& executionId, string& fileId, string& outputFolder, const int& myRank);
+			SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info);
 
 	unsigned long getNumberOfTestedCombinations();
 

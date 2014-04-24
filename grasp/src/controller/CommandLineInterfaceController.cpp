@@ -146,6 +146,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		}
 		// VND - local search module
 		VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, l, firstImprovementOnOneNeig, timeLimit);
+		// Execution additional info
+		ExecutionInfo info(executionId, fileId, outputFolder, myRank);
 
 		// -------------------  C C    P R O C E S S I N G -------------------------
 		if(CCEnabled) {
@@ -158,28 +160,24 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution;
 					c = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::CC_PROBLEM), executionId, fileId, outputFolder,
-							myRank);
+							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfSlaves processes and summarizes the result
 					ParallelGrasp parallelResolution(numberOfMasters, numberOfSearchSlaves);
 					c = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::CC_PROBLEM), executionId, fileId, outputFolder,
-							myRank);
+							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
 			} else if(resolutionStrategy == ILS) {
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
 					c = resolution.executeILS(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::CC_PROBLEM), executionId, fileId, outputFolder,
-							myRank);
+							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(numberOfMasters, numberOfSearchSlaves);
 					c = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::CC_PROBLEM), executionId, fileId, outputFolder,
-							myRank);
+							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
 			}
 			// Stops the timer and stores the elapsed time
@@ -227,28 +225,24 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution;
 					RCCCluster = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), executionId, fileId, outputFolder,
-							myRank);
+							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfMasters processes and summarizes the result
 					ParallelGrasp parallelResolution(numberOfMasters, numberOfSearchSlaves);
 					RCCCluster = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), executionId, fileId, outputFolder,
-							myRank);
+							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				}
 			} else if(resolutionStrategy == ILS) {
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
 					RCCCluster = resolution.executeILS(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), executionId, fileId, outputFolder,
-							myRank);
+							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(numberOfMasters, numberOfSearchSlaves);
 					RCCCluster = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), executionId, fileId, outputFolder,
-							myRank);
+							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				}
 			}
 			// Stops the timer and stores the elapsed time
@@ -609,10 +603,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						ConstructClustering construct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
 						VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, imsgpg.l, imsgpg.firstImprovementOnOneNeig,
 								imsgpg.timeLimit);
+						// Execution additional info
+						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
 						Grasp resolution;
 						Clustering bestClustering = resolution.executeGRASP(construct, vnd, g.get(), imsgpg.iter,
-								problemFactory.build(imsgpg.problemType),
-								imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
+								problemFactory.build(imsgpg.problemType), info);
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());
@@ -651,10 +646,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						ConstructClustering construct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
 						VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, imsgpils.l, imsgpils.firstImprovementOnOneNeig,
 								imsgpils.timeLimit);
+						// Additional execution info
+						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
 						resolution::ils::ILS resolution;
 						Clustering bestClustering = resolution.executeILS(construct, vnd, g.get(), imsgpils.iter,
-								problemFactory.build(imsgpils.problemType),
-								imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
+								problemFactory.build(imsgpils.problemType), info);
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());

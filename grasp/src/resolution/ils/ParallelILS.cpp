@@ -32,24 +32,22 @@ ParallelILS::~ParallelILS() {
 }
 
 Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter, ClusteringProblem& problem, string& executionId, string& fileId,
-		string& outputFolder, const int& myRank) {
+		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Initiating parallel ILS...";
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	std::vector<int> slaveList;
-	MPIUtil::populateListOfMasters(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
+	MPIUtil::populateListOfMasters(slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd.getNeighborhoodSize(),
-				problem.getType(), construct.getGainFunctionType(), executionId, fileId, outputFolder, vnd.getTimeLimit(),
+				problem.getType(), construct.getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd.getTimeLimit(),
 				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig());
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter,
-			problem, executionId, fileId, outputFolder, myRank);
+	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter, problem, info);
 
 	// the leader receives the processing results
 	OutputMessage omsg;

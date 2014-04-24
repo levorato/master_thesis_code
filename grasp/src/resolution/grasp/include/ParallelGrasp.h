@@ -26,8 +26,7 @@ public:
 	 * Triggers the parallel execution of the GRASP algorithm using MPI.
 	 */
 	Clustering executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-			SignedGraph *g, const int& iter, ClusteringProblem& problem,
-			string& executionId, string& fileId, string& outputFolder, const int& myRank);
+			SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info);
 
 private:
 	unsigned int numberOfSearchSlaves;

@@ -40,8 +40,7 @@ Grasp::~Grasp() {
 }
 
 Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter, ClusteringProblem& problem,
-		string& executionId, string& fileId, string& outputFolder, const int& myRank) {
+		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info)<< "Initializing " << " GRASP "<< problem.getName() <<
 	" procedure for alpha = " << construct.getAlpha() << " and l = " << vnd.getNeighborhoodSize();
 
@@ -49,7 +48,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
-	Clustering CStar = construct.constructClustering(g, problem, myRank);
+	Clustering CStar = construct.constructClustering(g, problem, info.processRank);
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
@@ -83,7 +82,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 		notifyNewValue(Cc, 0.0, totalIter);
 
 		// 2. Execute local search algorithm: RVND
-		Clustering Cl = vnd.localSearch(g, Cc, totalIter, problem, timeSpentInGRASP, myRank);
+		Clustering Cl = vnd.localSearch(g, Cc, totalIter, problem, timeSpentInGRASP, info.processRank);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl.getImbalance();
@@ -135,7 +134,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 			start_time = timer.elapsed();
 
 			// 1. Construct the next clustering
-			Cc = construct.constructClustering(g, problem, myRank);
+			Cc = construct.constructClustering(g, problem, info.processRank);
 
 			timer.stop();
 			end_time = timer.elapsed();
@@ -161,12 +160,12 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults);
-	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
+	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
+	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
+	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 
 	return CStar;
 }
