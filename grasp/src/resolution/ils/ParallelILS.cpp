@@ -22,7 +22,7 @@ using namespace util::parallel;
 using namespace resolution::construction;
 namespace mpi = boost::mpi;
 
-ParallelILS::ParallelILS(GainFunction* f, unsigned long seed) : ILS(f, seed) {
+ParallelILS::ParallelILS() : ILS() {
 
 }
 
@@ -30,8 +30,8 @@ ParallelILS::~ParallelILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ParallelILS::executeILS(SignedGraph *g, const int& iter,
-		const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
+Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
+		SignedGraph *g, const int& iter, const int& l, const bool& firstImprovementOnOneNeig,
 		ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
 		const long& timeLimit, const int& numberOfSlaves, const int& myRank,
 		const int& numberOfSearchSlaves) {
@@ -42,14 +42,14 @@ Clustering ParallelILS::executeILS(SignedGraph *g, const int& iter,
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
-		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, alpha, l,
-				problem.getType(), gainFunction->getType(), executionId, fileId, outputFolder, timeLimit,
+		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), l,
+				problem.getType(), construct.getGainFunctionType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Clustering bestClustering = ILS::executeILS(g, iter, alpha,
+	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter,
 			l, firstImprovementOnOneNeig, problem, executionId, fileId,
 			outputFolder, timeLimit, numberOfSlaves,
 			myRank, numberOfSearchSlaves);

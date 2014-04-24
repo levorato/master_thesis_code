@@ -20,53 +20,49 @@ using namespace problem;
 namespace resolution {
 namespace vnd {
 
-class RCCVariableNeighborhoodSearch : public ResolutionStrategy {
+class VariableNeighborhoodDescent : public ResolutionStrategy {
 public:
-	RCCVariableNeighborhoodSearch(unsigned long seed);
-	virtual ~RCCVariableNeighborhoodSearch();
+	VariableNeighborhoodDescent(unsigned long seed);
+	virtual ~VariableNeighborhoodDescent();
 
 	/**
-	 * Executes the local search algorithm for RCC. Repeatedly derives
+	 * Executes the local search algorithm. Repeatedly derives
 	 * the local optimum solution C(l) in the l-neighborhood of
-	 * the current solution C assuming that number of clusters <= k.
-	 * It is based on Variable Neighborhood Descent (VND) algorithm.
-	 * @param g the graph to be used as base
-	 * @param Cc the best clustering provided by the CC GRASP algorithm.
+	 * the current solution C.
+	 * This is the local search phase of the metaheuristic. It uses the
+	 * Variable Neighborhood Descent (VND) algorithm.
+	 * @param g the graph to be used as the base
+	 * @param Cc the clustering given by the construct clustering
+	 * phase of GRASP.
 	 * @param l the size of the neighborhood
-	 * @param k the maximum number of clusters in the solution
+	 * @param graspIteration the number of the grasp iteration this LS belongs to
 	 * @param problem the ClusteringProblem object for the objective function calculation
 	 * @param timeLimit Maximum processing time in seconds.
 	 * @return Clustering C(l), the local optinum solution
 	 */
-	Clustering executeSearch(SignedGraph *g, Clustering& Cc, const int &l,
-			const long unsigned int& k, const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
-			NeighborhoodSearch &neig, string& executionId, string& fileId, string& outputFolder,
-			const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
+	Clustering localSearch(SignedGraph *g, Clustering& Cc, const int &l, const int& graspIteration,
+			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, NeighborhoodSearch &neig,
+			const long& timeLimit, const long& timeSpentSoFar, const int &numberOfSlaves,
+			const int& myRank, const int& numberOfSearchSlaves);
 
 	unsigned long getNumberOfTestedCombinations();
 
 private:
 	/**
-	 * Generates CSV output file for RCC Search.
-	 */
-	void generateOutputFile(stringstream& fileContents, const string& rootFolder, const string& fileId, const string& timestamp,
-			const int &processNumber, const string& fileSuffix, const unsigned int& k, const int& l);
-
-	/**
-	 * Computes the best known RCC Search result at each time interval.
+	 * Computes the best known search result at each time interval.
 	 */
 	void measureTimeResults(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& iteration);
 
 	void notifyNewValue(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& iteration);
 
 	/**
-	 * Time spent so far in the RCC Search in seconds.
+	 * Time spent so far in the Local Search in seconds.
 	 */
 	double timeSpentInSearch;
 
 	/**
 	 * Stringstream containing the best result found at each moment of time.
-	 * Results are collected in local search of RCC.
+	 * Results are collected in local search.
 	 */
 	stringstream timeResults;
 
@@ -76,12 +72,12 @@ private:
 	unsigned long randomSeed;
 
 	/**
-	 * Time measure interval for RCC results in seconds.
+	 * Time measure interval for search results in seconds.
 	 */
 	static const double timeMeasureInterval = 10.0;
 	double timeSum;
 	/**
-	 * Total number of tested combinations in RCC local search.
+	 * Total number of tested combinations in local search.
 	 */
 	unsigned long numberOfTestedCombinations;
 };

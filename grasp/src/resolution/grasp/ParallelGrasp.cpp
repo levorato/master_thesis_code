@@ -22,7 +22,7 @@ using namespace util::parallel;
 using namespace resolution::construction;
 namespace mpi = boost::mpi;
 
-ParallelGrasp::ParallelGrasp(GainFunction* f, unsigned long seed) : Grasp(f, seed) {
+ParallelGrasp::ParallelGrasp() : Grasp() {
 
 }
 
@@ -30,8 +30,9 @@ ParallelGrasp::~ParallelGrasp() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
-		const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
+Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
+		SignedGraph *g, const int& iter,
+		const int& l, const bool& firstImprovementOnOneNeig,
 		ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
 		const long& timeLimit, const int& numberOfSlaves, const int& myRank,
 		const int& numberOfSearchSlaves) {
@@ -42,14 +43,14 @@ Clustering ParallelGrasp::executeGRASP(SignedGraph *g, const int& iter,
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
-		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, alpha, l,
-				problem.getType(), gainFunction->getType(), executionId, fileId, outputFolder, timeLimit,
+		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), l,
+				problem.getType(), construct.getGainFunctionType(), executionId, fileId, outputFolder, timeLimit,
 				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Clustering bestClustering = Grasp::executeGRASP(g, iter, alpha,
+	Clustering bestClustering = Grasp::executeGRASP(construct, vnd, g, iter,
 			l, firstImprovementOnOneNeig, problem, executionId, fileId,
 			outputFolder, timeLimit, numberOfSlaves,
 			myRank, numberOfSearchSlaves);

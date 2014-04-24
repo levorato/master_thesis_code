@@ -6,7 +6,6 @@
  */
 
 #include "include/Grasp.h"
-#include "../construction/include/VertexSet.h"
 #include "../../graph/include/SequentialNeighborhoodSearch.h"
 #include "../../graph/include/ParallelNeighborhoodSearch.h"
 #include "../../problem/include/ClusteringProblem.h"
@@ -18,8 +17,6 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
-#include <cmath>
-#include <boost/math/special_functions/round.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/timer/timer.hpp>
@@ -34,8 +31,8 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace grasp {
 
-Grasp::Grasp(GainFunction* f, unsigned long seed) :
-		timeSpentInGRASP(0.0), gainFunction(f), randomSeed(seed), timeResults(), timeSum(
+Grasp::Grasp() :
+		timeSpentInGRASP(0.0), timeResults(), timeSum(
 				0.0), CBest(), numberOfTestedCombinations(0) {
 	// TODO Auto-generated constructor stub
 
@@ -45,8 +42,8 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter,
-		const double& alpha, const int& l,
+Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
+		SignedGraph *g, const int& iter, const int& l,
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 		string& executionId, string& fileId, string& outputFolder,
 		const long& timeLimit, const int &numberOfSlaves, const int& myRank,
@@ -59,7 +56,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter,
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
-	Clustering CStar = constructClustering(g, problem, alpha, myRank);
+	Clustering CStar = construct.constructClustering(g, problem, myRank);
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
@@ -99,9 +96,9 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter,
 		// Registers the Cc result
 		notifyNewValue(Cc, 0.0, totalIter);
 
-		// 2. Execute local search algorithm
-		Clustering Cl = localSearch(g, Cc, l, totalIter, firstImprovementOnOneNeig,
-				problem, *neig, timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
+		// 2. Execute local search algorithm: RVND
+		Clustering Cl = vnd.localSearch(g, Cc, l, totalIter, firstImprovementOnOneNeig,
+				problem, *neig, timeLimit, timeSpentInGRASP, numberOfSlaves, myRank, numberOfSearchSlaves);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl.getImbalance();
@@ -153,7 +150,7 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter,
 			start_time = timer.elapsed();
 
 			// 1. Construct the next clustering
-			Cc = constructClustering(g, problem, alpha, myRank);
+			Cc = construct.constructClustering(g, problem, myRank);
 
 			timer.stop();
 			end_time = timer.elapsed();
@@ -179,166 +176,13 @@ Clustering Grasp::executeGRASP(SignedGraph *g, const int& iter,
 	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults);
-	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
+	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), construct.getAlpha(), l, iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), alpha, l, iter);
+	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), construct.getAlpha(), l, iter);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), alpha, l, iter);
+	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), construct.getAlpha(), l, iter);
 
-	return CStar;
-}
-
-Clustering Grasp::constructClustering(SignedGraph *g,
-		ClusteringProblem& problem, double alpha, int myRank) {
-	Clustering Cc; // Cc = empty
-	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP construct clustering...\n";
-
-	while (lc.size() > 0) { // lc != empty
-		GainCalculation gainCalculation;
-		if (alpha == 1.0) {
-			// alpha = 1.0 (completely random): no need to calculate all gains (saves time)
-			int i = lc.chooseRandomVertex(lc.size()).vertex;
-			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc, i);
-		} else {
-			// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-			// according to the value of the gain function
-			gainFunction->calculateGainList(problem, Cc, lc.getVertexList());
-
-			// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
-			// (alpha x |lc|) is a rounded number
-			// IMPORTANT: if alpha < 0, the constructClustering method will always
-			//             choose the first vertex in the gainFunction list, that is,
-			//             the one that minimizes the objective (VOTE algorithm).
-			if (alpha <= 0.0) {
-				// chooses first element (min) without ordering (saves time)
-				gainCalculation = lc.chooseFirstElement(gainFunction.get());
-			} else {
-				lc.sort(gainFunction.get());
-				gainCalculation = lc.chooseRandomVertex(
-						boost::math::iround(alpha * lc.size()));
-			}
-			// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
-		}
-		// 3. Cc = C union {i}
-		// Adds the vertex i to the partial clustering C, in a way so defined by
-		// its gain function. The vertex i can be augmented to C either as a
-		// separate cluster {i} or as a member of an existing cluster c in C.
-		// cout << "Selected vertex is " << i << endl;
-		// The gain function ensures no clusters of size > k are created if RCC Problem
-		if (gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
-			// inserts i as a separate cluster
-			Cc.addCluster(*g, problem, gainCalculation.vertex);
-		} else {
-			// inserts i into existing cluster
-			Cc.addNodeToCluster(*g, problem, gainCalculation.vertex, gainCalculation.clusterNumber);
-		}
-
-		// 4. lc = lc - {i}
-		// the choosing vertex i automatically removes it from the list
-		// Removal already done by the chooseVertex methods above
-		// Cc->printClustering();
-	}
-	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
-	// Post-processing phase, only for RCC Problem
-	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-		RCCProblem& rp = static_cast<RCCProblem&>(problem);
-		unsigned long k = rp.getK();
-		int n = g->getN();
-		// Repartitions the clustering so that initial clustering has exactly k clusters
-		while(Cc.getNumberOfClusters() < k) {
-			// BOOST_LOG_TRIVIAL(debug)<< "Cc less than k clusters detected.";
-			// Splits a cluster in two new clusters
-			// 1. Selects the cluster that has more nodes
-			int c = Cc.getBiggestClusterIndex();
-			BoolArray& cl = Cc.getCluster(c);
-			// 2. Randomly selects half of the nodes of cl to move to a new cluster
-			//    2.1. Populates a vertex set with the vertices in cluster cl
-			VertexSet set(randomSeed);
-			for(int i = 0; i < n; i++) {
-				if(cl[i]) {
-					set.addVertex(i);
-				}
-			}
-			//    2.2. Randomly chooses count/2 vertices, removing them from cluster cl
-			//         and adding to new cluster cln
-			BoolArray cln(n);
-			int half = boost::math::iround(set.size() / 2.0);
-			for(int i = 0; i < half; i++) {
-				GainCalculation v = set.chooseRandomVertex(set.size());
-				// BOOST_LOG_TRIVIAL(debug)<< "Selecionou " << v.vertex << ", size = " << set.size();
-				cl[v.vertex] = false;
-				cln[v.vertex] = true;
-			}
-			Cc.setClusterSize(c, set.size());
-			Cc.addCluster(cln);
-			// Cc.printClustering();
-		}
-		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";
-		// Cc.printClustering();
-	}
-	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed.\n";
-	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
-	// Cc.printClustering();
-	return Cc;
-}
-
-Clustering Grasp::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const int& graspIteration, const bool& firstImprovementOnOneNeig,
-		ClusteringProblem& problem, NeighborhoodSearch &neig,
-		const long& timeLimit, const int &numberOfSlaves, const int& myRank,
-		const int& numberOfSearchSlaves) {
-	// k is the current neighborhood distance in the local search
-	int r = 1, iteration = 0;
-	Clustering CStar = Cc; // C* := Cc
-	CBefore = CStar; // previous best solution
-	double timeSpentOnLocalSearch = 0.0;
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP local search...\n";
-	BOOST_LOG_TRIVIAL(debug)<< "Current neighborhood is " << r << endl;
-
-	while (r <= l && (timeSpentInGRASP + timeSpentOnLocalSearch < timeLimit)) {
-		// cout << "Local search iteration " << iteration << endl;
-		// 0. Triggers local processing time calculation
-		boost::timer::cpu_timer timer;
-		timer.start();
-		boost::timer::cpu_times start_time = timer.elapsed();
-
-		// N := Nl(C*)
-		// apply a local search in CStar using the r-neighborhood	
-		Clustering Cl = neig.searchNeighborhood(r, g, &CStar, problem,
-				timeSpentInGRASP + timeSpentOnLocalSearch, timeLimit,
-				randomSeed, myRank, firstImprovementOnOneNeig);
-		// sums the number of tested combinations on local search
-		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
-		if (Cl.getImbalance().getValue() < 0.0000001) {
-			BOOST_LOG_TRIVIAL(error)<< myRank << ": Objective function below zero. Obj = " << Cl.getImbalance().getValue();
-			break;
-		}
-		// cout << "Comparing local solution value." << endl;
-		Imbalance il = Cl.getImbalance();
-		Imbalance ic = CStar.getImbalance();
-		if (il < ic) {
-			// BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
-			// Cl->printClustering();
-			CStar = Cl;
-			r = 1;
-		} else {  // no better result found in neighborhood
-			r++;
-			// BOOST_LOG_TRIVIAL(debug) << "Changed to neighborhood size l = " << k;
-		}
-		iteration++;
-
-		// => Finally: Stops the timer and stores the elapsed time
-		timer.stop();
-		boost::timer::cpu_times end_time = timer.elapsed();
-		timeSpentOnLocalSearch += (end_time.wall - start_time.wall)
-				/ double(1000000000);
-
-		// Registers the best result at time intervals
-		notifyNewValue(CStar, timeSpentOnLocalSearch, graspIteration);
-	}
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP local search done. Time spent: " << timeSpentOnLocalSearch << " s";
 	return CStar;
 }
 

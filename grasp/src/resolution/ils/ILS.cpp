@@ -32,8 +32,8 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace ils {
 
-ILS::ILS(GainFunction* f, unsigned long seed) : timeSpentInILS(0.0),
-		gainFunction(f), randomSeed(seed), timeResults(), timeSum(0.0), CBest(), 
+ILS::ILS() : timeSpentInILS(0.0),
+		timeResults(), timeSum(0.0), CBest(),
 		numberOfTestedCombinations(0) {
 	// TODO Auto-generated constructor stub
 
@@ -43,18 +43,18 @@ ILS::~ILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ILS::executeILS(SignedGraph *g, const int& iter, const double& alpha, const int& l,
+Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
+		SignedGraph *g, const int& iter, const int& l,
 		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, string& executionId,
 		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
 		const int& myRank, const int& numberOfSearchSlaves) {
-	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = " << alpha << " and l = " << l;
-	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
+	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = " << construct.getAlpha() << " and l = " << l;
 
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
-	Clustering CStar = constructClustering(g, problem, alpha, myRank);
+	Clustering CStar = construct.constructClustering(g, problem, myRank);
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
@@ -95,8 +95,8 @@ Clustering ILS::executeILS(SignedGraph *g, const int& iter, const double& alpha,
 		notifyNewValue(Cc, 0.0, totalIter);
 
 		// 2. Execute local search algorithm
-		Clustering Cl = localSearch(g, Cc, l, totalIter, firstImprovementOnOneNeig,
-				problem, *neig, timeLimit, numberOfSlaves, myRank, numberOfSearchSlaves);
+		Clustering Cl = vnd.localSearch(g, Cc, l, totalIter, firstImprovementOnOneNeig,
+				problem, *neig, timeLimit, timeSpentInILS, numberOfSlaves, myRank, numberOfSearchSlaves);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl.getImbalance();
@@ -139,7 +139,7 @@ Clustering ILS::executeILS(SignedGraph *g, const int& iter, const double& alpha,
 		start_time = timer.elapsed();
 
 		// 1. Construct the next clustering
-		Cc = constructClustering(g, problem, alpha, myRank);
+		Cc = construct.constructClustering(g, problem, myRank);
 
 		timer.stop();
 		end_time = timer.elapsed();
@@ -165,125 +165,13 @@ Clustering ILS::executeILS(SignedGraph *g, const int& iter, const double& alpha,
 	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults);
-	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), alpha, l, iter);
+	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), construct.getAlpha(), l, iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), alpha, l, iter);
+	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), construct.getAlpha(), l, iter);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), alpha, l, iter);
+	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), construct.getAlpha(), l, iter);
 
-	return CStar;
-}
-
-Clustering ILS::constructClustering(SignedGraph *g, ClusteringProblem& problem,
-		double alpha, int myRank) {
-	Clustering Cc; // Cc = empty
-	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP construct clustering...\n";
-
-	while (lc.size() > 0) { // lc != empty
-		GainCalculation gainCalculation;
-		if (alpha == 1.0) {
-			// alpha = 1.0 (completely random): no need to calculate all gains (saves time)
-			int i = lc.chooseRandomVertex(lc.size()).vertex;
-			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc,	i);
-		} else {
-			// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-			// according to the value of the gain function
-			gainFunction->calculateGainList(problem, Cc, lc.getVertexList());
-
-			// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
-			// (alpha x |lc|) is a rounded number
-			// IMPORTANT: if alpha < 0, the constructClustering method will always
-			//             choose the first vertex in the gainFunction list, that is,
-			//             the one that minimizes the objective (VOTE algorithm).
-			if (alpha <= 0.0) {
-				// chooses first element (min) without ordering (saves time)
-				gainCalculation = lc.chooseFirstElement(gainFunction.get());
-			} else {
-				lc.sort(gainFunction.get());
-				gainCalculation = lc.chooseRandomVertex(
-						boost::math::iround(alpha * lc.size()));
-			}
-			// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
-		}
-		// 3. Cc = C union {i}
-		// Adds the vertex i to the partial clustering C, in a way so defined by
-		// its gain function. The vertex i can be augmented to C either as a
-		// separate cluster {i} or as a member of an existing cluster c in C.
-		// cout << "Selected vertex is " << i << endl;
-		if (gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
-			// inserts i as a separate cluster
-			Cc.addCluster(*g, problem, gainCalculation.vertex);
-		} else {
-			// inserts i into existing cluster
-			Cc.addNodeToCluster(*g, problem, gainCalculation.vertex, gainCalculation.clusterNumber);
-		}
-
-		// 4. lc = lc - {i}
-		// the choosing vertex i automatically removes it from the list
-		// Removal already done by the chooseVertex methods above
-		// Cc->printClustering();
-	}
-	BOOST_LOG_TRIVIAL(debug)<< myRank << ": Initial clustering completed.\n";
-	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
-	// Cc.printClustering();
-	return Cc;
-}
-
-Clustering ILS::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const int& ILSIteration,
-		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
-		NeighborhoodSearch &neig, const long& timeLimit, const int &numberOfSlaves,
-		const int& myRank, const int& numberOfSearchSlaves) {
-	// k is the current neighborhood distance in the local search
-	int k = 1, iteration = 0;
-	Clustering CStar = Cc; // C* := Cc
-	CBefore = CStar; // previous best solution
-	double timeSpentOnLocalSearch = 0.0;
-	BOOST_LOG_TRIVIAL(debug) << "ILS local search...\n";
-	BOOST_LOG_TRIVIAL(debug) << "Current neighborhood is " << k << endl;
-
-	while(k <= l && (timeSpentInILS + timeSpentOnLocalSearch < timeLimit)) {
-		// cout << "Local search iteration " << iteration << endl;
-		// 0. Triggers local processing time calculation
-		boost::timer::cpu_timer timer;
-		timer.start();
-		boost::timer::cpu_times start_time = timer.elapsed();
-
-		// N := Nl(C*)
-		// apply a local search in CStar using the k-neighborhood	
-		Clustering Cl = neig.searchNeighborhood(k, g, &CStar, problem,
-				timeSpentInILS + timeSpentOnLocalSearch, timeLimit, randomSeed, myRank, firstImprovementOnOneNeig);
-		// sums the number of tested combinations on local search
-		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
-		if(Cl.getImbalance().getValue() < 0.0) {
-			BOOST_LOG_TRIVIAL(error) << myRank << ": Objective function below zero. Error.";
-			break;
-		}
-		// cout << "Comparing local solution value." << endl;
-		Imbalance il = Cl.getImbalance();
-		Imbalance ic = CStar.getImbalance();
-		if(il < ic) {
-			// BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
-			// Cl->printClustering();
-			CStar = Cl;
-			k = 1;
-		} else {  // no better result found in neighborhood
-			k++;
-			// BOOST_LOG_TRIVIAL(debug) << "Changed to neighborhood size l = " << k;
-		}
-		iteration++;
-
-		// => Finally: Stops the timer and stores the elapsed time
-		timer.stop();
-		boost::timer::cpu_times end_time = timer.elapsed();
-		timeSpentOnLocalSearch += (end_time.wall - start_time.wall) / double(1000000000);
-
-		// Registers the best result at time intervals
-		notifyNewValue(CStar, timeSpentOnLocalSearch, ILSIteration);
-	}
-	BOOST_LOG_TRIVIAL(debug) << "ILS local search done. Time spent: " << timeSpentOnLocalSearch;
 	return CStar;
 }
 

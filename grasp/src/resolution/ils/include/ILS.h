@@ -14,19 +14,22 @@
 #include "../../../graph/include/Clustering.h"
 #include "../../../problem/include/ClusteringProblem.h"
 #include "../../../graph/include/NeighborhoodSearch.h"
+#include "../../construction/include/ConstructClustering.h"
+#include "../../vnd/include/VariableNeighborhoodDescent.h"
 
 #include <iostream>
 
 using namespace clusteringgraph;
 using namespace problem;
 using namespace resolution::construction;
+using namespace resolution::vnd;
 
 namespace resolution {
 namespace ils {
 
 class ILS: public ResolutionStrategy {
 public:
-	ILS(GainFunction* f, unsigned long seed);
+	ILS();
 	virtual ~ILS();
 
 	/**
@@ -47,7 +50,8 @@ public:
 	 * @param myRank processor rank (when running with MPI)
 	 * @param numberOfSearchSlaves number of slaves used for parallel VND processing
 	 */
-	Clustering executeILS(SignedGraph *g, const int& iter, const double& alpha, const int& l,
+	Clustering executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
+			SignedGraph *g, const int& iter, const int& l,
 			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
 			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
 			const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
@@ -55,37 +59,6 @@ public:
 	unsigned long getNumberOfTestedCombinations();
 
 protected:
-	/**
-	 * Constructs a clustering in a greedy ramdomized fashion,
-	 * starting from the empty set.
-	 * This is the first phase of the ILS algorithm.
-	 * @param g graph to be used as the base
-	 * @param problem the ClusteringProblem object for the objective function calculation
-	 * @param alpha ramdom seed belonging to the interval (0, 1)
-	 * @param ramdomSeed seed to be used in ramdom number generation
-	 * @return Clustering C(c)
-	 */
-	Clustering constructClustering(SignedGraph *g, ClusteringProblem& problem,
-			double alpha, int myRank);
-
-	/**
-	 * Executes the local search algorithm. Repeatedly derives
-	 * the local optimum solution C(l) in the l-neighborhood of
-	 * the current solution C.
-	 * This is the second phase of the ILS algorithm. It uses the
-	 * Variable Neighborhood Descent (VND) strategy.
-	 * @param g the graph to be used as the base
-	 * @param Cc the clustering given by the construct clustering
-	 * phase of ILS.
-	 * @param l the size of the neighborhood
-	 * @param ILSIteration the number of the ILS iteration this LS belongs to
-	 * @param problem the ClusteringProblem object for the objective function calculation
-	 * @param timeLimit Maximum processing time in seconds.
-	 * @return Clustering C(l), the local optinum solution
-	 */
-	Clustering localSearch(SignedGraph *g, Clustering& Cc, const int &l, const int& ILSIteration,
-			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, NeighborhoodSearch &neig,
-			const long& timeLimit, const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
 
 	/**
 	 * Generates CSV output file for ILS local Search.
@@ -112,16 +85,6 @@ protected:
 	 * Time spent so far in the ILS in seconds.
 	 */
 	double timeSpentInILS;
-
-	/**
-	 * The gain function to be used in the construction phase.
-	 */
-	boost::shared_ptr<GainFunction> gainFunction;
-
-	/**
-	 * Random seed.
-	 */
-	unsigned long randomSeed;
 
 	/**
 	 * Stringstream containing the best result found at each moment of time.
