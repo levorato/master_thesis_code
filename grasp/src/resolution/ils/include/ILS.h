@@ -39,22 +39,13 @@ public:
 	 * and localSearch.
 	 * @param g the graph to be used as the base
 	 * @param iter maximum number of iterations
-	 * @param alpha randomness factor belonging to the interval (0, 1); if alpha < 0, the
-	 * constructClustering method will always choose the first vertex in the gainFunction list,
-	 * that is, the one that minimizes the objective (VOTE algorithm).
-	 * @param l the size of the neighborhood
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param fileId string representing the identification of the input graph file
-	 * @param timeLimit Maximum processing time in seconds
-	 * @param numberOfSlaves number of slaves used for parallel ILS processing
 	 * @param myRank processor rank (when running with MPI)
-	 * @param numberOfSearchSlaves number of slaves used for parallel VND processing
 	 */
 	Clustering executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-			SignedGraph *g, const int& iter, const int& l,
-			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
-			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
-			const int &numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
+			SignedGraph *g, const int& iter, ClusteringProblem& problem,
+			string& executionId, string& fileId, string& outputFolder, const int& myRank);
 
 	unsigned long getNumberOfTestedCombinations();
 

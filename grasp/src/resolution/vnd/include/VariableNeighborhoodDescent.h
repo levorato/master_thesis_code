@@ -13,6 +13,9 @@
 #include "../../../graph/include/Clustering.h"
 #include "../../../problem/include/ClusteringProblem.h"
 #include "../../../graph/include/NeighborhoodSearch.h"
+#include "../../../graph/include/SequentialNeighborhoodSearch.h"
+#include "../../../graph/include/ParallelNeighborhoodSearch.h"
+
 
 using namespace clusteringgraph;
 using namespace problem;
@@ -22,7 +25,15 @@ namespace vnd {
 
 class VariableNeighborhoodDescent : public ResolutionStrategy {
 public:
-	VariableNeighborhoodDescent(unsigned long seed);
+	/**
+	 * @param neighborhoodSearch neighborhood search algorithm (sequential, parallel)
+	 * @param seed random seed
+	 * @param lsize the size of the neighborhood
+	 * @param firstImprovement1Opt true if first-improvement on 1-opt is enabled
+	 * @param tlimit time limit in seconds
+	 */
+	VariableNeighborhoodDescent(NeighborhoodSearch &neigborhoodSearch, unsigned long seed,
+			const int &lsize, const bool& firstImprovement1Opt, const long &tlimit);
 	virtual ~VariableNeighborhoodDescent();
 
 	/**
@@ -34,18 +45,26 @@ public:
 	 * @param g the graph to be used as the base
 	 * @param Cc the clustering given by the construct clustering
 	 * phase of GRASP.
-	 * @param l the size of the neighborhood
 	 * @param graspIteration the number of the grasp iteration this LS belongs to
 	 * @param problem the ClusteringProblem object for the objective function calculation
-	 * @param timeLimit Maximum processing time in seconds.
-	 * @return Clustering C(l), the local optinum solution
+	 * @return Clustering C(l), the local optimum solution
 	 */
-	Clustering localSearch(SignedGraph *g, Clustering& Cc, const int &l, const int& graspIteration,
-			const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, NeighborhoodSearch &neig,
-			const long& timeLimit, const long& timeSpentSoFar, const int &numberOfSlaves,
-			const int& myRank, const int& numberOfSearchSlaves);
+	Clustering localSearch(SignedGraph *g, Clustering& Cc, const int& graspIteration,
+			ClusteringProblem& problem, const long& timeSpentSoFar, const int& myRank);
 
 	unsigned long getNumberOfTestedCombinations();
+
+	unsigned int getNeighborhoodSize() {
+		return l;
+	}
+
+	unsigned long getTimeLimit() {
+		return timeLimit;
+	}
+
+	bool isFirstImprovementOnOneNeig() {
+		return firstImprovementOnOneNeig;
+	}
 
 private:
 	/**
@@ -80,6 +99,27 @@ private:
 	 * Total number of tested combinations in local search.
 	 */
 	unsigned long numberOfTestedCombinations;
+
+	/**
+	 * Associated NeigborhoodSearch class.
+	 */
+	NeighborhoodSearch& _neighborhoodSearch;
+
+	/**
+	 * Controls if first-improvement is enabled on 1-opt neighborhood.
+	 */
+	bool firstImprovementOnOneNeig;
+
+	/**
+	 * Neighborhood size of local search.
+	 */
+	int l;
+
+	/**
+	 * Time limit of local search execution in seconds.
+	 */
+	long timeLimit;
+
 };
 
 } /* namespace vnd */

@@ -6,12 +6,9 @@
  */
 
 #include "include/Grasp.h"
-#include "../../graph/include/SequentialNeighborhoodSearch.h"
-#include "../../graph/include/ParallelNeighborhoodSearch.h"
 #include "../../problem/include/ClusteringProblem.h"
 #include "../../problem/include/CCProblem.h"
 #include "../../problem/include/RCCProblem.h"
-#include "../../graph/include/NeighborhoodSearchFactory.h"
 #include "../../graph/include/Imbalance.h"
 
 #include <algorithm>
@@ -43,13 +40,10 @@ Grasp::~Grasp() {
 }
 
 Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter, const int& l,
-		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
-		string& executionId, string& fileId, string& outputFolder,
-		const long& timeLimit, const int &numberOfSlaves, const int& myRank,
-		const int& numberOfSearchSlaves) {
+		SignedGraph *g, const int& iter, ClusteringProblem& problem,
+		string& executionId, string& fileId, string& outputFolder, const int& myRank) {
 	BOOST_LOG_TRIVIAL(info)<< "Initializing " << " GRASP "<< problem.getName() <<
-	" procedure for alpha = " << construct.getAlpha() << " and l = " << l;
+	" procedure for alpha = " << construct.getAlpha() << " and l = " << vnd.getNeighborhoodSize();
 
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
@@ -70,14 +64,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0.0;
 	double initialImbalanceSum = 0.0;
-	// Chooses between the sequential or parallel VND algorithm
-	NeighborhoodSearch* neig;
-	NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
-	if(numberOfSearchSlaves > 0) {
-		neig = nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
-	} else {
-		neig = nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-	}
+
 	stringstream iterationResults;
 	stringstream constructivePhaseResults;
 	int i = 0, totalIter = 0;
@@ -96,8 +83,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 		notifyNewValue(Cc, 0.0, totalIter);
 
 		// 2. Execute local search algorithm: RVND
-		Clustering Cl = vnd.localSearch(g, Cc, l, totalIter, firstImprovementOnOneNeig,
-				problem, *neig, timeLimit, timeSpentInGRASP, numberOfSlaves, myRank, numberOfSearchSlaves);
+		Clustering Cl = vnd.localSearch(g, Cc, totalIter, problem, timeSpentInGRASP, myRank);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl.getImbalance();
@@ -130,7 +116,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 		end_time = timer.elapsed();
 		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
 		// if elapsed time is bigger than timeLimit, break
-		if(timeSpentInGRASP >= timeLimit) {
+		if(timeSpentInGRASP >= vnd.getTimeLimit()) {
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
@@ -175,12 +161,12 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults);
-	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), construct.getAlpha(), l, iter);
+	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), construct.getAlpha(), l, iter);
+	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), construct.getAlpha(), l, iter);
+	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 
 	return CStar;
 }

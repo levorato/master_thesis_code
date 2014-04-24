@@ -19,16 +19,23 @@ namespace ils {
 
 class ParallelILS : resolution::ils::ILS {
 public:
-	ParallelILS();
+	/**
+	 * @param numberOfSlaves number of slaves used for parallel ILS processing
+	 * @param numberOfSearchSlaves number of slaves used for parallel VND processing
+	 */
+	ParallelILS(const int& slaves, const int& searchSlaves);
 	virtual ~ParallelILS();
 
 	/**
 	 * Triggers the parallel execution of the ILS algorithm using MPI.
 	 */
 	Clustering executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-			SignedGraph *g, const int& iter, const int& l, const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
-			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
-			const int& numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
+			SignedGraph *g, const int& iter, ClusteringProblem& problem,
+			string& executionId, string& fileId, string& outputFolder, const int& myRank);
+
+private:
+	unsigned int numberOfSearchSlaves;
+	unsigned int numberOfSlaves;
 };
 
 } /* namespace ils */

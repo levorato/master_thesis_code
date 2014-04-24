@@ -44,11 +44,9 @@ ILS::~ILS() {
 }
 
 Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter, const int& l,
-		const bool& firstImprovementOnOneNeig, ClusteringProblem& problem, string& executionId,
-		string& fileId, string& outputFolder, const long& timeLimit, const int &numberOfSlaves,
-		const int& myRank, const int& numberOfSearchSlaves) {
-	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = " << construct.getAlpha() << " and l = " << l;
+		SignedGraph *g, const int& iter, ClusteringProblem& problem, string& executionId,
+		string& fileId, string& outputFolder, const int& myRank) {
+	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = " << construct.getAlpha() << " and l = " << vnd.getNeighborhoodSize();
 
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
@@ -69,14 +67,6 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0.0;
 	double initialImbalanceSum = 0.0;
-	// Chooses between the sequential or parallel VND algorithm
-	NeighborhoodSearch* neig;
-	NeighborhoodSearchFactory nsFactory(numberOfSlaves, numberOfSearchSlaves);
-	if(numberOfSearchSlaves > 0) {
-		neig = nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
-	} else {
-		neig = nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-	}
 	stringstream iterationResults;
 	stringstream constructivePhaseResults;
 	int i = 0, totalIter = 0;
@@ -95,8 +85,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 		notifyNewValue(Cc, 0.0, totalIter);
 
 		// 2. Execute local search algorithm
-		Clustering Cl = vnd.localSearch(g, Cc, l, totalIter, firstImprovementOnOneNeig,
-				problem, *neig, timeLimit, timeSpentInILS, numberOfSlaves, myRank, numberOfSearchSlaves);
+		Clustering Cl = vnd.localSearch(g, Cc, totalIter, problem, timeSpentInILS, myRank);
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl.getImbalance();
@@ -129,7 +118,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 		end_time = timer.elapsed();
 		timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
 		// if elapsed time is bigger than timeLimit, break
-		if(timeSpentInILS >= timeLimit) {
+		if(timeSpentInILS >= vnd.getTimeLimit()) {
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
@@ -165,12 +154,12 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults);
-	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), construct.getAlpha(), l, iter);
+	generateOutputFile(problem, iterationResults, outputFolder, fileId, executionId, myRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), construct.getAlpha(), l, iter);
+	generateOutputFile(problem, timeResults, outputFolder, fileId, executionId, myRank, string("timeIntervals"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), construct.getAlpha(), l, iter);
+	generateOutputFile(problem, constructivePhaseResults, outputFolder, fileId, executionId, myRank, string("initialSolutions"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 
 	return CStar;
 }

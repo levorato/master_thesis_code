@@ -6,10 +6,7 @@
  */
 
 #include "include/VariableNeighborhoodDescent.h"
-#include "../../graph/include/SequentialNeighborhoodSearch.h"
-#include "../../graph/include/ParallelNeighborhoodSearch.h"
 #include "../../problem/include/ClusteringProblem.h"
-#include "../../graph/include/NeighborhoodSearchFactory.h"
 #include "../../graph/include/Imbalance.h"
 
 #include <algorithm>
@@ -31,8 +28,11 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace vnd {
 
-VariableNeighborhoodDescent::VariableNeighborhoodDescent(unsigned long seed) : timeResults(),
-		randomSeed(seed), timeSum(0.0), timeSpentInSearch(0.0),	numberOfTestedCombinations(0) {
+VariableNeighborhoodDescent::VariableNeighborhoodDescent(NeighborhoodSearch &neighborhoodSearch,
+		unsigned long seed, const int &lsize, const bool& firstImprovement1Opt, const long &tlimit) :
+				timeResults(), randomSeed(seed), timeSum(0.0),
+				timeSpentInSearch(0.0),	numberOfTestedCombinations(0), _neighborhoodSearch(neighborhoodSearch),
+				l(lsize), firstImprovementOnOneNeig(firstImprovement1Opt), timeLimit(tlimit) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -41,11 +41,8 @@ VariableNeighborhoodDescent::~VariableNeighborhoodDescent() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& Cc, const int &l,
-		const int& graspIteration, const bool& firstImprovementOnOneNeig,
-		ClusteringProblem& problem, NeighborhoodSearch &neig,
-		const long& timeLimit, const long& timeSpentSoFar, const int &numberOfSlaves, const int& myRank,
-		const int& numberOfSearchSlaves) {
+Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& Cc, const int& graspIteration,
+		ClusteringProblem& problem, const long& timeSpentSoFar, const int& myRank) {
 	// k is the current neighborhood distance in the local search
 	int r = 1, iteration = 0;
 	Clustering CStar = Cc; // C* := Cc
@@ -62,11 +59,11 @@ Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& 
 
 		// N := Nl(C*)
 		// apply a local search in CStar using the k-neighborhood
-		Clustering Cl = neig.searchNeighborhood(r, g, &CStar, problem,
+		Clustering Cl = _neighborhoodSearch.searchNeighborhood(r, g, &CStar, problem,
 				timeSpentSoFar + timeSpentOnLocalSearch, timeLimit,
 				randomSeed, myRank, firstImprovementOnOneNeig);
 		// sums the number of tested combinations on local search
-		numberOfTestedCombinations += neig.getNumberOfTestedCombinations();
+		numberOfTestedCombinations += _neighborhoodSearch.getNumberOfTestedCombinations();
 		if (Cl.getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error)<< myRank << ": Objective function below zero. Obj = " << Cl.getImbalance().getValue();
 			break;

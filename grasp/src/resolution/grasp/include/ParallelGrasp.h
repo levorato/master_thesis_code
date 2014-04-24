@@ -19,17 +19,19 @@ namespace grasp {
 
 class ParallelGrasp : resolution::grasp::Grasp {
 public:
-	ParallelGrasp();
+	ParallelGrasp(const int& slaves, const int& searchSlaves);
 	virtual ~ParallelGrasp();
 
 	/**
 	 * Triggers the parallel execution of the GRASP algorithm using MPI.
 	 */
 	Clustering executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-			SignedGraph *g, const int& iter,
-			const int& l, const bool& firstImprovementOnOneNeig, ClusteringProblem& problem,
-			string& executionId, string& fileId, string& outputFolder, const long& timeLimit,
-			const int& numberOfSlaves, const int& myRank, const int& numberOfSearchSlaves);
+			SignedGraph *g, const int& iter, ClusteringProblem& problem,
+			string& executionId, string& fileId, string& outputFolder, const int& myRank);
+
+private:
+	unsigned int numberOfSearchSlaves;
+	unsigned int numberOfSlaves;
 };
 
 } /* namespace grasp */

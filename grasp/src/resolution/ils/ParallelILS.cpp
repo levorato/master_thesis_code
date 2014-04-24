@@ -22,7 +22,8 @@ using namespace util::parallel;
 using namespace resolution::construction;
 namespace mpi = boost::mpi;
 
-ParallelILS::ParallelILS() : ILS() {
+ParallelILS::ParallelILS(const int& slaves, const int& searchSlaves) : ILS(),
+		numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
 
 }
 
@@ -31,10 +32,8 @@ ParallelILS::~ParallelILS() {
 }
 
 Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter, const int& l, const bool& firstImprovementOnOneNeig,
-		ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
-		const long& timeLimit, const int& numberOfSlaves, const int& myRank,
-		const int& numberOfSearchSlaves) {
+		SignedGraph *g, const int& iter, ClusteringProblem& problem, string& executionId, string& fileId,
+		string& outputFolder, const int& myRank) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Initiating parallel ILS...";
 	// the leader distributes the work across the processors
@@ -42,17 +41,15 @@ Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeigh
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
-		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), l,
-				problem.getType(), construct.getGainFunctionType(), executionId, fileId, outputFolder, timeLimit,
-				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
+		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd.getNeighborhoodSize(),
+				problem.getType(), construct.getGainFunctionType(), executionId, fileId, outputFolder, vnd.getTimeLimit(),
+				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig());
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
 	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter,
-			l, firstImprovementOnOneNeig, problem, executionId, fileId,
-			outputFolder, timeLimit, numberOfSlaves,
-			myRank, numberOfSearchSlaves);
+			problem, executionId, fileId, outputFolder, myRank);
 
 	// the leader receives the processing results
 	OutputMessage omsg;

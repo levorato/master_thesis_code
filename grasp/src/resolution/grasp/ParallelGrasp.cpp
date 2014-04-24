@@ -22,7 +22,12 @@ using namespace util::parallel;
 using namespace resolution::construction;
 namespace mpi = boost::mpi;
 
-ParallelGrasp::ParallelGrasp() : Grasp() {
+/**
+ * @param numberOfSlaves number of slaves used for parallel ILS processing
+ * @param numberOfSearchSlaves number of slaves used for parallel VND processing
+ */
+ParallelGrasp::ParallelGrasp(const int& slaves, const int& searchSlaves) :
+		Grasp(), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
 
 }
 
@@ -31,11 +36,8 @@ ParallelGrasp::~ParallelGrasp() {
 }
 
 Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter,
-		const int& l, const bool& firstImprovementOnOneNeig,
-		ClusteringProblem& problem, string& executionId, string& fileId, string& outputFolder,
-		const long& timeLimit, const int& numberOfSlaves, const int& myRank,
-		const int& numberOfSearchSlaves) {
+		SignedGraph *g, const int& iter, ClusteringProblem& problem, string& executionId, string& fileId,
+		string& outputFolder, const int& myRank) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Initiating parallel GRASP...";
 	// the leader distributes the work across the processors
@@ -43,17 +45,15 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableN
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
-		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), l,
-				problem.getType(), construct.getGainFunctionType(), executionId, fileId, outputFolder, timeLimit,
-				numberOfSlaves, numberOfSearchSlaves, firstImprovementOnOneNeig);
+		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd.getNeighborhoodSize(),
+				problem.getType(), construct.getGainFunctionType(), executionId, fileId, outputFolder, vnd.getTimeLimit(),
+				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig());
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
 	Clustering bestClustering = Grasp::executeGRASP(construct, vnd, g, iter,
-			l, firstImprovementOnOneNeig, problem, executionId, fileId,
-			outputFolder, timeLimit, numberOfSlaves,
-			myRank, numberOfSearchSlaves);
+			problem, executionId, fileId, outputFolder, myRank);
 
 	// the leader receives the processing results
 	OutputMessage omsg;

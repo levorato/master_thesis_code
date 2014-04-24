@@ -24,11 +24,11 @@ public:
 	SequentialNeighborhoodSearch sequentialNeighborhoodSearch;
 	ParallelNeighborhoodSearch parallelNeighborhoodSearch;
 
-	NeighborhoodSearch* build(int neighborhoodType) {
+	NeighborhoodSearch& build(int neighborhoodType) {
 		if(neighborhoodType == NeighborhoodSearchFactory::SEQUENTIAL) {
-			return &sequentialNeighborhoodSearch;
+			return sequentialNeighborhoodSearch;
 		} else {
-			return &parallelNeighborhoodSearch;
+			return parallelNeighborhoodSearch;
 		}
 	}
 };
