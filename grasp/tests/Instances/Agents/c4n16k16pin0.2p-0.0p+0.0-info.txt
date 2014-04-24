@@ -1,0 +1,8 @@
+n: 16 vertices per cluster
+c (clusters): 4
+N: 64 total vertices
+I(P) = 0
+Cluster 0: 9 7 22 61 47 2 60 17 34 49 14 5 50 1 53 3 
+Cluster 1: 31 32 54 12 36 6 57 63 46 19 26 13 33 27 62 25 
+Cluster 2: 52 15 20 24 16 43 39 51 48 10 41 37 4 28 11 45 
+Cluster 3: 0 8 42 58 18 55 23 44 59 29 56 35 38 40 21 30 
