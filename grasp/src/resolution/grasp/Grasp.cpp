@@ -49,8 +49,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 		const long& timeLimit, const int &numberOfSlaves, const int& myRank,
 		const int& numberOfSearchSlaves) {
 	BOOST_LOG_TRIVIAL(info)<< "Initializing " << " GRASP "<< problem.getName() <<
-	" procedure for alpha = " << alpha << " and l = " << l;
-	BOOST_LOG_TRIVIAL(trace) << "Random seed is " << randomSeed << std::endl;
+	" procedure for alpha = " << construct.getAlpha() << " and l = " << l;
 
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
