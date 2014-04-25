@@ -32,7 +32,8 @@ ParallelILS::~ParallelILS() {
 }
 
 Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
+		SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+		ClusteringProblem& problem, ExecutionInfo& info) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Initiating parallel ILS...";
 	// the leader distributes the work across the processors
@@ -42,12 +43,12 @@ Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeigh
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd.getNeighborhoodSize(),
 				problem.getType(), construct.getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd.getTimeLimit(),
-				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig());
+				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter, problem, info);
+	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
 
 	// the leader receives the processing results
 	OutputMessage omsg;

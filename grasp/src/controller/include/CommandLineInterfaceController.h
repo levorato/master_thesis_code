@@ -37,7 +37,8 @@ private:
 			const int& numberOfIterations, const long& timeLimit,
 			const int& numberOfSlaves, const int& numberOfSearchSlaves, const int& myRank,
 			const int& functionType, const unsigned long& seed,	const bool& CCEnabled,
-			const bool& RCCEnabled, long k, const StategyName& resolutionStrategy);
+			const bool& RCCEnabled, long k, const StategyName& resolutionStrategy,
+			const int& iterMaxILS, const int& perturbationLevelMax);
 
 	void readPropertiesFile();
 

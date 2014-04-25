@@ -39,12 +39,15 @@ public:
 	 * This ILS algorithm consists of two phases: constructClustering
 	 * and localSearch.
 	 * @param g the graph to be used as the base
-	 * @param iter maximum number of iterations
+	 * @param iterMax maximum number of iterations of multistart ILS
+	 * @param iterMaxILS maximum number of iterations of internal ILS loop
+	 * @param perturbationLevelMax maximum perturbation level for ILS
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param executionInfo auxiliary data about execution
 	 */
 	Clustering executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-			SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info);
+			SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
+			ClusteringProblem& problem,	ExecutionInfo& info);
 
 	unsigned long getNumberOfTestedCombinations();
 

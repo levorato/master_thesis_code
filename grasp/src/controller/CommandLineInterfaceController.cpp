@@ -120,8 +120,8 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
 		string& executionId, const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
 		const int& numberOfIterations, const long& timeLimit, const int& numberOfMasters, const int& numberOfSearchSlaves,
-		const int& myRank, const int& functionType, const unsigned long& seed,
-		const bool& CCEnabled, const bool& RCCEnabled, long k, const StategyName& resolutionStrategy) {
+		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
+		long k, const StategyName& resolutionStrategy, const int& iterMaxILS, const int& perturbationLevelMax) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -171,13 +171,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
-					c = resolution.executeILS(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
+					c = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(numberOfMasters, numberOfSearchSlaves);
-					c = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
+					c = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
 			}
 			// Stops the timer and stores the elapsed time
@@ -236,13 +236,13 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
-					RCCCluster = resolution.executeILS(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
+					RCCCluster = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+							perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(numberOfMasters, numberOfSearchSlaves);
-					RCCCluster = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
+					RCCCluster = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+							perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				}
 			}
 			// Stops the timer and stores the elapsed time
@@ -324,13 +324,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int numberOfMasters = np - 1;
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
+	int iterMaxILS = 0, perturbationLevelMax = 0;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
 		("help", "show program options")
 		("alpha,a", po::value<string>(&s_alpha),
 			  "alpha - randomness factor of constructive phase")
-		("iterations,it", po::value<int>(&numberOfIterations)->default_value(500),
+		("iterations,it", po::value<int>(&numberOfIterations)->default_value(400),
 			  "number of iterations of multi-start heuristic")
 		("neighborhood_size,l", po::value<int>(&l)->default_value(1),
 			  "neighborhood size of local search")
@@ -352,6 +353,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("jobid", po::value<string>(&jobid), "job identifier (string)")
 		("strategy", po::value<StategyName>(&strategy),
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
+		("iterMaxILS", po::value<int>(&iterMaxILS)->default_value(3), "number of iterations of ILS loop")
+		("perturbationLevelMax", po::value<int>(&perturbationLevelMax)->default_value(7), "maximum perturbation level in ILS")
 	;
 	po::positional_options_description p;
 	p.add("input-file", -1);
@@ -506,14 +509,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 							numberOfIterations, timeLimit, numberOfMasters, numberOfSearchSlaves,
-							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy);
+							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, iterMaxILS, perturbationLevelMax);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, numberOfMasters, numberOfSearchSlaves,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy);
+								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, iterMaxILS, perturbationLevelMax);
 					}
 				}
 			}
@@ -650,6 +653,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
 						resolution::ils::ILS resolution;
 						Clustering bestClustering = resolution.executeILS(construct, vnd, g.get(), imsgpils.iter,
+								imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 								problemFactory.build(imsgpils.problemType), info);
 
 						// Sends the result back to the leader process

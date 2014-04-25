@@ -142,20 +142,24 @@ public:
 	string outputFolder;
 	long timeLimit;
 	bool firstImprovementOnOneNeig;
+	int iterMaxILS;
+	int perturbationLevelMax;
 
 	InputMessageParallelILS() : InputMessage(),
-			alpha(0.0F), iter(500), gainFunctionType(0), problemType(0),
-			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false) {
+			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0),
+			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
+			iterMaxILS(3), perturbationLevelMax(7) {
 
 	}
 
 	InputMessageParallelILS(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
-			unsigned int searchSlaves, bool fiOneNeig) :
+			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), executionId(eid), fileId(fid),
-					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig) {
+					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
+					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel) {
 
 	}
 
@@ -190,6 +194,8 @@ public:
 		ar & outputFolder;
 		ar & timeLimit;
 		ar & firstImprovementOnOneNeig;
+		ar & iterMaxILS;
+		ar & perturbationLevelMax;
 	}
 };
 

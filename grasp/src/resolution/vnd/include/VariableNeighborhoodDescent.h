@@ -66,6 +66,10 @@ public:
 		return firstImprovementOnOneNeig;
 	}
 
+	unsigned long getRandomSeed() {
+		return randomSeed;
+	}
+
 private:
 	/**
 	 * Computes the best known search result at each time interval.

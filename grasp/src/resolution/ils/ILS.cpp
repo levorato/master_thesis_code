@@ -13,6 +13,7 @@
 #include "../../problem/include/CCProblem.h"
 #include "../../graph/include/NeighborhoodSearchFactory.h"
 #include "../../graph/include/Imbalance.h"
+#include "../../graph/include/Perturbation.h"
 
 #include <algorithm>
 #include <iostream>
@@ -44,7 +45,8 @@ ILS::~ILS() {
 }
 
 Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
+		SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
+		ClusteringProblem& problem,	ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = "
 			<< construct.getAlpha() << " and l = " << vnd.getNeighborhoodSize();
 
@@ -52,6 +54,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
+	// 1. Initial clustering (construct)
 	Clustering CStar = construct.constructClustering(g, problem, info.processRank);
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
@@ -63,55 +66,82 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 	Clustering previousCc = CStar;
 	CBest = CStar;
 	Clustering Cc = CStar;
-	Imbalance bestValue = CStar.getImbalance();
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0.0;
 	double initialImbalanceSum = 0.0;
 	stringstream iterationResults;
 	stringstream constructivePhaseResults;
-	int i = 0, totalIter = 0;
 	numberOfTestedCombinations = 0;
 
-	for (i = 0, totalIter = 0; i <= iter || iter < 0 ; i++, totalIter++, previousCc = Cc) {
+	// Multi-start ILS
+	for (int i = 0; i < iterMax || iterMax < 0 ; i++, previousCc = Cc) {
 		BOOST_LOG_TRIVIAL(debug) << "ILS iteration " << i;
 		// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 
 		//    Store initial solution value in corresponding results file
-		constructivePhaseResults << (totalIter+1) << "," << Cc.getImbalance().getValue() << "," << Cc.getImbalance().getPositiveValue()
-						<< "," << Cc.getImbalance().getNegativeValue() << "," << Cc.getNumberOfClusters()
-						<< "," << fixed << setprecision(4) << timeSpentInConstruction << "\n";
+		constructivePhaseResults << (i+1) << "," << Cc.getImbalance().getValue() << ","
+				<< Cc.getImbalance().getPositiveValue()
+				<< "," << Cc.getImbalance().getNegativeValue() << "," << Cc.getNumberOfClusters()
+				<< "," << fixed << setprecision(4) << timeSpentInConstruction << "\n";
 		initialImbalanceSum += Cc.getImbalance().getValue();
 		// Registers the Cc result
-		notifyNewValue(Cc, 0.0, totalIter);
+		notifyNewValue(Cc, 0.0, i);
 
-		// 2. Execute local search algorithm
-		Clustering Cl = vnd.localSearch(g, Cc, totalIter, problem, timeSpentInILS, info.processRank);
-		// 3. Select the best clustring so far
-		// if Q(Cl) > Q(Cstar)
-		Imbalance newValue = Cl.getImbalance();
+		CStar = Cc;
+		Clustering Cl = Cc;
+		int perturbationLevel = 1;
+		for(int j = 1, total = 0; j <= iterMaxILS; total++) {  // internal ILS loop
+			// 2. Execute local search algorithm
+			Cl = vnd.localSearch(g, Cl, i, problem, timeSpentInILS, info.processRank);
+			// 3. Select the best clustring so far
+			// if Q(Cl) > Q(Cstar)
+			Imbalance newValue = Cl.getImbalance();
+			Imbalance bestValue = CStar.getImbalance();
+			if(newValue < bestValue) {  // solution improved
+				// cout << "A better solution was found." << endl;
+				CStar = Cl;
+				bestValue = newValue;
+				iterationValue = total;
+				// restarts the internal ILS loop and the perturbation
+				j = 1;
+				perturbationLevel = 1;
+				timeSpentOnBestSolution = timeSpentInILS;
+				if(newValue.getValue() == 0)  break;
+			} else {  // did not improve solution
+				j++;
+				if(j > iterMaxILS) {
+					perturbationLevel++;
+					j = 1;
+					if(perturbationLevel > perturbationLevelMax) {
+						break;
+					}
+				}
+			}
+			// 4. Generate perturbation over C*
+			Perturbation perturbation(vnd.getRandomSeed());
+			Cl = perturbation.randomMove(g, CStar, problem, perturbationLevel);
 
-		// 4. Stops the timer and stores the elapsed time
-		timer.stop();
-		end_time = timer.elapsed();
+			// 5. Stops the timer and stores the elapsed time
+			timer.stop();
+			end_time = timer.elapsed();
 
-		// 5. Write the results into ostream os, using csv format
-		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
-		// TODO melhorar formatacao do tempo
-		timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
-		iterationResults << (totalIter+1) << "," << newValue.getValue() << "," << newValue.getPositiveValue()
-				<< "," << newValue.getNegativeValue() << "," << CStar.getNumberOfClusters()
-				<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
-		timer.resume();
-		start_time = timer.elapsed();
-
+			// 6. Write the results into ostream os, using csv format
+			// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
+			timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
+			iterationResults << (total+1) << "," << bestValue.getValue() << "," << bestValue.getPositiveValue()
+					<< "," << bestValue.getNegativeValue() << "," << CStar.getNumberOfClusters()
+					<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
+			timer.resume();
+			start_time = timer.elapsed();
+		}
+		Imbalance newValue = CStar.getImbalance();
+		Imbalance bestValue = CBest.getImbalance();
 		if(newValue < bestValue) {
 			// cout << "A better solution was found." << endl;
-			CStar = Cl;
+			CBest = CStar;
 			bestValue = newValue;
-			iterationValue = totalIter;
+			iterationValue = i;
 			timeSpentOnBestSolution = timeSpentInILS;
-			i = 0;
-			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue.getValue() == 0)  break;
 		}
 		timer.stop();
@@ -122,46 +152,51 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
-
-		// 0. Triggers local processing time calculation
-		timer.resume();
-		start_time = timer.elapsed();
-
-		// 1. Construct the next clustering
-		Cc = construct.constructClustering(g, problem, info.processRank);
-
-		timer.stop();
-		end_time = timer.elapsed();
-		timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
-		timer.resume();
-
 		// guarantees at least one execution of the ILS when the number of iterations is smaller than one
-		if(iter <= 0) {  break;  }
+		if(iterMax <= 0) {  break;  }
+
+		// Avoids constructClustering if loop break condition is met
+		if(i <= iterMax) {
+			// 0. Triggers local processing time calculation
+			timer.resume();
+			start_time = timer.elapsed();
+
+			// 1. Construct the next clustering
+			Cc = construct.constructClustering(g, problem, info.processRank);
+
+			timer.stop();
+			end_time = timer.elapsed();
+			timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+			timeSpentInILS += timeSpentInConstruction;
+			timer.resume();
+			start_time = timer.elapsed();
+		}
 	}
+	Imbalance bestValue = CBest.getImbalance();
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
 			<< "," << bestValue.getPositiveValue()
 			<< "," << bestValue.getNegativeValue()
 			<< setprecision(0)
-			<< "," << CStar.getNumberOfClusters()
+			<< "," << CBest.getNumberOfClusters()
 			<< "," << (iterationValue+1)
 			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
-			<< "," << (totalIter+1) 
+			<< "," << iterMax
 			<< "," << numberOfTestedCombinations << endl;
 
-	constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << (initialImbalanceSum / (totalIter+1))
+	constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << (initialImbalanceSum / iterMax)
 			<< endl;
 
 	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults);
-	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
+	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iterMax);
 	// saves the best result to output time file
-	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
+	measureTimeResults(0.0, iterMax);
+	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), vnd.getNeighborhoodSize(), iterMax);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
+	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), vnd.getNeighborhoodSize(), iterMax);
 
-	return CStar;
+	return CBest;
 }
 
 void ILS::generateOutputFile(ClusteringProblem& problem, stringstream& fileContents, const string& rootFolder,
