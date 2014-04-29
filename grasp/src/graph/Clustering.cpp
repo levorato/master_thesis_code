@@ -75,6 +75,10 @@ BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
 	return clusterList.at(clusterNumber);
 }
 
+void Clustering::setCluster(unsigned long clusterNumber, BoolArray b) {
+	clusterList[clusterNumber] = b;
+}
+
 int Clustering::getBiggestClusterIndex() {
 	ClusterList::iterator pos = std::min_element(clusterList.begin(), clusterList.end(),
 			ClusterSizeComparison(false));

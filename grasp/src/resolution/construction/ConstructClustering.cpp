@@ -9,13 +9,17 @@
 #include "../construction/include/VertexSet.h"
 #include <boost/log/trivial.hpp>
 #include <boost/math/special_functions/round.hpp>
-
+#include "../../problem/include/RCCProblem.h"
+#include <cassert>
 
 namespace resolution {
 namespace construction {
 
-ConstructClustering::ConstructClustering(GainFunction* f, const unsigned long& seed,
-		const double& alpha) : gainFunction(f), randomSeed(seed), _alpha(alpha) {
+using namespace problem;
+
+ConstructClustering::ConstructClustering(GainFunction* f,
+		const unsigned long& seed, const double& alpha) :
+		gainFunction(f), randomSeed(seed), _alpha(alpha) {
 
 }
 
@@ -34,7 +38,8 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		if (_alpha == 1.0) {
 			// alpha = 1.0 (completely random): no need to calculate all gains (saves time)
 			int i = lc.chooseRandomVertex(lc.size()).vertex;
-			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc,	i);
+			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc,
+					i);
 		} else {
 			// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 			// according to the value of the gain function
@@ -60,12 +65,14 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		// its gain function. The vertex i can be augmented to C either as a
 		// separate cluster {i} or as a member of an existing cluster c in C.
 		// cout << "Selected vertex is " << i << endl;
+		// The gain function ensures no clusters of size > k are created if RCC Problem
 		if (gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
 			// inserts i as a separate cluster
 			Cc.addCluster(*g, problem, gainCalculation.vertex);
 		} else {
 			// inserts i into existing cluster
-			Cc.addNodeToCluster(*g, problem, gainCalculation.vertex, gainCalculation.clusterNumber);
+			Cc.addNodeToCluster(*g, problem, gainCalculation.vertex,
+					gainCalculation.clusterNumber);
 		}
 
 		// 4. lc = lc - {i}
@@ -73,7 +80,52 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		// Removal already done by the chooseVertex methods above
 		// Cc->printClustering();
 	}
-	BOOST_LOG_TRIVIAL(debug)<< myRank << ": Initial clustering completed.\n";
+	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
+	// Post-processing phase, only for RCC Problem
+	if (problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		unsigned long k = rp.getK();
+		int n = g->getN();
+		// Repartitions the clustering so that initial clustering has exactly k clusters
+		while (Cc.getNumberOfClusters() < k) {
+			// BOOST_LOG_TRIVIAL(debug)<< "Cc less than k clusters detected.";
+			// Splits a cluster in two new clusters
+			// 1. Selects the cluster that has more nodes
+			int c = Cc.getBiggestClusterIndex();
+			BoolArray cl = Cc.getCluster(c);
+			// 2. Randomly selects half of the nodes of cl to move to a new cluster
+			//    2.1. Populates a vertex set with the vertices in cluster cl
+			VertexSet set(randomSeed);
+			for (int i = 0; i < n; i++) {
+				if (cl[i]) {
+					set.addVertex(i);
+				}
+			}
+			//    2.2. Randomly chooses count/2 vertices, removing them from cluster cl
+			//         and adding to new cluster cln
+			BoolArray cln(n);
+			int half = boost::math::iround(set.size() / 2.0);
+			for (int i = 0; i < half; i++) {
+				GainCalculation v = set.chooseRandomVertex(set.size());
+				// BOOST_LOG_TRIVIAL(debug)<< "Selecionou " << v.vertex << ", size = " << set.size();
+				cl[v.vertex] = false;
+				cln[v.vertex] = true;
+			}
+			// replaces existing c cluster
+			Cc.setCluster(c, cl);
+			Cc.setClusterSize(c, set.size());
+			// includes newly generated cluster
+			Cc.addCluster(cln);
+			if(cl != Cc.getCluster(c)) {
+				cout << set.size() << endl;
+				cout << cl << " : " << cl.count() << endl << Cc.getCluster(c) << " : " << Cc.getCluster(c).count() << endl;
+			}
+			// Cc.printClustering();
+		}
+		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";
+		// Cc.printClustering();
+	}
+	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed.\n";
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
 	// Cc.printClustering();
 	return Cc;

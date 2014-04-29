@@ -10,6 +10,8 @@
 #include <cmath>
 #include <algorithm>
 #include <cassert>
+#include <list>
+#include <vector>
 #include <boost/log/trivial.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/detail/matrix_assign.hpp>
@@ -18,6 +20,7 @@
 using namespace boost;
 using boost::numeric::ublas::detail::equals;
 using boost::numeric::ublas::matrix;
+using namespace clusteringgraph;
 
 namespace problem {
 
@@ -54,7 +57,7 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	c.positiveSum.assign(zero_matrix<double>(nc, nc));
 	c.negativeSum.assign(zero_matrix<double>(nc, nc));
 
-	// BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation." << endl;
+	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation.";
 	// c.printClustering();
 
 	// For each vertex i
@@ -430,6 +433,184 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g,
 	// BOOST_LOG_TRIVIAL(trace) << "Matrix negativeSum: " << c.negativeSum << endl;
 
 	return Imbalance(internalSum, externalSum);
+}
+
+/**
+  * Contabilizar, para cada vertice, o total de arestas que estao contribuindo para o
+  * desequilibrio (positivo + negativo). Assim a gente vai poder comparar quem tem
+  * mais relacoes em desequilibrio e quem sabe tirar alguma conclusao disso.
+  * Esse script será executado sobre os resultados de todos os grafos de intâncias reais.
+*/
+string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
+	int nc = c.getNumberOfClusters();
+	int n = g.getN();
+	stringstream ss1, ss2;
+	// os valores de soma entre clusters devem compor uma matriz
+	// as diagnonais da matriz contem os valores das somas internas
+	const matrix<double> posSum(c.positiveSum);
+	const matrix<double> negSum(c.negativeSum);
+	c.positiveSum.resize(nc, nc, false);
+	c.negativeSum.resize(nc, nc, false);
+	c.positiveSum.assign(zero_matrix<double>(nc, nc));
+	c.negativeSum.assign(zero_matrix<double>(nc, nc));
+
+	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] Starting imbalance analysis.";
+	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
+	ss1 << "Vertex,PositiveSum,NegativeSum" << endl;
+	ss2 << "Imbalance analysis (in edges contribution):" << endl;
+	ss2 << "Vertex,PositiveSum,NegativeSum" << endl;
+
+	// For each vertex i
+	for (int i = 0; i < n; i++) {
+		BoolArray clusterI;
+		unsigned long ki;
+		// Find out to which cluster vertex i belongs
+		for (ki = 0; ki < nc; ki++) {
+			clusterI = c.getCluster(ki);
+			if (clusterI[i]) {
+				break;
+			}
+		}
+		assert(ki < nc);
+		DirectedGraph::out_edge_iterator f, l;
+		DirectedGraph::edge_descriptor e;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+			double weight = ((Edge*) f->get_property())->weight;
+			e = *f;
+			Vertex dest = target(e, g.graph);
+			int j = dest.id;
+			// ignores edge loops
+			if (i == j)
+				continue;
+			bool sameCluster = clusterI[j];
+			if (sameCluster) {
+				if (weight > 0) { // positive edge
+					c.positiveSum(ki, ki) += weight;
+				} else { // negative edge
+					c.negativeSum(ki, ki) += fabs(weight);
+				}
+			} else {
+				// Find out to which cluster vertex j belongs
+				unsigned long kj = 0;
+				BoolArray clusterJ;
+				for (kj = 0; kj < nc; kj++) {
+					clusterJ = c.getCluster(kj);
+					if (clusterJ[j]) {
+						break;
+					}
+				}
+				assert(kj < nc);
+				if (weight > 0) { // positive edge
+					c.positiveSum(ki, kj) += weight;
+				} else { // negative edge
+					c.negativeSum(ki, kj) += fabs(weight);
+				}
+			}
+		}
+	}
+	double internalSum = 0.0, externalSum = 0.0;
+	list<EdgeContribution> edgeList;
+	for (unsigned long k1 = 0; k1 < nc; k1++) {
+		if(c.positiveSum(k1, k1) < c.negativeSum(k1, k1)) {
+			list<EdgeContribution> l = computeEdges(g, c, k1, k1, RCCProblem::POSITIVE_EDGE);
+			edgeList.splice(edgeList.end(), l);
+			internalSum += c.positiveSum(k1, k1);
+		} else {
+			list<EdgeContribution> l = computeEdges(g, c, k1, k1, RCCProblem::NEGATIVE_EDGE);
+			edgeList.splice(edgeList.end(), l);
+			internalSum += c.negativeSum(k1, k1);
+		}
+		for (unsigned long k2 = 0; k2 < nc; k2++) {
+			if (k1 < k2) {
+				double posSum = c.positiveSum(k1, k2) + c.positiveSum(k2, k1);
+				double negSum = c.negativeSum(k1, k2) + c.negativeSum(k2, k1);
+				if(posSum < negSum) {
+					list<EdgeContribution> l = computeEdges(g, c, k1, k2, RCCProblem::POSITIVE_EDGE);
+					edgeList.splice(edgeList.end(), l);
+					list<EdgeContribution> l2 = computeEdges(g, c, k2, k1, RCCProblem::POSITIVE_EDGE);
+					edgeList.splice(edgeList.end(), l2);
+					externalSum += posSum;
+				} else {
+					list<EdgeContribution> l = computeEdges(g, c, k1, k2, RCCProblem::NEGATIVE_EDGE);
+					edgeList.splice(edgeList.end(), l);
+					list<EdgeContribution> l2 = computeEdges(g, c, k2, k1, RCCProblem::NEGATIVE_EDGE);
+					edgeList.splice(edgeList.end(), l2);
+					externalSum += negSum;
+				}
+			}
+		}
+	}
+	// computes edges' positive and negative contribution to relaxed imbalance
+	std::vector<double> positiveContribution(n, 0.0), negativeContribution(n, 0.0);
+	// Out edges contribution for each vertex
+	for(list<EdgeContribution>::iterator it = edgeList.begin(); it != edgeList.end(); it++) {
+		EdgeContribution edge = *it;
+		if(edge.value > 0) {
+			positiveContribution[edge.i] += edge.value;
+		} else {
+			negativeContribution[edge.i] += (-1) * edge.value;
+		}
+	}
+	double sum1 = 0.0;
+	for(int i = 0; i < n; i++) {
+		ss1 << i << "," << positiveContribution[i] << "," << negativeContribution[i] << endl;
+		sum1 += positiveContribution[i] + negativeContribution[i];
+		positiveContribution[i] = 0.0;
+		negativeContribution[i] = 0.0;
+	}
+	// In edges contribution for each vertex
+	for(list<EdgeContribution>::iterator it = edgeList.begin(); it != edgeList.end(); it++) {
+		EdgeContribution edge = *it;
+		if(edge.value > 0) {
+			positiveContribution[edge.j] += edge.value;
+		} else {
+			negativeContribution[edge.j] += (-1) * edge.value;
+		}
+	}
+	for(int i = 0; i < n; i++) {
+		ss2 << i << "," << positiveContribution[i] << "," << negativeContribution[i] << endl;
+	}
+	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] (out) sum1 = " << sum1 << endl;
+	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] Graph analysis done. Obj = " << (internalSum + externalSum) <<
+			", obj full = " << objectiveFunction(g, c).getValue() << endl;
+
+	return ss1.str() + ss2.str();
+}
+
+list<EdgeContribution> RCCProblem::computeEdges(SignedGraph& g, Clustering& c, int c1, int c2, int edgeType) {
+	int nc = c.getNumberOfClusters();
+	int n = g.getN();
+	list<EdgeContribution> edgeList;
+	BoolArray cluster1 = c.getCluster(c1);
+	BoolArray cluster2 = c.getCluster(c2);
+
+	// For each vertex i in cluster c1
+	for (int i = 0; i < n; i++) {
+		if(cluster1[i]) {
+			DirectedGraph::out_edge_iterator f, l;
+			DirectedGraph::edge_descriptor e;
+			// For each out edge of i
+			for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+				double weight = ((Edge*) f->get_property())->weight;
+				e = *f;
+				Vertex dest = target(e, g.graph);
+				int j = dest.id;
+				// ignores edge loops
+				if (i == j)
+					continue;
+				// vertex j must be in cluster c2
+				if(cluster2[j]) {
+					if (weight > 0 && edgeType == RCCProblem::POSITIVE_EDGE) { // we are looking for pos. edges
+						edgeList.push_back(EdgeContribution(i, j, weight));
+					} else if(weight < 0 && edgeType == RCCProblem::NEGATIVE_EDGE) { // we are looking for neg. edges
+						edgeList.push_back(EdgeContribution(i, j, weight));
+					}
+				}
+			}
+		}
+	}
+	return edgeList;
 }
 
 } /* namespace problem */

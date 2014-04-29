@@ -264,7 +264,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			stringstream ss;
 			RCCCluster.printClustering(ss);
 			out << ss.str();
-			
+			// Outputs additional graph analysis data
+			RCCProblem& rccp = static_cast<RCCProblem&>(problemFactory.build(ClusteringProblem::RCC_PROBLEM));
+			string analysis = rccp.analyzeImbalance(*g, c);
+			out << analysis << endl;
 			// Closes the file
 			out.close();
 			BOOST_LOG_TRIVIAL(info) << "RCC Solve done. Obj = " << imb.getValue();
@@ -331,7 +334,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("help", "show program options")
 		("alpha,a", po::value<string>(&s_alpha),
 			  "alpha - randomness factor of constructive phase")
-		("iterations,it", po::value<int>(&numberOfIterations)->default_value(400),
+		("iterations,iter", po::value<int>(&numberOfIterations)->default_value(400),
 			  "number of iterations of multi-start heuristic")
 		("neighborhood_size,l", po::value<int>(&l)->default_value(1),
 			  "neighborhood size of local search")
@@ -353,8 +356,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("jobid", po::value<string>(&jobid), "job identifier (string)")
 		("strategy", po::value<StategyName>(&strategy),
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
-		("iterMaxILS", po::value<int>(&iterMaxILS)->default_value(3), "number of iterations of ILS loop")
-		("perturbationLevelMax", po::value<int>(&perturbationLevelMax)->default_value(7), "maximum perturbation level in ILS")
+		// ("iterMaxILS", po::value<int>(&iterMaxILS)->default_value(3), "number of iterations of ILS loop")
+		// ("perturbationLevelMax", po::value<int>(&perturbationLevelMax)->default_value(7), "maximum perturbation level in ILS")
 	;
 	po::positional_options_description p;
 	p.add("input-file", -1);

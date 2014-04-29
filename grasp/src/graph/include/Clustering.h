@@ -69,6 +69,8 @@ public:
 	 */
 	BoolArray& getCluster(unsigned long clusterNumber);
 
+	void setCluster(unsigned long clusterNumber, BoolArray b);
+
 	/**
 	 * Returns the biggest cluster (index) of the cluster (the one with more elements).
 	 */

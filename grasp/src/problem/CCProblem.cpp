@@ -42,7 +42,7 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
 
-	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Starting obj function calculation." << endl;
+	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Starting obj function calculation.";
 
 	// For each vertex i
 	for(int i = 0; i < n; i++) {
@@ -145,8 +145,8 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	stringstream ss1, ss2;
 	DirectedGraph::edge_descriptor e;
 
-	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Starting imbalance analysis." << endl;
-	ss1 << "Imbalance analysis (out edges contribution):" << endl;
+	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Starting imbalance analysis.";
+	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
 	ss1 << "Vertex,PositiveSum,NegativeSum" << endl;
 	ss2 << "Imbalance analysis (in edges contribution):" << endl;
 	ss2 << "Vertex,PositiveSum,NegativeSum" << endl;

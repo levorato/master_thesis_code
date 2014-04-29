@@ -17,6 +17,19 @@ using namespace clusteringgraph;
 
 namespace problem {
 
+class EdgeContribution {
+public:
+	EdgeContribution(int _i, int _j, double _value) : i(_i), j(_j), value(_value) {
+
+	}
+	virtual ~EdgeContribution() {
+
+	}
+
+	int i, j;
+	double value;
+};
+
 class RCCProblem: public problem::ClusteringProblem {
 public:
 	RCCProblem();
@@ -38,6 +51,8 @@ public:
 	virtual Imbalance calculateDeltaMinusObjectiveFunction(SignedGraph& g, Clustering& c,
 			const unsigned long& k, const unsigned long& i);
 
+	string analyzeImbalance(SignedGraph& g, Clustering& c);
+
 	virtual int getType() const;
 
 	virtual string getName();
@@ -52,6 +67,10 @@ public:
 
 private:
 	unsigned long k;
+	static const int POSITIVE_EDGE = -1;
+	static const int NEGATIVE_EDGE = 1;
+
+	list<EdgeContribution> computeEdges(SignedGraph& g, Clustering& c, int c1, int c2, int edgeType);
 };
 
 } /* namespace problem */
