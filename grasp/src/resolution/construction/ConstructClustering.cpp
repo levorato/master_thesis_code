@@ -105,21 +105,28 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 			//         and adding to new cluster cln
 			BoolArray cln(n);
 			int half = boost::math::iround(set.size() / 2.0);
-			for (int i = 0; i < half; i++) {
-				GainCalculation v = set.chooseRandomVertex(set.size());
+			GainCalculation v = set.chooseRandomVertex(set.size());
+			Cc.removeNodeFromCluster(*g, problem, v.vertex, c);
+			Cc.addCluster(*g, problem, v.vertex);
+			int new_c = Cc.getNumberOfClusters() - 1;
+			for (int i = 1; i < half; i++) {
+				v = set.chooseRandomVertex(set.size());
 				// BOOST_LOG_TRIVIAL(debug)<< "Selecionou " << v.vertex << ", size = " << set.size();
-				cl[v.vertex] = false;
-				cln[v.vertex] = true;
+				// cl[v.vertex] = false;
+				// cln[v.vertex] = true;
+				Cc.removeNodeFromCluster(*g, problem, v.vertex, c);
+				Cc.addNodeToCluster(*g, problem, v.vertex, new_c);
 			}
 			// replaces existing c cluster
-			Cc.setCluster(c, cl);
-			Cc.setClusterSize(c, set.size());
+			//Cc.setCluster(c, cl);
+			//Cc.setClusterSize(c, set.size());
 			// includes newly generated cluster
-			Cc.addCluster(cln);
+			//Cc.addCluster(cln);
+			/*
 			if(cl != Cc.getCluster(c)) {
 				cout << set.size() << endl;
 				cout << cl << " : " << cl.count() << endl << Cc.getCluster(c) << " : " << Cc.getCluster(c).count() << endl;
-			}
+			} */
 			// Cc.printClustering();
 		}
 		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";

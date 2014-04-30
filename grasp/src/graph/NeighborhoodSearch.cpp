@@ -85,7 +85,6 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 							cTemp.addNodeToCluster(*g, problem, i, k2);
 						}
 						numberOfTestedCombinations++;
-
 						// cTemp->printClustering();
 						Imbalance newImbalance = cTemp.getImbalance();
 						Imbalance bestImbalance = cBest.getImbalance();

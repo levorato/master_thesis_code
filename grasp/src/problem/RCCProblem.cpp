@@ -12,6 +12,8 @@
 #include <cassert>
 #include <list>
 #include <vector>
+#include <boost/unordered_map.hpp>
+#include <boost/functional/hash.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/detail/matrix_assign.hpp>
@@ -20,6 +22,7 @@
 using namespace boost;
 using boost::numeric::ublas::detail::equals;
 using boost::numeric::ublas::matrix;
+using boost::unordered_set;
 using namespace clusteringgraph;
 
 namespace problem {
@@ -552,7 +555,7 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 			negativeContribution[edge.i] += (-1) * edge.value;
 		}
 	}
-	double sum1 = 0.0;
+	double sum1 = 0.0, sum2 = 0.0;
 	for(int i = 0; i < n; i++) {
 		ss1 << i << "," << positiveContribution[i] << "," << negativeContribution[i] << endl;
 		sum1 += positiveContribution[i] + negativeContribution[i];
@@ -570,11 +573,9 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	}
 	for(int i = 0; i < n; i++) {
 		ss2 << i << "," << positiveContribution[i] << "," << negativeContribution[i] << endl;
+		sum2 += positiveContribution[i] + negativeContribution[i];
 	}
-	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] (out) sum1 = " << sum1 << endl;
-	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] Graph analysis done. Obj = " << (internalSum + externalSum) <<
-			", obj full = " << objectiveFunction(g, c).getValue() << endl;
-
+	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] Graph analysis done. Obj = " << (internalSum + externalSum);
 	return ss1.str() + ss2.str();
 }
 

@@ -266,7 +266,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			out << ss.str();
 			// Outputs additional graph analysis data
 			RCCProblem& rccp = static_cast<RCCProblem&>(problemFactory.build(ClusteringProblem::RCC_PROBLEM));
-			string analysis = rccp.analyzeImbalance(*g, c);
+			string analysis = rccp.analyzeImbalance(*g, RCCCluster);
 			out << analysis << endl;
 			// Closes the file
 			out.close();

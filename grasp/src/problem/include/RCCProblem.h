@@ -19,6 +19,10 @@ namespace problem {
 
 class EdgeContribution {
 public:
+	EdgeContribution() : i(0), j(0), value(0) {
+
+	}
+
 	EdgeContribution(int _i, int _j, double _value) : i(_i), j(_j), value(_value) {
 
 	}
