@@ -22,7 +22,9 @@ from time import sleep
 mycluster = []
 cluster_node_list = []
 matrix = []
-
+in_vertex_list = []
+out_vertex_list = []
+       
 class Range(object):
     def __init__(self, start, end):
         self.start = start
@@ -50,8 +52,8 @@ def pick_random_vertex(vertex_list, degree, k):
     return a
 
 # Returns a new random edge that connects 2 nodes of the same cluster
-# Each node must have in-degree + out-degree < k
-def pick_random_internal_edge(N, degree, k):
+# Each node must have in-degree + out-degree < k ???
+def pick_random_internal_edge(N, indegree, outdegree, k):
     # Global variables
     global mycluster
     global cluster_node_list
@@ -63,7 +65,7 @@ def pick_random_internal_edge(N, degree, k):
     found = False
     while not found:
          # Selects a random node of in-degree + out-degree < k
-         a = pick_random_vertex(vertex_list, degree, k)
+         a = pick_random_vertex(vertex_list, outdegree, k)
          if(a < 0): 
             return None
          #print "1- Selected vertex %s" % str(a)
@@ -72,31 +74,46 @@ def pick_random_internal_edge(N, degree, k):
          neighbour_list = cluster_node_list[mycluster[a]]
          random.shuffle(neighbour_list)
          for b in neighbour_list:
-              if(b <> a and matrix[a][b] == 0 and degree[b] < k):
+              if(b <> a and matrix[a][b] == 0 and indegree[b] < k):
                   found = True
                   break
     return edge(a, b)
 
 # Returns a new random edge that connects 2 nodes of different clusters
 # Each node must have degree < k
-def pick_random_external_edge(N, degree, k):
+def pick_random_external_edge(N, indegree, outdegree, k):
     # Global variables
     global mycluster
     global matrix
+    global in_vertex_list
+    global out_vertex_list
 
     found = False
-    vertex_list = range(N)
-    random.shuffle(vertex_list)
     while not found:
+         found_a = False
          # Selects a random node of degree < k
-         a = pick_random_vertex(vertex_list, degree, k)
-         if(a < 0): 
+         for a in out_vertex_list:
+            if(outdegree[a] >= k):
+               out_vertex_list.remove(a)
+               #print 'removed node {0}\n'.format(str(a))
+            else:
+               found_a = True
+               #print 'found a = {0}\n'.format(str(a))
+               break
+         if(not found_a):
             return None
-         # Selects a neighbour of a (different cluster) with degree < k 
-         for b in vertex_list:
-              if(b <> a and mycluster[a] <> mycluster[b] and matrix[a][b] == 0 and degree[b] < k):
+         #print 'selected node {0}\n'.format(str(a))
+         # Selects a non-neighbour of a (different cluster) with degree < k 
+         for b in in_vertex_list:
+              if(indegree[b] >= k):
+                  in_vertex_list.remove(b)
+                  continue
+              if(b <> a and mycluster[a] <> mycluster[b] and matrix[a][b] == 0 and indegree[b] < k):
                   found = True
                   break
+         if(not found):
+            print 'b not found!'
+            return None
     return edge(a, b)
 
 def CCObjectiveFunction(N):
@@ -129,6 +146,8 @@ def SG(c, n, k, p_in, p_minus, p_plus):
    global mycluster
    global cluster_node_list
    global matrix
+   global in_vertex_list
+   global out_vertex_list
    # Variables used in graph generation
    N = n * c
    print 'Generating random graph with {0} vertices...'.format(str(N))
@@ -143,8 +162,13 @@ def SG(c, n, k, p_in, p_minus, p_plus):
        # Graph adjacency matrix (with dimensions N x N)
        # Creates a list containing N lists initialized to 0 (index begins with 0)
        matrix = [[0 for x in xrange(N)] for x in xrange(N)] 
-       # Array that controls the degree of each vertex
-       degree = [0 for x in range(N)]
+       # Arrays that control the degree of each vertex
+       in_vertex_list = range(N)
+       random.shuffle(in_vertex_list)
+       out_vertex_list = range(N)
+       random.shuffle(out_vertex_list)
+       indegree = [0 for x in xrange(N)]
+       outdegree = [0 for x in xrange(N)]
        
        # builds a list with all the N vertices of the graph
        vertex_list = range(N)
@@ -172,8 +196,8 @@ def SG(c, n, k, p_in, p_minus, p_plus):
        # 2- uses probability p_in to generate k edges (initially positive) connecting each of the vertices
        # p_in % of the edges connect nodes of the same cluster
        print "Step 2: uses probability p_in to generate k edges (initially positive) connecting each of the vertices..."
-       total_edges = int((c * n * k) / 2)
-       internal_edge_num = int(math.floor(total_edges * p_in))
+       total_edges = (c * n * k)
+       internal_edge_num = int(math.ceil(total_edges * p_in))
        external_edge_num = total_edges - internal_edge_num
        print 'Number of total edges of the graph is {0}'.format(str(total_edges))
        print 'Number of expected internal edges of the graph is {0}'.format(str(internal_edge_num))
@@ -181,49 +205,90 @@ def SG(c, n, k, p_in, p_minus, p_plus):
        assert (internal_edge_num + external_edge_num == total_edges), "Sum of internal and external edges do not match"
        
 
-       # Guarantees that each node has exactly k edges (in-degree + out-degree = k)
-       # 2.1- Creates the internal edges (within same cluster), initially positive
-       print "Generating internal edges..."
-       count = 0
-       for i in xrange(internal_edge_num):
-        # Randomly picks a pair of nodes that belong to the same cluster
-        e = pick_random_internal_edge(N, degree, k)
-        if e == None:
-            print "Warn: no more internal edge found."
-            break
-        # edges are directed
-        matrix[e.x][e.y] = 1
-        degree[e.x] += 1
-        degree[e.y] += 1
-        count += 1
-        
-       print 'Generated {0} random internal edges.'.format(count)
-       internal_edge_num = count
-       external_edge_num = total_edges - internal_edge_num
+       # Guarantees that each node has exactly k edges (TODO: in-degree + out-degree = k ???)
+
 
        # 2.2- Creates the external edges (between different clusters), initially negative
        print "Generating external edges..."
        count = 0
        for i in xrange(external_edge_num):
         # Randomly picks a pair of nodes that do not belong to the same cluster
-        e = pick_random_external_edge(N, degree, k)
+        e = pick_random_external_edge(N, indegree, outdegree, k)
         if e == None:
             print "Warn: no more external edge found."
             break
         # edges are directed
+        # TODO: generate edges' weight randomly in the [0, 1] interval
         matrix[e.x][e.y] = -1
-        degree[e.x] += 1
-        degree[e.y] += 1
+        outdegree[e.x] += 1
+        indegree[e.y] += 1
         count += 1
+        sys.stdout.write('.')
+       
+       for v in xrange(N):
+        if indegree[v] > k or outdegree[v] > k:
+            print '*** Degrees of {0}: {1} ; {2}\n'.format(str(v), str(indegree[v]), str(outdegree[v]))
         
-       print 'Generated {0} random external edges.'.format(count)
+       print '\nGenerated {0} random external edges.'.format(count)
        external_edge_num = count
+
+       # 2.1- Creates the internal edges (within same cluster), initially positive
+       print "Generating internal edges..."
+       #count = 0
+       #for i in xrange(internal_edge_num):
+        # Randomly picks a pair of nodes that belong to the same cluster
+        #e = pick_random_internal_edge(N, indegree, outdegree, k)
+        #if e == None:
+        #    print "Warn: no more internal edge found."
+        #    break
+        # edges are directed
+        # TODO: use a random distribution to generate edges' weights in the [0, 1] interval
+        #matrix[e.x][e.y] = 1
+        #outdegree[e.x] += 1
+        #indegree[e.y] += 1
+        #count += 1
+       count = 0
+       # for each node, generate an internal cluster edge
+       while(count < internal_edge_num):
+         inserted = False
+         for node in xrange(N):
+          if(outdegree[node] < k):
+             # selects another node in the same cluster
+             # print 'selected node {0} with outdegree = {1}\n'.format(str(node), str(outdegree[node]))
+             neighbour_list = cluster_node_list[mycluster[node]]
+             random.shuffle(neighbour_list)
+             for b in neighbour_list:
+                if(outdegree[node] >= k):
+                   break
+                if(b <> node and matrix[node][b] == 0 and indegree[b] < k):
+                   matrix[node][b] = 1
+                   outdegree[node] += 1
+                   indegree[b] += 1
+                   if(indegree[b] > k or outdegree[node] > k):
+                      print 'violation!\n'
+                   count += 1
+                   inserted = True
+                   #sys.stdout.write('.')
+         if(not inserted):
+            print 'No more internal edge found! Count = {0}'.format(str(count))
+            break
+       print 'internal edge count is {0}'.format(str(count))
+
+       
+       for v in xrange(N):
+        if indegree[v] > k or outdegree[v] > k:
+            print 'xxx Degrees of {0}: {1} ; {2}\n'.format(str(v), str(indegree[v]), str(outdegree[v]))       
+ 
+       print 'Generated {0} random internal edges.'.format(internal_edge_num)
+       #internal_edge_num = count
+       #external_edge_num = total_edges - internal_edge_num
 
        # restarts graph generation until the correct number of edges is obtained
        success = True
        for v in range(N):
         #assert degree[v] == k, "The degree of each vertex must be equal to k"
-        if degree[v] <> k:
+        if indegree[v] <> k or outdegree[v] <> k:
+            print 'Degrees of {0}: {1} ; {2}\n'.format(str(v), str(indegree[v]), str(outdegree[v]))
             success = False
             print "\nRetrying...\n"
             break
