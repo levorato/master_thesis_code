@@ -92,6 +92,7 @@ def pick_random_external_edge(N, indegree, outdegree, k):
     while not found:
          found_a = False
          # Selects a random node of degree < k
+         random.shuffle(out_vertex_list)
          for a in out_vertex_list:
             if(outdegree[a] >= k):
                out_vertex_list.remove(a)
@@ -104,6 +105,7 @@ def pick_random_external_edge(N, indegree, outdegree, k):
             return None
          #print 'selected node {0}\n'.format(str(a))
          # Selects a non-neighbour of a (different cluster) with degree < k 
+         random.shuffle(in_vertex_list)
          for b in in_vertex_list:
               if(indegree[b] >= k):
                   in_vertex_list.remove(b)
@@ -206,32 +208,6 @@ def SG(c, n, k, p_in, p_minus, p_plus):
        
 
        # Guarantees that each node has exactly k edges (TODO: in-degree + out-degree = k ???)
-
-
-       # 2.2- Creates the external edges (between different clusters), initially negative
-       print "Generating external edges..."
-       count = 0
-       for i in xrange(external_edge_num):
-        # Randomly picks a pair of nodes that do not belong to the same cluster
-        e = pick_random_external_edge(N, indegree, outdegree, k)
-        if e == None:
-            print "Warn: no more external edge found."
-            break
-        # edges are directed
-        # TODO: generate edges' weight randomly in the [0, 1] interval
-        matrix[e.x][e.y] = -1
-        outdegree[e.x] += 1
-        indegree[e.y] += 1
-        count += 1
-        sys.stdout.write('.')
-       
-       for v in xrange(N):
-        if indegree[v] > k or outdegree[v] > k:
-            print '*** Degrees of {0}: {1} ; {2}\n'.format(str(v), str(indegree[v]), str(outdegree[v]))
-        
-       print '\nGenerated {0} random external edges.'.format(count)
-       external_edge_num = count
-
        # 2.1- Creates the internal edges (within same cluster), initially positive
        print "Generating internal edges..."
        #count = 0
@@ -247,9 +223,107 @@ def SG(c, n, k, p_in, p_minus, p_plus):
         #outdegree[e.x] += 1
         #indegree[e.y] += 1
         #count += 1
-       count = 0
        # for each node, generate an internal cluster edge
-       while(count < internal_edge_num):
+       int_count = 0
+       # each cluster will get (internal_edge_num) / c internal edges
+       edge_count = int(math.floor((internal_edge_num) / c))
+       while(int_count < c * edge_count):
+         inserted = False
+         print 'there are {0} internal edges so far'.format(int_count)
+         for cluster in xrange(c):
+          print 'must generate {0} internal edges for cluster {1}'.format(str(edge_count), str(cluster))
+          i = 0
+          while i < edge_count:
+           random.shuffle(cluster_node_list[cluster])
+           for node in cluster_node_list[cluster]:
+            if(i >= edge_count):
+             break
+            if(outdegree[node] < k):
+             # selects another node in the same cluster
+             # print 'selected node {0} with outdegree = {1}\n'.format(str(node), str(outdegree[node]))
+             neighbour_list = cluster_node_list[mycluster[node]]
+             random.shuffle(neighbour_list)
+             for b in neighbour_list:
+                if(outdegree[node] >= k):
+                   break
+                if(b <> node and matrix[node][b] == 0 and indegree[b] < k):
+                   matrix[node][b] = 1
+                   outdegree[node] += 1
+                   indegree[b] += 1
+                   if(indegree[b] > k or outdegree[node] > k):
+                      print 'violation!\n'
+                   int_count += 1
+                   i += 1
+                   inserted = True
+                   break
+                   #sys.stdout.write('.')
+          if(not inserted):
+            print 'No more internal edge found! Count = {0}'.format(str(int_count))
+            break
+       print 'internal edge count is {0}'.format(str(int_count))
+
+
+       # 2.2- Creates the external edges (between different clusters), initially negative
+       print "Generating external edges..."
+       ext_count = 0
+       for i in xrange(external_edge_num):
+        # Randomly picks a pair of nodes that do not belong to the same cluster
+        e = pick_random_external_edge(N, indegree, outdegree, k)
+        if e == None:
+            print "Warn: no more external edge found."
+            break
+        # edges are directed
+        # TODO: generate edges' weight randomly in the [0, 1] interval
+        matrix[e.x][e.y] = -1
+        outdegree[e.x] += 1
+        indegree[e.y] += 1
+        ext_count += 1
+        #sys.stdout.write('.')
+       
+       for v in xrange(N):
+        if indegree[v] > k or outdegree[v] > k:
+            print '*** Degrees of {0}: {1} ; {2}\n'.format(str(v), str(indegree[v]), str(outdegree[v]))
+        
+       print '\nGenerated {0} random external edges.'.format(ext_count)
+       external_edge_num = ext_count
+
+
+       
+       # tries to add more internal edges by locating the vertices whose degree is smaller than k
+       for node in xrange(N):
+          while(outdegree[node] < k and int_count < internal_edge_num):
+             # get a vertex with indegree == k
+             executed = False
+             for v in cluster_node_list[mycluster[node]]:
+                if(matrix[node][v] == 0 and indegree[v] == k):
+                   # disconnects an external edge (u,v) and connects to another vertex with indegree < k
+                   for u in xrange(N):
+                      if(matrix[u][v] <> 0 and mycluster[u] <> mycluster[v] and indegree[u] < k):
+                         print 'Achei uma aresta externa (u,v) para desconectar!'
+                         matrix[u][v] = 0
+                         outdegree[u] -= 1
+                         # creates an external edge in reverse direction (from another vertex to u)
+                         created = False
+                         for w in xrange(N):
+                            if(mycluster[w] <> mycluster[u] and outdegree[w] < k and matrix[w][u] == 0):
+                               matrix[w][u] = 1
+                               outdegree[w] += 1
+                               indegree[u] += 1
+                               print 'external edge (w,u) created'
+                               created = True
+                         if(not created):
+                            print 'external edge (w,u) NOT created.'
+                            ext_count -= 1
+                         # connects the vertices
+                         matrix[node][v] = 1
+                         outdegree[node] += 1
+                         #indegree[v] += 1
+                         int_count += 1
+                         print 'Added one more.'
+                         executed = True
+             if(not executed):
+                break
+       while(int_count < internal_edge_num):
          inserted = False
          for node in xrange(N):
           if(outdegree[node] < k):
@@ -265,20 +339,18 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                    outdegree[node] += 1
                    indegree[b] += 1
                    if(indegree[b] > k or outdegree[node] > k):
+
                       print 'violation!\n'
-                   count += 1
+                   int_count += 1
                    inserted = True
                    #sys.stdout.write('.')
          if(not inserted):
-            print 'No more internal edge found! Count = {0}'.format(str(count))
+            print 'No more internal edge found! Count = {0}'.format(str(int_count))
             break
-       print 'internal edge count is {0}'.format(str(count))
+       print 'internal edge count is {0}'.format(str(int_count))
 
-       
-       for v in xrange(N):
-        if indegree[v] > k or outdegree[v] > k:
-            print 'xxx Degrees of {0}: {1} ; {2}\n'.format(str(v), str(indegree[v]), str(outdegree[v]))       
  
+       print 'now there are {0} internal edges and {1} external edges'.format(str(int_count), str(ext_count))
        print 'Generated {0} random internal edges.'.format(internal_edge_num)
        #internal_edge_num = count
        #external_edge_num = total_edges - internal_edge_num
@@ -287,7 +359,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
        success = True
        for v in range(N):
         #assert degree[v] == k, "The degree of each vertex must be equal to k"
-        if indegree[v] <> k or outdegree[v] <> k:
+        if indegree[v] <> k and outdegree[v] <> k:
             print 'Degrees of {0}: {1} ; {2}\n'.format(str(v), str(indegree[v]), str(outdegree[v]))
             success = False
             print "\nRetrying...\n"
