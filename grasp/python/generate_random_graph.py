@@ -383,27 +383,27 @@ def SG(c, n, k, p_in, p_minus, p_plus):
         os.makedirs(directory)
    with open(directory+"/"+filename, "w") as g_file:
         # file header
-        g_file.write('people: {0}\n\n'.format(str(N)))
-        g_file.write('VarErr: 0.5\n\n')
+        g_file.write('people: {0}\r\n\r\n'.format(str(N)))
+        g_file.write('VarErr: 0.5\r\n\r\n')
         vertex_names = ""
         for x in xrange(1,N+1):
              vertex_names += str(x) + " "
-        g_file.write('Names: [{0}]\n\n'.format(vertex_names))
+        g_file.write('Names: [{0}]\r\n\r\n'.format(vertex_names))
         # graph contents
         edge_list = ""
         for i in xrange(N):
              for j in xrange(N):
                    if matrix[i][j] <> 0:
-                       edge_list += '({0},{1}){2} '.format(str(i+1), str(j+1), str(matrix[i][j]))
+                       edge_list += '({0},{1}){2} \r\n'.format(str(i+1), str(j+1), str(matrix[i][j]))
         g_file.write('Mrel: [ {0}]'.format(edge_list))
         
    # Writes output file with additional information about graph generation
    imbalance = CCObjectiveFunction(N)
    with open(directory+"/"+filename_prefix+"-info.txt", "w") as t_file:
-        t_file.write('n: {0} vertices per cluster\n'.format(str(n)))
-        t_file.write('c (clusters): {0}\n'.format(str(c)))
-        t_file.write('N: {0} total vertices\n'.format(str(N)))
-        t_file.write('I(P) = {0}\n'.format(str(imbalance)))
+        t_file.write('n: {0} vertices per cluster\r\n'.format(str(n)))
+        t_file.write('c (clusters): {0}\r\n'.format(str(c)))
+        t_file.write('N: {0} total vertices\r\n'.format(str(N)))
+        t_file.write('I(P) = {0}\r\n'.format(str(imbalance)))
         for cl in xrange(c):
             t_file.write('Cluster {0}: '.format(str(cl)))
             count = 0
@@ -411,7 +411,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                 t_file.write('{0} '.format(str(node)))
                 count += 1
             assert count == n
-            t_file.write('\n')
+            t_file.write('\r\n')
    
    print "\nOutput files successfully generated."
 
