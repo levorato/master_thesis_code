@@ -9,7 +9,7 @@
 #include "../construction/include/VertexSet.h"
 #include <boost/log/trivial.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include "../../problem/include/RCCProblem.h"
+#include "problem/include/RCCProblem.h"
 #include <cassert>
 
 namespace resolution {

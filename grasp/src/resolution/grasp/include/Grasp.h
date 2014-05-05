@@ -11,11 +11,11 @@
 #include "../../construction/include/ConstructClustering.h"
 #include "../../vnd/include/VariableNeighborhoodDescent.h"
 #include "../../include/ResolutionStrategy.h"
-#include "../../../graph/include/Graph.h"
-#include "../../../graph/include/Clustering.h"
-#include "../../../problem/include/ClusteringProblem.h"
-#include "../../../graph/include/NeighborhoodSearch.h"
-#include "../../../util/include/ExecutionInfo.h"
+#include "graph/include/Graph.h"
+#include "graph/include/Clustering.h"
+#include "problem/include/ClusteringProblem.h"
+#include "graph/include/NeighborhoodSearch.h"
+#include "util/include/ExecutionInfo.h"
 
 #include <iostream>
 

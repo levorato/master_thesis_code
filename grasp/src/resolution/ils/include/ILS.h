@@ -10,13 +10,13 @@
 
 #include "../../construction/include/GainFunction.h"
 #include "../../include/ResolutionStrategy.h"
-#include "../../../graph/include/Graph.h"
-#include "../../../graph/include/Clustering.h"
-#include "../../../problem/include/ClusteringProblem.h"
-#include "../../../graph/include/NeighborhoodSearch.h"
+#include "graph/include/Graph.h"
+#include "graph/include/Clustering.h"
+#include "problem/include/ClusteringProblem.h"
+#include "graph/include/NeighborhoodSearch.h"
 #include "../../construction/include/ConstructClustering.h"
 #include "../../vnd/include/VariableNeighborhoodDescent.h"
-#include "../../../util/include/ExecutionInfo.h"
+#include "util/include/ExecutionInfo.h"
 #include <iostream>
 
 using namespace clusteringgraph;

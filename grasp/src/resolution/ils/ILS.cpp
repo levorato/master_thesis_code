@@ -7,13 +7,13 @@
 
 #include "include/ILS.h"
 #include "../construction/include/VertexSet.h"
-#include "../../graph/include/SequentialNeighborhoodSearch.h"
-#include "../../graph/include/ParallelNeighborhoodSearch.h"
-#include "../../problem/include/ClusteringProblem.h"
-#include "../../problem/include/CCProblem.h"
-#include "../../graph/include/NeighborhoodSearchFactory.h"
-#include "../../graph/include/Imbalance.h"
-#include "../../graph/include/Perturbation.h"
+#include "graph/include/SequentialNeighborhoodSearch.h"
+#include "graph/include/ParallelNeighborhoodSearch.h"
+#include "problem/include/ClusteringProblem.h"
+#include "problem/include/CCProblem.h"
+#include "graph/include/NeighborhoodSearchFactory.h"
+#include "graph/include/Imbalance.h"
+#include "graph/include/Perturbation.h"
 
 #include <algorithm>
 #include <iostream>

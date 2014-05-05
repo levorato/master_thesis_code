@@ -9,12 +9,12 @@
 #define RCCLOCALSEARCH_H_
 
 #include "../../include/ResolutionStrategy.h"
-#include "../../../graph/include/Graph.h"
-#include "../../../graph/include/Clustering.h"
-#include "../../../problem/include/ClusteringProblem.h"
-#include "../../../graph/include/NeighborhoodSearch.h"
-#include "../../../graph/include/SequentialNeighborhoodSearch.h"
-#include "../../../graph/include/ParallelNeighborhoodSearch.h"
+#include "graph/include/Graph.h"
+#include "graph/include/Clustering.h"
+#include "problem/include/ClusteringProblem.h"
+#include "graph/include/NeighborhoodSearch.h"
+#include "graph/include/SequentialNeighborhoodSearch.h"
+#include "graph/include/ParallelNeighborhoodSearch.h"
 
 
 using namespace clusteringgraph;

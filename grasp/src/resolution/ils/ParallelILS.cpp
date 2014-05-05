@@ -6,8 +6,8 @@
  */
 
 #include "include/ParallelILS.h"
-#include "../../util/include/MPIMessage.h"
-#include "../../util/parallel/include/MPIUtil.h"
+#include "util/include/MPIMessage.h"
+#include "util/parallel/include/MPIUtil.h"
 #include <cstring>
 #include <vector>
 #include <boost/mpi/communicator.hpp>

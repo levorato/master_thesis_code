@@ -9,8 +9,8 @@
 #define GRASPPR_H_
 
 #include "../../include/ResolutionStrategy.h"
-#include "../../../graph/include/Graph.h"
-#include "../../../graph/include/Clustering.h"
+#include "graph/include/Graph.h"
+#include "graph/include/Clustering.h"
 
 using namespace clusteringgraph;
 

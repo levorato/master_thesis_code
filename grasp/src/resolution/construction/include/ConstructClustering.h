@@ -9,9 +9,9 @@
 #define CONSTRUCTCLUSTERING_H_
 
 #include "../../construction/include/GainFunction.h"
-#include "../../../graph/include/Graph.h"
-#include "../../../graph/include/Clustering.h"
-#include "../../../problem/include/ClusteringProblem.h"
+#include "graph/include/Graph.h"
+#include "graph/include/Clustering.h"
+#include "problem/include/ClusteringProblem.h"
 
 namespace resolution {
 namespace construction {

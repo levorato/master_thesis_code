@@ -6,8 +6,8 @@
  */
 
 #include "include/VariableNeighborhoodDescent.h"
-#include "../../problem/include/ClusteringProblem.h"
-#include "../../graph/include/Imbalance.h"
+#include "problem/include/ClusteringProblem.h"
+#include "graph/include/Imbalance.h"
 
 #include <algorithm>
 #include <iostream>

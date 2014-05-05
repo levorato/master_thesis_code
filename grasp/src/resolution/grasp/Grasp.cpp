@@ -6,10 +6,10 @@
  */
 
 #include "include/Grasp.h"
-#include "../../problem/include/ClusteringProblem.h"
-#include "../../problem/include/CCProblem.h"
-#include "../../problem/include/RCCProblem.h"
-#include "../../graph/include/Imbalance.h"
+#include "problem/include/ClusteringProblem.h"
+#include "problem/include/CCProblem.h"
+#include "problem/include/RCCProblem.h"
+#include "graph/include/Imbalance.h"
 
 #include <algorithm>
 #include <iostream>

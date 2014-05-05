@@ -1,3 +1,4 @@
+import os
 from waflib import Options
 from waflib.Errors import WafError
 
@@ -30,6 +31,9 @@ def configure(conf):
 	conf.link_add_flags()
 
 	conf.load('compiler_c')
+	conf.env.append_value('LINKFLAGS', '-ldl')
+	# shared lib graph-common path
+	# bld.read_shlib('graph-common', paths='../graph-common/build')
 
 	#conf.check(compiler='cxx', lib='boost_serialization', uselib_store='BSERIAL', mandatory=True)
 
@@ -44,29 +48,21 @@ def configure(conf):
 
         #conf.env.append_value('LIBPATH', conf.env['/usr/lib64'])
 	#conf.env.append_value('LIBPATH', conf.env['/opt/mpi/mpibull2-1.3.9-18.s/lib'])
-
+	
 	pass
 
 def build(bld):
 		
 	bld.stlib(
                 features='cxx cxxprogram',
-				cxxflags  = ['-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-m64', '-O2', '-fPIC', '-pthread'], 
+				cxxflags  = ['-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-m64', '-O3', '-fPIC', '-pthread'], 
                 source   = bld.path.ant_glob("src/**/*.cpp"),
                 target   = 'graspcc',
-                includes = '. /home_nfs/mlevorato/include /usr/local/include /usr/include/mpi /opt/mpich2_p1/include /opt/mpi/mpibull2-1.3.9-18.s/include /usr/include/openmpi-x86_64 /usr/lib/openmpi/include/openmpi /usr/lib/openmpi/include',
+		includes = '. /home_nfs/mlevorato/include /usr/local/include /usr/include/mpi /opt/mpich2_p1/include /opt/mpi/mpibull2-1.3.9-18.s/include /usr/include/openmpi-x86_64 /usr/lib/openmpi/include/openmpi /usr/lib/openmpi/include ../graph-common/src',
                 uselib='BSERIAL dl opa rt boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_date_time boost_log boost_log_setup',
                 lib = ['dl', 'pthread', 'rt', 'uuid', 'mpi', 'mpi_cxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_chrono', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log_setup', 'boost_log', 'open-rte', 'open-pal', 'nsl', 'util', 'm'],
-                libpath = ['/home_nfs/mlevorato/lib', '/usr/local/lib', '/lib64', '/usr/lib64', '/usr/lib', '/usr/lib64/openmpi/lib', '/usr/lib/openmpi/lib', '/usr/lib64/mpich2/lib', '/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi', '/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock', '/opt/mpi/mpibull2-1.3.9-18.s/lib', '/home_nfs/3.2.2.006/lib64']
+                libpath = ['/home_nfs/mlevorato/lib', '/usr/local/lib', '/lib64', '/usr/lib64', '/usr/lib', '/usr/lib64/openmpi/lib', '/usr/lib/openmpi/lib', '/usr/lib64/mpich2/lib', '/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi', '/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock', '/opt/mpi/mpibull2-1.3.9-18.s/lib', '/home_nfs/3.2.2.006/lib64'],
+		stlib=['graph-common'],
+		stlibpath=[os.path.join(os.getcwd(), '../graph-common/build')],
                 )
-
-#	bld.program(
-#		features='cxx cxxprogram',
-#		cxxflags  = ['-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-DHAVE_MPI_CXX', '-m64', '-O2', '-fPIC'],
-#        	source   = 'src/main.cpp',
-#	        target   = 'graspcc',
-#	        includes = '. ../include /usr/local/include /usr/include/mpi /opt/mpich2_p1/include /opt/mpi/mpibull2-1.3.9-18.s/include',
-#		use='BOOST graspcclib dl opa rt mpich mpichcxx boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_date_time boost_log boost_log_setup',
-#		lib = ['dl', 'pthread', 'rt', 'mpich', 'mpichcxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log', 'boost_log_setup', 'graspcclib']
-#	       	)
 

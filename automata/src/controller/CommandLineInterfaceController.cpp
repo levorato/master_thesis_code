@@ -6,10 +6,10 @@
  */
 
 #include "include/CommandLineInterfaceController.h"
-#include "../../../grasp/src/controller/include/SimpleTextGraphFileReader.h"
-#include "../../../grasp/src/graph/include/Graph.h"
-#include "../../../grasp/src/util/include/TimeDateUtil.h"
-#include "../../../grasp/src/util/include/EnumUtil.h"
+#include "graph/include/SimpleTextGraphFileReader.h"
+#include "graph/include/Graph.h"
+#include "util/include/TimeDateUtil.h"
+#include "util/include/EnumUtil.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>

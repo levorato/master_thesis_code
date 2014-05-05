@@ -6,8 +6,8 @@
  */
 
 #include "include/ImbalanceGainFunction.h"
-#include "../../problem/include/CCProblem.h"
-#include "../../problem/include/RCCProblem.h"
+#include "problem/include/CCProblem.h"
+#include "problem/include/RCCProblem.h"
 
 namespace resolution {
 namespace construction {

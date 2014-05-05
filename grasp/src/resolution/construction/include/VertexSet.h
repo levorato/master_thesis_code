@@ -11,7 +11,7 @@
 #include <list>
 
 #include "GainFunction.h"
-#include "../../../graph/include/Clustering.h"
+#include "graph/include/Clustering.h"
 
 namespace resolution {
 namespace construction {

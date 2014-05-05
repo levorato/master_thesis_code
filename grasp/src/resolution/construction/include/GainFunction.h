@@ -8,9 +8,9 @@
 #ifndef GAINFUNCTION_H_
 #define GAINFUNCTION_H_
 
-#include "../../../graph/include/Graph.h"
-#include "../../../graph/include/Clustering.h"
-#include "../../../problem/include/ClusteringProblem.h"
+#include "graph/include/Graph.h"
+#include "graph/include/Clustering.h"
+#include "problem/include/ClusteringProblem.h"
 
 #include <list>
 #include <vector>
