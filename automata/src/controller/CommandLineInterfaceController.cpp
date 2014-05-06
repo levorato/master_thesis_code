@@ -10,6 +10,7 @@
 #include "graph/include/Graph.h"
 #include "util/include/TimeDateUtil.h"
 #include "util/include/EnumUtil.h"
+#include "util/include/RandomUtil.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -141,7 +142,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 	cout << "Network Automata Simulation Algorithm" << endl;
 
-	// random seed used in algorithm
+	// random seed used in the algorithm
 	/*
 	* Caveat: std::time(0) is not a very good truly-random seed.  When
 	* called in rapid succession, it could return the same values, and
@@ -151,7 +152,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	* http://stackoverflow.com/questions/322938/recommended-way-to-initialize-srand
 	*/
 	unsigned long seed = mix(clock(), time(NULL), getpid());
-	// boost::minstd_rand generator(seed);
+	RandomUtil randomUtil;
+	randomUtil.setSeed(seed);
 
 	// reads the system properties from ini file
 	this->readPropertiesFile();

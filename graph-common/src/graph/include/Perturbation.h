@@ -27,9 +27,10 @@ public:
 			unsigned long numberOfMoves);
 
 private:
-    Clustering move1opt(SignedGraph* g, Clustering clustering, ClusteringProblem& p);
+    Clustering randomMove1opt(SignedGraph* g, Clustering clustering, ClusteringProblem& p);
 
     unsigned long _randomSeed;
+    static const int NEW_CLUSTER = -1;
 };
 
 } /* namespace clusteringgraph */

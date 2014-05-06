@@ -28,6 +28,7 @@
 #include "graph/include/SequentialNeighborhoodSearch.h"
 #include "../resolution/vnd/include/VariableNeighborhoodDescent.h"
 #include "../resolution/construction/include/ConstructClustering.h"
+#include "util/include/RandomUtil.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -302,7 +303,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	mpi::communicator world;
 	cout << "Correlation clustering problem solver" << endl;
 
-	// random seed used in grasp
+	// random seed used in the algorithms
 	/*
 	* Caveat: std::time(0) is not a very good truly-random seed.  When
 	* called in rapid succession, it could return the same values, and
@@ -312,7 +313,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	* http://stackoverflow.com/questions/322938/recommended-way-to-initialize-srand
 	*/
 	unsigned long seed = mix(clock(), time(NULL), getpid());
-	// boost::minstd_rand generator(seed);
+	RandomUtil randomUtil;
+	randomUtil.setSeed(seed);
 
 	// reads the system properties from ini file
 	this->readPropertiesFile();
@@ -327,11 +329,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int numberOfMasters = np - 1;
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
-	int iterMaxILS = 0, perturbationLevelMax = 0;
+	int iterMaxILS = 3, perturbationLevelMax = 7;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
 		("help", "show program options")
+		//("iter-max-ils", po::value<int>(&iterMaxILS), "number of iterations of ILS loop")
+		//("perturbation-level-max,pmax", po::value<int>(&perturbationLevelMax), "maximum perturbation level in ILS")
 		("alpha,a", po::value<string>(&s_alpha),
 			  "alpha - randomness factor of constructive phase")
 		("iterations,iter", po::value<int>(&numberOfIterations)->default_value(400),
@@ -356,8 +360,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("jobid", po::value<string>(&jobid), "job identifier (string)")
 		("strategy", po::value<StategyName>(&strategy),
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
-		// ("iterMaxILS", po::value<int>(&iterMaxILS)->default_value(3), "number of iterations of ILS loop")
-		// ("perturbationLevelMax", po::value<int>(&perturbationLevelMax)->default_value(7), "maximum perturbation level in ILS")
 	;
 	po::positional_options_description p;
 	p.add("input-file", -1);

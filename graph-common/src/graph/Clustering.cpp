@@ -54,7 +54,7 @@ BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const uns
 	BoolArray array(g.getN());
 
 	// Add i to the newly created cluster
-	////BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
+	// BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
 	array[i] = true;
 	this->clusterList.push_back(array);
 	this->clusterSize.push_back(1);

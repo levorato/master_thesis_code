@@ -5,17 +5,15 @@
  *      Author: mario
  */
 
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int.hpp>
-#include <boost/random/linear_congruential.hpp>
-#include <boost/nondet_random.hpp>
-#include <boost/random/variate_generator.hpp>
 #include <algorithm>
 
 #include "include/VertexSet.h"
+#include "util/include/RandomUtil.h"
 
 namespace resolution {
 namespace construction {
+
+using namespace util;
 
 VertexSet::VertexSet(unsigned long randomSeed) : seed(randomSeed) {
 	// Empty set
@@ -44,16 +42,13 @@ int VertexSet::size() {
 GainCalculation VertexSet::chooseRandomVertex(int x) {
 
 	// Generates a random number between 1 and x
-	// boost::random::mt19937 generator;  TODO Adaptar para o modo debug
 	// distribution that maps to 1..x
 	if(x - 1 < 0) {
 		x++;
 	}
-	boost::uniform_int<> dist(0,x-1);
-	boost::minstd_rand generator(seed);
-	generator.seed(boost::random::random_device()());
-	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uni(generator, dist);
-	unsigned int selectedVertexSetIndex = uni();
+	// random number generators used in loop randomization
+	RandomUtil randomUtil;
+	unsigned int selectedVertexSetIndex = randomUtil.next(0, x - 1);
 	GainCalculation selectedVertex;
 
 	// Finds the Vertex

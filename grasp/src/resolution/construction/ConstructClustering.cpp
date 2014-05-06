@@ -132,8 +132,8 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";
 		// Cc.printClustering();
 	}
-	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed.\n";
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
+	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed. Obj = " << Cc.getImbalance().getValue();
 	// Cc.printClustering();
 	return Cc;
 }

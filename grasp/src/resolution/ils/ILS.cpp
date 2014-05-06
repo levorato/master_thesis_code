@@ -110,6 +110,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 			} else {  // did not improve solution
 				j++;
 				if(j > iterMaxILS) {
+					BOOST_LOG_TRIVIAL(debug)<< "Increasing perturbation level...";
 					perturbationLevel++;
 					j = 1;
 					if(perturbationLevel > perturbationLevelMax) {

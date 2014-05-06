@@ -1,10 +1,5 @@
 #include <limits>
 #include <boost/make_shared.hpp>
-#include <boost/random/uniform_int.hpp>
-#include <boost/nondet_random.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/random/linear_congruential.hpp>
 #include <boost/timer/timer.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/log/trivial.hpp>
@@ -14,6 +9,7 @@
 #include <cassert>
 #include "include/NeighborhoodSearch.h"
 #include "../util/include/MPIMessage.h"
+#include "../util/include/RandomUtil.h"
 
 using namespace boost::mpi;
 using namespace std;
@@ -44,16 +40,11 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 	unsigned long numberOfClustersInInterval = finalClusterIndex - initialClusterIndex + 1;
 	unsigned long totalNumberOfClusters = clustering->getNumberOfClusters();
 	// random number generators used in loop randomization
-	boost::uniform_int<> distnc(0, totalNumberOfClusters - 1);
-	boost::uniform_int<> distN(0, n - 1);
-	boost::minstd_rand generator(randomSeed);
-	generator.seed(boost::random::random_device()());
-	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uninc(generator, distnc);
-	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uniN(generator, distN);
+	RandomUtil randomUtil;
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
 
-	for (unsigned long k1 = uninc(), cont1 = 0; cont1 < numberOfClustersInInterval; cont1++) {
+	for (unsigned long k1 = randomUtil.next(0, totalNumberOfClusters - 1), cont1 = 0; cont1 < numberOfClustersInInterval; cont1++) {
 		// cluster(k1)
 		// RCC Problem: must have exactly k clusters -> Cannot remove node from standalone cluster
 		unsigned long s = clustering->getClusterSize(k1);
@@ -62,10 +53,10 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 		}
 		BoolArray cluster1 = clustering->getCluster(k1);
 		// For each node i in cluster(k1)
-		for (unsigned long i = uniN(), cont2 = 0; cont2 < n; cont2++, i = (i + 1) % n) {
+		for (unsigned long i = randomUtil.next(initialClusterIndex, finalClusterIndex), cont2 = 0; cont2 < n; cont2++, i = (i + 1) % n) {
 			if (cluster1[i]) {
 				// Option 1: node i is moved to another existing cluster k2
-				for (unsigned long k2 = uninc(), cont3 = 0; cont3 < totalNumberOfClusters; cont3++) {
+				for (unsigned long k2 = randomUtil.next(0, totalNumberOfClusters - 1), cont3 = 0; cont3 < totalNumberOfClusters; cont3++) {
 					if (k1 != k2) {
 						// cluster(k2)
 						// removes node i from cluster1 and inserts in cluster2
@@ -157,21 +148,13 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 	unsigned long n = g->getN();
 	unsigned long numberOfClustersInInterval = finalClusterIndex - initialClusterIndex + 1;
 	unsigned long totalNumberOfClusters = clustering->getNumberOfClusters();
-	// random number generators used in loop randomization
-	boost::uniform_int<> distn1(initialClusterIndex, finalClusterIndex);
-	boost::uniform_int<> distnc(0, totalNumberOfClusters - 1);
-	boost::uniform_int<> distN(0, n - 1);
-	boost::minstd_rand generator(randomSeed);
-	generator.seed(boost::random::random_device()());
-	boost::variate_generator<minstd_rand&, boost::uniform_int<> > unin1(generator, distn1);
-	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uninc(generator, distnc);
-	boost::variate_generator<minstd_rand&, boost::uniform_int<> > uniN(generator, distN);
+	RandomUtil randomUtil;
 	// stores the best clustering combination generated (minimum imbalance)
 	Clustering cBest = *clustering;
 	Clustering cTemp = cBest;
 
 	Imbalance bestImbalance = cBest.getImbalance();
-	for (unsigned long k1 = uninc(), contk1 = 0; contk1 < numberOfClustersInInterval; contk1++) {
+	for (unsigned long k1 = randomUtil.next(initialClusterIndex, finalClusterIndex), contk1 = 0; contk1 < numberOfClustersInInterval; contk1++) {
 		// cluster(k1)
 		unsigned long s1 = clustering->getClusterSize(k1);
 		if((problem->getType() == ClusteringProblem::RCC_PROBLEM) && (s1 == 1)) {
@@ -180,7 +163,7 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 		}
 		BoolArray cluster1 = clustering->getCluster(k1);
 		// if(problem->getType() == ClusteringProblem::RCC_PROBLEM) assert(cluster1.size() > 1);
-		for (unsigned long k2 = uninc(), contk2 = 0; contk2 < totalNumberOfClusters; contk2++) {
+		for (unsigned long k2 = randomUtil.next(0, totalNumberOfClusters - 1), contk2 = 0; contk2 < totalNumberOfClusters; contk2++) {
 			// cluster(k2)
 			unsigned long s2 = clustering->getClusterSize(k2);
 			if((problem->getType() == ClusteringProblem::RCC_PROBLEM) && (s2 == 1)) {
@@ -199,14 +182,14 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 			BoolArray cluster2 = clustering->getCluster(k2);
 			// if(problem->getType() == ClusteringProblem::RCC_PROBLEM) assert(cluster2.size() > 1);
 			// For each node i in cluster(k1)
-			for (unsigned long i = uniN(), conti = 0; conti < n; conti++, i = (i + 1) % n) {
+			for (unsigned long i = randomUtil.next(0, n - 1), conti = 0; conti < n; conti++, i = (i + 1) % n) {
 				if (cluster1[i]) {
 					// For each node j in cluster(k2)
-					for (unsigned long j = uniN(), contj = 0; contj < n; contj++, j = (j + 1) % n) {
+					for (unsigned long j = randomUtil.next(0, n - 1), contj = 0; contj < n; contj++, j = (j + 1) % n) {
 						if(j == i)  continue;
 						if (cluster2[j]) {
 							// Option 1: node i is moved to another existing cluster k3
-							for (unsigned long k3 = uninc(), contk3 = 0; contk3 < totalNumberOfClusters; contk3++) {
+							for (unsigned long k3 = randomUtil.next(0, totalNumberOfClusters - 1), contk3 = 0; contk3 < totalNumberOfClusters; contk3++) {
 								MPI_IPROBE_RETURN(cBest)
 
 								if (k1 != k3) {
@@ -282,7 +265,8 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 							if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s1 > 1)) {
 								// this code is not executed in RCC Problem, as it must have exactly k clusters
 								// this code is not executed if node i is to be moved from a standalone cluster to another standalone cluster
-								for (unsigned long k4 = uninc(), contk4 = 0; contk4 < numberOfClustersInInterval; contk4++) {
+								for (unsigned long k4 = randomUtil.next(0, totalNumberOfClusters - 1), contk4 = 0;
+										contk4 < numberOfClustersInInterval; contk4++) {
 									if (k2 != k4) {
 										// cluster(k4)
 										//BOOST_LOG_TRIVIAL(trace) << "Option 3: " << i << " into new cluster and " << j << " into cluster " << k4;

@@ -91,7 +91,8 @@ Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& 
 		// Registers the best result at time intervals
 		notifyNewValue(CStar, timeSpentOnLocalSearch, graspIteration);
 	}
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP local search done. Time spent: " << timeSpentOnLocalSearch << " s";
+	BOOST_LOG_TRIVIAL(debug)<< "GRASP local search done. Obj = " << CStar.getImbalance().getValue() <<
+			". Time spent: " << timeSpentOnLocalSearch << " s";
 	return CStar;
 }
 
