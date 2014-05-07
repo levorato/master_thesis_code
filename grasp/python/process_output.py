@@ -288,7 +288,8 @@ def main(argv):
                  filename = filename[filename.rfind("/")+1:]
                  text_file.write("RCC Summary for graph file: %s\n"%filename)
                  local_avg_count = 0
-
+		 local_avg_ip_const = 0
+                 
                  best_value = 1000000L
                  best_pos_value = 0
                  best_neg_value = 0
@@ -336,6 +337,11 @@ def main(argv):
                              best_param = filepath[filepath.rfind("/")+1:]
                              best_pos_value = pos_value
                              best_neg_value = neg_value
+		       elif linestring.startswith( 'Average initial I(P)' ):
+                             # computa o valor medio da solucao inicial da fase construtiva para determinado no da execucao paralela
+                             ip_const = float(column[1])
+                             local_avg_ip_const = local_avg_ip_const + ip_const
+                             local_avg_count = local_avg_count + 1
                     count = count - 1
                    finally:
                     content_file.close()
@@ -344,6 +350,7 @@ def main(argv):
                  # armazena os valores de todas as execucoes de um mesmo grafo para calculo da media
                  if filename == previous_filename:
                     avg_comb = avg_comb + total_comb
+		    avg_ip_const = avg_ip_const + local_avg_ip_const
                     avg_value = avg_value + best_value
                     avg_k = avg_k + best_K
                     avg_time = avg_time + global_time
@@ -352,7 +359,7 @@ def main(argv):
                  else:
                     if avg_count > 0:
                         #print "storing " + previous_filename
-                        RCC_avg_file_summary[previous_filename] = str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_comb / avg_count)+", "+str(avg_count)
+                        RCC_avg_file_summary[previous_filename] = str(avg_ip_const / avg_count) + ", " + str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_comb / avg_count)+", "+str(avg_count)
                         #print "average execution times for file " + previous_filename
                         tdir = "./times"
                         if not os.path.exists(tdir):
@@ -364,6 +371,7 @@ def main(argv):
                         timeInterval = dict()
                         timeCount = dict()
                     avg_comb = total_comb
+		    avg_ip_const = local_avg_ip_const
                     avg_value = best_value
                     avg_k = best_K
                     avg_time = global_time
@@ -433,7 +441,7 @@ def main(argv):
    for key in sorted(RCC_best_file_summary.iterkeys()):
       print "%s, %s" % (key, RCC_best_file_summary[key])
    print "------ RCC Average results:"
-   print "Instance, Avg RI(P), Avg K, Avg Time(s), Avg Iter, Avg combinations, Num executions"
+   print "Instance, Avg RI(P) const, Avg RI(P), Avg K, Avg Time(s), Avg Iter, Avg combinations, Num executions"
    for key in sorted(RCC_avg_file_summary.iterkeys()):
       print "%s, %s" % (key, RCC_avg_file_summary[key])
 
