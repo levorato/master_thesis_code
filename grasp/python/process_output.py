@@ -223,6 +223,20 @@ def main(argv):
 		    best_file_summary[filename] = str(all_files_summary[filename+"/"+datetime])
 
 		 previous_filename = filename
+	 # end loop
+	 # process last file
+	 print "storing " + previous_filename + ", number of executions = " + str(avg_count)
+         avg_file_summary[previous_filename] = str(avg_ip_const / avg_count) + ", " + str(avg_value / avg_count)+", "+str(avg_k / avg_count)+", "+str(avg_time / avg_count)+", "+str(avg_iter / avg_count)+", "+str(avg_comb / avg_count)+", "+str(avg_count)
+         print "average execution times for file " + previous_filename
+         tdir = "./times"
+         if not os.path.exists(tdir):
+             os.makedirs(tdir)
+             times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
+             for key, value in sorted(timeInterval.items()):
+                  times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
+             times_file.close()
+             timeInterval = dict()
+             timeCount = dict()
 	 # end process CC results
 
    print "\nProcessing CC Results...\n"
@@ -357,8 +371,8 @@ def main(argv):
                     avg_count = 1
 
                  # captura o melhor resultado dadas todas as execucoes de um mesmo grafo
-                 if best_file_summary.has_key(filename):
-                    element = best_file_summary[filename]
+                 if RCC_best_file_summary.has_key(filename):
+                    element = RCC_best_file_summary[filename]
                     value = float(element[0:element.find(',')-1])
                     if(best_value < value):
                        RCC_best_file_summary[filename] = str(RCC_all_files_summary[filename+"/"+datetime])
@@ -440,3 +454,4 @@ def main(argv):
 
 if __name__ == "__main__":
    main(sys.argv[1:])
+   
