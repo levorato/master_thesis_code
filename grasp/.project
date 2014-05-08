@@ -3,6 +3,7 @@
 	<name>Mestrado-ILS</name>
 	<comment></comment>
 	<projects>
+		<project>Mestrado-GraphCommon</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -329,7 +329,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int numberOfMasters = np - 1;
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
-	int iterMaxILS = 3, perturbationLevelMax = 7;
+	int iterMaxILS = 5, perturbationLevelMax = 30;
 
 	po::options_description desc("Available options:");
 	desc.add_options()

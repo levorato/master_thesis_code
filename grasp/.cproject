@@ -41,22 +41,6 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<folderInfo id="cdt.managedbuild.toolchain.gnu.base.55073528.1812766536" name="/" resourcePath="tests/Instances/UNGA/UNGA_Weighted_SignedGraphs">
-						<toolChain id="cdt.managedbuild.toolchain.gnu.base.760760660" name="cdt.managedbuild.toolchain.gnu.base" superClass="cdt.managedbuild.toolchain.gnu.base" unusedChildren="">
-							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1734097975" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1250681775"/>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.82752902" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.2102143553">
-								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.984378395" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
-							</tool>
-							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.1146238099" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.1580823269">
-								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.646183620" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
-							</tool>
-							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.669733046" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base.625621534"/>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1469356195" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base.989515096"/>
-							<tool id="cdt.managedbuild.tool.gnu.assembler.base.1414462489" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base.400037997">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.743311487" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-							</tool>
-						</toolChain>
-					</folderInfo>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
@@ -80,4 +64,5 @@
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>

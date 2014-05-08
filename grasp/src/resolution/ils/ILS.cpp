@@ -102,6 +102,8 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 				CStar = Cl;
 				bestValue = newValue;
 				iterationValue = total;
+				// Registers the best result at time intervals
+				notifyNewValue(CStar, timeSpentInILS, i);
 				// restarts the internal ILS loop and the perturbation
 				j = 1;
 				perturbationLevel = 1;
