@@ -79,8 +79,15 @@ def main(argv):
    print 'File filter is ', filter
 
 
-   # CC results
    all_files_summary = dict()
+
+   # lookup country full name and iso abbreviation from csv file
+   country_full_name = dict()
+   with open(ccode_dir + '/' + 'UN_country_names.csv', 'r') as ccdata:
+      reader = csv.DictReader(ccdata, delimiter=',')
+      for line in reader:
+         country_full_name[line["<iso_code>"].strip()] = line["<country_name>"].strip()
+
 
    for root, subFolders, files in os.walk(folder):
       # sort dirs and files
@@ -108,7 +115,7 @@ def main(argv):
                       reader = csv.DictReader(ccdata, delimiter=' ')
                       for line in reader:
                          country[int(line["<vertex_label>"])] = line["<cname>"]
- 
+
 		   try:
 		    content = content_file.read()
 		    reader = csv.reader(StringIO.StringIO(content), delimiter='\n')
@@ -116,6 +123,7 @@ def main(argv):
                     processed = False
                     clustering_numbers = []
                     clustering_names = []
+                    clustering_full_names = []
 		    for row in reader:
 		       linestring = ''.join(row)
                        if(linestring.startswith(' ')):
@@ -125,18 +133,22 @@ def main(argv):
                           for line in reader2:
                              line_out = ''
                              line_out2 = ''
+                             line_out3 = ''
                              for vertex in line:
                                 line_out += str(country[int(vertex)]) + ","
                                 line_out2 += str(vertex) + ","
+                                line_out3 += str(country_full_name[str(country[int(vertex)]).strip()]) + ","
                              clustering_names.append(line_out + '\r\n')
                              clustering_numbers.append(line_out2 + '\r\n')
-                          
+                             clustering_full_names.append(line_out3 + '\r\n')
                        else:
                           if(not processed):
                              result_file.write(str(row[0]) + '\n')
                           else:
                              break
 
+                    for line in clustering_full_names:
+                       result_file.write(line)
                     for line in clustering_names:
                        result_file.write(line)
                     result_file.write('\r\n')
