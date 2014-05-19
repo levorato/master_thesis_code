@@ -195,15 +195,23 @@ def main(argv):
    
    for key, value in sorted(cc_result_summary.iteritems()):
       html += '<h2>' + str(key)  + ' (' + str(startyear) + ')</h2><p>'
-      t = HTML.Table(header_row=['Partition', 'Countries'])
+      t = HTML.Table(header_row=['Partition', '#', 'Countries'])
       count = 0
       for item in value:        
-         t.rows.append([str(count+1), str(item)])
+         t.rows.append([str(count+1), str(item.count(',')), str(item)])
          count += 1
       html += str(t)
       html += '</p><br/><br/>'
       startyear += 1
-   html += '</body>\n</html>'
+   html += '<h2>Frequency of countries per cluster per year</h2><p>'
+   t = HTML.Table(header_row=['Partition sizes'])
+   for key, value in sorted(cc_result_summary.iteritems()):   
+      sizes = []
+      for item in value:        
+         sizes.append(str(item.count(',')))
+      t.rows.append(sizes)
+   html += str(t)
+   html += '</p></body>\n</html>'
    with open(folder + '/unga-cc-summary.html', 'w') as ccfile:
       ccfile.write(html)
       print 'Saved CC UNGA summary results.'
@@ -216,15 +224,23 @@ def main(argv):
    
    for key, value in sorted(rcc_result_summary.iteritems()):
       html += '<h2>' + str(key) + ' (' + str(startyear) + ')</h2><p>'
-      t = HTML.Table(header_row=['Partition', 'Countries'])
+      t = HTML.Table(header_row=['Partition', '#', 'Countries'])
       count = 0
       for item in value:        
-         t.rows.append([str(count+1), str(item)])
+         t.rows.append([str(count+1), str(item.count(',')), str(item)])
          count += 1
       html += str(t)
       html += '</p><br/><br/>'
       startyear += 1
-   html += '</body>\n</html>'
+   html += '<h2>Frequency of countries per cluster per year</h2><p>'
+   t = HTML.Table(header_row=['Partition sizes'])
+   for key, value in sorted(rcc_result_summary.iteritems()):   
+      sizes = []
+      for item in value:        
+         sizes.append(str(item.count(',')))
+      t.rows.append(sizes)
+   html += str(t)
+   html += '</p></body>\n</html>'
    with open(folder + '/unga-rcc-summary.html', 'w') as rccfile:
       rccfile.write(html)
       print 'Saved RCC UNGA summary results.'
