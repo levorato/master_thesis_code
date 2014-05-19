@@ -79,7 +79,7 @@ def main(argv):
    print 'File filter is ', filter
 
 
-   all_files_summary = dict()
+   error_summary = []
 
    # lookup country full name and iso abbreviation from csv file
    country_full_name = dict()
@@ -137,7 +137,12 @@ def main(argv):
                              for vertex in line:
                                 line_out += str(country[int(vertex)]) + ","
                                 line_out2 += str(vertex) + ","
-                                line_out3 += str(country_full_name[str(country[int(vertex)]).strip()]) + ","
+                                key = str(country[int(vertex)]).strip()
+                                if(country_full_name.has_key(key)):
+                                   line_out3 += str(country_full_name[key]) + ","
+                                else:
+                                   line_out3 += str(country[int(vertex)]) + ","
+                                   error_summary.append(str(country[int(vertex)]))
                              clustering_names.append(line_out + '\r\n')
                              clustering_numbers.append(line_out2 + '\r\n')
                              clustering_full_names.append(line_out3 + '\r\n')
@@ -149,6 +154,7 @@ def main(argv):
 
                     for line in clustering_full_names:
                        result_file.write(line)
+                    result_file.write('\r\n')
                     for line in clustering_names:
                        result_file.write(line)
                     result_file.write('\r\n')
@@ -162,6 +168,12 @@ def main(argv):
 	 # end process results
 
    print "\nSuccessfully processed all graph files.\n"
+   if(len(error_summary) > 0):
+      print "WARNING: The following country full names could not be found: "
+      items = ''
+      for item in set(error_summary):
+         items += item + ", "
+      print items
 
 if __name__ == "__main__":
    main(sys.argv[1:])
