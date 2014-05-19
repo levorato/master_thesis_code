@@ -13,6 +13,8 @@ import os
 import os.path
 import re
 
+import HTML
+
 #gambit para python 2.4
 class _minmax(object):
     def __init__(self, func):
@@ -80,6 +82,8 @@ def main(argv):
 
 
    error_summary = []
+   cc_result_summary = dict()
+   rcc_result_summary = dict()
 
    # lookup country full name and iso abbreviation from csv file
    country_full_name = dict()
@@ -103,9 +107,11 @@ def main(argv):
 		   print "Processing file " + file_list[count] + "\n"
 		   content_file = open(file_list[count], 'r')
                    prefix = file_list[count]
-                   result_file = open(prefix[0:prefix.rfind('.txt')] + '-addinfo.txt', "w")
+                   result_file_path = prefix[0:prefix.rfind('.txt')]
+                   result_file = open(result_file_path + '-addinfo.txt', "w")
                    result_file.write("Additional results info\n")
-
+                   result_file_name = result_file_path[result_file_path.rfind('/')+1:]
+                   
                    # lookup of country code data from file
                    graphfile = prefix[0:prefix.rfind('/')]
                    graphfile = graphfile[0:graphfile.rfind('/')]
@@ -161,6 +167,11 @@ def main(argv):
                     for line in clustering_numbers:
                        result_file.write(line)
 
+                    if(result_file_name.startswith('cc')):
+                       cc_result_summary[graphfile] = clustering_full_names
+                    else:  # rcc
+                       rcc_result_summary[graphfile] = clustering_full_names
+
 		   finally:
 		    content_file.close()
                     result_file.close()
@@ -174,6 +185,50 @@ def main(argv):
       for item in set(error_summary):
          items += item + ", "
       print items
+
+   # exports summary to HTML file
+   # Exporting CC results
+   html = '<!DOCTYPE html>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/">\n<head><title>UNGA CC Summary</title>'
+   html += '</head><body class="index">'
+   html += '<h1>UNGA Voting Data - CC Imbalance Analysis</h1>'
+   startyear = 1946
+   
+   for key, value in sorted(cc_result_summary.iteritems()):
+      html += '<h2>' + str(key)  + ' (' + str(startyear) + ')</h2><p>'
+      t = HTML.Table(header_row=['Partition', 'Countries'])
+      count = 0
+      for item in value:        
+         t.rows.append([str(count+1), str(item)])
+         count += 1
+      html += str(t)
+      html += '</p><br/><br/>'
+      startyear += 1
+   html += '</body>\n</html>'
+   with open(folder + '/unga-cc-summary.html', 'w') as ccfile:
+      ccfile.write(html)
+      print 'Saved CC UNGA summary results.'
+
+   # Exporting RCC results
+   html = '<!DOCTYPE html>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/">\n<head><title>UNGA RCC Summary</title>'
+   html += '</head><body class="index">'
+   html += '<h1>UNGA Voting Data - RCC Imbalance Analysis</h1>'
+   startyear = 1946
+   
+   for key, value in sorted(rcc_result_summary.iteritems()):
+      html += '<h2>' + str(key) + ' (' + str(startyear) + ')</h2><p>'
+      t = HTML.Table(header_row=['Partition', 'Countries'])
+      count = 0
+      for item in value:        
+         t.rows.append([str(count+1), str(item)])
+         count += 1
+      html += str(t)
+      html += '</p><br/><br/>'
+      startyear += 1
+   html += '</body>\n</html>'
+   with open(folder + '/unga-rcc-summary.html', 'w') as rccfile:
+      rccfile.write(html)
+      print 'Saved RCC UNGA summary results.'
+   
 
 if __name__ == "__main__":
    main(sys.argv[1:])
