@@ -46,10 +46,10 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		k = rp.getK();
 	}
 
-	// Splits the processing in (numberOfClusters / numberOfSearchSlaves) chunks,
+	// Splits the processing in (n / numberOfSearchSlaves) chunks,
 	// to be consumed by numberOfSearchSlaves processes
-	unsigned long sizeOfChunk = clustering->getNumberOfClusters() / numberOfSearchSlaves;
-	unsigned long remainingClusters = clustering->getNumberOfClusters() % numberOfSearchSlaves;
+	unsigned long sizeOfChunk = g->getN() / numberOfSearchSlaves;
+	unsigned long remainingVertices = g->getN() % numberOfSearchSlaves;
 	mpi::communicator world;
 	// the leader distributes the work across the processors
 	// the leader itself (myRank) does part of the work too
@@ -68,17 +68,17 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		}
 	}
 	// the leader (me) does its part of the work too
-	BOOST_LOG_TRIVIAL(trace) << "Total number of clusters is " << clustering->getNumberOfClusters() << endl;
+	BOOST_LOG_TRIVIAL(trace) << "Total number of vertices is " << g->getN() << endl;
 	BOOST_LOG_TRIVIAL(trace) << "VND Parallelization status: " << numberOfSearchSlaves <<
-			" search slaves will process " << sizeOfChunk << " clusters each one." << endl;
-	BOOST_LOG_TRIVIAL(trace) << "RemainingClusters is " << remainingClusters << endl;
+			" search slaves will process " << sizeOfChunk << " vertices each one." << endl;
+	BOOST_LOG_TRIVIAL(trace) << "RemainingVertices is " << remainingVertices << endl;
 
 	double bestValue = numeric_limits<double>::infinity();
 	Clustering bestClustering;
-	if(remainingClusters > 0) {
+	if(remainingVertices > 0) {
 		bestClustering = this->searchNeighborhood(l, g, clustering,
 				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
-				i * sizeOfChunk, i * sizeOfChunk + remainingClusters - 1, false, k);
+				i * sizeOfChunk, i * sizeOfChunk + remainingVertices - 1, false, k);
 		bestValue = bestClustering.getImbalance().getValue();
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
@@ -120,17 +120,17 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 
 Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
-		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialClusterIndex,
-		unsigned long finalClusterIndex, bool firstImprovementOnOneNeig, unsigned long k) {
+		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialSearchIndex,
+		unsigned long finalSearchIndex, bool firstImprovementOnOneNeig, unsigned long k) {
 
-	assert(initialClusterIndex < clustering->getNumberOfClusters());
-	assert(finalClusterIndex < clustering->getNumberOfClusters());
+	assert(initialSearchIndex < g->getN());
+	assert(finalSearchIndex < g->getN());
 
 	if (l == 1) {  // 1-opt
 		// Parallel search always does best improvement in 1-opt
 		// Therefore, parameter firstImprovementOnOneNeig is ignored
 		return this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
-				myRank, initialClusterIndex, finalClusterIndex, false, k);
+				myRank, initialSearchIndex, finalSearchIndex, false, k);
 	} else {  // 2-opt
 		// TODO implement global first improvement in parallel 2-opt
 		// first improvement found in one process must break all other processes' loop
@@ -144,7 +144,7 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 			// firstImprovementOn2Opt = false;
 		}
 		return this->search2opt(g, clustering, &problem, timeSpentSoFar, timeLimit, randomSeed,
-				myRank, initialClusterIndex, finalClusterIndex, firstImprovementOn2Opt, k);
+				myRank, initialSearchIndex, finalSearchIndex, firstImprovementOn2Opt, k);
 	}
 }
 

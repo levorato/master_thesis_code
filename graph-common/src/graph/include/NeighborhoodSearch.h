@@ -53,7 +53,7 @@ protected:
 
     	/**
     	 * Searches the l-neighborhood of the given clustering, by removing a vertex
-    	 * from a cluster which index is between initialClusterIndex and finalClusterIndex
+    	 * from a cluster (vertex index is between initialSearchIndex and finalSearchIndex)
     	 * and adding it to any other cluster available (and also a new cluster). In the case
     	 * of 2-opt, the initial and final cluster indices only apply to the first vertex in
     	 * the search (not the second one).
@@ -62,20 +62,20 @@ protected:
     	virtual Clustering searchNeighborhood(int l, SignedGraph* g,
     					Clustering* clustering, ClusteringProblem& problem,
     					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-    					int myRank,	unsigned long initialClusterIndex, unsigned long finalClusterIndex,
+    					int myRank,	unsigned long initialSearchIndex, unsigned long finalSearchIndex,
     					bool firstImprovementOnOneNeig, unsigned long k) = 0;
 
         virtual Clustering search1opt(SignedGraph* g,
                         Clustering* clustering, ClusteringProblem& problem,
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-                        int myRank, unsigned long initialClusterIndex,
-                		unsigned long finalClusterIndex, bool firstImprovement, unsigned long k);
+                        int myRank, unsigned long initialSearchIndex,
+                		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k);
 
 		virtual Clustering search2opt(SignedGraph* g,
 						Clustering* clustering, ClusteringProblem* problem,
 						double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-						int myRank, unsigned long initialClusterIndex,
-						unsigned long finalClusterIndex, bool firstImprovement, unsigned long k);
+						int myRank, unsigned long initialSearchIndex,
+						unsigned long finalSearchIndex, bool firstImprovement, unsigned long k);
 
         /**
          * Generates a new cluster by swithcing the node i from cluster k1 to k3, and

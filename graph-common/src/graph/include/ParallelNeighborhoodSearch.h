@@ -28,16 +28,16 @@ public:
 
 	/**
 	 * Searches the l-neighborhood of the given clustering, by removing a vertex
-	 * from a cluster which index is between initialClusterIndex and finalClusterIndex
+	 * from a cluster (vertex index is between initialSearchIndex and finalSearchIndex)
 	 * and adding it to any other cluster available (and also a new cluster). In the case
-	 * of 2-opt, the initial and final cluster indices only apply to the first vertex in
-	 * the search (not the second one).
+	 * of 2-opt, the initial and final search indices only apply to the first vertex moved
+	 * in the search (not the second one).
 	 * This parallel version does best-improvement for 1-opt e first improvement for 2-opt.
 	 */
 	virtual Clustering searchNeighborhood(int l, SignedGraph* g,
 					Clustering* clustering, ClusteringProblem& problem,
 					double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
-					int myRank,	unsigned long initialClusterIndex, unsigned long finalClusterIndex,
+					int myRank,	unsigned long initialSearchIndex, unsigned long finalSearchIndex,
 					bool firstImprovementOnOneNeig, unsigned long k);
 
 private:
