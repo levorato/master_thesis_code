@@ -12,6 +12,7 @@ import glob
 import os
 import os.path
 import re
+import math
 
 import HTML
 
@@ -64,26 +65,42 @@ def main(argv):
    global ccode_dir
    folder = ''
    filter = ''
+   instances_path = ''
    try:
-      opts, args = getopt.getopt(argv,"hi:o:",["folder=","filter="])
+      opts, args = getopt.getopt(argv,"hi:o:",["folder=","filter=","instancespath="])
    except getopt.GetoptError:
-      print 'extract_random_summary.py --folder <folder> --filter <filter>'
+      print 'process_unga_graphs.py --folder <folder> --filter <filter> --instancespath <instances_path>'
       sys.exit(2)
    for opt, arg in opts:
       if opt == '-h':
-         print 'extract_random_summary.py --folder <folder> --filter <filter>'
+         print 'process_unga_graphs.py --folder <folder> --filter <filter> --instancespath <instances_path>'
          sys.exit()
       elif opt in ("-i", "--folder"):
          folder = arg
       if opt in ("-f", "--filter"):
          filter = arg
+      if opt in ("-p", "--instancespath"):
+         instances_path = arg
+
+   if(folder == ''):
+      print 'Please specify the results dir'
+      sys.exit()
+   if(instances_path == ''):
+      print 'Please specify the graph instances path'
+      sys.exit()
    print 'Input dir is ', folder
    print 'File filter is ', filter
+   print 'Graph instances dir is ', instances_path
 
 
    error_summary = []
    cc_result_summary = dict()
+   cc_imbalance_summary = dict()
    rcc_result_summary = dict()
+   rcc_imbalance_summary = dict()
+   matrix = []
+   neg_edge_sum = 0.0
+   pos_edge_sum = 0.0
 
    # lookup country full name and iso abbreviation from csv file
    country_full_name = dict()
@@ -92,7 +109,7 @@ def main(argv):
       for line in reader:
          country_full_name[line["<iso_code>"].strip()] = line["<country_name>"].strip()
 
-
+   previous_filename = ''
    for root, subFolders, files in os.walk(folder):
       # sort dirs and files
       subFolders.sort()
@@ -122,7 +139,36 @@ def main(argv):
                       for line in reader:
                          country[int(line["<vertex_label>"])] = line["<cname>"]
 
-		   try:
+		   # process graph file contents and obtains positive and negative edge weight sum
+		   if(result_file_name <> previous_filename):
+		    print 'Reading graph file: {0}'.format(str(instances_path + '/' + graphfile))
+		    with open(instances_path + '/' + graphfile, 'rb') as csvfile:
+		       dialect = csv.Sniffer().sniff(csvfile.read(1024), delimiters=" \t")
+		       csvfile.seek(0)
+		       r = csv.reader(csvfile, dialect)
+		       line1=r.next()
+		       values = [col for col in line1]
+		       if(values[0].find(' ') > 0):
+		          N = int(values[0][:values[0].find(' ')])
+		       else:
+		          N = int(values[0])
+		       #print 'N is {0}'.format(str(N))
+		       matrix = [[0 for x in xrange(N)] for x in xrange(N)]
+		       pos_edge_sum = 0.0
+		       neg_edge_sum = 0.0		    
+		       for line in r:
+		          i = int(line[0])
+		          j = int(line[1])
+		          w = float(line[2])
+		          matrix[i][j] = w
+		          #print '({0}, {1}) = {2}\n'.format(str(i), str(j), str(w))
+		          if(w < 0):
+		             neg_edge_sum += math.fabs(w)
+		          else:
+		             pos_edge_sum += w
+		   print 'neg_edge_sum = {0}, pos_edge_sum = {1}'.format(str(neg_edge_sum), str(pos_edge_sum))
+
+		   try:  # process *-result.txt file
 		    content = content_file.read()
 		    reader = csv.reader(StringIO.StringIO(content), delimiter='\n')
 		    k = 0
@@ -158,6 +204,24 @@ def main(argv):
                           else:
                              break
 
+                    # process *-Node0-*-iterations.csv file
+                    csv_file_list = []
+                    if(result_file_name.startswith('cc')):
+                        prfx = 'CC'
+                    else:
+                        prfx = 'RCC'
+                    csv_file_list.extend(glob.glob(root + '/' + prfx + '-Node0-*-iterations.csv'))
+                    with open(csv_file_list[0], 'r') as r_csv_file:
+                       r2 = csv.reader(r_csv_file)
+		       line = r2.next()
+                       while (not line[0].startswith('Best')):
+                          line = r2.next()
+                       # extracts total, positive and negative imbalance of the best result
+                       imbalance = float(line[1])
+                       pos_imbalance = float(line[2])
+                       neg_imbalance = float(line[3])
+                       print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+
                     for line in clustering_full_names:
                        result_file.write(line)
                     result_file.write('\r\n')
@@ -169,13 +233,15 @@ def main(argv):
 
                     if(result_file_name.startswith('cc')):
                        cc_result_summary[graphfile] = clustering_full_names
+                       cc_imbalance_summary[graphfile] = [str(imbalance), str(100*imbalance/(pos_edge_sum+neg_edge_sum)), str(pos_imbalance), str(100*pos_imbalance/pos_edge_sum), str(neg_imbalance), str(100*neg_imbalance/neg_edge_sum)]
                     else:  # rcc
                        rcc_result_summary[graphfile] = clustering_full_names
-
+                       rcc_imbalance_summary[graphfile] = [str(imbalance), str(100*imbalance/(pos_edge_sum+neg_edge_sum)), str(pos_imbalance), str(100*pos_imbalance/pos_edge_sum), str(neg_imbalance), str(100*neg_imbalance/neg_edge_sum)]
 		   finally:
 		    content_file.close()
                     result_file.close()
                    count = count - 1
+                   previous_filename = graphfile
 	 # end process results
 
    print "\nSuccessfully processed all graph files.\n"
@@ -187,14 +253,22 @@ def main(argv):
       print items
 
    # exports summary to HTML file
-   # Exporting CC results
-   html = '<!DOCTYPE html>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/">\n<head><title>UNGA CC Summary</title>'
-   html += '</head><body class="index">'
-   html += '<h1>UNGA Voting Data - CC Imbalance Analysis</h1>'
+   # Exporting CC and RCC results
+   mhtml = '<!DOCTYPE html>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/">\n<head><title>UNGA CC and RCC Summary</title>'
+   mhtml += '</head><body class="index">'
+   mhtml += '<h1>UNGA Voting Data - CC and RCC Imbalance Analysis</h1>'
    startyear = 1946
+   partial_html_cc = []
+   partial_html_rcc = []
    
    for key, value in sorted(cc_result_summary.iteritems()):
-      html += '<h2>' + str(key)  + ' (' + str(startyear) + ')</h2><p>'
+      html = '<h2>CC - ' + str(key)  + ' (' + str(startyear) + ')</h2><p>'
+
+      imbalance_array = cc_imbalance_summary[key]
+      t = HTML.Table(header_row=['I(P)', 'I(P)%', 'I(P)-', 'I(P)-%', 'I(P)+', 'I(P)+%'])
+      t.rows.append(imbalance_array)
+      html += str(t) + '</p><p>'
+
       t = HTML.Table(header_row=['Partition', '#', 'Countries'])
       count = 0
       for item in value:        
@@ -203,7 +277,8 @@ def main(argv):
       html += str(t)
       html += '</p><br/><br/>'
       startyear += 1
-   html += '<h2>Frequency of countries per cluster per year</h2><p>'
+      partial_html_cc.append(html)
+   html = '<h2>CC - Frequency of countries per cluster per year</h2><p>'
    t = HTML.Table(header_row=['Partition sizes'])
    for key, value in sorted(cc_result_summary.iteritems()):   
       sizes = []
@@ -211,19 +286,19 @@ def main(argv):
          sizes.append(str(item.count(',')))
       t.rows.append(sizes)
    html += str(t)
-   html += '</p></body>\n</html>'
-   with open(folder + '/unga-cc-summary.html', 'w') as ccfile:
-      ccfile.write(html)
-      print 'Saved CC UNGA summary results.'
+   html += '</p>'
+   partial_html_cc.append(html)
 
-   # Exporting RCC results
-   html = '<!DOCTYPE html>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/">\n<head><title>UNGA RCC Summary</title>'
-   html += '</head><body class="index">'
-   html += '<h1>UNGA Voting Data - RCC Imbalance Analysis</h1>'
    startyear = 1946
    
    for key, value in sorted(rcc_result_summary.iteritems()):
-      html += '<h2>' + str(key) + ' (' + str(startyear) + ')</h2><p>'
+      html = '<h2>RCC - ' + str(key) + ' (' + str(startyear) + ')</h2><p>'
+
+      imbalance_array = rcc_imbalance_summary[key]
+      t = HTML.Table(header_row=['RI(P)', 'RI(P)%', 'RI(P)-', 'RI(P)-%', 'RI(P)+', 'RI(P)+%'])
+      t.rows.append(imbalance_array)
+      html += str(t) + '</p><p>'
+
       t = HTML.Table(header_row=['Partition', '#', 'Countries'])
       count = 0
       for item in value:        
@@ -232,7 +307,8 @@ def main(argv):
       html += str(t)
       html += '</p><br/><br/>'
       startyear += 1
-   html += '<h2>Frequency of countries per cluster per year</h2><p>'
+      partial_html_rcc.append(html)
+   html = '<h2>RCC - Frequency of countries per cluster per year</h2><p>'
    t = HTML.Table(header_row=['Partition sizes'])
    for key, value in sorted(rcc_result_summary.iteritems()):   
       sizes = []
@@ -240,10 +316,16 @@ def main(argv):
          sizes.append(str(item.count(',')))
       t.rows.append(sizes)
    html += str(t)
-   html += '</p></body>\n</html>'
-   with open(folder + '/unga-rcc-summary.html', 'w') as rccfile:
-      rccfile.write(html)
-      print 'Saved RCC UNGA summary results.'
+   html += '</p>'
+   partial_html_rcc.append(html)
+
+   with open(folder + '/unga-cc-rcc-summary.html', 'w') as rccfile:
+      rccfile.write(mhtml)
+      for i in range(0, len(partial_html_cc)):
+         rccfile.write(partial_html_cc[i])
+         rccfile.write(partial_html_rcc[i])
+      rccfile.write('</body>\n</html>')
+      print 'Saved CC and RCC UNGA summary results.'
    
 
 if __name__ == "__main__":
