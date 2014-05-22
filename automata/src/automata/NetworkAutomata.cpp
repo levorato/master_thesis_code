@@ -45,7 +45,7 @@ void NetworkAutomata::print() {
 	// TODO implement me
 }
 
-void NetworkAutomata::applyRule(SignedGraph *g, int startIndex, int endIndex) {
+void NetworkAutomata::applyRule(SignedGraph *g) {
 	int h = 0; // dest->shape()[0];
 	int w = 0; // dest->shape()[1];
 	cout << "Aplicando a regra para as linhas " << startIndex << " e " << endIndex << endl;
@@ -65,11 +65,5 @@ void NetworkAutomata::applyRule(SignedGraph *g, int startIndex, int endIndex) {
 		}
 	}
 }
-
-void NetworkAutomata::processIntersection(SignedGraph *gdest, int line) {
-	//cout << "Processando intersecao na linha " << line << endl;
-	applyRule(gdest, line, line);
-}
-
 
 } /* namespace automata */

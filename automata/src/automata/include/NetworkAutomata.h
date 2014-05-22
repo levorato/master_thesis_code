@@ -26,15 +26,9 @@ public:
 private:
 	SignedGraph *graph;
 	/**
-	 * Aplica a regra do jogo da vida considerando a particao do tabuleiro
-	 * reservada ao respectivo processo. Nao aplica a regra nas fronteiras da particao.
+	 * Aplica a regra do automato a todas as arestas do grafo.
 	 */
-	void applyRule(SignedGraph *g, int startIndex, int endIndex);
-	/**
-	 * Processa as regioes de intersecao entre uma divisao e outra do tabuleiro.
-	 * O processamento deve ser feito sobre a geracao anterior.
-	 */
-	void processIntersection(SignedGraph *gdest, int line);
+	void applyRule(SignedGraph *g);
 };
 
 } /* namespace automata */
