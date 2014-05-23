@@ -173,9 +173,13 @@ def main(argv):
 		    reader = csv.reader(StringIO.StringIO(content), delimiter='\n')
 		    k = 0
                     processed = False
+                    processed_analysis = False
                     clustering_numbers = []
                     clustering_names = []
                     clustering_full_names = []
+                    vertex_contrib = [[float(0.0), float(0.0)] for x in xrange(N)]
+                    pos_contrib_sum = float(0.0)
+                    neg_contrib_sum = float(0.0)
 		    for row in reader:
 		       linestring = ''.join(row)
                        if(linestring.startswith(' ')):
@@ -202,7 +206,25 @@ def main(argv):
                           if(not processed):
                              result_file.write(str(row[0]) + '\n')
                           else:
-                             break
+                             # processes imbalance analysis data (out edges contribution)
+                             reader2 = csv.reader(StringIO.StringIO(linestring), delimiter=',')
+                             line = reader2.next()
+                             if(line[0].startswith('Imbalance')):
+                                if(not processed_analysis):
+                                   processed_analysis = True
+                                else: 
+                                   break  # finished processing
+                             else:
+                                if(not line[0].startswith('Vertex')):
+                                   # processes vertex contribution to imbalance
+                                   vertex = int(line[0])
+                                   pos_contrib = float(line[1])
+                                   neg_contrib = float(line[2])
+                                   vertex_contrib[vertex][0] = pos_contrib
+                                   vertex_contrib[vertex][1] =  neg_contrib
+                                   pos_contrib_sum += pos_contrib
+                                   neg_contrib_sum += neg_contrib
+                                   print '{0} {1}'.format(str(neg_contrib_sum), str(neg_contrib))
 
                     # process *-Node0-*-iterations.csv file
                     csv_file_list = []
@@ -210,6 +232,8 @@ def main(argv):
                         prfx = 'CC'
                     else:
                         prfx = 'RCC'
+                        pos_imbalance = pos_contrib_sum
+                        neg_imbalance = neg_contrib_sum
                     csv_file_list.extend(glob.glob(root + '/' + prfx + '-Node0-*-iterations.csv'))
                     with open(csv_file_list[0], 'r') as r_csv_file:
                        r2 = csv.reader(r_csv_file)
@@ -218,9 +242,15 @@ def main(argv):
                           line = r2.next()
                        # extracts total, positive and negative imbalance of the best result
                        imbalance = float(line[1])
-                       pos_imbalance = float(line[2])
-                       neg_imbalance = float(line[3])
-                       print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+                       if(result_file_name.startswith('cc')):
+                          pos_imbalance = float(line[2])
+                          neg_imbalance = float(line[3])
+                          print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+                       else:  # for RCC problem the numbers are internal and external imbalance values
+                          int_imbalance = float(line[2])
+                          ext_imbalance = float(line[3])
+                          print 'imbalances {0} (int){1} (ext){2}'.format(str(imbalance), str(int_imbalance), str(ext_imbalance))
+                          print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
 
                     for line in clustering_full_names:
                        result_file.write(line)
@@ -233,16 +263,18 @@ def main(argv):
 
                     if(result_file_name.startswith('cc')):
                        cc_result_summary[graphfile] = clustering_full_names
-                       cc_imbalance_summary[graphfile] = [str(imbalance), str(100*imbalance/(pos_edge_sum+neg_edge_sum)), str(pos_imbalance), str(100*pos_imbalance/pos_edge_sum), str(neg_imbalance), str(100*neg_imbalance/neg_edge_sum)]
+                       cc_imbalance_summary[graphfile] = [str(imbalance), str(pos_edge_sum+neg_edge_sum), str(100*imbalance/(pos_edge_sum+neg_edge_sum)), str(pos_imbalance), str(pos_edge_sum), str(100*pos_imbalance/pos_edge_sum), str(neg_imbalance), str(neg_edge_sum), str(100*neg_imbalance/neg_edge_sum)]
                     else:  # rcc
                        rcc_result_summary[graphfile] = clustering_full_names
-                       rcc_imbalance_summary[graphfile] = [str(imbalance), str(100*imbalance/(pos_edge_sum+neg_edge_sum)), str(pos_imbalance), str(100*pos_imbalance/pos_edge_sum), str(neg_imbalance), str(100*neg_imbalance/neg_edge_sum)]
+                       rcc_imbalance_summary[graphfile] = [str(imbalance), str(pos_edge_sum+neg_edge_sum), str(100*imbalance/(pos_edge_sum+neg_edge_sum)), str(pos_imbalance), str(pos_edge_sum), str(100*pos_imbalance/pos_edge_sum), str(neg_imbalance), str(neg_edge_sum), str(100*neg_imbalance/neg_edge_sum), str(int_imbalance), str(100*int_imbalance/(pos_edge_sum+neg_edge_sum)), str(ext_imbalance), str(100*ext_imbalance/(pos_edge_sum+neg_edge_sum))]
 		   finally:
 		    content_file.close()
                     result_file.close()
                    count = count - 1
                    previous_filename = graphfile
 	 # end process results
+
+   # TODO implementar tabela com os valores de contribuição pos/neg entre clusters
 
    print "\nSuccessfully processed all graph files.\n"
    if(len(error_summary) > 0):
@@ -265,7 +297,7 @@ def main(argv):
       html = '<h2>CC - ' + str(key)  + ' (' + str(startyear) + ')</h2><p>'
 
       imbalance_array = cc_imbalance_summary[key]
-      t = HTML.Table(header_row=['I(P)', 'I(P)%', 'I(P)-', 'I(P)-%', 'I(P)+', 'I(P)+%'])
+      t = HTML.Table(header_row=['I(P)', 'Edge sum', 'I(P)%', 'I(P)+/I(P)ext', 'Pos edge sum', 'I(P)+%', 'I(P)-/I(P)int', 'Neg edge sum', 'I(P)-%'])
       t.rows.append(imbalance_array)
       html += str(t) + '</p><p>'
 
@@ -295,7 +327,7 @@ def main(argv):
       html = '<h2>RCC - ' + str(key) + ' (' + str(startyear) + ')</h2><p>'
 
       imbalance_array = rcc_imbalance_summary[key]
-      t = HTML.Table(header_row=['RI(P)', 'RI(P)%', 'RI(P)-', 'RI(P)-%', 'RI(P)+', 'RI(P)+%'])
+      t = HTML.Table(header_row=['RI(P)', 'Edge sum', 'RI(P)%', 'RI(P)+', 'Pos edge sum', 'RI(P)+%', 'RI(P)-', 'Neg edge sum', 'RI(P)-%', 'RI(P)int', 'RI(P)int%', 'RI(P)ext', 'RI(P)ext%'])
       t.rows.append(imbalance_array)
       html += str(t) + '</p><p>'
 
