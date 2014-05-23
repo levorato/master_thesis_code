@@ -26,9 +26,9 @@ public:
 private:
 	SignedGraph *graph;
 	/**
-	 * Aplica a regra do automato a todas as arestas do grafo.
+	 * Aplica a regra do automato a uma aresta do grafo.
 	 */
-	void applyRule(SignedGraph *g);
+	double applyRule(SignedGraph *g, int i, int j, double w);
 };
 
 } /* namespace automata */

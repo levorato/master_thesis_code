@@ -6,8 +6,11 @@
  */
 
 #include "include/NetworkAutomata.h"
+#include <boost/log/trivial.hpp>
 
 namespace automata {
+
+using namespace boost;
 
 NetworkAutomata::NetworkAutomata(SignedGraph *g) : graph(g) {
 
@@ -18,26 +21,27 @@ NetworkAutomata::~NetworkAutomata() {
 }
 
 void NetworkAutomata::execute(int numberOfGenerations) {
-	// TODO implement me
+
 	for(int i = 0; i < numberOfGenerations; i++) {
-		/*
-		for(int j = 0; j < height; j++) {
-			for(int k = 0; k < width; k++) {
-				int n = numberOfNeighbors(j, k, height, width);
-				if(n == 3) {
-					(*newmatrixPtr)[j][k] = 1;
-				} else if (n == 2) {
-					(*newmatrixPtr)[j][k] = (*matrixPtr)[j][k];
-				} else {
-					(*newmatrixPtr)[j][k] = 0;
-				}
+		BOOST_LOG_TRIVIAL(info) << "Generation " << (i+1) << endl;
+		int n = graph->getN();
+		double edgeSum = 0.0;
+
+		// traverses all edges of the (symmetric) graph
+		for(int i = 0; i < n; i++) {  // For each vertex i
+			DirectedGraph::out_edge_iterator f, l;
+			// For each out edge of i => (i, j)
+			for (boost::tie(f, l) = out_edges(i, graph->graph); f != l; ++f) {
+				Edge *e = (Edge*)f->get_property();
+				double weight = e->weight;
+				int j = target(*f, graph->graph);
+				edgeSum += fabs(weight);
+				// apply the rule to the edge (i, j)
+				double newWeight = applyRule(graph, i, j, weight);
+				e->weight = newWeight;
 			}
 		}
-		*/
-		cout << "Generation " << (i+1) << endl;
-		// print(matrixPtr.get(), height, width);
-		// matrixPtr.reset(newmatrixPtr);
-		// newmatrixPtr = new Matrix(boost::extents[height][width]);
+		BOOST_LOG_TRIVIAL(info) << "Current edge sum is: " << edgeSum;
 	}
 }
 
@@ -45,25 +49,17 @@ void NetworkAutomata::print() {
 	// TODO implement me
 }
 
-void NetworkAutomata::applyRule(SignedGraph *g) {
-	int h = 0; // dest->shape()[0];
-	int w = 0; // dest->shape()[1];
-	cout << "Aplicando a regra para as linhas " << startIndex << " e " << endIndex << endl;
+double NetworkAutomata::applyRule(SignedGraph *g, int i, int j, double w) {
+	// TODO implementar logica segundo artigo 'Study of sign adjustment in weighted signed networks'
+	// Local pressure adjustment rule
+	//  (1) Select at random any three nodes from the network and, if they are each linked with the others,
+	//        in a 3-cycle, go step 2. Otherwise, select another three nodes randomly, until a completed
+	//        3-cycle is selected.
+	//  (2) Select at random one edge from the selected 3-cycle to adjust.
+	//  (3) The selected edge is adjusted according to the equation:
+	//        w(i,j)[t+] = w(i,j)[t] + w(i, k)[t] x w(k, j)[t] x (1 - abs(w(i, j)[t]))
 
-	for(int i = startIndex; i < endIndex; i++) {
-		for(int j = 0; j < w; j++) {
-			/*
-			int n = numberOfNeighbors(i, j, h, w);
-			if(n == 3) {
-				(*dest)[i][j] = 1;
-			} else if (n == 2) {
-				(*dest)[i][j] = (*matrixPtr)[i][j];
-			} else {
-				(*dest)[i][j] = 0;
-			}
-			*/
-		}
-	}
+	return w*2.0;
 }
 
 } /* namespace automata */

@@ -11,6 +11,7 @@
 #include "util/include/TimeDateUtil.h"
 #include "util/include/EnumUtil.h"
 #include "util/include/RandomUtil.h"
+#include "../automata/include/NetworkAutomata.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -62,6 +63,7 @@ namespace fs = boost::filesystem;
 using namespace std;
 using namespace clusteringgraph;
 using namespace util;
+using namespace automata;
 
 namespace controller {
 
@@ -83,7 +85,7 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 }
 
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
-		string& executionId, const bool& debug, const int& numberOfIterations, const long& timeLimit,
+		string& executionId, const bool& debug, const int& numberOfGenerations, const long& timeLimit,
 		const unsigned long& seed) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
@@ -99,6 +101,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		// medicao de tempo do algoritmo
 		timer.start();
 		start_time = timer.elapsed();
+
+		// Invokes the Network Automata
+		NetworkAutomata na(g.get());
+		na.execute(numberOfGenerations);
 
 		// Stops the timer and stores the elapsed time
 		timer.stop();
@@ -158,7 +164,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	// reads the system properties from ini file
 	this->readPropertiesFile();
 
-	int numberOfIterations = 500;
+	int numberOfGenerations = 500;
 	bool debug = false;
 	string inputFileDir, outputFolder;
 	int timeLimit = 1800;
@@ -167,8 +173,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	po::options_description desc("Available options:");
 	desc.add_options()
 		("help", "show program options")
-		("iterations,iter", po::value<int>(&numberOfIterations)->default_value(400),
-			  "number of iterations of multi-start heuristic")
+		("generations,gen", po::value<int>(&numberOfGenerations)->default_value(400),
+			  "number of generations of cellular automata")
 		("time-limit", po::value<int>(&timeLimit)->default_value(1800), "maximum execution time (seconds)")
 		("input-file", po::value< std::vector<string> >(), "graph input file")
 		("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
@@ -255,8 +261,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		for(unsigned int i = 0; i < fileList.size(); i++) {
 			fs::path filePath = fileList.at(i);
 
-			BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
-			processInputFile(filePath, outputFolder, executionId, debug, numberOfIterations, timeLimit,
+			BOOST_LOG_TRIVIAL(info) << "Number of generations is " << numberOfGenerations << "\n";
+			processInputFile(filePath, outputFolder, executionId, debug, numberOfGenerations, timeLimit,
 					seed);
 		}
 

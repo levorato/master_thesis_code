@@ -31,7 +31,7 @@ public:
 
 private:
 	void processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
-			const bool& debug, const int& numberOfIterations, const long& timeLimit,
+			const bool& debug, const int& numberOfGenerations, const long& timeLimit,
 			const unsigned long& seed);
 
 	void readPropertiesFile();
