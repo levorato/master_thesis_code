@@ -29,6 +29,7 @@
 #include "../resolution/vnd/include/VariableNeighborhoodDescent.h"
 #include "../resolution/construction/include/ConstructClustering.h"
 #include "util/include/RandomUtil.h"
+#include "../resolution/vnd/include/vnd.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -370,6 +371,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 	// job id is obtained through command line parameter from PBS Scheduler
 	cout << "Job id is " << jobid << "\n";
+	testcuda();
 	// initializes the logging subsystem
 	if(jobid.length() == 0) {
 		jobid = TimeDateUtil::generateRandomId();
