@@ -28,7 +28,7 @@ private:
 	/**
 	 * Aplica a regra do automato a uma aresta do grafo.
 	 */
-	double applyRule(SignedGraph *g, int i, int j, double w);
+	double applyRule(SignedGraph *g, unsigned long i, unsigned long j, double w);
 };
 
 } /* namespace automata */
