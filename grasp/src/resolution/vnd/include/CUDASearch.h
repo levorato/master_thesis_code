@@ -12,11 +12,11 @@ using namespace thrust;
 	typedef unsigned long ulong;
 
 
-	extern "C" bool runSimpleSearchKernel(thrust::host_vector<double>& h_weights, thrust::host_vector<int>& h_dest,
+	extern "C" bool runSimpleSearchKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 			thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
-			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<double>& h_functionValue,
+			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
 			ulong n, ulong m,
-			thrust::host_vector<unsigned long>& h_destcluster, thrust::host_vector<double>& h_destFunctionValue,
-			ushort threadsCount);
+			thrust::host_vector<unsigned long>& h_destcluster, thrust::host_vector<float>& h_destPosFunctionValue,
+			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc);
 
 }

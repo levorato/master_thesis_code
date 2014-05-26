@@ -52,47 +52,37 @@ Clustering CUDANeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 
 	// Splits the processing in (n / numberOfSearchSlaves) chunks,
 	// to be consumed by numberOfSearchSlaves processes
-	unsigned long sizeOfChunk = g->getN() / threadsCount;
-	unsigned long remainingVertices = g->getN() % threadsCount;
+	unsigned long sizeOfChunk = 0;
+	unsigned long remainingVertices = 0;
+	if(g->getN() > threadsCount) {
+		sizeOfChunk = (unsigned long)((double)g->getN() / threadsCount);
+		remainingVertices = g->getN() % threadsCount;
+	} else {
+		sizeOfChunk = 1;
+		threadsCount = g->getN();
+		remainingVertices = 0;
+	}
 	// the leader distributes the work across the processors
 	// the leader itself (myRank) does part of the work too
-	int i = 0;
-	std::vector<int> slaveList;
-	if(sizeOfChunk > 0) {
-		// MPIUtil::populateListOfVNDSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
-		// Sends the parallel search (VND) message to the search slaves via MPI
-		for(i = 0; i < threadsCount; i++) {
-			/*
-			InputMessageParallelVND imsgpvns(g->getId(), l, g->getGraphFileLocation(), *clustering, problem.getType(),
-					timeSpentSoFar, timeLimit, i * sizeOfChunk, (i + 1) * sizeOfChunk - 1, numberOfSlaves,
-					numberOfSearchSlaves, k);
-			world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_VND_TAG, imsgpvns);
-
-			BOOST_LOG_TRIVIAL(trace) << "VND Message sent to process " << slaveList[i] << "; [" << i * sizeOfChunk
-					<< ", " << (i + 1) * sizeOfChunk - 1 << "]" << endl;
-					*/
-		}
-	}
 	// invoke the 1-opt CUDA method
-	this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed, myRank, 0, g->getN(), firstImprovementOnOneNeig, k);
+	BOOST_LOG_TRIVIAL(debug) << "Waiting for CUDA...\n";
+	Clustering bestClustering;
+	double bestValue = numeric_limits<double>::infinity();
+	bestClustering = this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed, myRank, 0, threadsCount*sizeOfChunk - 1,
+			firstImprovementOnOneNeig, k);
 
 	// the leader (me) does its part of the work too
 	BOOST_LOG_TRIVIAL(trace) << "Total number of vertices is " << g->getN() << endl;
 	BOOST_LOG_TRIVIAL(trace) << "CUDA Parallelization status: " << threadsCount <<
-			" search slaves (threads) will process " << sizeOfChunk << " vertices each one." << endl;
+			" search slaves (threads) will process " << sizeOfChunk << " vertice(s) each one." << endl;
 	BOOST_LOG_TRIVIAL(trace) << "RemainingVertices is " << remainingVertices << endl;
 
-	double bestValue = numeric_limits<double>::infinity();
-	Clustering bestClustering;
 	if(remainingVertices > 0) {
-		/*
-		bestClustering = this->searchNeighborhood(l, g, clustering,
+		bestClustering = NeighborhoodSearch::search1opt(g, clustering,
 				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
-				i * sizeOfChunk, i * sizeOfChunk + remainingVertices - 1, false, k);
+				threadsCount * sizeOfChunk, threadsCount * sizeOfChunk + remainingVertices - 1, firstImprovementOnOneNeig, k);
 		bestValue = bestClustering.getImbalance().getValue();
-		*/
 	}
-	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
 	// the leader receives the processing results, if that is the case
 	// TODO implement global first improvement (l = 2-opt) in parallel VND here!
 	if(sizeOfChunk > 0) {
@@ -126,7 +116,7 @@ Clustering CUDANeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		}
 		*/
 	}
-	BOOST_LOG_TRIVIAL(debug) << "[Parallel VND] Best solution found: Obj = " << bestClustering.getImbalance().getValue() << endl;
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel Search CUDA] Best solution found: Obj = " << bestClustering.getImbalance().getValue() << endl;
 	bestClustering.printClustering();
 	return bestClustering;
 }
@@ -135,7 +125,7 @@ Clustering CUDANeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialSearchIndex,
 		unsigned long finalSearchIndex, bool firstImprovementOnOneNeig, unsigned long k) {
-
+	// Unused method
 	assert(initialSearchIndex < g->getN());
 	assert(finalSearchIndex < g->getN());
 
@@ -193,16 +183,18 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	BOOST_LOG_TRIVIAL(info) << "[CUDA] Begin transfer to device...";
 	// A -> Transfer to device
 	// transfers the myClusters array to CUDA device
+	int numberOfThreads = finalSearchIndex - initialSearchIndex;
 	unsigned long* cluster = myCluster.get();
 	thrust::host_vector<unsigned long> h_mycluster(cluster, cluster + n);
 	thrust::host_vector<unsigned long> h_destcluster(cluster, cluster + n);
 	// objective function value
-	thrust::host_vector<double> h_functionValue(2);
+	thrust::host_vector<float> h_functionValue(2);
 	h_functionValue[0] = clustering->getImbalance().getPositiveValue();
 	h_functionValue[1] = clustering->getImbalance().getNegativeValue();
-	thrust::host_vector<double> h_destFunctionValue(2);
+	thrust::host_vector<float> h_destPosFunctionValue(numberOfThreads);
+	thrust::host_vector<float> h_destNegFunctionValue(numberOfThreads);
 	// graph structure (adapted adjacency list)
-	thrust::host_vector<double> h_weights(m);  // edge weights
+	thrust::host_vector<float> h_weights(m);  // edge weights
 	thrust::host_vector<int> h_dest(m);  // edge destination (vertex j)
 	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
 	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
@@ -222,13 +214,18 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		offset += count;
 	}
 	// TODO transform into class constant
-	unsigned short threadsCount = 120;
+	unsigned short threadsCount = 512;
 
 	// Pass raw array and its size to kernel
 	runSimpleSearchKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m,
-			h_destcluster, h_destFunctionValue, threadsCount);
+			h_destcluster, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, totalNumberOfClusters);
 
-	BOOST_LOG_TRIVIAL(info) << "[CUDA] Processing complete.";
+	BOOST_LOG_TRIVIAL(info) << "[CUDA] Before: " << h_functionValue[0] << "; " << h_functionValue[1];
+	BOOST_LOG_TRIVIAL(info) << "[CUDA] Processing complete. " << h_destPosFunctionValue[2] << "; " << h_destPosFunctionValue[4];
+
+	// Process result vectors
+
+
 	/*
 	// for each vertex i, tries to move i to another cluster in myNeighborClusterList[i]
 	// For each node i in cluster(k1)
