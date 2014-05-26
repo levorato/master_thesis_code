@@ -34,8 +34,9 @@ ParallelNeighborhoodSearch::~ParallelNeighborhoodSearch() {
 }
 
 Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
-		Clustering* clustering, ClusteringProblem& problem, double timeSpentSoFar,
-		double timeLimit, unsigned long randomSeed, int myRank, bool firstImprovementOnOneNeig) {
+        Clustering* clustering, ClusteringProblem& problem,
+        double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
+        int myRank, bool firstImprovementOnOneNeig) {
 
 	// Resets the number of combinations tested on neighborhood search
 	numberOfTestedCombinations = 0;

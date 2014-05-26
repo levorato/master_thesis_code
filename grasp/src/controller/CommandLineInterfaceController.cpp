@@ -30,6 +30,7 @@
 #include "../resolution/construction/include/ConstructClustering.h"
 #include "util/include/RandomUtil.h"
 #include "../resolution/vnd/include/vnd.h"
+#include "../resolution/vnd/include/CUDANeighborhoodSearch.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -139,15 +140,18 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		// Construct clustering module
 		ConstructClustering construct(functionFactory.build(functionType), seed, alpha);
 		// Chooses between the sequential or parallel search algorithm
-		NeighborhoodSearch* neigborhoodSearch;
+		// NeighborhoodSearch* neigborhoodSearch;
 		NeighborhoodSearchFactory nsFactory(numberOfMasters, numberOfSearchSlaves);
+		/*
 		if(numberOfSearchSlaves > 0) {
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 		} else {
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-		}
+		}*/
+		// Replaced by CUDA neighborhood search
+		CUDANeighborhoodSearch neigborhoodSearch;
 		// VND - local search module
-		VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, l, firstImprovementOnOneNeig, timeLimit);
+		VariableNeighborhoodDescent vnd(neigborhoodSearch, seed, l, firstImprovementOnOneNeig, timeLimit);
 		// Execution additional info
 		ExecutionInfo info(executionId, fileId, outputFolder, myRank);
 
