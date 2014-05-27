@@ -38,9 +38,10 @@ namespace clusteringgraph {
 			float bestValuePos, bestValueNeg;
 			bestValuePos = funcArray[0];
 			bestValueNeg = funcArray[1];
-			// float bestValue = bestValuePos + bestValueNeg;
+			float originalImbalance = funcArray[0] + funcArray[1];
 			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
-			for (ulong k2 = 0; k2 < nc; k2++) {  // cluster(k2)
+			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
+			for (ulong k2 = 0; k2 <= nc; k2++) {  // cluster(k2)
 				if(k2 != k1) {
 					// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
 					float negativeSum = 0.0, positiveSum = 0.0;
@@ -116,15 +117,13 @@ namespace clusteringgraph {
 							}
 						}
 					}
-						
-					if(positiveSum + negativeSum < 0) {  // improvement in imbalance
-						bestValuePos += positiveSum;
-						bestValueNeg += negativeSum;
+					if(originalImbalance + positiveSum + negativeSum < bestValuePos + bestValueNeg) {  // improvement in imbalance
+						bestValuePos = positiveSum + funcArray[0];
+						bestValueNeg = negativeSum + funcArray[1];
 						bestDestCluster = k2;
 					}
 				}
 			}
-			// TODO: implement addition to new cluster
 			// updates thread i / vertex i imbalance result
 			destPosImbArray[i] = bestValuePos;
 			destNegImbArray[i] = bestValueNeg;
@@ -164,7 +163,7 @@ namespace clusteringgraph {
 		// size_t reqBlocksCount = (n * (nc - 1)) / threadsCount;
 		// ushort blocksCount = (ushort)std::min((size_t)32768, reqBlocksCount);
 		int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-    	printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
+    	// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
 		// <<<blocksCount, threadsCount>>>
 		simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray, offsetArray, 
 				clusterArray, funcArray, uint(n), uint(m), destClusterArray, destPosImbArray, destNegImbArray, ulong(nc));

@@ -180,7 +180,7 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		}
 	}
 
-	BOOST_LOG_TRIVIAL(info) << "[CUDA] Begin transfer to device...";
+	BOOST_LOG_TRIVIAL(trace) << "[CUDA] Begin transfer to device...";
 	// A -> Transfer to device
 	// transfers the myClusters array to CUDA device
 	int numberOfThreads = finalSearchIndex - initialSearchIndex;
@@ -234,100 +234,32 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 
 	// Reproduce the best clustering found
 	if(bestSrcVertex >= 0) {
-		BOOST_LOG_TRIVIAL(info) << "[CUDA] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
-					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance;
+		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
+					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance << " " << h_destPosFunctionValue[bestSrcVertex] << " " << h_destNegFunctionValue[bestSrcVertex];
 		Clustering newClustering(*clustering);
 		int k1 = myCluster[bestSrcVertex];
 		int k2 = bestDestCluster;
+		bool newClusterK2 = (k2 == totalNumberOfClusters);
 		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
-		if((newClustering.getNumberOfClusters() < totalNumberOfClusters) && (k2 >= k1)) {
-			// cluster k1 has been removed
-			newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
-		} else {
-			newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2);
+		if(not newClusterK2) {  // existing cluster k2
+			if((newClustering.getNumberOfClusters() < totalNumberOfClusters) && (k2 >= k1)) {
+				// cluster k1 has been removed
+				newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
+			} else {
+				newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2);
+			}
+		} else {  // new cluster k2
+			newClustering.addCluster(*g, problem, bestSrcVertex);
 		}
 		cBest = newClustering;
-		BOOST_LOG_TRIVIAL(info) << "[CUDA] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue();
+		if(newClustering.getImbalance().getValue() != bestImbalance) {
+			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH!";
+		}
+		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
+				<< newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
 	} else {
-		BOOST_LOG_TRIVIAL(info) << "[CUDA] Validation. No improvement.";
+		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. No improvement.";
 	}
-
-	/*
-	// for each vertex i, tries to move i to another cluster in myNeighborClusterList[i]
-	// For each node i in cluster(k1)
-	for (unsigned long i = randomUtil.next(initialSearchIndex, finalSearchIndex), cont2 = 0; cont2 < numberOfVerticesInInterval; cont2++) {
-		// vertex i is in cluster(k1)
-		unsigned long k1 = myCluster[i];
-		// RCC Problem: must have exactly k clusters -> Cannot remove node from standalone cluster
-		unsigned long s = clustering->getClusterSize(k1);
-		if((problem.getType() == ClusteringProblem::RCC_PROBLEM) && (s == 1)) {
-			continue;
-		}
-		// Option 1: node i is moved from k1 to another existing cluster k2 != k1
-		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
-			// cluster(k2)
-			unsigned long k2 = *itr;
-			// removes node i from cluster1 and inserts in cluster2
-			Clustering cTemp = *clustering;
-			BoolArray cluster2 = cTemp.getCluster(k2);
-
-			//BOOST_LOG_TRIVIAL(trace) << "Option 1: Taking node " << i << " from cluster " << k1 << " to cluster " << k2;
-			int nc = cTemp.getNumberOfClusters();
-			cTemp.removeNodeFromCluster(*g, problem, i, k1);
-			// recalculates the number of clusters, as one of them may have been removed
-			if((cTemp.getNumberOfClusters() < nc) && (k2 >= k1)) {
-				// cluster k1 has been removed
-				cTemp.addNodeToCluster(*g, problem, i, k2 - 1);
-			} else {
-				cTemp.addNodeToCluster(*g, problem, i, k2);
-			}
-			numberOfTestedCombinations++;
-			// cTemp->printClustering();
-			Imbalance newImbalance = cTemp.getImbalance();
-			Imbalance bestImbalance = cBest.getImbalance();
-			if (newImbalance < bestImbalance) {
-				//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 1-neighborhood: " << setprecision(2) << newImbalance.getValue();
-				// First improvement for 1-opt neighborhood
-				cBest = cTemp;
-				if(firstImprovement) {
-					return cBest;
-				}
-			}
-			// return if time limit is exceeded
-			boost::timer::cpu_times end_time = timer.elapsed();
-			double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-			// std::cout << timeSpentSoFar + localTimeSpent << endl;
-			if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
-		}
-		// Option 2: node i is moved to a new cluster, alone
-		// removes node i from cluster k1 and inserts in newCluster
-		// cout << "New clustering combination generated." << endl;
-		if((problem.getType() == ClusteringProblem::CC_PROBLEM) && (s > 1)) {
-			// this code is not executed for RCC Problem, as it must have exactly k clusters
-			// this code is not executed if node i is to be moved from a standalone cluster to another standalone cluster (s == 1)
-			Clustering cTemp = *clustering;
-			//BOOST_LOG_TRIVIAL(trace) << "Option 2: Taking node " << i << " from " << k1 << " to new cluster.";
-			cTemp.removeNodeFromCluster(*g, problem, i, k1);
-			BoolArray cluster2 = cTemp.addCluster(*g, problem, i);
-			numberOfTestedCombinations++;
-			// cTemp->printClustering();
-			Imbalance newImbalance = cTemp.getImbalance();
-			Imbalance bestImbalance = cBest.getImbalance();
-			if (newImbalance < bestImbalance) {
-				//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 1-neighborhood: " << setprecision(2) << newImbalance.getValue();
-				// First improvement for 1-opt neighborhood
-				cBest = cTemp;
-				if(firstImprovement) {
-					return cBest;
-				}
-			}
-		}
-		// increment rule
-		i++;
-		if(i > finalSearchIndex) {
-			i = initialSearchIndex;
-		}
-	}*/
 	// returns the best combination found in 1-opt
 	return cBest;
 }
