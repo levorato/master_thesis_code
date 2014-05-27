@@ -47,6 +47,7 @@ Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& 
 	int r = 1, iteration = 0;
 	Clustering CStar = Cc; // C* := Cc
 	double timeSpentOnLocalSearch = 0.0;
+	numberOfTestedCombinations = 0;
 	BOOST_LOG_TRIVIAL(debug)<< "GRASP local search...\n";
 	BOOST_LOG_TRIVIAL(debug)<< "Current neighborhood is " << r << endl;
 

@@ -5,6 +5,7 @@
 #include <cuda_runtime.h>
 #include <thrust/device_vector.h>
 #include <stdio.h>
+#include <curand_kernel.h>
 
 // CUDA facts:
 //
@@ -17,6 +18,8 @@
 // (i>>log2(n)) and (i%n) is equivalent to (i&(n-1)); the compiler will perform these conversions if n is literal.
 
 namespace clusteringgraph {
+	
+
 	/// CUDA kernel for simple byte-per-cell world evaluation.
 	///
 	/// @param lifeData  Linearized 2D array of life data with byte-per-cell density.
@@ -25,12 +28,16 @@ namespace clusteringgraph {
 	/// @param resultLifeData  Result buffer in the same format as input.
 	__global__ void simpleSearchKernel(const float* weightArray, const int* destArray, const int* numArray,
 			const int* offsetArray, const ulong* clusterArray, const float* funcArray, uint n, uint m,
-		ulong* destClusterArray, float* destPosImbArray, float* destNegImbArray, ulong nc) {
+		ulong* destClusterArray, float* destPosImbArray, float* destNegImbArray, ulong nc, ulong numberOfChunks,
+		bool firstImprovement, ulong* destNumCombArray) {
 
-		// compute new objective function value
-		uint i = blockIdx.x * blockDim.x + threadIdx.x;
+		uint idx = blockIdx.x * blockDim.x + threadIdx.x;
+		uint i = idx % n;  // kernel executes local search for vertex i
+		uint part = idx / n;  // kernel executes local search for vertex i, for the 'part' partition
+		uint nparts = numberOfChunks / n;
 		
-		if(i < n) {  // kernel executes local search for vertex i
+		if(idx < numberOfChunks) {
+			ulong numberOfTestedCombinations = 0;
 			// vertex i is in cluster(k1)
 			ulong k1 = clusterArray[i];
 			uint bestDestCluster = k1;
@@ -41,93 +48,99 @@ namespace clusteringgraph {
 			float originalImbalance = funcArray[0] + funcArray[1];
 			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
 			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
-			for (ulong k2 = 0; k2 <= nc; k2++) {  // cluster(k2)
-				if(k2 != k1) {
-					// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
-					float negativeSum = 0.0, positiveSum = 0.0;
-					ulong count = offsetArray[i] + numArray[i];
-					// out-edges of vertex i
-					for (ulong edgenum = offsetArray[i]; edgenum < count; edgenum++) {   
-						int targ = destArray[edgenum];
-						float weight = weightArray[edgenum];
-						// REMOVAL from cluster k1: subtracts imbalance
-						if(clusterArray[targ] == k1) {  // same cluster
-							if(weight < 0) {
-								negativeSum -= fabs(weight);
+			ulong chunkSize = ulong(ceil((float)(nc + 1.0) / nparts));
+			ulong initialK2 = part * chunkSize;
+			ulong finalK2 = (part + 1) * chunkSize - 1;
+			if(initialK2 < nc + 1 && i < n) {
+				if(finalK2 >= nc + 1) {  // last chunk
+					finalK2 = nc;
+				}
+				// TODO implement random initial vertex
+				for (ulong k2 = initialK2; k2 <= finalK2; k2++) {  // cluster(k2)
+					if(k2 != k1) {
+						// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
+						float negativeSum = 0.0, positiveSum = 0.0;
+						ulong count = offsetArray[i] + numArray[i];
+						// out-edges of vertex i
+						for (ulong edgenum = offsetArray[i]; edgenum < count; edgenum++) {   
+							int targ = destArray[edgenum];
+							float weight = weightArray[edgenum];
+							// REMOVAL from cluster k1: subtracts imbalance
+							if(clusterArray[targ] == k1) {  // same cluster
+								if(weight < 0) {
+									negativeSum -= fabs(weight);
+								}
+							} else {  // diff cluster
+								if(weight > 0) {
+									positiveSum -= weight;
+								}
 							}
-						} else {  // diff cluster
-							if(weight > 0) {
-								positiveSum -= weight;
+							// ADDITION to cluster k2 != k1: adds imbalance
+							if(clusterArray[targ] == k2) {  // same cluster
+								if(weight < 0) {
+									negativeSum += fabs(weight);
+								}
+							} else {  // diff cluster
+								if(weight > 0) {
+									positiveSum += weight;
+								}
 							}
 						}
-					}
-					// in-edges of vertex i
-					for(uint j = 0; j < n; j++) {
-						ulong count2 = offsetArray[j] + numArray[j];
-						for (ulong edgenum = offsetArray[j]; edgenum < count2; edgenum++) {
-							if(destArray[edgenum] == i) {  // edge (j, i)   
-								float weight = weightArray[edgenum];
-								// REMOVAL from cluster k1: subtracts imbalance
-								if(clusterArray[j] == k1) {  // same cluster
-									if(weight < 0) {
-										negativeSum -= fabs(weight);
+						// in-edges of vertex i
+						for(uint j = 0; j < n; j++) {
+							ulong count2 = offsetArray[j] + numArray[j];
+							for (ulong edgenum = offsetArray[j]; edgenum < count2; edgenum++) {
+								if(destArray[edgenum] == i) {  // edge (j, i)   
+									float weight = weightArray[edgenum];
+									// REMOVAL from cluster k1: subtracts imbalance
+									if(clusterArray[j] == k1) {  // same cluster
+										if(weight < 0) {
+											negativeSum -= fabs(weight);
+										}
+									} else {  // diff cluster
+										if(weight > 0) {
+											positiveSum -= weight;
+										}
 									}
-								} else {  // diff cluster
-									if(weight > 0) {
-										positiveSum -= weight;
+									// ADDITION to cluster k2 != k1: adds imbalance
+									if(clusterArray[j] == k2) {  // same cluster
+										if(weight < 0) {
+											negativeSum += fabs(weight);
+										}
+									} else {  // diff cluster
+										if(weight > 0) {
+											positiveSum += weight;
+										}
 									}
 								}
 							}
 						}
-					}
-					// temporatily changes vertex i's cluster from k1 to k2
-					
-					count = offsetArray[i] + numArray[i];
-					// out-edges of vertex i
-					for (ulong edgenum = offsetArray[i]; edgenum < count; edgenum++) {   
-						int targ = destArray[edgenum];
-						float weight = weightArray[edgenum];
-						// ADDITION to cluster k2 != k1: adds imbalance
-						if(clusterArray[targ] == k2) {  // same cluster
-							if(weight < 0) {
-								negativeSum += fabs(weight);
-							}
-						} else {  // diff cluster
-							if(weight > 0) {
-								positiveSum += weight;
+						numberOfTestedCombinations++;
+						if(originalImbalance + positiveSum + negativeSum < bestValuePos + bestValueNeg) {  // improvement in imbalance
+							bestValuePos = positiveSum + funcArray[0];
+							bestValueNeg = negativeSum + funcArray[1];
+							bestDestCluster = k2;
+							if(firstImprovement) {
+								destPosImbArray[idx] = bestValuePos;
+								destNegImbArray[idx] = bestValueNeg;
+								destClusterArray[idx] = bestDestCluster;
+								destNumCombArray[idx] = numberOfTestedCombinations;
+								return;
 							}
 						}
-					}
-					// in-edges of vertex i
-					for(uint j = 0; j < n; j++) {
-						ulong count2 = offsetArray[j] + numArray[j];
-						for (ulong edgenum = offsetArray[j]; edgenum < count2; edgenum++) {
-							if(destArray[edgenum] == i) {  // edge (j, i)   
-								float weight = weightArray[edgenum];
-								// ADDITION to cluster k2 != k1: adds imbalance
-								if(clusterArray[j] == k2) {  // same cluster
-									if(weight < 0) {
-										negativeSum += fabs(weight);
-									}
-								} else {  // diff cluster
-									if(weight > 0) {
-										positiveSum += weight;
-									}
-								}
-							}
-						}
-					}
-					if(originalImbalance + positiveSum + negativeSum < bestValuePos + bestValueNeg) {  // improvement in imbalance
-						bestValuePos = positiveSum + funcArray[0];
-						bestValueNeg = negativeSum + funcArray[1];
-						bestDestCluster = k2;
 					}
 				}
+				// updates thread idx / vertex i imbalance result
+				destPosImbArray[idx] = bestValuePos;
+				destNegImbArray[idx] = bestValueNeg;
+				destClusterArray[idx] = bestDestCluster;
+				destNumCombArray[idx] = numberOfTestedCombinations;
+			} else {
+				destPosImbArray[idx] = funcArray[0];
+				destNegImbArray[idx] = funcArray[1];
+				destClusterArray[idx] = k1;
+				destNumCombArray[idx] = 0;
 			}
-			// updates thread i / vertex i imbalance result
-			destPosImbArray[i] = bestValuePos;
-			destNegImbArray[i] = bestValueNeg;
-			destClusterArray[i] = bestDestCluster;
 		}
 	}
 	
@@ -137,7 +150,8 @@ namespace clusteringgraph {
 			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
 			ulong n, ulong m,
 			thrust::host_vector<unsigned long>& h_destcluster, thrust::host_vector<float>& h_destPosFunctionValue,
-			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc) {
+			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
+			bool firstImprovement, thrust::host_vector<unsigned long>& h_destNumComb) {
 
 		thrust::device_vector<float> d_weights = h_weights;  // edge weights
 		thrust::device_vector<int> d_dest = h_dest;  // edge destination (vertex j)
@@ -149,6 +163,7 @@ namespace clusteringgraph {
 		thrust::device_vector<float> d_destPosFunctionValue = h_destPosFunctionValue;
 		thrust::device_vector<float> d_destNegFunctionValue = h_destNegFunctionValue;
 		thrust::device_vector<unsigned long> d_destCluster = h_destcluster;
+		thrust::device_vector<unsigned long> d_destNumComb = h_destNumComb;
 	
 		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
 		int* destArray = thrust::raw_pointer_cast( &d_dest[0] );
@@ -159,20 +174,23 @@ namespace clusteringgraph {
 		unsigned long* destClusterArray = thrust::raw_pointer_cast( &d_destCluster[0] );
 		float* destPosImbArray = thrust::raw_pointer_cast( &d_destPosFunctionValue[0] );
 		float* destNegImbArray = thrust::raw_pointer_cast( &d_destNegFunctionValue[0] );
+		ulong* destNumCombArray = thrust::raw_pointer_cast( &d_destNumComb[0] );
 
 		// size_t reqBlocksCount = (n * (nc - 1)) / threadsCount;
 		// ushort blocksCount = (ushort)std::min((size_t)32768, reqBlocksCount);
-		int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
+		int blocksPerGrid = (numberOfChunks + threadsCount - 1) / threadsCount;
     	// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
 		// <<<blocksCount, threadsCount>>>
 		simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray, offsetArray, 
-				clusterArray, funcArray, uint(n), uint(m), destClusterArray, destPosImbArray, destNegImbArray, ulong(nc));
+				clusterArray, funcArray, uint(n), uint(m), destClusterArray, destPosImbArray, destNegImbArray, 
+				ulong(nc), ulong(numberOfChunks), firstImprovement, destNumCombArray);
 		
 		checkCudaErrors(cudaDeviceSynchronize());
 
 		h_destcluster = d_destCluster;
 		h_destPosFunctionValue = d_destPosFunctionValue;
 		h_destNegFunctionValue = d_destNegFunctionValue;
+		h_destNumComb = d_destNumComb;
 		
 		return true;
 	}

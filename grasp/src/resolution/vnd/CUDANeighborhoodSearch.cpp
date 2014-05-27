@@ -183,16 +183,18 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	BOOST_LOG_TRIVIAL(trace) << "[CUDA] Begin transfer to device...";
 	// A -> Transfer to device
 	// transfers the myClusters array to CUDA device
-	int numberOfThreads = finalSearchIndex - initialSearchIndex;
+	unsigned long numberOfChunks = n * 4;  // the search space for each vertex (dest cluster) will be split into 4 chunks
 	unsigned long* cluster = myCluster.get();
 	thrust::host_vector<unsigned long> h_mycluster(cluster, cluster + n);
-	thrust::host_vector<unsigned long> h_destcluster(n);
 	// objective function value
 	thrust::host_vector<float> h_functionValue(2);
 	h_functionValue[0] = clustering->getImbalance().getPositiveValue();
 	h_functionValue[1] = clustering->getImbalance().getNegativeValue();
-	thrust::host_vector<float> h_destPosFunctionValue(n);
-	thrust::host_vector<float> h_destNegFunctionValue(n);
+	// destination (result) host vectors
+	thrust::host_vector<unsigned long> h_destcluster(numberOfChunks);  // destination cluster (k2)
+	thrust::host_vector<float> h_destPosFunctionValue(numberOfChunks);  // positive imbalance value
+	thrust::host_vector<float> h_destNegFunctionValue(numberOfChunks);  // negative imbalance value
+	thrust::host_vector<unsigned long> h_destNumComb(numberOfChunks);  // number of combinations
 	// graph structure (adapted adjacency list)
 	thrust::host_vector<float> h_weights(m);  // edge weights
 	thrust::host_vector<int> h_dest(m);  // edge destination (vertex j)
@@ -214,25 +216,34 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		offset += count;
 	}
 	// TODO transform into class constant
+	// number of threads per block
 	unsigned short threadsCount = 512;
 
 	// Pass raw array and its size to kernel
 	runSimpleSearchKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m,
-			h_destcluster, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, totalNumberOfClusters);
+			h_destcluster, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, totalNumberOfClusters,
+			numberOfChunks, firstImprovement, h_destNumComb);
 
 	// Finds the best value found, iterating through all threads results
 	int bestSrcVertex = -1;
 	int bestDestCluster = -1;
 	double bestImbalance = clustering->getImbalance().getValue();
-	for(int i = 0; i < n; i++) {
+	// To simulate sequential first improvement, chooses a random initial index for the following loop
+	for(int i = RandomUtil::next(0, numberOfChunks - 1), cont = 0; cont < numberOfChunks; cont++, i = (i + 1) % numberOfChunks) {
 		if(h_destPosFunctionValue[i] + h_destNegFunctionValue[i] < bestImbalance) {
-			bestSrcVertex = i;
+			bestSrcVertex = i % n;
 			bestDestCluster = h_destcluster[i];
 			bestImbalance = h_destPosFunctionValue[i] + h_destNegFunctionValue[i];
+			if(firstImprovement)  break;
 		}
 	}
+	// Sums the number of combinations visited
+	numberOfTestedCombinations = 0;
+	for(int i = 0; i < numberOfChunks; i++) {
+		numberOfTestedCombinations += h_destNumComb[i];
+	}
 
-	// Reproduce the best clustering found
+	// Reproduce the best clustering found using host data structures
 	if(bestSrcVertex >= 0) {
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
 					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance << " " << h_destPosFunctionValue[bestSrcVertex] << " " << h_destNegFunctionValue[bestSrcVertex];

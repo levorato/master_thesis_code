@@ -83,6 +83,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 
 		// 2. Execute local search algorithm: RVND
 		Clustering Cl = vnd.localSearch(g, Cc, totalIter, problem, timeSpentInGRASP, info.processRank);
+		numberOfTestedCombinations += vnd.getNumberOfTestedCombinations();
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl.getImbalance();

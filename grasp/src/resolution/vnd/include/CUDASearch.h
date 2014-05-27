@@ -17,6 +17,7 @@ using namespace thrust;
 			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
 			ulong n, ulong m,
 			thrust::host_vector<unsigned long>& h_destcluster, thrust::host_vector<float>& h_destPosFunctionValue,
-			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc);
+			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
+			bool firstImprovement, thrust::host_vector<unsigned long>& h_destNumComb);
 
 }
