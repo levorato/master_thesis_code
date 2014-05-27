@@ -186,13 +186,13 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	int numberOfThreads = finalSearchIndex - initialSearchIndex;
 	unsigned long* cluster = myCluster.get();
 	thrust::host_vector<unsigned long> h_mycluster(cluster, cluster + n);
-	thrust::host_vector<unsigned long> h_destcluster(cluster, cluster + n);
+	thrust::host_vector<unsigned long> h_destcluster(n);
 	// objective function value
 	thrust::host_vector<float> h_functionValue(2);
 	h_functionValue[0] = clustering->getImbalance().getPositiveValue();
 	h_functionValue[1] = clustering->getImbalance().getNegativeValue();
-	thrust::host_vector<float> h_destPosFunctionValue(numberOfThreads);
-	thrust::host_vector<float> h_destNegFunctionValue(numberOfThreads);
+	thrust::host_vector<float> h_destPosFunctionValue(n);
+	thrust::host_vector<float> h_destNegFunctionValue(n);
 	// graph structure (adapted adjacency list)
 	thrust::host_vector<float> h_weights(m);  // edge weights
 	thrust::host_vector<int> h_dest(m);  // edge destination (vertex j)
@@ -220,11 +220,37 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	runSimpleSearchKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m,
 			h_destcluster, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, totalNumberOfClusters);
 
-	BOOST_LOG_TRIVIAL(info) << "[CUDA] Before: " << h_functionValue[0] << "; " << h_functionValue[1];
-	BOOST_LOG_TRIVIAL(info) << "[CUDA] Processing complete. " << h_destPosFunctionValue[2] << "; " << h_destPosFunctionValue[4];
+	// Finds the best value found, iterating through all threads results
+	int bestSrcVertex = -1;
+	int bestDestCluster = -1;
+	double bestImbalance = clustering->getImbalance().getValue();
+	for(int i = 0; i < n; i++) {
+		if(h_destPosFunctionValue[i] + h_destNegFunctionValue[i] < bestImbalance) {
+			bestSrcVertex = i;
+			bestDestCluster = h_destcluster[i];
+			bestImbalance = h_destPosFunctionValue[i] + h_destNegFunctionValue[i];
+		}
+	}
 
-	// Process result vectors
-
+	// Reproduce the best clustering found
+	if(bestSrcVertex >= 0) {
+		BOOST_LOG_TRIVIAL(info) << "[CUDA] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
+					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance;
+		Clustering newClustering(*clustering);
+		int k1 = myCluster[bestSrcVertex];
+		int k2 = bestDestCluster;
+		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
+		if((newClustering.getNumberOfClusters() < totalNumberOfClusters) && (k2 >= k1)) {
+			// cluster k1 has been removed
+			newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
+		} else {
+			newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2);
+		}
+		cBest = newClustering;
+		BOOST_LOG_TRIVIAL(info) << "[CUDA] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue();
+	} else {
+		BOOST_LOG_TRIVIAL(info) << "[CUDA] Validation. No improvement.";
+	}
 
 	/*
 	// for each vertex i, tries to move i to another cluster in myNeighborClusterList[i]
