@@ -35,6 +35,14 @@ namespace clusteringgraph {
 		uint i = idx % n;  // kernel executes local search for vertex i
 		uint part = idx / n;  // kernel executes local search for vertex i, for the 'part' partition
 		uint nparts = numberOfChunks / n;
+		// shared memory
+		extern __shared__ int s[];       // 2n integers
+		int *s_offset = s;               // n integers
+		int *s_numedges = &s_offset[n];  // n integers
+		for(uint j = 0; j < n; j++) {
+			s_offset[j] = offsetArray[j];
+			s_numedges[j] = numArray[j];
+		}
 		
 		if(idx < numberOfChunks) {
 			ulong numberOfTestedCombinations = 0;
@@ -43,9 +51,10 @@ namespace clusteringgraph {
 			uint bestDestCluster = k1;
 			// stores the best imbalance found so far
 			float bestValuePos, bestValueNeg;
-			bestValuePos = funcArray[0];
-			bestValueNeg = funcArray[1];
-			float originalImbalance = funcArray[0] + funcArray[1];
+			float originalPosImbalance = funcArray[0];
+			float originalNegImbalance = funcArray[1];
+			bestValuePos = originalPosImbalance;
+			bestValueNeg = originalNegImbalance;
 			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
 			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
 			ulong chunkSize = ulong(ceil((float)(nc + 1.0) / nparts));
@@ -60,9 +69,9 @@ namespace clusteringgraph {
 					if(k2 != k1) {
 						// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
 						float negativeSum = 0.0, positiveSum = 0.0;
-						ulong count = offsetArray[i] + numArray[i];
+						ulong count = s_offset[i] + s_numedges[i];
 						// out-edges of vertex i
-						for (ulong edgenum = offsetArray[i]; edgenum < count; edgenum++) {   
+						for (ulong edgenum = s_offset[i]; edgenum < count; edgenum++) {   
 							int targ = destArray[edgenum];
 							float weight = weightArray[edgenum];
 							// REMOVAL from cluster k1: subtracts imbalance
@@ -88,8 +97,8 @@ namespace clusteringgraph {
 						}
 						// in-edges of vertex i
 						for(uint j = 0; j < n; j++) {
-							ulong count2 = offsetArray[j] + numArray[j];
-							for (ulong edgenum = offsetArray[j]; edgenum < count2; edgenum++) {
+							ulong count2 = s_offset[j] + s_numedges[j];
+							for (ulong edgenum = s_offset[j]; edgenum < count2; edgenum++) {
 								if(destArray[edgenum] == i) {  // edge (j, i)   
 									float weight = weightArray[edgenum];
 									// REMOVAL from cluster k1: subtracts imbalance
@@ -116,9 +125,9 @@ namespace clusteringgraph {
 							}
 						}
 						numberOfTestedCombinations++;
-						if(originalImbalance + positiveSum + negativeSum < bestValuePos + bestValueNeg) {  // improvement in imbalance
-							bestValuePos = positiveSum + funcArray[0];
-							bestValueNeg = negativeSum + funcArray[1];
+						if(originalPosImbalance + originalNegImbalance + positiveSum + negativeSum < bestValuePos + bestValueNeg) {  // improvement in imbalance
+							bestValuePos = positiveSum + originalPosImbalance;
+							bestValueNeg = negativeSum + originalNegImbalance;
 							bestDestCluster = k2;
 							if(firstImprovement) {
 								destPosImbArray[idx] = bestValuePos;
@@ -136,8 +145,8 @@ namespace clusteringgraph {
 				destClusterArray[idx] = bestDestCluster;
 				destNumCombArray[idx] = numberOfTestedCombinations;
 			} else {
-				destPosImbArray[idx] = funcArray[0];
-				destNegImbArray[idx] = funcArray[1];
+				destPosImbArray[idx] = originalPosImbalance;
+				destNegImbArray[idx] = originalNegImbalance;
 				destClusterArray[idx] = k1;
 				destNumCombArray[idx] = 0;
 			}
@@ -181,7 +190,7 @@ namespace clusteringgraph {
 		int blocksPerGrid = (numberOfChunks + threadsCount - 1) / threadsCount;
     	// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
 		// <<<blocksCount, threadsCount>>>
-		simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray, offsetArray, 
+		simpleSearchKernel<<<blocksPerGrid, threadsCount, 2*n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, 
 				clusterArray, funcArray, uint(n), uint(m), destClusterArray, destPosImbArray, destNegImbArray, 
 				ulong(nc), ulong(numberOfChunks), firstImprovement, destNumCombArray);
 		
