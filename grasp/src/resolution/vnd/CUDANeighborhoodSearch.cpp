@@ -215,14 +215,31 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		h_numedges[i] = count;
 		offset += count;
 	}
+	// random number vector used for initial cluster index (destination -> k2) of local search
+	thrust::host_vector<uint> h_randomIndex(numberOfChunks);
+	ulong nparts = numberOfChunks / n;
+	ulong chunkSize = ulong(ceil((float)(totalNumberOfClusters + 1.0) / nparts));
+	for(uint idx = 0; idx < numberOfChunks; idx++) {
+		uint part = idx / n;
+		uint initialK2 = part * chunkSize;
+		uint finalK2 = (part + 1) * chunkSize - 1;
+		if(initialK2 < totalNumberOfClusters + 1) {
+			if(finalK2 >= totalNumberOfClusters + 1) {
+				finalK2 = totalNumberOfClusters;
+			}
+			h_randomIndex[idx] = RandomUtil::next(initialK2, finalK2);
+		} else {
+			h_randomIndex[idx] = 0;
+		}
+	}
 	// TODO transform into class constant
 	// number of threads per block
-	unsigned short threadsCount = 512;
+	unsigned short threadsCount = 256;
 
 	// Pass raw array and its size to kernel
 	runSimpleSearchKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m,
 			h_destcluster, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, totalNumberOfClusters,
-			numberOfChunks, firstImprovement, h_destNumComb);
+			numberOfChunks, firstImprovement, h_destNumComb, h_randomIndex);
 
 	// Finds the best value found, iterating through all threads results
 	int bestSrcVertex = -1;

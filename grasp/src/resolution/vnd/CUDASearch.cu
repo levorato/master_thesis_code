@@ -29,7 +29,7 @@ namespace clusteringgraph {
 	__global__ void simpleSearchKernel(const float* weightArray, const int* destArray, const int* numArray,
 			const int* offsetArray, const ulong* clusterArray, const float* funcArray, uint n, uint m,
 		ulong* destClusterArray, float* destPosImbArray, float* destNegImbArray, ulong nc, ulong numberOfChunks,
-		bool firstImprovement, ulong* destNumCombArray) {
+		bool firstImprovement, ulong* destNumCombArray, uint* randomIndexArray) {
 
 		uint idx = blockIdx.x * blockDim.x + threadIdx.x;
 		uint i = idx % n;  // kernel executes local search for vertex i
@@ -58,32 +58,61 @@ namespace clusteringgraph {
 			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
 			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
 			ulong chunkSize = ulong(ceil((float)(nc + 1.0) / nparts));
-			ulong initialK2 = part * chunkSize;
-			ulong finalK2 = (part + 1) * chunkSize - 1;
+			uint initialK2 = part * chunkSize;
+			uint finalK2 = (part + 1) * chunkSize - 1;
 			if(initialK2 < nc + 1 && i < n) {
 				if(finalK2 >= nc + 1) {  // last chunk
 					finalK2 = nc;
 				}
-				// TODO implement random initial vertex
-				for (ulong k2 = initialK2; k2 <= finalK2; k2++) {  // cluster(k2)
+				// REMOVAL of vertex i from cluster k1 -> avoids recalculating 
+				//   the same thing in the k2 (destination cluster) loop
+				float negativeSumK1 = 0.0, positiveSumK1 = 0.0;
+				// out-edges of vertex i
+				ulong count = s_offset[i] + s_numedges[i];
+				for (ulong edgenum = s_offset[i]; edgenum < count; edgenum++) {   
+					int targ = destArray[edgenum];
+					float weight = weightArray[edgenum];
+					// REMOVAL from cluster k1: subtracts imbalance
+					if(clusterArray[targ] == k1) {  // same cluster
+						if(weight < 0) {
+							negativeSumK1 -= fabs(weight);
+						}
+					} else {  // diff cluster
+						if(weight > 0) {
+							positiveSumK1 -= weight;
+						}
+					}
+				}
+				// in-edges of vertex i
+				for(uint j = 0; j < n; j++) {
+					ulong count2 = s_offset[j] + s_numedges[j];
+					for (ulong edgenum = s_offset[j]; edgenum < count2; edgenum++) {
+						if(destArray[edgenum] == i) {  // edge (j, i)   
+							float weight = weightArray[edgenum];
+							// REMOVAL from cluster k1: subtracts imbalance
+							if(clusterArray[j] == k1) {  // same cluster
+								if(weight < 0) {
+									negativeSumK1 -= fabs(weight);
+								}
+							} else {  // diff cluster
+								if(weight > 0) {
+									positiveSumK1 -= weight;
+								}
+							}
+						}
+					}
+				}
+				// Random initial vertex
+				uint k2 = randomIndexArray[idx];
+				for(uint countK2 = 0; countK2 < chunkSize; countK2++) {  // cluster(k2)
 					if(k2 != k1) {
 						// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
-						float negativeSum = 0.0, positiveSum = 0.0;
+						float negativeSum = negativeSumK1, positiveSum = positiveSumK1;
 						ulong count = s_offset[i] + s_numedges[i];
 						// out-edges of vertex i
 						for (ulong edgenum = s_offset[i]; edgenum < count; edgenum++) {   
 							int targ = destArray[edgenum];
 							float weight = weightArray[edgenum];
-							// REMOVAL from cluster k1: subtracts imbalance
-							if(clusterArray[targ] == k1) {  // same cluster
-								if(weight < 0) {
-									negativeSum -= fabs(weight);
-								}
-							} else {  // diff cluster
-								if(weight > 0) {
-									positiveSum -= weight;
-								}
-							}
 							// ADDITION to cluster k2 != k1: adds imbalance
 							if(clusterArray[targ] == k2) {  // same cluster
 								if(weight < 0) {
@@ -101,16 +130,6 @@ namespace clusteringgraph {
 							for (ulong edgenum = s_offset[j]; edgenum < count2; edgenum++) {
 								if(destArray[edgenum] == i) {  // edge (j, i)   
 									float weight = weightArray[edgenum];
-									// REMOVAL from cluster k1: subtracts imbalance
-									if(clusterArray[j] == k1) {  // same cluster
-										if(weight < 0) {
-											negativeSum -= fabs(weight);
-										}
-									} else {  // diff cluster
-										if(weight > 0) {
-											positiveSum -= weight;
-										}
-									}
 									// ADDITION to cluster k2 != k1: adds imbalance
 									if(clusterArray[j] == k2) {  // same cluster
 										if(weight < 0) {
@@ -138,6 +157,11 @@ namespace clusteringgraph {
 							}
 						}
 					}
+					// loop increment rule
+					k2++;
+					if(k2 > finalK2) {
+						k2 = initialK2;
+					}
 				}
 				// updates thread idx / vertex i imbalance result
 				destPosImbArray[idx] = bestValuePos;
@@ -160,7 +184,8 @@ namespace clusteringgraph {
 			ulong n, ulong m,
 			thrust::host_vector<unsigned long>& h_destcluster, thrust::host_vector<float>& h_destPosFunctionValue,
 			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
-			bool firstImprovement, thrust::host_vector<unsigned long>& h_destNumComb) {
+			bool firstImprovement, thrust::host_vector<unsigned long>& h_destNumComb,
+			thrust::host_vector<uint>& h_randomIndex) {
 
 		thrust::device_vector<float> d_weights = h_weights;  // edge weights
 		thrust::device_vector<int> d_dest = h_dest;  // edge destination (vertex j)
@@ -168,6 +193,7 @@ namespace clusteringgraph {
 		thrust::device_vector<int> d_offset = h_offset;  // initial edge number for vertex i
 		thrust::device_vector<float> d_functionValue = h_functionValue;
 		thrust::device_vector<unsigned long> d_mycluster = h_mycluster;
+		thrust::device_vector<uint> d_randomIndex = h_randomIndex;
 		// destination vectors
 		thrust::device_vector<float> d_destPosFunctionValue = h_destPosFunctionValue;
 		thrust::device_vector<float> d_destNegFunctionValue = h_destNegFunctionValue;
@@ -180,6 +206,7 @@ namespace clusteringgraph {
 		int* offsetArray = thrust::raw_pointer_cast( &d_offset[0] );
 		unsigned long* clusterArray = thrust::raw_pointer_cast( &d_mycluster[0] );
 		float* funcArray = thrust::raw_pointer_cast( &d_functionValue[0] );
+		uint* randomIndexArray = thrust::raw_pointer_cast( &d_randomIndex[0] );
 		unsigned long* destClusterArray = thrust::raw_pointer_cast( &d_destCluster[0] );
 		float* destPosImbArray = thrust::raw_pointer_cast( &d_destPosFunctionValue[0] );
 		float* destNegImbArray = thrust::raw_pointer_cast( &d_destNegFunctionValue[0] );
@@ -188,11 +215,11 @@ namespace clusteringgraph {
 		// size_t reqBlocksCount = (n * (nc - 1)) / threadsCount;
 		// ushort blocksCount = (ushort)std::min((size_t)32768, reqBlocksCount);
 		int blocksPerGrid = (numberOfChunks + threadsCount - 1) / threadsCount;
-    	// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
+    	printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
 		// <<<blocksCount, threadsCount>>>
-		simpleSearchKernel<<<blocksPerGrid, threadsCount, 2*n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, 
+		simpleSearchKernel<<<blocksPerGrid, threadsCount, (2*n)*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, 
 				clusterArray, funcArray, uint(n), uint(m), destClusterArray, destPosImbArray, destNegImbArray, 
-				ulong(nc), ulong(numberOfChunks), firstImprovement, destNumCombArray);
+				ulong(nc), ulong(numberOfChunks), firstImprovement, destNumCombArray, randomIndexArray);
 		
 		checkCudaErrors(cudaDeviceSynchronize());
 
