@@ -68,54 +68,14 @@ Clustering CUDANeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for CUDA...\n";
 	Clustering bestClustering;
 	double bestValue = numeric_limits<double>::infinity();
-	bestClustering = this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed, myRank, 0, threadsCount*sizeOfChunk - 1,
+	bestClustering = searchNeighborhood(l, g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed, myRank, 0, threadsCount*sizeOfChunk - 1,
 			firstImprovementOnOneNeig, k);
 
 	// the leader (me) does its part of the work too
 	BOOST_LOG_TRIVIAL(trace) << "Total number of vertices is " << g->getN() << endl;
 	BOOST_LOG_TRIVIAL(trace) << "CUDA Parallelization status: " << threadsCount <<
 			" search slaves (threads) will process " << sizeOfChunk << " vertice(s) each one." << endl;
-	BOOST_LOG_TRIVIAL(trace) << "RemainingVertices is " << remainingVertices << endl;
 
-	if(remainingVertices > 0) {
-		bestClustering = NeighborhoodSearch::search1opt(g, clustering,
-				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
-				threadsCount * sizeOfChunk, threadsCount * sizeOfChunk + remainingVertices - 1, firstImprovementOnOneNeig, k);
-		bestValue = bestClustering.getImbalance().getValue();
-	}
-	// the leader receives the processing results, if that is the case
-	// TODO implement global first improvement (l = 2-opt) in parallel VND here!
-	if(sizeOfChunk > 0) {
-		/*
-		OutputMessage omsg;
-		for(i = 0; i < numberOfSearchSlaves; i++) {
-			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_VND_TAG, omsg);
-			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ". Obj = " <<
-					omsg.clustering.getImbalance().getValue();
-			BOOST_LOG_TRIVIAL(trace) << omsg.clustering.toString();
-			// processes the result of the execution of process p(i)
-			// sums the number of tested combinations
-			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
-			// checks if the obj value improved
-			if(omsg.clustering.getImbalance().getValue() < bestValue) {
-				Clustering clustering = omsg.clustering;
-				bestClustering = clustering;
-				bestValue = omsg.clustering.getImbalance().getValue();
-				BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VND] Better value found for objective function in node "
-						<< stat.source() << ": " <<
-						omsg.clustering.getImbalance().getValue() << endl;
-				// IMPORTANT: Terminate other slaves' VND search if 2-opt and CC Problem
-				if( (l == 2) and (problem.getType() == ClusteringProblem::CC_PROBLEM) ) {
-					InputMessageParallelVND imsg;
-					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VND] First improvement on 2-opt: interrupting other VND slaves.";
-					for(int j = 0; j < numberOfSearchSlaves; j++) {
-						world.send(slaveList[j], MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG, imsg);
-					}
-				}
-			}
-		}
-		*/
-	}
 	BOOST_LOG_TRIVIAL(debug) << "[Parallel Search CUDA] Best solution found: Obj = " << bestClustering.getImbalance().getValue() << endl;
 	bestClustering.printClustering();
 	return bestClustering;
