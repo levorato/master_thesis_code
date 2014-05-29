@@ -12,7 +12,7 @@ using namespace thrust;
 	typedef unsigned long ulong;
 
 
-	extern "C" bool runSimpleSearchKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
+	extern "C" bool run1optSearchKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 			thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
 			ulong n, ulong m,
@@ -20,5 +20,14 @@ using namespace thrust;
 			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
 			bool firstImprovement, thrust::host_vector<unsigned long>& h_destNumComb,
 			thrust::host_vector<uint>& h_randomIndex);
+
+	extern "C" bool run2optSearchKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
+				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
+				thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
+				ulong n, ulong m, thrust::host_vector<unsigned long>& h_destcluster1,
+				thrust::host_vector<unsigned long>& h_destcluster2, thrust::host_vector<float>& h_destPosFunctionValue,
+				thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
+				bool firstImprovement, thrust::host_vector<unsigned long>& h_destNumComb,
+				thrust::host_vector<uint>& h_randomIndex);
 
 }

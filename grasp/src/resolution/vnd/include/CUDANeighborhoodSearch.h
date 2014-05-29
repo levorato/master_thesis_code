@@ -45,6 +45,12 @@ public:
 	                double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 	                int myRank, unsigned long initialSearchIndex,
 	        		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k);
+
+	Clustering search2opt(SignedGraph* g,
+		                Clustering* clustering, ClusteringProblem& problem,
+		                double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
+		                int myRank, unsigned long initialSearchIndex,
+		        		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k);
 };
 
 } /* namespace clusteringgraph */
