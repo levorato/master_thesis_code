@@ -196,18 +196,27 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	thrust::host_vector<float> h_destNegFunctionValue(numberOfChunks);  // negative imbalance value
 	thrust::host_vector<unsigned long> h_destNumComb(numberOfChunks);  // number of combinations
 	// graph structure (adapted adjacency list)
-	thrust::host_vector<float> h_weights(m);  // edge weights
-	thrust::host_vector<int> h_dest(m);  // edge destination (vertex j)
+	thrust::host_vector<float> h_weights(2 * m);  // in/out edge weights
+	thrust::host_vector<int> h_dest(2 * m);  // edge destination (vertex j)
 	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
 	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
-	// For each vertex i
-	for(int i = 0, offset = 0, edge = 0; i < n; i++) {
+	// For each vertex, creates a list of in and out edges
+	int i = 0, offset = 0;
+	for(int edge = 0; i < n; i++) {  // For each vertex i
 		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		h_offset[i] = offset;
-		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
 			double weight = ((Edge*)f->get_property())->weight;
 			int j = target(*f, g->graph);
+			h_dest[edge] = j;
+			h_weights[edge] = weight;
+			count++; edge++;
+		}
+		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
+		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
+			double weight = ((Edge*)f2->get_property())->weight;
+			int j = source(*f2, g->graph);
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
