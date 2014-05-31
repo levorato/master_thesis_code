@@ -123,14 +123,14 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	unsigned long n = g->getN();
 	unsigned long m = g->getM();
 	unsigned long numberOfVerticesInInterval = finalSearchIndex - initialSearchIndex + 1;
-	unsigned long totalNumberOfClusters = clustering->getNumberOfClusters();
+	unsigned long nc = clustering->getNumberOfClusters();
 	// random number generators used in loop randomization
 	RandomUtil randomUtil;
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
 	// pre-calculates, in an array, to which cluster each vertex belongs
 	boost::shared_ptr<unsigned long[]> myCluster(new unsigned long[n]);
-	for(unsigned long k = 0; k < totalNumberOfClusters; k++) {  // for each cluster k
+	for(unsigned long k = 0; k < nc; k++) {  // for each cluster k
 		BoolArray clusterK = clustering->getCluster(k);
 		for(unsigned long i = 0; i < n; i++) {  // for each vertex i
 			if(clusterK[i]) {  // vertex i is in cluster k
@@ -160,9 +160,9 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
 	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
 	// Array that stores the sum of edge weights between vertex i and all clusters
-	thrust::host_vector<float> h_VertexClusterPosSum(n * totalNumberOfClusters);
-	thrust::host_vector<float> h_VertexClusterNegSum(n * totalNumberOfClusters);
-	for(int i = 0; i < n * totalNumberOfClusters; i++) {
+	thrust::host_vector<float> h_VertexClusterPosSum(n * (nc+1));
+	thrust::host_vector<float> h_VertexClusterNegSum(n * (nc+1));
+	for(int i = 0; i < n * (nc+1); i++) {
 		h_VertexClusterPosSum[i] = 0.0;
 		h_VertexClusterNegSum[i] = 0.0;
 	}
@@ -179,9 +179,9 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 			h_weights[edge] = weight;
 			count++; edge++;
 			if(weight > 0) {
-				h_VertexClusterPosSum[i * totalNumberOfClusters + myCluster[j]] += fabs(weight);
+				h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
 			} else {
-				h_VertexClusterNegSum[i * totalNumberOfClusters + myCluster[j]] += fabs(weight);
+				h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
 			}
 		}
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
@@ -192,10 +192,10 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 			h_weights[edge] = weight;
 			count++; edge++;
 			if(weight > 0) {
-                                h_VertexClusterPosSum[i * totalNumberOfClusters + myCluster[j]] += fabs(weight);
-                        } else {
-                                h_VertexClusterNegSum[i * totalNumberOfClusters + myCluster[j]] += fabs(weight);
-                        }
+					h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+			} else {
+					h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+			}
 		}
 		h_numedges[i] = count;
 		offset += count;
@@ -203,14 +203,14 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	// random number vector used for initial cluster index (destination -> k2) of local search
 	thrust::host_vector<uint> h_randomIndex(numberOfChunks);
 	ulong nparts = numberOfChunks / n;
-	ulong chunkSize = ulong(ceil((float)(totalNumberOfClusters + 1.0) / nparts));
+	ulong chunkSize = ulong(ceil((float)(nc + 1.0) / nparts));
 	for(uint idx = 0; idx < numberOfChunks; idx++) {
 		uint part = idx / n;
 		uint initialK2 = part * chunkSize;
 		uint finalK2 = (part + 1) * chunkSize - 1;
-		if(initialK2 < totalNumberOfClusters + 1) {
-			if(finalK2 >= totalNumberOfClusters + 1) {
-				finalK2 = totalNumberOfClusters;
+		if(initialK2 < nc + 1) {
+			if(finalK2 >= nc + 1) {
+				finalK2 = nc;
 			}
 			h_randomIndex[idx] = RandomUtil::next(initialK2, finalK2);
 		} else {
@@ -223,7 +223,7 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 
 	// Pass raw array and its size to kernel
 	run1optSearchKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m,
-			h_destcluster, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, totalNumberOfClusters,
+			h_destcluster, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, nc,
 			numberOfChunks, firstImprovement, h_destNumComb, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum);
 
 	// Finds the best value found, iterating through all threads results
@@ -252,10 +252,10 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		Clustering newClustering(*clustering);
 		int k1 = myCluster[bestSrcVertex];
 		int k2 = bestDestCluster;
-		bool newClusterK2 = (k2 == totalNumberOfClusters);
+		bool newClusterK2 = (k2 == nc);
 		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
 		if(not newClusterK2) {  // existing cluster k2
-			if((newClustering.getNumberOfClusters() < totalNumberOfClusters) && (k2 >= k1)) {
+			if((newClustering.getNumberOfClusters() < nc) && (k2 >= k1)) {
 				// cluster k1 has been removed
 				newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
 			} else {
@@ -290,14 +290,14 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 	unsigned long n = g->getN();
 	unsigned long m = g->getM();
 	unsigned long numberOfVerticesInInterval = finalSearchIndex - initialSearchIndex + 1;
-	unsigned long totalNumberOfClusters = clustering->getNumberOfClusters();
+	unsigned long nc = clustering->getNumberOfClusters();
 	// random number generators used in loop randomization
 	RandomUtil randomUtil;
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
 	// pre-calculates, in an array, to which cluster each vertex belongs
 	boost::shared_ptr<unsigned long[]> myCluster(new unsigned long[n]);
-	for(unsigned long k = 0; k < totalNumberOfClusters; k++) {  // for each cluster k
+	for(unsigned long k = 0; k < nc; k++) {  // for each cluster k
 		BoolArray clusterK = clustering->getCluster(k);
 		for(unsigned long i = 0; i < n; i++) {  // for each vertex i
 			if(clusterK[i]) {  // vertex i is in cluster k
@@ -327,6 +327,13 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 	thrust::host_vector<int> h_dest(2 * m);  // edge destination (vertex j)
 	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
 	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
+	// Array that stores the sum of edge weights between vertex i and all clusters
+	thrust::host_vector<float> h_VertexClusterPosSum(n * (nc+1));
+	thrust::host_vector<float> h_VertexClusterNegSum(n * (nc+1));
+	for(int i = 0; i < n * (nc+1); i++) {
+		h_VertexClusterPosSum[i] = 0.0;
+		h_VertexClusterNegSum[i] = 0.0;
+	}
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
@@ -339,6 +346,11 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
+			if(weight > 0) {
+				h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+			} else {
+				h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+			}
 		}
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
@@ -347,6 +359,11 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
+			if(weight > 0) {
+					h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+			} else {
+					h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+			}
 		}
 		h_numedges[i] = count;
 		offset += count;
@@ -356,7 +373,7 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 	ulong nparts = n;
 	ulong chunkSize = n;
 	for(uint idx = 0; idx < numberOfChunks; idx++) {
-		h_randomIndex[idx] = RandomUtil::next(0, totalNumberOfClusters);
+		h_randomIndex[idx] = RandomUtil::next(0, nc);
 	}
 	// TODO transform into class constant
 	// number of threads per block
@@ -364,8 +381,8 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 
 	// Pass raw array and its size to kernel
 	run2optSearchKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m,
-			h_destcluster1, h_destcluster2, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, totalNumberOfClusters,
-			numberOfChunks, firstImprovement, h_destNumComb, h_randomIndex);
+			h_destcluster1, h_destcluster2, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, nc,
+			numberOfChunks, firstImprovement, h_destNumComb, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum);
 
 	// Returns the best value found, iterating through all threads results
 	int bestSrcVertex1 = -1;
@@ -399,12 +416,12 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 		int k3 = bestDestCluster1;
 		int k2 = myCluster[bestSrcVertex2];
 		int k4 = bestDestCluster2;
-		bool newClusterK3 = (k3 == totalNumberOfClusters);
-		bool newClusterK4 = (k4 == totalNumberOfClusters);
+		bool newClusterK3 = (k3 == nc);
+		bool newClusterK4 = (k4 == nc);
 		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex1, k1);
 		int newnc1 = newClustering.getNumberOfClusters();
 		if(not newClusterK3) {  // existing cluster k3
-			if((newnc1 < totalNumberOfClusters) && (k3 >= k1)) {
+			if((newnc1 < nc) && (k3 >= k1)) {
 				// cluster k1 has been removed
 				newClustering.addNodeToCluster(*g, problem, bestSrcVertex1, k3 - 1);
 			} else {
