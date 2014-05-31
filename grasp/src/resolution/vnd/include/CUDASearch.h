@@ -19,7 +19,8 @@ using namespace thrust;
 			thrust::host_vector<unsigned long>& h_destcluster, thrust::host_vector<float>& h_destPosFunctionValue,
 			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
 			bool firstImprovement, thrust::host_vector<unsigned long>& h_destNumComb,
-			thrust::host_vector<uint>& h_randomIndex);
+			thrust::host_vector<uint>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
+			thrust::host_vector<float>& h_VertexClusterNegSum);
 
 	extern "C" bool run2optSearchKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,

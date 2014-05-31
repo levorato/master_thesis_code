@@ -142,7 +142,7 @@ protected:
 		}
 
 	/* Number of tested combinations during neighborhood search */
-	long numberOfTestedCombinations;
+	unsigned long numberOfTestedCombinations;
 };
 
 } /* namespace clusteringgraph */

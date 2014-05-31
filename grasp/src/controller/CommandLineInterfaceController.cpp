@@ -23,9 +23,10 @@
 #include "problem/include/ClusteringProblemFactory.h"
 #include "../resolution/construction/include/GainFunctionFactory.h"
 #include "../resolution/construction/include/GainFunction.h"
-#include "graph/include/NeighborhoodSearchFactory.h"
+// #include "graph/include/NeighborhoodSearchFactory.h"
 #include "graph/include/ParallelNeighborhoodSearch.h"
-#include "graph/include/SequentialNeighborhoodSearch.h"
+// #include "graph/include/SequentialNeighborhoodSearch.h"
+#include "../resolution/vnd/include/SequentialNeighborhoodSearch.h"
 #include "../resolution/vnd/include/VariableNeighborhoodDescent.h"
 #include "../resolution/construction/include/ConstructClustering.h"
 #include "util/include/RandomUtil.h"
@@ -141,7 +142,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		ConstructClustering construct(functionFactory.build(functionType), seed, alpha);
 		// Chooses between the sequential or parallel search algorithm
 		// NeighborhoodSearch* neigborhoodSearch;
-		NeighborhoodSearchFactory nsFactory(numberOfMasters, numberOfSearchSlaves);
+		// NeighborhoodSearchFactory nsFactory(numberOfMasters, numberOfSearchSlaves);
 		/*
 		if(numberOfSearchSlaves > 0) {
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
@@ -149,9 +150,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 		}*/
 		// Replaced by CUDA neighborhood search
-		CUDANeighborhoodSearch neigborhoodSearch;
+		CUDANeighborhoodSearch neigborhoodSearchCUDA;
+		SequentialNeighborhoodSearch neighborhoodSearchSeq;
 		// VND - local search module
-		VariableNeighborhoodDescent vnd(neigborhoodSearch, seed, l, firstImprovementOnOneNeig, timeLimit);
+		VariableNeighborhoodDescent vnd(neighborhoodSearchSeq, seed, l, firstImprovementOnOneNeig, timeLimit);
 		// Execution additional info
 		ExecutionInfo info(executionId, fileId, outputFolder, myRank);
 
@@ -606,16 +608,17 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 						// triggers the local GRASP routine
 						// Chooses between the sequential or parallel search algorithm
-						NeighborhoodSearch* neigborhoodSearch;
+						/* NeighborhoodSearch* neigborhoodSearch;
 						NeighborhoodSearchFactory nsFactory(imsgpg.numberOfMasters, imsgpg.numberOfSearchSlaves);
 						if(numberOfSearchSlaves > 0) {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 						} else {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-						}
+						}*/
+						SequentialNeighborhoodSearch neighborhoodSearchSeq;
 						GainFunctionFactory functionFactory(g.get());
 						ConstructClustering construct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
-						VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, imsgpg.l, imsgpg.firstImprovementOnOneNeig,
+						VariableNeighborhoodDescent vnd(neighborhoodSearchSeq, seed, imsgpg.l, imsgpg.firstImprovementOnOneNeig,
 								imsgpg.timeLimit);
 						// Execution additional info
 						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
@@ -649,16 +652,18 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 						// triggers the local ILS routine
 						// Chooses between the sequential or parallel search algorithm
+						/*
 						NeighborhoodSearch* neigborhoodSearch;
 						NeighborhoodSearchFactory nsFactory(imsgpils.numberOfMasters, imsgpils.numberOfSearchSlaves);
 						if(numberOfSearchSlaves > 0) {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 						} else {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-						}
+						}*/
+						SequentialNeighborhoodSearch neighborhoodSearchSeq;
 						GainFunctionFactory functionFactory(g.get());
 						ConstructClustering construct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
-						VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, imsgpils.l, imsgpils.firstImprovementOnOneNeig,
+						VariableNeighborhoodDescent vnd(neighborhoodSearchSeq, seed, imsgpils.l, imsgpils.firstImprovementOnOneNeig,
 								imsgpils.timeLimit);
 						// Additional execution info
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);

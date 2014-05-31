@@ -13,7 +13,8 @@
 #include "graph/include/Clustering.h"
 #include "problem/include/ClusteringProblem.h"
 #include "graph/include/NeighborhoodSearch.h"
-#include "graph/include/SequentialNeighborhoodSearch.h"
+// #include "graph/include/SequentialNeighborhoodSearch.h"
+#include "SequentialNeighborhoodSearch.h"
 #include "graph/include/ParallelNeighborhoodSearch.h"
 
 
