@@ -153,7 +153,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		CUDANeighborhoodSearch neigborhoodSearchCUDA;
 		SequentialNeighborhoodSearch neighborhoodSearchSeq;
 		// VND - local search module
-		VariableNeighborhoodDescent vnd(neighborhoodSearchSeq, seed, l, firstImprovementOnOneNeig, timeLimit);
+		VariableNeighborhoodDescent vnd(neigborhoodSearchCUDA, seed, l, firstImprovementOnOneNeig, timeLimit);
 		// Execution additional info
 		ExecutionInfo info(executionId, fileId, outputFolder, myRank);
 

@@ -21,27 +21,35 @@ namespace clusteringgraph {
 	
 
 	/// CUDA kernel for simple 1-opt search.
-	__global__ void simpleSearchKernel(const float* weightArray, const int* destArray, const int* numArray,
-			const int* offsetArray, const ulong* clusterArray, const float* funcArray, uint n, uint m,
+	__global__ void simpleSearchKernel(const ulong* clusterArray, const float* funcArray, uint n, uint m,
 		ulong* destClusterArray, float* destPosImbArray, float* destNegImbArray, ulong nc, ulong numberOfChunks,
 		bool firstImprovement, ulong* destNumCombArray, uint* randomIndexArray, float* vertexClusterPosSumArray,
-		float* vertexClusterNegSumArray) {
+		float* vertexClusterNegSumArray, int threadsPerBlock) {
 
 		uint idx = blockIdx.x * blockDim.x + threadIdx.x;
 		uint i = idx % n;  // kernel executes local search for vertex i
 		uint part = idx / n;  // kernel executes local search for vertex i, for the 'part' partition
 		uint nparts = numberOfChunks / n;
 		// shared memory
-		extern __shared__ long s[];       // n longs
-		long *s_cluster = s;              // n longs
-		for(ulong j = 0; j < n; j++) {
-			s_cluster[j] = clusterArray[j];
+		extern __shared__ float s[];       // 2 * blockDim.x * nc floats
+		float *s_clusterPosSum = s;        // blockDim.x * nc floats
+		float *s_clusterNegSum = &s_clusterPosSum[threadsPerBlock * (nc+1)];   // blockDim.x * nc floats
+		int base = i*(nc+1);
+		int tbase = threadIdx.x * (nc+1);
+		int tbase2 = threadsPerBlock * (nc+1) + threadIdx.x * (nc+1); // blockDim.x * nc + threadIdx.x * nc;
+		for(int k = 0; k <= nc; k++) {
+			s_clusterPosSum[tbase + k] = vertexClusterPosSumArray[base + k];
+			s_clusterPosSum[tbase2 + k] = vertexClusterNegSumArray[base + k];
 		}
+		// ensure that all threads have loaded their values into
+		// shared memory; otherwise, one thread might be computing
+		// on unitialized data.
+		__syncthreads();
 		
 		if(idx < numberOfChunks) {
 			ulong numberOfTestedCombinations = 0;
 			// vertex i is in cluster(k1)
-			ulong k1 = s_cluster[i];
+			ulong k1 = clusterArray[i];
 			uint bestDestCluster = k1;
 			// stores the best imbalance found so far
 			float bestValuePos, bestValueNeg;
@@ -60,11 +68,11 @@ namespace clusteringgraph {
 				}
 				// REMOVAL of vertex i from cluster k1 -> avoids recalculating 
 				//   the same thing in the k2 (destination cluster) loop
-				float negativeSumK1 = -vertexClusterNegSumArray[i*(nc+1) + k1];
+				float negativeSumK1 = -s_clusterNegSum[tbase+k1];
                 float positiveSumK1 = 0.0;
                 for(uint k = 0; k < nc; k++) {
                         if(k != k1) {
-                                positiveSumK1 -= vertexClusterPosSumArray[i*(nc+1) + k];
+                                positiveSumK1 -= s_clusterPosSum[tbase+k];
                         }
                 }
 				// Random initial vertex
@@ -72,11 +80,11 @@ namespace clusteringgraph {
 				for(uint countK2 = 0; countK2 < chunkSize; countK2++) {  // cluster(k2)
 					if(k2 != k1) {
 						// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
-						float negativeSum = negativeSumK1 + vertexClusterNegSumArray[i*(nc+1) + k2];
+						float negativeSum = negativeSumK1 + s_clusterNegSum[tbase+k2];
 						float positiveSum = positiveSumK1;
 						for(uint k = 0; k < nc; k++) {
 							if(k != k2) {
-								positiveSum += vertexClusterPosSumArray[i*(nc+1) + k];
+								positiveSum += s_clusterPosSum[tbase+k];
 							}
 						}
 						numberOfTestedCombinations++;
@@ -114,28 +122,40 @@ namespace clusteringgraph {
 	}
 	
 		/// CUDA kernel for 2-opt search.
-	__global__ void doubleSearchKernel(const float* weightArray, const int* destArray, const int* numArray,
-			const int* offsetArray, const ulong* clusterArray, const float* funcArray, uint n, uint m,
+	__global__ void doubleSearchKernel(const ulong* clusterArray, const float* funcArray, uint n, uint m,
 		ulong* destClusterArray1, ulong* destClusterArray2, float* destPosImbArray, float* destNegImbArray, ulong nc, ulong numberOfChunks,
 		bool firstImprovement, ulong* destNumCombArray, uint* randomIndexArray, float* vertexClusterPosSumArray,
-		float* vertexClusterNegSumArray) {
+		float* vertexClusterNegSumArray, int threadsPerBlock) {
 
 		uint idx = blockIdx.x * blockDim.x + threadIdx.x;
 		uint i = idx % n;  // kernel executes local search for vertex i
 		uint j = idx / n;  // kernel executes local search for vertex i, and vertex j
 		// shared memory
-		extern __shared__ long s[];       // n longs
-		long *s_cluster = s;              // n longs
-		for(ulong z = 0; z < n; z++) {
-			s_cluster[z] = clusterArray[z];
+		extern __shared__ float s[];       										// 4 * blockDim.x * nc+1 floats
+		float *s_clusterPosSumI = s;        								 	// blockDim.x * nc+1 floats
+		float *s_clusterNegSumI = &s_clusterPosSumI[threadsPerBlock * (nc+1)];  // blockDim.x * nc+1 floats
+		float *s_clusterPosSumJ = &s_clusterNegSumI[threadsPerBlock * (nc+1)];  // blockDim.x * nc+1 floats
+		float *s_clusterNegSumJ = &s_clusterPosSumJ[threadsPerBlock * (nc+1)];	// blockDim.x * nc+1 floats
+		int baseI = i*(nc+1);
+		int baseJ = j*(nc+1);
+		int tbase = threadIdx.x * (nc+1);
+		for(ulong k = 0; k <= nc; k++) {
+			s_clusterPosSumI[tbase + k] = vertexClusterPosSumArray[baseI + k];
+			s_clusterNegSumI[tbase + k] = vertexClusterNegSumArray[baseI + k];
+			s_clusterPosSumJ[tbase + k] = vertexClusterPosSumArray[baseJ + k];
+			s_clusterNegSumJ[tbase + k] = vertexClusterNegSumArray[baseJ + k];
 		}
+		// ensure that all threads have loaded their values into
+		// shared memory; otherwise, one thread might be computing
+		// on unitialized data.
+		__syncthreads();
 		
 		if(idx < numberOfChunks) {
 			ulong numberOfTestedCombinations = 0;
 			// vertex i is in cluster(k1)
-			ulong k1 = s_cluster[i];
+			ulong k1 = clusterArray[i];
 			// vertex j is in cluster(k2)
-			ulong k2 = s_cluster[j];
+			ulong k2 = clusterArray[j];
 			// best destination clusters
 			uint bestDestCluster1 = k1;
 			uint bestDestCluster2 = k2;
@@ -148,12 +168,15 @@ namespace clusteringgraph {
 			// Option 1: vertex i is moved from k1 to another existing cluster k3 != k1
 			// Option 2: vertex i is moved from k1 to a new cluster (k3 = nc)
 			// REMOVAL of vertex i from cluster k1 -> avoids recalculating 
-			//   the same thing in the k2 (destination cluster) loop
-			float negativeSumK1 = -vertexClusterNegSumArray[i*(nc+1) + k1];
+			//   the same thing in the destination cluster loop
+			float negativeSumK1 = -(s_clusterNegSumI[k1] + s_clusterNegSumJ[k2]);
             float positiveSumK1 = 0.0;
             for(uint k = 0; k < nc; k++) {
                     if(k != k1) {
-                            positiveSumK1 -= vertexClusterPosSumArray[i*(nc+1) + k];
+                            positiveSumK1 -= s_clusterPosSumI[k];
+                    }
+                    if(k != k2) {
+                            positiveSumK1 -= s_clusterPosSumJ[k];
                     }
             }
 			// Random initial vertex
@@ -161,21 +184,21 @@ namespace clusteringgraph {
 			for(uint countK3 = 0; countK3 <= nc; countK3++) {  // cluster(k3)
 				if(k3 != k1) {
 					// calculates the cost of removing vertex i from cluster k1 and inserting into cluster k3
-					float negativeSum = negativeSumK1 + vertexClusterNegSumArray[i*(nc+1) + k3];
+					float negativeSum = negativeSumK1 + s_clusterNegSumI[k3];
 					float positiveSum = positiveSumK1;
 					for(uint k = 0; k < nc; k++) {
 						if(k != k3) {
-							positiveSum += vertexClusterPosSumArray[i*(nc+1) + k];
+							positiveSum += s_clusterPosSumI[k];
 						}
 					}
 					for(uint k4 = k3 + 1; k4 <= nc; k4++) {  // cluster(k4)
 						if(k4 != k2) {
 							// calculates the cost of removing vertex j from cluster k2 and inserting into cluster k4
-							float negativeSum2 = negativeSum + vertexClusterNegSumArray[j*(nc+1) + k4];
+							float negativeSum2 = negativeSum + s_clusterNegSumJ[k4];
 							float positiveSum2 = positiveSum;
 							for(uint k = 0; k < nc; k++) {
 								if(k != k4) {
-									positiveSum2 += vertexClusterPosSumArray[j*(nc+1) + k];
+									positiveSum2 += s_clusterPosSumJ[k];
 								}
 							}
 							numberOfTestedCombinations++;
@@ -212,9 +235,7 @@ namespace clusteringgraph {
 	}
 	
 	/// Runs a kernel for 1-opt search.
-	bool run1optSearchKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
-			thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
-			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
+	bool run1optSearchKernel(thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
 			ulong n, ulong m,
 			thrust::host_vector<unsigned long>& h_destcluster, thrust::host_vector<float>& h_destPosFunctionValue,
 			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
@@ -222,10 +243,6 @@ namespace clusteringgraph {
 			thrust::host_vector<uint>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
 			thrust::host_vector<float>& h_VertexClusterNegSum) {
 
-		thrust::device_vector<float> d_weights = h_weights;  // edge weights
-		thrust::device_vector<int> d_dest = h_dest;  // edge destination (vertex j)
-		thrust::device_vector<int> d_numedges = h_numedges;  // number of edges of each vertex i
-		thrust::device_vector<int> d_offset = h_offset;  // initial edge number for vertex i
 		thrust::device_vector<float> d_functionValue = h_functionValue;
 		thrust::device_vector<unsigned long> d_mycluster = h_mycluster;
 		thrust::device_vector<uint> d_randomIndex = h_randomIndex;
@@ -237,10 +254,6 @@ namespace clusteringgraph {
 		thrust::device_vector<unsigned long> d_destCluster = h_destcluster;
 		thrust::device_vector<unsigned long> d_destNumComb = h_destNumComb;
 	
-		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
-		int* destArray = thrust::raw_pointer_cast( &d_dest[0] );
-		int* numArray = thrust::raw_pointer_cast( &d_numedges[0] );
-		int* offsetArray = thrust::raw_pointer_cast( &d_offset[0] );
 		unsigned long* clusterArray = thrust::raw_pointer_cast( &d_mycluster[0] );
 		float* funcArray = thrust::raw_pointer_cast( &d_functionValue[0] );
 		uint* randomIndexArray = thrust::raw_pointer_cast( &d_randomIndex[0] );
@@ -254,12 +267,12 @@ namespace clusteringgraph {
 		// size_t reqBlocksCount = (n * (nc - 1)) / threadsCount;
 		// ushort blocksCount = (ushort)std::min((size_t)32768, reqBlocksCount);
 		int blocksPerGrid = (numberOfChunks + threadsCount - 1) / threadsCount;
-    	// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
+    	// printf("CUDA kernel launch with %d blocks of %d threads, shmem = %d\n", blocksPerGrid, threadsCount, threadsCount*2*nc*sizeof(float));
 		// <<<blocksCount, threadsCount>>>
-		simpleSearchKernel<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray, offsetArray, 
-				clusterArray, funcArray, uint(n), uint(m), destClusterArray, destPosImbArray, destNegImbArray, 
+		simpleSearchKernel<<<blocksPerGrid, threadsCount, threadsCount*2*(nc+1)*sizeof(float)>>>(clusterArray, funcArray, 
+				uint(n), uint(m), destClusterArray, destPosImbArray, destNegImbArray, 
 				ulong(nc), ulong(numberOfChunks), firstImprovement, destNumCombArray, randomIndexArray,
-				vertexClusterPosSumArray, vertexClusterNegSumArray);
+				vertexClusterPosSumArray, vertexClusterNegSumArray, threadsCount);
 		
 		checkCudaErrors(cudaDeviceSynchronize());
 
@@ -272,9 +285,7 @@ namespace clusteringgraph {
 	}
 	
 	/// Runs a kernel for 2-opt search.
-	bool run2optSearchKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
-			thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
-			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
+	bool run2optSearchKernel(thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
 			ulong n, ulong m, thrust::host_vector<unsigned long>& h_destcluster1, 
 			thrust::host_vector<unsigned long>& h_destcluster2, thrust::host_vector<float>& h_destPosFunctionValue,
 			thrust::host_vector<float>& h_destNegFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
@@ -282,10 +293,6 @@ namespace clusteringgraph {
 			thrust::host_vector<uint>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
 			thrust::host_vector<float>& h_VertexClusterNegSum) {
 
-		thrust::device_vector<float> d_weights = h_weights;  // edge weights
-		thrust::device_vector<int> d_dest = h_dest;  // edge destination (vertex j)
-		thrust::device_vector<int> d_numedges = h_numedges;  // number of edges of each vertex i
-		thrust::device_vector<int> d_offset = h_offset;  // initial edge number for vertex i
 		thrust::device_vector<float> d_functionValue = h_functionValue;
 		thrust::device_vector<unsigned long> d_mycluster = h_mycluster;
 		thrust::device_vector<uint> d_randomIndex = h_randomIndex;
@@ -298,10 +305,6 @@ namespace clusteringgraph {
 		thrust::device_vector<unsigned long> d_destCluster2 = h_destcluster2;
 		thrust::device_vector<unsigned long> d_destNumComb = h_destNumComb;
 	
-		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
-		int* destArray = thrust::raw_pointer_cast( &d_dest[0] );
-		int* numArray = thrust::raw_pointer_cast( &d_numedges[0] );
-		int* offsetArray = thrust::raw_pointer_cast( &d_offset[0] );
 		unsigned long* clusterArray = thrust::raw_pointer_cast( &d_mycluster[0] );
 		float* funcArray = thrust::raw_pointer_cast( &d_functionValue[0] );
 		uint* randomIndexArray = thrust::raw_pointer_cast( &d_randomIndex[0] );
@@ -315,10 +318,10 @@ namespace clusteringgraph {
 
 		int blocksPerGrid = (numberOfChunks + threadsCount - 1) / threadsCount;
     	// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
-		doubleSearchKernel<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray, offsetArray, 
-				clusterArray, funcArray, uint(n), uint(m), destClusterArray1, destClusterArray2, destPosImbArray, destNegImbArray, 
+		doubleSearchKernel<<<blocksPerGrid, threadsCount, threadsCount*4*(nc+1)*sizeof(float)>>>(clusterArray, funcArray, 
+				uint(n), uint(m), destClusterArray1, destClusterArray2, destPosImbArray, destNegImbArray, 
 				ulong(nc), ulong(numberOfChunks), firstImprovement, destNumCombArray, randomIndexArray,
-				vertexClusterPosSumArray, vertexClusterNegSumArray);
+				vertexClusterPosSumArray, vertexClusterNegSumArray, threadsCount);
 		
 		checkCudaErrors(cudaDeviceSynchronize());
 

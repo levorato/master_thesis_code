@@ -147,6 +147,7 @@ Clustering SequentialNeighborhoodSearch::search1opt(SignedGraph* g,
 	int bestDestCluster = -1;
 	int bestSrcVertex = -1;
 	Imbalance bestImbalance = clustering->getImbalance();
+	bool foundBetterSolution = false;
 	for(uint i = 0; i < n; i++) {  // for each vertex i
 		// vertex i is in cluster(k1)
 		ulong k1 = myCluster[i];
@@ -179,6 +180,7 @@ Clustering SequentialNeighborhoodSearch::search1opt(SignedGraph* g,
 					bestImbalance = Imbalance(positiveSum + clustering->getImbalance().getPositiveValue(), negativeSum + clustering->getImbalance().getNegativeValue());
 					bestDestCluster = k2;
 					bestSrcVertex = i;
+					foundBetterSolution = true;
 					if(firstImprovement) {
 						break;
 					}
@@ -189,6 +191,9 @@ Clustering SequentialNeighborhoodSearch::search1opt(SignedGraph* g,
 			if(k2 > finalSearchIndex) {
 				k2 = initialSearchIndex;
 			}
+		}
+		if(firstImprovement and foundBetterSolution) {
+			break;
 		}
 	}
 	// Reproduce the best clustering found using host data structures
@@ -211,10 +216,11 @@ Clustering SequentialNeighborhoodSearch::search1opt(SignedGraph* g,
 			newClustering.addCluster(*g, problem, bestSrcVertex);
 		}
 		cBest = newClustering;
+		/*
 		if(newClustering.getImbalance().getValue() != bestImbalance.getValue()) {
 			BOOST_LOG_TRIVIAL(error) << "New and old objective function values DO NOT MATCH! Correct = " << newClustering.getImbalance().getValue()
 					<< " vs obtained = " << bestImbalance.getValue();
-		}
+		}*/
 		BOOST_LOG_TRIVIAL(debug) << "[New local search] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
 				<< newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
 	} else {
@@ -310,6 +316,7 @@ Clustering SequentialNeighborhoodSearch::search2opt(SignedGraph* g,
 	int bestSrcVertex1 = -1;
 	int bestSrcVertex2 = -1;
 	Imbalance bestImbalance = clustering->getImbalance();
+	bool foundBetterSolution = false;
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < n; j++) {
 			// vertex i is in cluster(k1)
@@ -356,8 +363,15 @@ Clustering SequentialNeighborhoodSearch::search2opt(SignedGraph* g,
 								bestDestCluster2 = k4;
 								bestSrcVertex1 = i;
 								bestSrcVertex2 = j;
+								foundBetterSolution = true;
+								if(firstImprovement) {
+									break;
+								}
 							}
 						}
+					}
+					if(firstImprovement and foundBetterSolution) {
+						break;
 					}
 				}
 				// loop increment rule
@@ -366,6 +380,12 @@ Clustering SequentialNeighborhoodSearch::search2opt(SignedGraph* g,
 					k3 = 0;
 				}
 			}
+			if(firstImprovement and foundBetterSolution) {
+				break;
+			}
+		}
+		if(firstImprovement and foundBetterSolution) {
+			break;
 		}
 	}
 	// Reproduce the best clustering found using host data structures
@@ -404,9 +424,10 @@ Clustering SequentialNeighborhoodSearch::search2opt(SignedGraph* g,
 			newClustering.addCluster(*g, problem, bestSrcVertex2);
 		}
 		cBest = newClustering;
+		/*
 		if(newClustering.getImbalance().getValue() != bestImbalance.getValue()) {
 			BOOST_LOG_TRIVIAL(error) << "New-calculation and old-calculation objective function values DO NOT MATCH!";
-		}
+		}*/
 		BOOST_LOG_TRIVIAL(debug) << "[New local search 2-opt] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
 				<< newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
 	} else {
