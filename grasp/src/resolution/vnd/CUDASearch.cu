@@ -169,14 +169,14 @@ namespace clusteringgraph {
 			// Option 2: vertex i is moved from k1 to a new cluster (k3 = nc)
 			// REMOVAL of vertex i from cluster k1 -> avoids recalculating 
 			//   the same thing in the destination cluster loop
-			float negativeSumK1 = -(s_clusterNegSumI[k1] + s_clusterNegSumJ[k2]);
+			float negativeSumK1 = -(s_clusterNegSumI[tbase+k1] + s_clusterNegSumJ[tbase+k2]);
             float positiveSumK1 = 0.0;
             for(uint k = 0; k < nc; k++) {
                     if(k != k1) {
-                            positiveSumK1 -= s_clusterPosSumI[k];
+                            positiveSumK1 -= s_clusterPosSumI[tbase+k];
                     }
                     if(k != k2) {
-                            positiveSumK1 -= s_clusterPosSumJ[k];
+                            positiveSumK1 -= s_clusterPosSumJ[tbase+k];
                     }
             }
 			// Random initial vertex
@@ -184,21 +184,21 @@ namespace clusteringgraph {
 			for(uint countK3 = 0; countK3 <= nc; countK3++) {  // cluster(k3)
 				if(k3 != k1) {
 					// calculates the cost of removing vertex i from cluster k1 and inserting into cluster k3
-					float negativeSum = negativeSumK1 + s_clusterNegSumI[k3];
+					float negativeSum = negativeSumK1 + s_clusterNegSumI[tbase+k3];
 					float positiveSum = positiveSumK1;
 					for(uint k = 0; k < nc; k++) {
 						if(k != k3) {
-							positiveSum += s_clusterPosSumI[k];
+							positiveSum += s_clusterPosSumI[tbase+k];
 						}
 					}
 					for(uint k4 = k3 + 1; k4 <= nc; k4++) {  // cluster(k4)
 						if(k4 != k2) {
 							// calculates the cost of removing vertex j from cluster k2 and inserting into cluster k4
-							float negativeSum2 = negativeSum + s_clusterNegSumJ[k4];
+							float negativeSum2 = negativeSum + s_clusterNegSumJ[tbase+k4];
 							float positiveSum2 = positiveSum;
 							for(uint k = 0; k < nc; k++) {
 								if(k != k4) {
-									positiveSum2 += s_clusterPosSumJ[k];
+									positiveSum2 += s_clusterPosSumJ[tbase+k];
 								}
 							}
 							numberOfTestedCombinations++;

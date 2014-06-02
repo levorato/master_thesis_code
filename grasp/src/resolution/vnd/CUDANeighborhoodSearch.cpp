@@ -354,8 +354,8 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 		h_randomIndex[idx] = RandomUtil::next(0, nc);
 	}
 	// TODO transform into class constant
-	// number of threads per block
-	unsigned short threadsCount = 512;
+	// number of threads per block, limited by thread block memory
+	unsigned short threadsCount = 64;
 
 	// Pass raw array and its size to kernel
 	run2optSearchKernel(h_mycluster, h_functionValue, n, m,
