@@ -208,18 +208,18 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	}
 	// TODO transform into class constant
 	// number of threads per block
-	unsigned short threadsCount = 64;  // limited by shared memory size
+	unsigned short threadsCount = 128;  // limited by shared memory size
 
 	// Pass raw array and its size to kernel
-	run1optSearchKernel(h_mycluster, h_functionValue, n, m,
-			h_destcluster, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, nc,
-			numberOfChunks, firstImprovement, h_destNumComb, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum);
+	uint bestSrcVertex = -1;
+	uint bestDestCluster = -1;
+	float bestImbalance = clustering->getImbalance().getValue();
+	run1optSearchKernel(h_mycluster, h_functionValue, n, m, threadsCount, nc,
+			numberOfChunks, firstImprovement, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum,
+			bestSrcVertex, bestDestCluster, bestImbalance);
 
-	// Finds the best value found, iterating through all threads results
-	int bestSrcVertex = -1;
-	int bestDestCluster = -1;
-	double bestImbalance = clustering->getImbalance().getValue();
 	// To simulate sequential first improvement, chooses a random initial index for the following loop
+	/*
 	for(int i = RandomUtil::next(0, numberOfChunks - 1), cont = 0; cont < numberOfChunks; cont++, i = (i + 1) % numberOfChunks) {
 		if(h_destPosFunctionValue[i] + h_destNegFunctionValue[i] < bestImbalance) {
 			bestSrcVertex = i % n;
@@ -227,15 +227,10 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 			bestImbalance = h_destPosFunctionValue[i] + h_destNegFunctionValue[i];
 			if(firstImprovement)  break;
 		}
-	}
-	// Sums the number of combinations visited
-	numberOfTestedCombinations = 0;
-	for(int i = 0; i < numberOfChunks; i++) {
-		numberOfTestedCombinations += h_destNumComb[i];
-	}
+	}*/
 
 	// Reproduce the best clustering found using host data structures
-	if(bestSrcVertex >= 0) {
+	if(bestImbalance < clustering->getImbalance().getValue()) {
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
 					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance << " " << h_destPosFunctionValue[bestSrcVertex] << " " << h_destNegFunctionValue[bestSrcVertex];
 		Clustering newClustering(*clustering);

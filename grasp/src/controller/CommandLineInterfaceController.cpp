@@ -150,10 +150,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 		}*/
 		// Replaced by CUDA neighborhood search
-		CUDANeighborhoodSearch neigborhoodSearchCUDA;
+		CUDANeighborhoodSearch neighborhoodSearchCUDA;
 		SequentialNeighborhoodSearch neighborhoodSearchSeq;
 		// VND - local search module
-		VariableNeighborhoodDescent vnd(neigborhoodSearchCUDA, seed, l, firstImprovementOnOneNeig, timeLimit);
+		VariableNeighborhoodDescent vnd(neighborhoodSearchCUDA, seed, l, firstImprovementOnOneNeig, timeLimit);
 		// Execution additional info
 		ExecutionInfo info(executionId, fileId, outputFolder, myRank);
 
