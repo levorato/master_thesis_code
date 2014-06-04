@@ -71,11 +71,31 @@ protected:
                         int myRank, unsigned long initialSearchIndex,
                 		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k);
 
+        virtual Clustering search1optCCProblem(SignedGraph* g,
+                        Clustering* clustering, ClusteringProblem& problem,
+                        double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
+                        int myRank, unsigned long initialSearchIndex,
+                		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
+                		std::vector<unsigned long>& myCluster,
+                		std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
+                		std::vector<double>& vertexClusterPosSum,
+                		std::vector<double>& vertexClusterNegSum);
+
 		virtual Clustering search2opt(SignedGraph* g,
 						Clustering* clustering, ClusteringProblem* problem,
 						double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 						int myRank, unsigned long initialSearchIndex,
 						unsigned long finalSearchIndex, bool firstImprovement, unsigned long k);
+
+		virtual Clustering search2optCCProblem(SignedGraph* g,
+		                Clustering* clustering, ClusteringProblem& problem,
+		                double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
+		                int myRank, unsigned long initialSearchIndex,
+		        		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
+		        		std::vector<unsigned long>& myCluster,
+						std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
+						std::vector<double>& vertexClusterPosSum,
+						std::vector<double>& vertexClusterNegSum);
 
         /**
          * Generates a new cluster by swithcing the node i from cluster k1 to k3, and
