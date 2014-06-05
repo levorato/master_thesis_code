@@ -198,8 +198,36 @@ Clustering SequentialNeighborhoodSearch::search1opt(SignedGraph* g,
 	}
 	// Reproduce the best clustering found using host data structures
 	if(bestSrcVertex >= 0) {
-		BOOST_LOG_TRIVIAL(debug) << "[New local search] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
-					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance.getValue() << " " << bestImbalance.getPositiveValue() << " " << bestImbalance.getNegativeValue();
+		std::vector<unsigned long> myCluster2(myCluster);
+		int previousCluster = myCluster2[bestSrcVertex];
+		myCluster2[bestSrcVertex] = bestDestCluster;
+		int h_nc = nc;
+		// validate the current number of clusters in the solution
+		if(bestDestCluster == h_nc) {  // Option 1 (easier): destcluster == nc, i.e., bestSrcVertex is going to a standalone cluster
+			h_nc++;  // just increment the number of clusters
+		}
+		// Option 2 (harder): bestSrcVertex's previous cluster no longer exists (removed its only element)
+		// Check if there are other vertices in the previous cluster of bestSrcVertex
+		bool found = false;
+		for(int i = 0; i < n; i++) {
+			if(myCluster2[i] == previousCluster) {
+				found = true;
+				break;
+			}
+		}
+		if(not found) {  // previousCluster is empty, has to be removed
+			for(int i = 0; i < n; i++) {
+				if(myCluster2[i] > previousCluster) {
+					myCluster2[i]--;
+				}
+			}
+			h_nc--;
+		}
+
+		/*
+		cout << "[New local search] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
+					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance.getValue() << " " << bestImbalance.getPositiveValue() << " " << bestImbalance.getNegativeValue() << endl;
+					*/
 		Clustering newClustering(*clustering);
 		int k1 = myCluster[bestSrcVertex];
 		int k2 = bestDestCluster;
@@ -208,6 +236,7 @@ Clustering SequentialNeighborhoodSearch::search1opt(SignedGraph* g,
 		if(not newClusterK2) {  // existing cluster k2
 			if((newClustering.getNumberOfClusters() < nc) && (k2 >= k1)) {
 				// cluster k1 has been removed
+				// cout << "Cluster " << k1 << " removed." << endl;
 				newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
 			} else {
 				newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2);
@@ -216,6 +245,26 @@ Clustering SequentialNeighborhoodSearch::search1opt(SignedGraph* g,
 			newClustering.addCluster(*g, problem, bestSrcVertex);
 		}
 		cBest = newClustering;
+
+		std::vector<unsigned long> myCluster3(n);
+		for(unsigned long k = 0; k < newClustering.getNumberOfClusters(); k++) {  // for each cluster k
+			BoolArray clusterK = newClustering.getCluster(k);
+			for(unsigned long i = 0; i < n; i++) {  // for each vertex i
+				if(clusterK[i]) {  // vertex i is in cluster k
+					myCluster3[i] = k;
+				}
+			}
+		}
+		// assert that myCluster3 equals myCluster2
+		bool equals = true;
+		for(int i = 0; i < n; i++) {
+			if(myCluster2[i] != myCluster3[i]) {
+				equals = false;
+				cerr << "Failed on vertex " << i << " " << myCluster2[i] << " " << myCluster3[i] << endl;
+				break;
+			}
+		}
+		assert(equals);
 		/*
 		if(newClustering.getImbalance().getValue() != bestImbalance.getValue()) {
 			BOOST_LOG_TRIVIAL(error) << "New and old objective function values DO NOT MATCH! Correct = " << newClustering.getImbalance().getValue()

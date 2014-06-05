@@ -146,9 +146,8 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	unsigned long* cluster = myCluster.get();
 	thrust::host_vector<unsigned long> h_mycluster(cluster, cluster + n);
 	// objective function value
-	thrust::host_vector<float> h_functionValue(2);
-	h_functionValue[0] = clustering->getImbalance().getPositiveValue();
-	h_functionValue[1] = clustering->getImbalance().getNegativeValue();
+	thrust::host_vector<float> h_functionValue(1);
+	h_functionValue[0] = clustering->getImbalance().getValue();
 	// destination (result) host vectors
 	thrust::host_vector<unsigned long> h_destcluster(numberOfChunks);  // destination cluster (k2)
 	thrust::host_vector<float> h_destPosFunctionValue(numberOfChunks);  // positive imbalance value
@@ -161,6 +160,11 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		h_VertexClusterPosSum[i] = 0.0;
 		h_VertexClusterNegSum[i] = 0.0;
 	}
+	// graph structure (adapted adjacency list)
+	thrust::host_vector<float> h_weights(2 * m);  // in/out edge weights
+	thrust::host_vector<int> h_dest(2 * m);  // edge destination (vertex j)
+	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
+	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
@@ -169,6 +173,8 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
 			double weight = ((Edge*)f->get_property())->weight;
 			int j = target(*f, g->graph);
+			h_dest[edge] = j;
+			h_weights[edge] = weight;
 			count++; edge++;
 			if(weight > 0) {
 				h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
@@ -180,6 +186,8 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
 			double weight = ((Edge*)f2->get_property())->weight;
 			int j = source(*f2, g->graph);
+			h_dest[edge] = j;
+			h_weights[edge] = weight;
 			count++; edge++;
 			if(weight > 0) {
 					h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
@@ -187,6 +195,7 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 					h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
 			}
 		}
+		h_numedges[i] = count;
 		offset += count;
 	}
 	// random number vector used for initial cluster index (destination -> k2) of local search
@@ -214,9 +223,10 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	uint bestSrcVertex = -1;
 	uint bestDestCluster = -1;
 	float bestImbalance = clustering->getImbalance().getValue();
-	run1optSearchKernel(h_mycluster, h_functionValue, n, m, threadsCount, nc,
+	int l = 1;
+	run1optSearchKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m, threadsCount, nc,
 			numberOfChunks, firstImprovement, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum,
-			bestSrcVertex, bestDestCluster, bestImbalance);
+			bestSrcVertex, bestDestCluster, bestImbalance, timeSpentSoFar, l);
 
 	// To simulate sequential first improvement, chooses a random initial index for the following loop
 	/*
@@ -232,7 +242,7 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	// Reproduce the best clustering found using host data structures
 	if(bestImbalance < clustering->getImbalance().getValue()) {
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
-					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance << " " << h_destPosFunctionValue[bestSrcVertex] << " " << h_destNegFunctionValue[bestSrcVertex];
+					<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance;
 		Clustering newClustering(*clustering);
 		int k1 = myCluster[bestSrcVertex];
 		int k2 = bestDestCluster;
