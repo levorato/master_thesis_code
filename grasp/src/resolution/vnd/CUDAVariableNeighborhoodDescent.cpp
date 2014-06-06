@@ -239,14 +239,14 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 
 	// Reproduce the best Cc found using host data structures
 	if(bestImbalance < Cc.getImbalance().getValue()) {
-		BOOST_LOG_TRIVIAL(info) << "Number of clusters is " << nc;
-		cout << "Number of clusters is " << nc << endl;
-
+		// BOOST_LOG_TRIVIAL(info) << "Number of clusters is " << nc;
+		// cout << "Number of clusters is " << nc << endl;
+		/*
 		for(int i = 0; i < n; i++) {
 			cout << h_mycluster[i] << " ";
 		}
 		cout << endl;
-
+		*/
 		Clustering CStar; // Cc = empty
 		for(int k = 0; k < nc; k++) {
 			BoolArray array(n);
@@ -260,44 +260,6 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 			}
 		}
 		CStar.setImbalance(problem.objectiveFunction(*g, CStar));
-		/*
-		Clustering newClustering = Cc;
-		for(int x = 0; x < sourceVertexList.size(); x++) {
-			ulong nc = newClustering.getNumberOfClusters();
-			uint bestSrcVertex = sourceVertexList[x];
-			uint bestDestCluster =  destinationClusterList[x];
-			int k1 = -1;
-			for(int k = 0; k < nc; k++) {
-				BoolArray cluster = newClustering.getCluster(k);
-				if(cluster[bestSrcVertex]) {
-					k1 = k;
-					break;
-				}
-			}
-			assert(k1 >= 0);
-			int k2 = bestDestCluster;
-			assert(k2 >= 0);
-			BOOST_LOG_TRIVIAL(debug) << "Number of clusters is " << nc;
-			BOOST_LOG_TRIVIAL(debug) << "[CUDA] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << k1
-									<< ") goes to cluster " << k2 << " with I(P) = " << bestImbalance;
-			bool newClusterK2 = (k2 >= nc);
-			newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
-			BOOST_LOG_TRIVIAL(debug) << "removed from " << k1 << ", nc = " << nc << "; " << newClustering.getNumberOfClusters();
-			// TODO estudar uma outra maneira de sinalizar novo cluster
-			if(not newClusterK2) {  // existing cluster k2
-				if((newClustering.getNumberOfClusters() < nc) && (k2 >= k1)) {
-					// cluster k1 has been removed
-					BOOST_LOG_TRIVIAL(debug) << "Adding to " << (k2 - 1);
-					newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
-				} else {
-					BOOST_LOG_TRIVIAL(debug) << "Adding to " << (k2);
-					newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2);
-				}
-			} else {  // new cluster k2
-				BOOST_LOG_TRIVIAL(debug) << "Adding to new cluster.";
-				newClustering.addCluster(*g, problem, bestSrcVertex);
-			}
-		}*/
 		cBest = CStar;
 		if(CStar.getImbalance().getValue() != bestImbalance) {
 			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH!";

@@ -535,9 +535,9 @@ namespace clusteringgraph {
 		uint* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 		
 		// number of clusters - changes every iteration of VND
-		thrust::host_vector<uint> h_nc(1);
+		thrust::host_vector<ulong> h_nc(1);
 		h_nc[0] = nc;
-				
+
 		// VND loop
 		int r = 1, iteration = 0;
 		float bestImbalance = h_functionValue[0];
@@ -545,7 +545,7 @@ namespace clusteringgraph {
 		destinationClusterList.clear();
 		
 		while (r <= l /* && (timeSpentSoFar + timeSpentOnLocalSearch < timeLimit)*/) {
-			printf("*** Local search iteration %d, r = %d, nc = %ld\n", iteration, r, h_nc[0]);		
+			// printf("*** Local search iteration %d, r = %d, nc = %ld\n", iteration, r, h_nc[0]);
 			if(r == 1) {
 				numberOfChunks = 4 * n;
 			} else {
@@ -560,6 +560,7 @@ namespace clusteringgraph {
 			float* destImbArray = thrust::raw_pointer_cast( &d_destFunctionValue[0] );
 						
 			int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
+			d_nc = h_nc;
 			updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
 				offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, h_nc[0]);
 			checkCudaErrors(cudaDeviceSynchronize());
@@ -594,8 +595,8 @@ namespace clusteringgraph {
 				// printf("Begin post-process...\n");
 				if(r == 1) {
 					int resultIdx = position;
-					thrust::device_vector<unsigned long>::iterator it = d_destCluster1.begin();
-					for(int i = 0; i < position; i++, it++);
+					thrust::device_vector<unsigned long>::iterator it = d_destCluster1.begin() + position;
+					// for(int i = 0; i < position; i++, it++);
 					ulong destcluster = *it;
 					ulong bestSrcVertex = resultIdx % n;
 					// printf("The best src vertex is %d to cluster %d with I(P) = %.2f\n", bestSrcVertex, destcluster, destFunctionValue);
@@ -643,7 +644,7 @@ namespace clusteringgraph {
 		h_VertexClusterPosSum = d_VertexClusterPosSum;
 		h_VertexClusterNegSum = d_VertexClusterNegSum;
 		nc = h_nc[0];
-		printf("Exiting with nc = %ld\n", h_nc[0]);
+		// printf("Exiting with nc = %ld\n", h_nc[0]);
 				
 		return true;
 	}
