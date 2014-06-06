@@ -117,9 +117,9 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 			h_weights[edge] = weight;
 			count++; edge++;
 			if(weight > 0) {
-				h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
-				h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+				h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
 			}
 		}
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
@@ -130,9 +130,9 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 			h_weights[edge] = weight;
 			count++; edge++;
 			if(weight > 0) {
-					h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+					h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
-					h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+					h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
 			}
 		}
 		h_numedges[i] = count;

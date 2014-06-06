@@ -122,8 +122,8 @@ namespace clusteringgraph {
 		for(int i = 0; i < n; i++) {
             // For each vertex i, stores the sum of edge weights between vertex i and all clusters
             for(int k = 0; k <= nc; k++) {
-            	vertexClusterPosSumArray[i * (nc+1) + k] = 0.0;
-            	vertexClusterNegSumArray[i * (nc+1) + k] = 0.0;
+            	vertexClusterPosSumArray[k * n + i] = 0.0;
+            	vertexClusterNegSumArray[k * n + i] = 0.0;
             }
             // in/out-edges of vertex i
             int offset = offsetArray[i];
@@ -133,9 +133,9 @@ namespace clusteringgraph {
 				int j = destArray[edgenum];
 				float weight = weightArray[edgenum];
 				if(weight > 0) {
-					vertexClusterPosSumArray[i * (nc+1) + clusterArray[j]] += fabs(weight);
+					vertexClusterPosSumArray[clusterArray[j] * n + i] += fabs(weight);
 				} else {
-					vertexClusterNegSumArray[i * (nc+1) + clusterArray[j]] += fabs(weight);
+					vertexClusterNegSumArray[clusterArray[j] * n + i] += fabs(weight);
 				}
 			}
         }
@@ -156,8 +156,8 @@ namespace clusteringgraph {
 	    if(i < n) {
             // For each vertex i, stores the sum of edge weights between vertex i and all clusters
             for(int k = 0; k <= nc; k++) {
-            	vertexClusterPosSumArray[i * (nc+1) + k] = 0.0;
-            	vertexClusterNegSumArray[i * (nc+1) + k] = 0.0;
+            	vertexClusterPosSumArray[k * n + i] = 0.0;
+            	vertexClusterNegSumArray[k * n + i] = 0.0;
             }
             // in/out-edges of vertex i
             int offset = offsetArray[i];
@@ -167,9 +167,9 @@ namespace clusteringgraph {
 				int j = destArray[edgenum];
 				float weight = weightArray[edgenum];
 				if(weight > 0) {
-					vertexClusterPosSumArray[i * (nc+1) + s_cluster[j]] += fabs(weight);
+					vertexClusterPosSumArray[s_cluster[j] * n + i] += fabs(weight);
 				} else {
-					vertexClusterNegSumArray[i * (nc+1) + s_cluster[j]] += fabs(weight);
+					vertexClusterNegSumArray[s_cluster[j] * n + i] += fabs(weight);
 				}
 			}
         }
@@ -189,12 +189,13 @@ namespace clusteringgraph {
 		extern __shared__ float s[];       // 2 * blockDim.x * nc floats
 		float *s_clusterPosSum = s;        // blockDim.x * nc floats
 		float *s_clusterNegSum = &s_clusterPosSum[threadsPerBlock * (nc+1)];   // blockDim.x * nc floats
-		int base = i*(nc+1);
+		// int base = i*(nc+1);
 		int tbase = threadIdx.x * (nc+1);
 		int tbase2 = threadsPerBlock * (nc+1) + threadIdx.x * (nc+1); // blockDim.x * nc + threadIdx.x * nc;
-		for(int k = 0; k <= nc; k++) {
-			s_clusterPosSum[tbase + k] = vertexClusterPosSumArray[base + k];
-			s_clusterPosSum[tbase2 + k] = vertexClusterNegSumArray[base + k];
+		int base = i;
+		for(int k = 0; k <= nc; k++, base += n) {
+			s_clusterPosSum[tbase + k] = vertexClusterPosSumArray[base];
+			s_clusterPosSum[tbase2 + k] = vertexClusterNegSumArray[base];
 		}
 		// ensure that all threads have loaded their values into
 		// shared memory; otherwise, one thread might be computing
@@ -281,14 +282,15 @@ namespace clusteringgraph {
 		float *s_clusterNegSumI = &s_clusterPosSumI[threadsPerBlock * (nc+1)];  // blockDim.x * nc+1 floats
 		float *s_clusterPosSumJ = &s_clusterNegSumI[threadsPerBlock * (nc+1)];  // blockDim.x * nc+1 floats
 		float *s_clusterNegSumJ = &s_clusterPosSumJ[threadsPerBlock * (nc+1)];	// blockDim.x * nc+1 floats
-		int baseI = i*(nc+1);
-		int baseJ = j*(nc+1);
+		// int baseI = i*(nc+1);
+		// int baseJ = j*(nc+1);
 		int tbase = threadIdx.x * (nc+1);
-		for(ulong k = 0; k <= nc; k++) {
-			s_clusterPosSumI[tbase + k] = vertexClusterPosSumArray[baseI + k];
-			s_clusterNegSumI[tbase + k] = vertexClusterNegSumArray[baseI + k];
-			s_clusterPosSumJ[tbase + k] = vertexClusterPosSumArray[baseJ + k];
-			s_clusterNegSumJ[tbase + k] = vertexClusterNegSumArray[baseJ + k];
+		int baseI = i, baseJ = j;
+		for(ulong k = 0; k <= nc; k++, baseI += n, baseJ += n) {
+			s_clusterPosSumI[tbase + k] = vertexClusterPosSumArray[baseI];
+			s_clusterNegSumI[tbase + k] = vertexClusterNegSumArray[baseI];
+			s_clusterPosSumJ[tbase + k] = vertexClusterPosSumArray[baseJ];
+			s_clusterNegSumJ[tbase + k] = vertexClusterNegSumArray[baseJ];
 		}
 		// ensure that all threads have loaded their values into
 		// shared memory; otherwise, one thread might be computing
@@ -641,8 +643,6 @@ namespace clusteringgraph {
 			iteration++;
 		}
 		h_mycluster = d_mycluster;
-		h_VertexClusterPosSum = d_VertexClusterPosSum;
-		h_VertexClusterNegSum = d_VertexClusterNegSum;
 		nc = h_nc[0];
 		// printf("Exiting with nc = %ld\n", h_nc[0]);
 				
