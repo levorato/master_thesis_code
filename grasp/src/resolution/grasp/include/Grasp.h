@@ -11,6 +11,7 @@
 #include "../../construction/include/ConstructClustering.h"
 #include "../../vnd/include/VariableNeighborhoodDescent.h"
 #include "../../include/ResolutionStrategy.h"
+#include "../../include/LocalSearch.h"
 #include "graph/include/Graph.h"
 #include "graph/include/Clustering.h"
 #include "problem/include/ClusteringProblem.h"
@@ -47,7 +48,7 @@ public:
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param executionInfo auxiliary data about execution
 	 */
-	Clustering executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
+	Clustering executeGRASP(ConstructClustering &construct, LocalSearch &ls,
 			SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info);
 
 	unsigned long getNumberOfTestedCombinations();

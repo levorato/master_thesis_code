@@ -10,6 +10,7 @@
 
 #include "../../construction/include/GainFunction.h"
 #include "../../include/ResolutionStrategy.h"
+#include "../../include/LocalSearch.h"
 #include "graph/include/Graph.h"
 #include "graph/include/Clustering.h"
 #include "problem/include/ClusteringProblem.h"
@@ -45,7 +46,7 @@ public:
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param executionInfo auxiliary data about execution
 	 */
-	Clustering executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
+	Clustering executeILS(ConstructClustering &construct, LocalSearch &ls,
 			SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem,	ExecutionInfo& info);
 

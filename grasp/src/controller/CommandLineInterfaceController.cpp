@@ -31,6 +31,7 @@
 #include "../resolution/construction/include/ConstructClustering.h"
 #include "util/include/RandomUtil.h"
 #include "../resolution/vnd/include/vnd.h"
+#include "../resolution/vnd/include/CUDAVariableNeighborhoodDescent.h"
 #include "../resolution/vnd/include/CUDANeighborhoodSearch.h"
 
 #include <boost/program_options.hpp>
@@ -154,6 +155,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		SequentialNeighborhoodSearch neighborhoodSearchSeq;
 		// VND - local search module
 		VariableNeighborhoodDescent vnd(neighborhoodSearchCUDA, seed, l, firstImprovementOnOneNeig, timeLimit);
+		CUDAVariableNeighborhoodDescent cudavnd(seed, l, firstImprovementOnOneNeig, timeLimit);
 		// Execution additional info
 		ExecutionInfo info(executionId, fileId, outputFolder, myRank);
 
@@ -167,7 +169,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   G R A S P
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution;
-					c = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+					c = resolution.executeGRASP(construct, cudavnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfSlaves processes and summarizes the result
@@ -179,7 +181,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
-					c = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+					c = resolution.executeILS(construct, cudavnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result

@@ -9,6 +9,8 @@
 #include "problem/include/ClusteringProblem.h"
 #include "graph/include/Imbalance.h"
 
+#include "../include/LocalSearch.h"
+
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -30,10 +32,8 @@ namespace vnd {
 
 VariableNeighborhoodDescent::VariableNeighborhoodDescent(NeighborhoodSearch &neighborhoodSearch,
 		unsigned long seed, const int &lsize, const bool& firstImprovement1Opt, const long &tlimit) :
-				timeResults(), randomSeed(seed), timeSum(0.0),
-				timeSpentInSearch(0.0),	numberOfTestedCombinations(0), _neighborhoodSearch(neighborhoodSearch),
-				l(lsize), firstImprovementOnOneNeig(firstImprovement1Opt), timeLimit(tlimit),
-				timeSpentOnLocalSearch(0.0) {
+				LocalSearch(seed, lsize, firstImprovement1Opt, tlimit, 0.0, 0, 0.0), timeSum(0.0),
+				timeResults(), _neighborhoodSearch(neighborhoodSearch) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -109,11 +109,6 @@ void VariableNeighborhoodDescent::measureTimeResults(Clustering &CStar, const do
 void VariableNeighborhoodDescent::notifyNewValue(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& iteration) {
 	measureTimeResults(CStar, timeSpentOnLocalSearch, iteration);
 }
-
-unsigned long VariableNeighborhoodDescent::getNumberOfTestedCombinations() {
-	return numberOfTestedCombinations;
-}
-
 
 } /* namespace vnd */
 } /* namespace resolution */

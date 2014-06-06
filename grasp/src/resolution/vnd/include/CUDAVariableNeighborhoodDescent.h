@@ -1,14 +1,14 @@
 /*
- * RCCLocalSearch.h
+ * CUDAVariableNeighborhoodDescent.h
  *
- *  Created on: 28/11/2013
+ *  Created on: 5/6/2014
  *      Author: Mario Levorato
  */
 
-#ifndef VND_H_
-#define VND_H_
+#ifndef CUDAVND_H_
+#define CUDAVND_H_
 
-#include "../../include/LocalSearch.h"
+#include "../../include/ResolutionStrategy.h"
 #include "graph/include/Graph.h"
 #include "graph/include/Clustering.h"
 #include "problem/include/ClusteringProblem.h"
@@ -16,6 +16,7 @@
 // #include "graph/include/SequentialNeighborhoodSearch.h"
 #include "SequentialNeighborhoodSearch.h"
 #include "graph/include/ParallelNeighborhoodSearch.h"
+#include "../../include/LocalSearch.h"
 
 
 using namespace clusteringgraph;
@@ -24,18 +25,17 @@ using namespace problem;
 namespace resolution {
 namespace vnd {
 
-class VariableNeighborhoodDescent : public LocalSearch {
+class CUDAVariableNeighborhoodDescent : public LocalSearch {
 public:
 	/**
-	 * @param neighborhoodSearch neighborhood search algorithm (sequential, parallel)
 	 * @param seed random seed
 	 * @param lsize the size of the neighborhood
 	 * @param firstImprovement1Opt true if first-improvement on 1-opt is enabled
 	 * @param tlimit time limit in seconds
 	 */
-	VariableNeighborhoodDescent(NeighborhoodSearch &neigborhoodSearch, unsigned long seed,
+	CUDAVariableNeighborhoodDescent(unsigned long seed,
 			const int &lsize, const bool& firstImprovement1Opt, const long &tlimit);
-	virtual ~VariableNeighborhoodDescent();
+	virtual ~CUDAVariableNeighborhoodDescent();
 
 	/**
 	 * Executes the local search algorithm. Repeatedly derives
@@ -61,7 +61,6 @@ private:
 
 	void notifyNewValue(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& iteration);
 
-
 	/**
 	 * Stringstream containing the best result found at each moment of time.
 	 * Results are collected in local search.
@@ -74,14 +73,8 @@ private:
 	static const double timeMeasureInterval = 10.0;
 	double timeSum;
 
-	/**
-	 * Associated NeigborhoodSearch class.
-	 */
-	NeighborhoodSearch& _neighborhoodSearch;
-
-
 };
 
 } /* namespace vnd */
 } /* namespace resolution */
-#endif /* VND_H_ */
+#endif /* CUDAVND_H_ */

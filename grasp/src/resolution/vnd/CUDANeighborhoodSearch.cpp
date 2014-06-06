@@ -15,6 +15,7 @@
 #include <boost/timer/timer.hpp>
 
 #include <limits>
+#include <cstdio>
 #include <thrust/host_vector.h>
 
 
@@ -170,6 +171,7 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	for(int edge = 0; i < n; i++) {  // For each vertex i
 		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
+		h_offset[i] = offset;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
 			double weight = ((Edge*)f->get_property())->weight;
 			int j = target(*f, g->graph);
@@ -228,6 +230,64 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 			numberOfChunks, firstImprovement, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum,
 			bestSrcVertex, bestDestCluster, bestImbalance, timeSpentSoFar, l);
 
+	// validate arrays calculation
+	/*
+	thrust::host_vector<float> h_VertexClusterPosSum2(n * (nc+1));
+	thrust::host_vector<float> h_VertexClusterNegSum2(n * (nc+1));
+	for(int i = 0; i < n * (nc+1); i++) {
+		h_VertexClusterPosSum2[i] = 0.0;
+		h_VertexClusterNegSum2[i] = 0.0;
+	}
+	i = 0, offset = 0;
+	for(int edge = 0; i < n; i++) {  // For each vertex i
+		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
+		int count = 0;
+		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
+			double weight = ((Edge*)f->get_property())->weight;
+			int j = target(*f, g->graph);
+			count++; edge++;
+			if(weight > 0) {
+				h_VertexClusterPosSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
+			} else {
+				h_VertexClusterNegSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
+			}
+		}
+		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
+		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
+			double weight = ((Edge*)f2->get_property())->weight;
+			int j = source(*f2, g->graph);
+			count++; edge++;
+			if(weight > 0) {
+					h_VertexClusterPosSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
+			} else {
+					h_VertexClusterNegSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
+			}
+		}
+		offset += count;
+	}
+	bool equal = true;
+	for(int i = 0; i < n; i++) {
+		// printf("i = %d\n", i);
+		for(int k = 0; k <= nc; k++) {
+			// printf("k = %d\n", k);
+			// printf("Pos: correct: %.2f CUDA: %.2f ; ", h_VertexClusterPosSum2[i * (nc + 1) + k], h_VertexClusterPosSum[i * (nc + 1) + k]);
+			// printf("Neg: %.2f %.2f\n", h_VertexClusterNegSum2[i * (nc + 1) + k], h_VertexClusterNegSum[i * (nc + 1) + k]);
+			if(h_VertexClusterPosSum2[i * (nc + 1) + k] != h_VertexClusterPosSum[i * (nc + 1) + k]) {
+				equal = false;
+				// printf("Failed on pos i = %d and k = %d\n", i, k);
+
+				// break;
+			}
+			if(h_VertexClusterNegSum2[i * (nc + 1) + k] != h_VertexClusterNegSum[i * (nc + 1) + k]) {
+				equal = false;
+				// printf("Failed on neg i = %d and k = %d\n", i, k);
+
+				// break;
+			}
+		}
+	}
+	assert(equal);
+	*/
 	// To simulate sequential first improvement, chooses a random initial index for the following loop
 	/*
 	for(int i = RandomUtil::next(0, numberOfChunks - 1), cont = 0; cont < numberOfChunks; cont++, i = (i + 1) % numberOfChunks) {
@@ -313,9 +373,7 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 	// destination (result) host vectors
 	thrust::host_vector<unsigned long> h_destcluster1(numberOfChunks);  // destination cluster (k3)
 	thrust::host_vector<unsigned long> h_destcluster2(numberOfChunks);  // destination cluster (k4)
-	thrust::host_vector<float> h_destPosFunctionValue(numberOfChunks);  // positive imbalance value
-	thrust::host_vector<float> h_destNegFunctionValue(numberOfChunks);  // negative imbalance value
-	thrust::host_vector<unsigned long> h_destNumComb(numberOfChunks);  // number of combinations
+	thrust::host_vector<float> h_destFunctionValue(numberOfChunks);  // imbalance value
 	// Array that stores the sum of edge weights between vertex i and all clusters
 	thrust::host_vector<float> h_VertexClusterPosSum(n * (nc+1));
 	thrust::host_vector<float> h_VertexClusterNegSum(n * (nc+1));
@@ -364,8 +422,8 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 
 	// Pass raw array and its size to kernel
 	run2optSearchKernel(h_mycluster, h_functionValue, n, m,
-			h_destcluster1, h_destcluster2, h_destPosFunctionValue, h_destNegFunctionValue, threadsCount, nc,
-			numberOfChunks, firstImprovement, h_destNumComb, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum);
+			h_destcluster1, h_destcluster2, h_destFunctionValue, threadsCount, nc,
+			numberOfChunks, firstImprovement, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum);
 
 	// Returns the best value found, iterating through all threads results
 	int bestSrcVertex1 = -1;
@@ -375,25 +433,20 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 	double bestImbalance = clustering->getImbalance().getValue();
 	// To simulate sequential first improvement, chooses a random initial index for the following loop
 	for(int i = RandomUtil::next(0, numberOfChunks - 1), cont = 0; cont < numberOfChunks; cont++, i = (i + 1) % numberOfChunks) {
-		if(h_destPosFunctionValue[i] + h_destNegFunctionValue[i] < bestImbalance) {
+		if(h_destFunctionValue[i] < bestImbalance) {
 			bestSrcVertex1 = i % n;
 			bestSrcVertex2 = i / n;
 			bestDestCluster1 = h_destcluster1[i];
 			bestDestCluster2 = h_destcluster2[i];
-			bestImbalance = h_destPosFunctionValue[i] + h_destNegFunctionValue[i];
+			bestImbalance = h_destFunctionValue[i];
 			if(firstImprovement)  break;
 		}
-	}
-	// Sums the number of combinations visited
-	numberOfTestedCombinations = 0;
-	for(int i = 0; i < numberOfChunks; i++) {
-		numberOfTestedCombinations += h_destNumComb[i];
 	}
 
 	// Reproduce the best clustering found using host data structures
 	if(bestSrcVertex1 >= 0) {
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Processing complete. Best result: vertex " << bestSrcVertex1 << " (from cluster " << myCluster[bestSrcVertex1]
-					<< ") goes to cluster " << bestDestCluster1 << " with I(P) = " << bestImbalance << " " << h_destPosFunctionValue[bestSrcVertex1] << " " << h_destNegFunctionValue[bestSrcVertex1];
+					<< ") goes to cluster " << bestDestCluster1 << " with I(P) = " << bestImbalance;
 		Clustering newClustering(*clustering);
 		int k1 = myCluster[bestSrcVertex1];
 		int k3 = bestDestCluster1;
