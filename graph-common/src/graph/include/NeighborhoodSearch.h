@@ -76,7 +76,7 @@ protected:
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                         int myRank, unsigned long initialSearchIndex,
                 		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
-                		std::vector<unsigned long>& myCluster,
+                		ClusterArray& myCluster,
                 		std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
                 		std::vector<double>& vertexClusterPosSum,
                 		std::vector<double>& vertexClusterNegSum);
@@ -92,7 +92,7 @@ protected:
 		                double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
 		                int myRank, unsigned long initialSearchIndex,
 		        		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
-		        		std::vector<unsigned long>& myCluster,
+		        		ClusterArray& myCluster,
 						std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
 						std::vector<double>& vertexClusterPosSum,
 						std::vector<double>& vertexClusterNegSum);
@@ -162,7 +162,7 @@ protected:
 		}
 
 	/* Number of tested combinations during neighborhood search */
-	long numberOfTestedCombinations;
+	unsigned long numberOfTestedCombinations;
 };
 
 } /* namespace clusteringgraph */

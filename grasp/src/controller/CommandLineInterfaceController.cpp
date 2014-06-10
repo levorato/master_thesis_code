@@ -198,7 +198,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			Imbalance imb = c.getImbalance();
 			out << "I(P) = " << imb.getValue() << endl;
 			stringstream ss;
-			c.printClustering(ss);
+			c.printClustering(ss, g->getN());
 			out << ss.str();
 			// Outputs additional graph analysis data
 			CCProblem& ccp = static_cast<CCProblem&>(problemFactory.build(ClusteringProblem::CC_PROBLEM));
@@ -263,7 +263,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			Imbalance imb = RCCCluster.getImbalance();
 			out << "SRI(P) = " << imb.getValue() << endl;
 			stringstream ss;
-			RCCCluster.printClustering(ss);
+			RCCCluster.printClustering(ss, g->getN());
 			out << ss.str();
 			// Outputs additional graph analysis data
 			RCCProblem& rccp = static_cast<RCCProblem&>(problemFactory.build(ClusteringProblem::RCC_PROBLEM));
@@ -329,7 +329,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int numberOfMasters = np - 1;
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
-	int iterMaxILS = 5, perturbationLevelMax = 30;
+	int iterMaxILS = 3, perturbationLevelMax = 7;
 
 	po::options_description desc("Available options:");
 	desc.add_options()

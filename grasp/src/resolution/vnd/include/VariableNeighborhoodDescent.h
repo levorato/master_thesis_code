@@ -70,6 +70,10 @@ public:
 		return randomSeed;
 	}
 
+	double getTimeSpentOnLocalSearch() {
+		return timeSpentOnLocalSearch;
+	}
+
 private:
 	/**
 	 * Computes the best known search result at each time interval.
@@ -124,6 +128,10 @@ private:
 	 */
 	long timeLimit;
 
+	/**
+	 * Time spent on local search.
+	 */
+	double timeSpentOnLocalSearch;
 };
 
 } /* namespace vnd */

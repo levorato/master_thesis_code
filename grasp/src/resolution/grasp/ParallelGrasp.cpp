@@ -71,7 +71,7 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableN
 		}
 	}
 	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
-	bestClustering.printClustering();
+	bestClustering.printClustering(g->getN());
 	return bestClustering;
 }
 

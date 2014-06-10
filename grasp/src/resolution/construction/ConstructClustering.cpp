@@ -29,7 +29,7 @@ ConstructClustering::~ConstructClustering() {
 
 Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		ClusteringProblem& problem, const int& myRank) {
-	Clustering Cc; // Cc = empty
+	Clustering Cc(*g); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	BOOST_LOG_TRIVIAL(debug)<< "GRASP construct clustering...\n";
 
@@ -88,22 +88,21 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		int n = g->getN();
 		// Repartitions the clustering so that initial clustering has exactly k clusters
 		while (Cc.getNumberOfClusters() < k) {
+			ClusterArray myCluster = Cc.getClusterArray();
 			// BOOST_LOG_TRIVIAL(debug)<< "Cc less than k clusters detected.";
 			// Splits a cluster in two new clusters
 			// 1. Selects the cluster that has more nodes
 			int c = Cc.getBiggestClusterIndex();
-			BoolArray cl = Cc.getCluster(c);
 			// 2. Randomly selects half of the nodes of cl to move to a new cluster
 			//    2.1. Populates a vertex set with the vertices in cluster cl
 			VertexSet set(randomSeed);
 			for (int i = 0; i < n; i++) {
-				if (cl[i]) {
+				if (myCluster[i] == c) {
 					set.addVertex(i);
 				}
 			}
 			//    2.2. Randomly chooses count/2 vertices, removing them from cluster cl
 			//         and adding to new cluster cln
-			BoolArray cln(n);
 			int half = boost::math::iround(set.size() / 2.0);
 			GainCalculation v = set.chooseRandomVertex(set.size());
 			Cc.removeNodeFromCluster(*g, problem, v.vertex, c);
@@ -117,17 +116,6 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 				Cc.removeNodeFromCluster(*g, problem, v.vertex, c);
 				Cc.addNodeToCluster(*g, problem, v.vertex, new_c);
 			}
-			// replaces existing c cluster
-			//Cc.setCluster(c, cl);
-			//Cc.setClusterSize(c, set.size());
-			// includes newly generated cluster
-			//Cc.addCluster(cln);
-			/*
-			if(cl != Cc.getCluster(c)) {
-				cout << set.size() << endl;
-				cout << cl << " : " << cl.count() << endl << Cc.getCluster(c) << " : " << Cc.getCluster(c).count() << endl;
-			} */
-			// Cc.printClustering();
 		}
 		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";
 		// Cc.printClustering();

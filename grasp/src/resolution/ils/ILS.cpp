@@ -191,7 +191,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 
 	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
-	CStar.printClustering(iterationResults);
+	CStar.printClustering(iterationResults, g->getN());
 	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iterMax);
 	// saves the best result to output time file
 	measureTimeResults(0.0, iterMax);

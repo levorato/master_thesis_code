@@ -68,7 +68,7 @@ Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeigh
 		}
 	}
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
-	bestClustering.printClustering();
+	bestClustering.printClustering(g->getN());
 	return bestClustering;
 }
 

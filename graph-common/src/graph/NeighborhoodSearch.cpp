@@ -48,16 +48,7 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 	RandomUtil randomUtil;
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
-	// pre-calculates, in an array, to which cluster each vertex belongs
-	std::vector<unsigned long> myCluster(n, 0);
-	for(unsigned long kc = 0; kc < nc; kc++) {  // for each cluster k
-		BoolArray clusterK = clustering->getCluster(kc);
-		for(unsigned long i = 0; i < n; i++) {  // for each vertex i
-			if(clusterK[i]) {  // vertex i is in cluster k
-				myCluster[i] = kc;
-			}
-		}
-	}
+	ClusterArray myCluster = clustering->getClusterArray();
 	// Array that stores the sum of edge weights between vertex i and all clusters
 	std::vector<double> h_VertexClusterPosSum(n * (nc + 1), double(0));
 	std::vector<double> h_VertexClusterNegSum(n * (nc + 1), double(0));
@@ -115,7 +106,6 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 			unsigned long k2 = *itr;
 			// removes node i from cluster1 and inserts in cluster2
 			Clustering cTemp = *clustering;
-			BoolArray cluster2 = cTemp.getCluster(k2);
 
 			//BOOST_LOG_TRIVIAL(trace) << "Option 1: Taking node " << i << " from cluster " << k1 << " to cluster " << k2;
 			int nc = cTemp.getNumberOfClusters();
@@ -154,7 +144,6 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 			Clustering cTemp = *clustering;
 			//BOOST_LOG_TRIVIAL(trace) << "Option 2: Taking node " << i << " from " << k1 << " to new cluster.";
 			cTemp.removeNodeFromCluster(*g, problem, i, k1);
-			BoolArray cluster2 = cTemp.addCluster(*g, problem, i);
 			numberOfTestedCombinations++;
 			// cTemp->printClustering();
 			Imbalance newImbalance = cTemp.getImbalance();
@@ -200,16 +189,7 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 	Clustering cTemp = cBest;
 	Imbalance bestImbalance = cBest.getImbalance();
 
-	// pre-calculates, in an array, to which cluster each vertex belongs
-	std::vector<unsigned long> myCluster(n, 0);
-	for(unsigned long kc = 0; kc < nc; kc++) {  // for each cluster k
-		BoolArray clusterK = clustering->getCluster(kc);
-		for(unsigned long i = 0; i < n; i++) {  // for each vertex i
-			if(clusterK[i]) {  // vertex i is in cluster k
-				myCluster[i] = kc;
-			}
-		}
-	}
+	ClusterArray myCluster = clustering->getClusterArray();
 	std::vector<double> h_VertexClusterPosSum(n * (nc + 1), double(0));
 	std::vector<double> h_VertexClusterNegSum(n * (nc + 1), double(0));
 	// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
@@ -412,7 +392,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
                 double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                 int myRank, unsigned long initialSearchIndex,
         		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
-        		std::vector<unsigned long>& myCluster,
+        		ClusterArray& myCluster,
         		std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
         		std::vector<double>& vertexClusterPosSum,
         		std::vector<double>& vertexClusterNegSum) {
@@ -526,7 +506,7 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
                 double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                 int myRank, unsigned long initialSearchIndex,
         		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
-        		std::vector<unsigned long>& myCluster,
+        		ClusterArray& myCluster,
 				std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
 				std::vector<double>& vertexClusterPosSum,
 				std::vector<double>& vertexClusterNegSum) {

@@ -90,7 +90,7 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_VND_TAG, omsg);
 			BOOST_LOG_TRIVIAL(debug) << "Message received from process " << stat.source() << ". Obj = " <<
 					omsg.clustering.getImbalance().getValue();
-			BOOST_LOG_TRIVIAL(trace) << omsg.clustering.toString();
+			BOOST_LOG_TRIVIAL(trace) << omsg.clustering.toString(g->getN());
 			// processes the result of the execution of process p(i)
 			// sums the number of tested combinations
 			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
@@ -114,7 +114,7 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		}
 	}
 	BOOST_LOG_TRIVIAL(debug) << "[Parallel VND] Best solution found: Obj = " << bestClustering.getImbalance().getValue() << endl;
-	bestClustering.printClustering();
+	bestClustering.printClustering(g->getN());
 	return bestClustering;
 }
 

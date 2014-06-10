@@ -1,3 +1,0 @@
-Global time spent: 3.57684
-I(P) = 18
-Clustering configuration: 

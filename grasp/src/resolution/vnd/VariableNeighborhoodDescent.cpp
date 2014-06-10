@@ -32,7 +32,8 @@ VariableNeighborhoodDescent::VariableNeighborhoodDescent(NeighborhoodSearch &nei
 		unsigned long seed, const int &lsize, const bool& firstImprovement1Opt, const long &tlimit) :
 				timeResults(), randomSeed(seed), timeSum(0.0),
 				timeSpentInSearch(0.0),	numberOfTestedCombinations(0), _neighborhoodSearch(neighborhoodSearch),
-				l(lsize), firstImprovementOnOneNeig(firstImprovement1Opt), timeLimit(tlimit) {
+				l(lsize), firstImprovementOnOneNeig(firstImprovement1Opt), timeLimit(tlimit),
+				timeSpentOnLocalSearch(0.0) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -46,7 +47,7 @@ Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& 
 	// k is the current neighborhood distance in the local search
 	int r = 1, iteration = 0;
 	Clustering CStar = Cc; // C* := Cc
-	double timeSpentOnLocalSearch = 0.0;
+	timeSpentOnLocalSearch = 0.0;
 	numberOfTestedCombinations = 0;
 	BOOST_LOG_TRIVIAL(debug)<< "GRASP local search...\n";
 	BOOST_LOG_TRIVIAL(debug)<< "Current neighborhood is " << r << endl;
