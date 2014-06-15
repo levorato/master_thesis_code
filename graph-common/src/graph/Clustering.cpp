@@ -25,6 +25,9 @@ using namespace problem;
 
 namespace clusteringgraph {
 
+const long Clustering::NEW_CLUSTER;
+const long Clustering::NO_CLUSTER;
+
 Clustering::Clustering() : clusterArray(), clusterSize(),
 		imbalance(0.0, 0.0), problemType(0), positiveSum(),
 		negativeSum()
