@@ -39,6 +39,7 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
+	mpi::communicator world;
 
 	unsigned long n = g->getN();
 	unsigned long m = g->getM();
@@ -102,6 +103,7 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 		}
 		// Option 1: node i is moved from k1 to another existing cluster k2 != k1
 		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
+			MPI_IPROBE_RETURN(cBest)
 			// cluster(k2)
 			unsigned long k2 = *itr;
 			// removes node i from cluster1 and inserts in cluster2
@@ -400,6 +402,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
+	mpi::communicator world;
 
 	unsigned long n = g->getN();
 	unsigned long m = g->getM();
@@ -435,6 +438,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		}
 		// Node i is moved from k1 to another existing cluster k2 != k1
 		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
+			MPI_IPROBE_RETURN(cBest)
 			// cluster(k2)
 			unsigned long k2 = *itr;
 			if(k2 != k1) {

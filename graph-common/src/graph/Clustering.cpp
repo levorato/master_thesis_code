@@ -163,7 +163,7 @@ void Clustering::printClustering(ostream& os, unsigned long n) {
 
 void Clustering::print(std::ostream& os, ClusterArray& a, unsigned long n)
 {
-	unsigned long numberOfClusters = a.size();
+	unsigned long numberOfClusters = *std::max_element(a.begin(), a.end()) + 1;
 	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
 
 	for(unsigned long i = 0; i < n; i++) {
