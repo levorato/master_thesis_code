@@ -329,7 +329,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int numberOfMasters = np - 1;
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
-	int iterMaxILS = 3, perturbationLevelMax = 7;
+	// int iterMaxILS = 5, perturbationLevelMax = 30;
+	int iterMaxILS = 5, perturbationLevelMax = 7;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
@@ -615,7 +616,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
 						Grasp resolution;
 						Clustering bestClustering = resolution.executeGRASP(construct, vnd, g.get(), imsgpg.iter,
-								problemFactory.build(imsgpg.problemType), info);
+								problemFactory.build(imsgpg.problemType, imsgpg.k), info);
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());
@@ -659,7 +660,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						resolution::ils::ILS resolution;
 						Clustering bestClustering = resolution.executeILS(construct, vnd, g.get(), imsgpils.iter,
 								imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-								problemFactory.build(imsgpils.problemType), info);
+								problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());
@@ -699,7 +700,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					// triggers the local partial VND search to be done between initial and final cluster indices
 					ParallelNeighborhoodSearch pnSearch(numberOfMasters, numberOfSearchSlaves);
 					Clustering bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
-							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
+							problemFactory.build(imsgvns.problemType, imsgvns.k), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
 							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex, false, imsgvns.k);
 
 					// Sends the result back to the master process
