@@ -258,14 +258,18 @@ def main(argv):
 		    matrixline = ['Cluster']
 		    for line in xrange(1, numberOfClusters+1):
 			matrixline.append('%d' % line)
+		    matrixline.append('Sum')
 		    t = HTML.Table(header_row=matrixline)
 		    for line in xrange(0, numberOfClusters):
 			matrixline = ['<b>' + str(line+1) + '</b>']
+			sum = float(0.0)
 			for column in xrange(0, numberOfClusters):
 				if(clusterImbMatrix[line][column] > 0):
 					matrixline.append('%.4f' % clusterImbMatrix[line][column])
 				else:
 					matrixline.append('<font color=\"red\">%.4f</font>' % clusterImbMatrix[line][column])
+				sum += abs(clusterImbMatrix[line][column])
+			matrixline.append('%.4f' % sum)
 	      		t.rows.append(matrixline)
 		    if(result_file_name.startswith('cc')):
 		    	cc_cluster_imb_matrix[graphfile] = str(t)
