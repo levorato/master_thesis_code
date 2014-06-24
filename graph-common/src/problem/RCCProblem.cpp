@@ -392,7 +392,7 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
-	stringstream ss1, ss2;
+	stringstream ss1, ss2, ss3;
 	// os valores de soma entre clusters devem compor uma matriz
 	// as diagnonais da matriz contem os valores das somas internas
 	const matrix<double> posSum(c.positiveSum);
@@ -401,6 +401,8 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	c.negativeSum.resize(nc, nc, false);
 	c.positiveSum.assign(zero_matrix<double>(nc, nc));
 	c.negativeSum.assign(zero_matrix<double>(nc, nc));
+	// Cluster to cluster matrix containing positive / negative contribution to imbalance
+	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
 
 	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] Starting imbalance analysis.";
 	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
@@ -505,8 +507,37 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 		ss2 << i << "," << positiveContribution[i] << "," << negativeContribution[i] << endl;
 		sum2 += positiveContribution[i] + negativeContribution[i];
 	}
+
+	// Matrix containing cluster to cluster contribution to relaxed imbalance
+	for (unsigned long k1 = 0; k1 < nc; k1++) {
+		if(c.positiveSum(k1, k1) < c.negativeSum(k1, k1)) {
+			clusterImbMatrix(k1, k1) = c.positiveSum(k1, k1);
+		} else {
+			clusterImbMatrix(k1, k1) = - c.negativeSum(k1, k1);
+		}
+		for (unsigned long k2 = 0; k2 < nc; k2++) {
+			if (k1 < k2) {
+				if(c.positiveSum(k1, k2) + c.positiveSum(k2, k1) <
+						c.negativeSum(k1, k2) + c.negativeSum(k2, k1)) {
+					clusterImbMatrix(k1, k2) = c.positiveSum(k1, k2);
+					clusterImbMatrix(k2, k1) = c.positiveSum(k2, k1);
+				} else {
+					clusterImbMatrix(k1, k2) = - (c.negativeSum(k1, k2));
+					clusterImbMatrix(k2, k1) = - (c.negativeSum(k2, k1));
+				}
+			}
+		}
+	}
+	ss3 << endl << "Cluster contribution to imbalance analysis (cluster-cluster matrix):" << endl;
+	for(int i = 0; i < nc; i++) {
+		for(int j = 0; j < nc; j++) {
+			ss3 << clusterImbMatrix(i, j) << ", ";
+		}
+		ss3 << endl;
+	}
+
 	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] Graph analysis done. Obj = " << (internalSum + externalSum);
-	return ss1.str() + ss2.str();
+	return ss1.str() + ss2.str() + ss3.str();
 }
 
 list<EdgeContribution> RCCProblem::computeEdges(SignedGraph& g, Clustering& c, int c1, int c2, int edgeType) {

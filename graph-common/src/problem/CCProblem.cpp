@@ -9,12 +9,14 @@
 #include <cmath>
 #include <boost/log/trivial.hpp>
 #include "../graph/include/Clustering.h"
+#include <boost/numeric/ublas/matrix.hpp>
 
 namespace problem {
 
 using namespace std;
 using namespace clusteringgraph;
 using namespace boost;
+using namespace boost::numeric::ublas;
 
 CCProblem::CCProblem() {
 	// TODO Auto-generated constructor stub
@@ -139,8 +141,10 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
-	stringstream ss1, ss2;
+	stringstream ss1, ss2, ss3;
 	DirectedGraph::edge_descriptor e;
+	// Cluster to cluster matrix containing positive / negative contribution to imbalance
+	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
 
 	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Starting imbalance analysis.";
 	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
@@ -162,9 +166,11 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
 				negativeSum += fabs(weight);
+				clusterImbMatrix(ki, myCluster[targ.id]) += fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
 				positiveSum += weight;
+				clusterImbMatrix(ki, myCluster[targ.id]) += fabs(weight);
 			}
 		}
 		ss1 << i << "," << positiveSum << "," << negativeSum << endl;
@@ -187,8 +193,16 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 		}
 		ss2 << i << "," << positiveSum << "," << negativeSum << endl;
 	}
+
+	ss3 << endl << "Cluster contribution to imbalance analysis (cluster-cluster matrix):" << endl;
+	for(int i = 0; i < nc; i++) {
+		for(int j = 0; j < nc; j++) {
+			ss3 << clusterImbMatrix(i, j) << ", ";
+		}
+		ss3 << endl;
+	}
 	
 	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Graph analysis done." << endl;
-	return ss1.str() + ss2.str();
+	return ss1.str() + ss2.str() + ss3.str();
 }
 } /* namespace problem */
