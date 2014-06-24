@@ -98,6 +98,8 @@ def main(argv):
    cc_imbalance_summary = dict()
    rcc_result_summary = dict()
    rcc_imbalance_summary = dict()
+   cc_cluster_imb_matrix = dict()
+   rcc_cluster_imb_matrix = dict()
    matrix = []
    neg_edge_sum = 0.0
    pos_edge_sum = 0.0
@@ -173,13 +175,16 @@ def main(argv):
 		    reader = csv.reader(StringIO.StringIO(content), delimiter='\n')
 		    k = 0
                     processed = False
-                    processed_analysis = False
+                    processed_imb_analysis = False
                     clustering_numbers = []
                     clustering_names = []
                     clustering_full_names = []
                     vertex_contrib = [[float(0.0), float(0.0)] for x in xrange(N)]
                     pos_contrib_sum = float(0.0)
                     neg_contrib_sum = float(0.0)
+		    started_cluster_analysis = False
+		    processed_imb_analysis = False
+		    started_imb_analysis = False
 		    for row in reader:
 		       linestring = ''.join(row)
                        if(linestring == ''):
@@ -211,13 +216,23 @@ def main(argv):
                              # processes imbalance analysis data (out edges contribution)
                              #reader3 = csv.reader(StringIO.StringIO(linestring), delimiter=',')
                              #line = reader3.next()
-                             if(linestring.startswith('Imbalance')):
-                                if(not processed_analysis):
-                                   processed_analysis = True
-                                else: 
-                                   break  # finished processing
+                             if(linestring.startswith('Cluster')):
+                                if(not started_cluster_analysis):
+                                   started_cluster_analysis = True
+				# initialize matrix with cluster contribution
+				numberOfClusters = len(clustering_full_names)
+				clusterImbMatrix = [[float(0.0) for x in xrange(numberOfClusters)] for x in xrange(numberOfClusters)]
+				line = 0
                              else:
-                                if(not linestring.startswith('Vertex')):
+                                if(not processed_imb_analysis):
+				   if(linestring.startswith('Vertex')):
+				       continue
+				   if(linestring.startswith('Imbalance')):
+				       if(not started_imb_analysis):
+				          started_imb_analysis = True
+				       else:
+					  processed_imb_analysis = True
+				       continue
                                    # processes vertex contribution to imbalance
                                    #reader3 = csv.reader(StringIO.StringIO(linestring), delimiter=',')
                                    #line = reader3.next()
@@ -230,6 +245,34 @@ def main(argv):
                                    pos_contrib_sum += pos_contrib
                                    neg_contrib_sum += neg_contrib
                                    # print '{0} {1}'.format(str(neg_contrib_sum), str(neg_contrib))
+                                if(started_cluster_analysis):
+                                   # reads matrix with cluster contribution to imbalance
+				   reader3 = csv.reader(StringIO.StringIO(linestring), delimiter=',')
+				   column = 0
+                                   for elem in reader3.next():
+					if(str(elem).strip() != ''):
+						clusterImbMatrix[line][column] = float(str(elem))
+						column += 1
+				   line += 1
+		    # export cluster imb matrix to html
+		    matrixline = ['Cluster']
+		    for line in xrange(1, numberOfClusters+1):
+			matrixline.append('%d' % line)
+		    t = HTML.Table(header_row=matrixline)
+		    for line in xrange(0, numberOfClusters):
+			matrixline = ['<b>' + str(line+1) + '</b>']
+			for column in xrange(0, numberOfClusters):
+				if(clusterImbMatrix[line][column] > 0):
+					matrixline.append('%.4f' % clusterImbMatrix[line][column])
+				else:
+					matrixline.append('<font color=\"red\">%.4f</font>' % clusterImbMatrix[line][column])
+	      		t.rows.append(matrixline)
+		    if(result_file_name.startswith('cc')):
+		    	cc_cluster_imb_matrix[graphfile] = str(t)
+		    else:
+		     	rcc_cluster_imb_matrix[graphfile] = str(t)
+		    # end process *-result.txt files
+
 
                     # process *-Node0-*-iterations.csv file
                     csv_file_list = []
@@ -317,7 +360,9 @@ def main(argv):
          t.rows.append(item)
       
       html += str(t)
-      html += '</p><br/><br/>'
+      html += '</p><br/>Cluster to cluster imbalance contribution matrix'
+      # append imbalance matrix
+      html += cc_cluster_imb_matrix[key] + '<br/>'
       startyear += 1
       partial_html_cc.append(html)
    html = '<h2>CC - Frequency of countries per cluster per year</h2><p>'
@@ -357,7 +402,9 @@ def main(argv):
          t.rows.append(item)
          
       html += str(t)
-      html += '</p><br/><br/>'
+      html += '</p><br/>Cluster to cluster imbalance contribution matrix'
+      # append imbalance matrix
+      html += rcc_cluster_imb_matrix[key] + '<br/>'
       startyear += 1
       partial_html_rcc.append(html)
    html = '<h2>RCC - Frequency of countries per cluster per year</h2><p>'
