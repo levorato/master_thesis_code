@@ -136,6 +136,11 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 					<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
 			timer.resume();
 			start_time = timer.elapsed();
+			// if elapsed time is bigger than timeLimit, break
+			if(timeSpentInILS >= vnd.getTimeLimit()) {
+				BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
+				break;
+			}
 		}
 		Imbalance newValue = CStar.getImbalance();
 		Imbalance bestValue = CBest.getImbalance();
