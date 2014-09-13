@@ -46,10 +46,10 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		k = rp.getK();
 	}
 
-	// Splits the processing in (n / numberOfSearchSlaves) chunks,
+	// Splits the processing in (n / (numberOfSearchSlaves + 1)) chunks,
 	// to be consumed by numberOfSearchSlaves processes
-	unsigned long sizeOfChunk = g->getN() / numberOfSearchSlaves;
-	unsigned long remainingVertices = g->getN() % numberOfSearchSlaves;
+	unsigned long sizeOfChunk = g->getN() / (numberOfSearchSlaves + 1);
+	unsigned long remainingVertices = g->getN() % (numberOfSearchSlaves + 1);
 	mpi::communicator world;
 	// the leader distributes the work across the processors
 	// the leader itself (myRank) does part of the work too
@@ -69,18 +69,16 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 	}
 	// the leader (me) does its part of the work too
 	BOOST_LOG_TRIVIAL(trace) << "Total number of vertices is " << g->getN() << endl;
-	BOOST_LOG_TRIVIAL(trace) << "VND Parallelization status: " << numberOfSearchSlaves <<
+	BOOST_LOG_TRIVIAL(trace) << "VND Parallelization status: The master plus " << numberOfSearchSlaves <<
 			" search slaves will process " << sizeOfChunk << " vertices each one." << endl;
 	BOOST_LOG_TRIVIAL(trace) << "RemainingVertices is " << remainingVertices << endl;
 
 	double bestValue = numeric_limits<double>::infinity();
 	Clustering bestClustering;
-	if(remainingVertices > 0) {
-		bestClustering = this->searchNeighborhood(l, g, clustering,
-				problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
-				i * sizeOfChunk, i * sizeOfChunk + remainingVertices - 1, false, k);
-		bestValue = bestClustering.getImbalance().getValue();
-	}
+	bestClustering = this->searchNeighborhood(l, g, clustering,
+                    problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
+                        i * sizeOfChunk, g->getN() - 1, false, k);
+    bestValue = bestClustering.getImbalance().getValue();
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
 	// the leader receives the processing results, if that is the case
 	// TODO implement global first improvement (l = 2-opt) in parallel VND here!
