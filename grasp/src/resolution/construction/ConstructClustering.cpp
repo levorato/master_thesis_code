@@ -8,6 +8,7 @@
 #include "include/ConstructClustering.h"
 #include "../construction/include/VertexSet.h"
 #include <boost/log/trivial.hpp>
+#include <boost/timer/timer.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include "problem/include/RCCProblem.h"
 #include <cassert>
@@ -32,6 +33,10 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 	Clustering Cc(*g); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	BOOST_LOG_TRIVIAL(debug)<< "GRASP construct clustering...\n";
+	// 0. Triggers local processing time calculation
+        boost::timer::cpu_timer timer;
+        timer.start();
+        boost::timer::cpu_times start_time = timer.elapsed();
 
 	while (lc.size() > 0) { // lc != empty
 		GainCalculation gainCalculation;
@@ -80,7 +85,16 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		// Removal already done by the chooseVertex methods above
 		// Cc->printClustering();
 	}
-	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
+	// Cc.setImbalance(problem.objectiveFunction(*g, Cc));
+	// => Finally: Stops the timer and stores the elapsed time
+        timer.stop();
+        boost::timer::cpu_times end_time = timer.elapsed();
+        double timeSpent = (end_time.wall - start_time.wall)
+                         / double(1000000000);
+	timer.resume();
+	if(timeSpent >= 3600) {
+		BOOST_LOG_TRIVIAL(info)<< "GRASP construct clustering done (before post-processing). Time spent: " << timeSpent;
+	}
 	// Post-processing phase, only for RCC Problem
 	if (problem.getType() == ClusteringProblem::RCC_PROBLEM) {
 		RCCProblem& rp = static_cast<RCCProblem&>(problem);
@@ -105,16 +119,14 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 			//         and adding to new cluster cln
 			int half = boost::math::iround(set.size() / 2.0);
 			GainCalculation v = set.chooseRandomVertex(set.size());
-			Cc.removeNodeFromCluster(*g, problem, v.vertex, c);
-			Cc.addCluster(*g, problem, v.vertex);
+			Cc.removeNodeFromCluster(*g, problem, v.vertex, c, false);
+			Cc.addCluster(*g, problem, v.vertex, false);
 			int new_c = Cc.getNumberOfClusters() - 1;
 			for (int i = 1; i < half; i++) {
 				v = set.chooseRandomVertex(set.size());
 				// BOOST_LOG_TRIVIAL(debug)<< "Selecionou " << v.vertex << ", size = " << set.size();
-				// cl[v.vertex] = false;
-				// cln[v.vertex] = true;
-				Cc.removeNodeFromCluster(*g, problem, v.vertex, c);
-				Cc.addNodeToCluster(*g, problem, v.vertex, new_c);
+				Cc.removeNodeFromCluster(*g, problem, v.vertex, c, false);
+				Cc.addNodeToCluster(*g, problem, v.vertex, new_c, false);
 			}
 		}
 		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";
@@ -122,6 +134,14 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 	}
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
 	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed. Obj = " << Cc.getImbalance().getValue();
+	timer.stop();
+        end_time = timer.elapsed();
+        timeSpent = (end_time.wall - start_time.wall)
+                         / double(1000000000);
+        if(timeSpent >= 3600) {
+                BOOST_LOG_TRIVIAL(info)<< "GRASP construct clustering done and post-processing done. Total time: " << timeSpent;
+        }
+
 	// Cc.printClustering();
 	return Cc;
 }

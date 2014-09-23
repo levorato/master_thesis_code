@@ -69,7 +69,7 @@ public:
 	 * the clustering, based on the modification.
 	 */
 	void addCluster(SignedGraph& g, ClusteringProblem& p,
-			const unsigned long& i);
+			const unsigned long& i, bool updateImbalance = true);
 
 	/**
 	 * Returns the biggest cluster (index) of the cluster (the one with more elements).
@@ -82,7 +82,7 @@ public:
 	 * modification.
 	 */
 	void addNodeToCluster(SignedGraph& g, ClusteringProblem& p,
-			const unsigned long& i, const unsigned long& k);
+			const unsigned long& i, const unsigned long& k, bool updateImbalance = true);
 
 	/**
 	 * Removes a node i from cluster k. Recalculates the objective
@@ -90,7 +90,7 @@ public:
 	 * modification.
 	 */
 	void removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p,
-			const unsigned long& i, const unsigned long& k);
+			const unsigned long& i, const unsigned long& k, bool updateImbalance = true);
 
 	/**
 	 * Prints the clustering config on the screen.

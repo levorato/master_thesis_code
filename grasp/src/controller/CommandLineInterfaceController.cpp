@@ -109,7 +109,7 @@ std::istream& operator>>(std::istream& in, CommandLineInterfaceController::State
     return in;
 }
 
-CommandLineInterfaceController::CommandLineInterfaceController() : logSeverity("warning") {
+CommandLineInterfaceController::CommandLineInterfaceController() : logSeverity("info") {
 	// TODO Auto-generated constructor stub
 
 }
@@ -329,8 +329,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int numberOfMasters = np - 1;
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
-	// int iterMaxILS = 5, perturbationLevelMax = 30;
-	int iterMaxILS = 5, perturbationLevelMax = 7;
+	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and Random instances 
+	//int iterMaxILS = 5, perturbationLevelMax = 7; // for UNGA instances
 
 	po::options_description desc("Available options:");
 	desc.add_options()
@@ -698,10 +698,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					}
 
 					// triggers the local partial VND search to be done between initial and final cluster indices
+					// TODO: include firstImprovementOnOneNeig as a parameter inside the MPI message
+					bool firstImprovementOnOneNeig = true;
 					ParallelNeighborhoodSearch pnSearch(numberOfMasters, numberOfSearchSlaves);
 					Clustering bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
 							problemFactory.build(imsgvns.problemType, imsgvns.k), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
-							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex, false, imsgvns.k);
+							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex, firstImprovementOnOneNeig, imsgvns.k);
 
 					// Sends the result back to the master process
 					int leader = stat.source();
@@ -729,7 +731,7 @@ void CommandLineInterfaceController::readPropertiesFile() {
 	pt::ptree propTree;
 
 	if ( !boost::filesystem::exists( "config.ini" ) ) {
-	  cout << "Can't find config.ini file! Assuming default properties." << endl;
+		cout << "Can't find config.ini file! Assuming default properties." << endl;
 	} else {
 		read_ini("config.ini", propTree);
 

@@ -46,7 +46,7 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		k = rp.getK();
 	}
 
-	// Splits the processing in (n / (numberOfSearchSlaves + 1)) chunks,
+	// Splits the processing in (n / numberOfSearchSlaves) chunks,
 	// to be consumed by numberOfSearchSlaves processes
 	unsigned long sizeOfChunk = g->getN() / (numberOfSearchSlaves + 1);
 	unsigned long remainingVertices = g->getN() % (numberOfSearchSlaves + 1);
@@ -75,10 +75,19 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 
 	double bestValue = numeric_limits<double>::infinity();
 	Clustering bestClustering;
+	// a busca abaixo, que eh feita pelo mestre, sera interrompida se ele receber uma solucao melhor de um dos escravos
 	bestClustering = this->searchNeighborhood(l, g, clustering,
-                    problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
-                        i * sizeOfChunk, g->getN() - 1, false, k);
-    bestValue = bestClustering.getImbalance().getValue();
+			problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
+			i * sizeOfChunk, g->getN() - 1, firstImprovementOnOneNeig, k);
+	bestValue = bestClustering.getImbalance().getValue();
+	if((firstImprovementOnOneNeig and l == 1) or (l == 2)) {
+        	InputMessageParallelVND imsg;
+                BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VND] First improvement on PVND: interrupting other VND slaves.";
+                for(int j = 0; j < numberOfSearchSlaves; j++) {
+                        world.send(slaveList[j], MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG, imsg);
+                }
+        }
+	// TODO enviar msg de interrupcao se a busca local do mestre acabar antes das dos demais escravos
 	BOOST_LOG_TRIVIAL(debug) << "Waiting for slaves return messages...\n";
 	// the leader receives the processing results, if that is the case
 	// TODO implement global first improvement (l = 2-opt) in parallel VND here!
@@ -100,14 +109,6 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 				BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VND] Better value found for objective function in node "
 						<< stat.source() << ": " <<
 						omsg.clustering.getImbalance().getValue() << endl;
-				// IMPORTANT: Terminate other slaves' VND search if 2-opt and CC Problem
-				if( (l == 2) and (problem.getType() == ClusteringProblem::CC_PROBLEM) ) {
-					InputMessageParallelVND imsg;
-					BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VND] First improvement on 2-opt: interrupting other VND slaves.";
-					for(int j = 0; j < numberOfSearchSlaves; j++) {
-						world.send(slaveList[j], MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG, imsg);
-					}
-				}
 			}
 		}
 	}
@@ -126,9 +127,9 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 
 	if (l == 1) {  // 1-opt
 		// Parallel search always does best improvement in 1-opt
-		// Therefore, parameter firstImprovementOnOneNeig is ignored
+		// Therefore, parameter firstImprovementOnOneNeig is ignored => TODO: DISABLED!!! Now the parameter is in use!
 		return this->search1opt(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
-				myRank, initialSearchIndex, finalSearchIndex, false, k);
+				myRank, initialSearchIndex, finalSearchIndex, firstImprovementOnOneNeig, k);
 	} else {  // 2-opt
 		// TODO implement global first improvement in parallel 2-opt
 		// first improvement found in one process must break all other processes' loop

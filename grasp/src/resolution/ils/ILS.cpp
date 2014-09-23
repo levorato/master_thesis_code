@@ -160,13 +160,14 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
+		timer.resume();
+		start_time = timer.elapsed();
 		// guarantees at least one execution of the ILS when the number of iterations is smaller than one
 		if(iterMax <= 0) {  break;  }
 
 		// Avoids constructClustering if loop break condition is met
-		if(i <= iterMax) {
+		if((i + 1) < iterMax) {
 			// 0. Triggers local processing time calculation
-			timer.resume();
 			start_time = timer.elapsed();
 
 			// 1. Construct the next clustering

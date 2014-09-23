@@ -75,7 +75,7 @@ unsigned long Clustering::getNumberOfClusters() const {
 	return this->clusterSize.size();
 }
 
-void Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i) {
+void Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, bool updateImbalance) {
 	assert(clusterArray.size() > 0);
 	// 1. Increase the number of clusters
 	this->clusterSize.push_back(1);
@@ -84,10 +84,12 @@ void Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const unsigned
 	// BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
 	this->clusterArray[i] = this->getNumberOfClusters() - 1;
 
-	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
-		this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterArray.size()-1, i);
-	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
-		this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, clusterArray.size()-1, i);
+	if(updateImbalance) {
+		if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+			this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterArray.size()-1, i);
+		} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+			this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, clusterArray.size()-1, i);
+		}
 	}
 }
 
@@ -96,15 +98,19 @@ int Clustering::getBiggestClusterIndex() {
 	return std::distance(clusterSize.begin(), pos);
 }
 
-void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
+void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k,
+		bool updateImbalance) {
 	assert(clusterArray.size() > 0);
 	//BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
 	this->clusterArray[i] = k;
 	this->clusterSize[k]++;
-	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
-		this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
-	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
-		this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+
+	if(updateImbalance) {
+		if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+			this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+		} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+			this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+		}
 	}
 }
 
@@ -132,14 +138,17 @@ void Clustering::setClusterSize(unsigned long k, unsigned long size) {
 	this->clusterSize[k] = size;
 }
 
-void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
+void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, 
+		const unsigned long& k, bool updateImbalance) {
 	assert(clusterArray.size() > 0);
 	// verifica se o cluster eh unitario
 	//BOOST_LOG_TRIVIAL(trace) << "Removing vertex " << i << " from cluster " << k;
-	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
-		this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
-	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
-		this->imbalance = p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+	if(updateImbalance) {
+		if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+			this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+		} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+			this->imbalance = p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+		}
 	}
 	this->clusterArray[i] = NO_CLUSTER;
 	if(clusterSize[k] <= 1) {

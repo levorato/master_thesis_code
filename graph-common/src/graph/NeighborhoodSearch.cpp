@@ -20,12 +20,17 @@ using namespace std;
 using namespace util;
 
 // probes for mpi VND interrupt message (first improvement from other node) and returns if it exists
+// or probes for vnd output message, if this search is being done by a master process
 #define MPI_IPROBE_RETURN(ret_val) \
 optional< mpi::status > stat = world.iprobe(mpi::any_source, MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG); \
 if (stat) { \
         InputMessageParallelVND imsg; \
         mpi::status stat = world.recv(mpi::any_source, MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG, imsg); \
-    return (ret_val); }
+	return (ret_val); } \
+optional< mpi::status > stat2 = world.iprobe(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_VND_TAG); \
+if (stat2) { \
+	return (ret_val); \
+} 
 
 
 namespace clusteringgraph {
@@ -321,9 +326,11 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 				}
 			}
 			// return if time limit is exceeded
+			timer.stop();
 			boost::timer::cpu_times end_time = timer.elapsed();
 			double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 			if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
+			timer.resume();
 			// Option 3: node i is moved to a new cluster, alone, and
 			//           node j is moved to another existing cluster k4
 			if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s1 > 1)) {
@@ -349,9 +356,11 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 						}
 					}
 					// return if time limit is exceeded
+					timer.stop();
 					boost::timer::cpu_times end_time = timer.elapsed();
 					double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 					if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
+					timer.resume();
 				}
 			}
 			// Option 4: nodes i and j are moved to 2 new clusters, and left alone
@@ -377,9 +386,11 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 			}
 		}
 		// return if time limit is exceeded
+		timer.stop();
 		boost::timer::cpu_times end_time = timer.elapsed();
 		double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
 		if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
+		timer.resume();
 		// increment rule
 		i++;
 		if(i > finalSearchIndex) {
@@ -436,6 +447,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 					_positiveSumK1 -= vertexClusterPosSum[i*(nc+1) + k];
 			}
 		}
+		bool timeLimitExceeded = false;
 		// Node i is moved from k1 to another existing cluster k2 != k1
 		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
 			MPI_IPROBE_RETURN(cBest)
@@ -460,9 +472,18 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 						break;
 					}
 				}
+				// return if time limit is exceeded
+                        	timer.stop();
+                        	boost::timer::cpu_times end_time = timer.elapsed();
+                        	double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+                        	if(timeSpentSoFar + localTimeSpent >= timeLimit){
+					timeLimitExceeded = true;
+					break;
+				}
+                        	timer.resume();
 			}
 		}
-		if(firstImprovement and foundBetterSolution) {
+		if((firstImprovement and foundBetterSolution) or timeLimitExceeded) {
 			break;
 		}
 		// increment rule
@@ -603,6 +624,14 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 									break;
 								}
 							}
+                                			// return if time limit is exceeded
+                                			timer.stop();
+                                			boost::timer::cpu_times end_time = timer.elapsed();
+                                			double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+                                			if(timeSpentSoFar + localTimeSpent >= timeLimit){ 
+                                        			return cBest;
+                                			}
+                                			timer.resume();
 						}
 					}
 					if(firstImprovement and foundBetterSolution) {
