@@ -441,12 +441,6 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		// REMOVAL of vertex i from cluster k1 -> avoids recalculating
 		//   the same thing in the k2 (destination cluster) loop
 		double _negativeSumK1 = -vertexClusterNegSum[i*(nc+1) + k1];
-		double _positiveSumK1 = 0.0;
-		for(uint k = 0; k < nc; k++) {
-			if(k != k1) {
-					_positiveSumK1 -= vertexClusterPosSum[i*(nc+1) + k];
-			}
-		}
 		bool timeLimitExceeded = false;
 		// Node i is moved from k1 to another existing cluster k2 != k1
 		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
@@ -456,12 +450,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 			if(k2 != k1) {
 				// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
 				double negativeSum = _negativeSumK1 + vertexClusterNegSum[i*(nc+1) + k2];
-				double positiveSum = _positiveSumK1;
-				for(uint k = 0; k < nc; k++) {
-					if(k != k2) {
-						positiveSum += vertexClusterPosSum[i*(nc+1) + k];
-					}
-				}
+				double positiveSum = -(- vertexClusterPosSum[i*(nc+1) + k1]) + (-vertexClusterPosSum[i*(nc+1) + k2]);
 				numberOfTestedCombinations++;
 				if(clustering->getImbalance().getValue() + positiveSum + negativeSum < bestImbalance.getValue()) {  // improvement in imbalance
 					bestImbalance = Imbalance(positiveSum + clustering->getImbalance().getPositiveValue(), negativeSum + clustering->getImbalance().getNegativeValue());
@@ -580,12 +569,6 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 			// REMOVAL of vertex i from cluster k1 -> avoids recalculating
 			//   the same thing in the k2 (destination cluster) loop
 			double negativeSumK1 = -vertexClusterNegSum[i*(nc+1) + k1];
-			double positiveSumK1 = 0.0;
-			for(uint k = 0; k < nc; k++) {
-					if(k != k1) {
-							positiveSumK1 -= vertexClusterPosSum[i*(nc+1) + k];
-					}
-			}
 			// Option 1: node i is moved to another existing cluster k3 != k1
 			for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
 				MPI_IPROBE_RETURN(cBest)
@@ -594,24 +577,14 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 				if(k3 != k1) {
 					// calculates the cost of removing vertex i from cluster k1 and inserting into cluster k3
 					double negativeSum = negativeSumK1 + vertexClusterNegSum[i*(nc+1) + k3];
-					double positiveSum = positiveSumK1;
-					for(uint k = 0; k < nc; k++) {
-						if(k != k3) {
-							positiveSum += vertexClusterPosSum[i*(nc+1) + k];
-						}
-					}
+					double positiveSum = -(- vertexClusterPosSum[i*(nc+1) + k1]) + (-vertexClusterPosSum[i*(nc+1) + k3]);
 					for (unordered_set<unsigned long>::iterator itr2 = myNeighborClusterList[j].begin(); itr2 != myNeighborClusterList[j].end(); ++itr2) {
 						// cluster(k4)
 						unsigned long k4 = *itr2;
 						if(k4 != k2) {
 							// calculates the cost of removing vertex j from cluster k2 and inserting into cluster k4
-							double negativeSum2 = negativeSum + vertexClusterNegSum[j*(nc+1) + k4];
-							double positiveSum2 = positiveSum;
-							for(uint k = 0; k < nc; k++) {
-								if(k != k4) {
-									positiveSum2 += vertexClusterPosSum[j*(nc+1) + k];
-								}
-							}
+							double negativeSum2 = negativeSum - vertexClusterNegSum[j*(nc+1) + k2] + vertexClusterNegSum[j*(nc+1) + k4];
+							double positiveSum2 = positiveSum + -(- vertexClusterPosSum[j*(nc+1) + k2]) + (-vertexClusterPosSum[j*(nc+1) + k4]);
 							numberOfTestedCombinations++;
 							if(originalPosImbalance + originalNegImbalance + positiveSum2 + negativeSum2 < bestImbalance.getValue()) {  // improvement in imbalance
 								bestImbalance = Imbalance(positiveSum2 + originalPosImbalance, negativeSum2 + originalNegImbalance);
@@ -624,14 +597,14 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 									break;
 								}
 							}
-                                			// return if time limit is exceeded
-                                			timer.stop();
-                                			boost::timer::cpu_times end_time = timer.elapsed();
-                                			double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-                                			if(timeSpentSoFar + localTimeSpent >= timeLimit){ 
-                                        			return cBest;
-                                			}
-                                			timer.resume();
+							// return if time limit is exceeded
+							timer.stop();
+							boost::timer::cpu_times end_time = timer.elapsed();
+							double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+							if(timeSpentSoFar + localTimeSpent >= timeLimit){
+									return cBest;
+							}
+							timer.resume();
 						}
 					}
 					if(firstImprovement and foundBetterSolution) {
