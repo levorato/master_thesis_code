@@ -93,6 +93,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 		for(int j = 1, total = 0; j <= iterMaxILS; total++) {  // internal ILS loop
 			// 2. Execute local search algorithm
 			Cl = vnd.localSearch(g, Cl, i, problem, timeSpentInILS, info.processRank);
+			numberOfTestedCombinations += vnd.getNumberOfTestedCombinations();
 			// 3. Select the best clustring so far
 			// if Q(Cl) > Q(Cstar)
 			Imbalance newValue = Cl.getImbalance();
