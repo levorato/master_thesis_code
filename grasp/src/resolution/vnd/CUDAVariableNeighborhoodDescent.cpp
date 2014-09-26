@@ -81,7 +81,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	BOOST_LOG_TRIVIAL(trace) << "[CUDA] Begin transfer to device...";
 	// A -> Transfer to device
 	// transfers the myClusters array to CUDA device
-	unsigned long numberOfChunks = n * 4;  // the search space for each vertex (dest cluster) will be split into 4 chunks
+	unsigned long numberOfChunks = n * (nc + 1);  // the search space for each vertex (dest cluster) will be split into 4 chunks
 	unsigned long* cluster = myCluster.get();
 	thrust::host_vector<unsigned long> h_mycluster(cluster, cluster + n);
 	// objective function value
@@ -169,7 +169,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 			sourceVertexList, destinationClusterList, bestImbalance, timeSpentSoFar, l);
 
 	// validate arrays calculation
-	/*
+/*
 	thrust::host_vector<float> h_VertexClusterPosSum2(n * (nc+1));
 	thrust::host_vector<float> h_VertexClusterNegSum2(n * (nc+1));
 	for(int i = 0; i < n * (nc+1); i++) {
@@ -225,7 +225,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 		}
 	}
 	assert(equal);
-	*/
+*/
 	// To simulate sequential first improvement, chooses a random initial index for the following loop
 	/*
 	for(int i = RandomUtil::next(0, numberOfChunks - 1), cont = 0; cont < numberOfChunks; cont++, i = (i + 1) % numberOfChunks) {
@@ -262,7 +262,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 		CStar.setImbalance(problem.objectiveFunction(*g, CStar));
 		cBest = CStar;
 		if(CStar.getImbalance().getValue() != bestImbalance) {
-			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH!";
+			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH! " << bestImbalance;
 		}
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. Best result: I(P) = " << CStar.getImbalance().getValue() << " "
 				<< CStar.getImbalance().getPositiveValue() << " " << CStar.getImbalance().getNegativeValue();

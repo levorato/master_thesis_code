@@ -222,16 +222,18 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	unsigned short threadsCount = 128;  // limited by shared memory size
 
 	// Pass raw array and its size to kernel
-	uint bestSrcVertex = -1;
-	uint bestDestCluster = -1;
+	std::vector<uint> sourceVertexList;
+	std::vector<uint> destinationClusterList;
 	float bestImbalance = clustering->getImbalance().getValue();
 	int l = 1;
-	run1optSearchKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m, threadsCount, nc,
+	runVNDKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m, threadsCount, nc,
 			numberOfChunks, firstImprovement, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum,
-			bestSrcVertex, bestDestCluster, bestImbalance, timeSpentSoFar, l);
+			sourceVertexList, destinationClusterList, bestImbalance, timeSpentSoFar, l);
+	uint bestSrcVertex = sourceVertexList[0];
+	uint bestDestCluster = destinationClusterList[0];
 
 	// validate arrays calculation
-	/*
+
 	thrust::host_vector<float> h_VertexClusterPosSum2(n * (nc+1));
 	thrust::host_vector<float> h_VertexClusterNegSum2(n * (nc+1));
 	for(int i = 0; i < n * (nc+1); i++) {
@@ -287,7 +289,7 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		}
 	}
 	assert(equal);
-	*/
+
 	// To simulate sequential first improvement, chooses a random initial index for the following loop
 	/*
 	for(int i = RandomUtil::next(0, numberOfChunks - 1), cont = 0; cont < numberOfChunks; cont++, i = (i + 1) % numberOfChunks) {
@@ -320,7 +322,7 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		}
 		cBest = newClustering;
 		if(newClustering.getImbalance().getValue() != bestImbalance) {
-			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH!";
+			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH! " << bestImbalance;
 		}
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
 				<< newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
@@ -480,7 +482,7 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 		}
 		cBest = newClustering;
 		if(newClustering.getImbalance().getValue() != bestImbalance) {
-			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH!";
+			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH! " << bestImbalance;
 		}
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
 				<< newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
