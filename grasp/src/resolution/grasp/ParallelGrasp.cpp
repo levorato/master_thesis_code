@@ -28,8 +28,8 @@ namespace mpi = boost::mpi;
  * @param numberOfSlaves number of slaves used for parallel ILS processing
  * @param numberOfSearchSlaves number of slaves used for parallel VND processing
  */
-ParallelGrasp::ParallelGrasp(const int& slaves, const int& searchSlaves) :
-		Grasp(), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
+ParallelGrasp::ParallelGrasp(const int& allocationStrategy, const int& slaves, const int& searchSlaves) :
+		Grasp(), machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
 
 }
 
@@ -50,7 +50,7 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableN
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	std::vector<int> slaveList;
-	MPIUtil::populateListOfMasters(slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
+	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd.getNeighborhoodSize(),
 				problem.getType(), construct.getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd.getTimeLimit(),

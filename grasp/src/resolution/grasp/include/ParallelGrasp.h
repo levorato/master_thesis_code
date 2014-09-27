@@ -19,7 +19,7 @@ namespace grasp {
 
 class ParallelGrasp : resolution::grasp::Grasp {
 public:
-	ParallelGrasp(const int& slaves, const int& searchSlaves);
+	ParallelGrasp(const int& allocationStrategy, const int& slaves, const int& searchSlaves);
 	virtual ~ParallelGrasp();
 
 	/**
@@ -29,6 +29,7 @@ public:
 			SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info);
 
 private:
+	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;
 	unsigned int numberOfSlaves;
 };
