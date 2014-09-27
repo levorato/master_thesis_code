@@ -24,8 +24,9 @@ using namespace util;
 using namespace util::parallel;
 using namespace std;
 
-ParallelNeighborhoodSearch::ParallelNeighborhoodSearch(unsigned int offset, unsigned int numproc) :
-		numberOfSlaves(offset), numberOfSearchSlaves(numproc) {
+ParallelNeighborhoodSearch::ParallelNeighborhoodSearch(int allocStrategy,
+		unsigned int offset, unsigned int numproc) :
+		machineProcessAllocationStrategy(allocStrategy), numberOfSlaves(offset), numberOfSearchSlaves(numproc) {
 
 }
 
@@ -56,7 +57,7 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 	int i = 0;
 	std::vector<int> slaveList;
 	if(sizeOfChunk > 0) {
-		MPIUtil::populateListOfVNDSlaves(slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
+		MPIUtil::populateListOfVNDSlaves(machineProcessAllocationStrategy, slaveList, myRank, numberOfSlaves, numberOfSearchSlaves);
 		// Sends the parallel search (VND) message to the search slaves via MPI
 		for(i = 0; i < numberOfSearchSlaves; i++) {
 			InputMessageParallelVND imsgpvns(g->getId(), l, g->getGraphFileLocation(), *clustering, problem.getType(),

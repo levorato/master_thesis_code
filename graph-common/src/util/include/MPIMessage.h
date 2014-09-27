@@ -284,7 +284,7 @@ public:
 class MPIMessage {
 public:
 	// Message with the number of heuristic masters
-	static const int INPUT_MSG_NUM_MASTERS_TAG = 40;
+	static const int INPUT_MSG_MPI_PARAMS_TAG = 40;
 	// Parallel Grasp message tag
 	static const int INPUT_MSG_PARALLEL_GRASP_TAG = 50;
 	static const int OUTPUT_MSG_PARALLEL_GRASP_TAG = 55;
