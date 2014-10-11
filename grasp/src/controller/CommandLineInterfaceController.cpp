@@ -109,6 +109,18 @@ std::istream& operator>>(std::istream& in, CommandLineInterfaceController::State
     return in;
 }
 
+std::istream& operator>>(std::istream& in, CommandLineInterfaceController::SearchName& search)
+{
+    std::string token;
+    in >> token;
+    if (token == "SEQUENTIAL")
+        search = CommandLineInterfaceController::SEQUENTIAL_SEARCH;
+    else if (token == "PARALLEL")
+        search = CommandLineInterfaceController::PARALLEL_SEARCH;
+//    else throw boost::program_options::validation_error("Invalid unit");
+    return in;
+}
+
 CommandLineInterfaceController::CommandLineInterfaceController() : logSeverity("info") {
 	// TODO Auto-generated constructor stub
 
@@ -123,7 +135,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		const int& numberOfIterations, const long& timeLimit, const int& machineProcessAllocationStrategy,
 		const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
-		long k, const StategyName& resolutionStrategy, const int& iterMaxILS, const int& perturbationLevelMax) {
+		long k, const StategyName& resolutionStrategy, const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -141,7 +153,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		// Chooses between the sequential or parallel search algorithm
 		NeighborhoodSearch* neigborhoodSearch;
 		NeighborhoodSearchFactory nsFactory(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-		if(numberOfSearchSlaves > 0) {
+		if(searchType == CommandLineInterfaceController::PARALLEL_SEARCH) {
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 		} else {
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
@@ -302,7 +314,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	std::set_terminate( handler );
 
 	mpi::communicator world;
-	cout << "Correlation clustering problem solver" << endl;
+	//cout << "Correlation clustering problem solver" << endl;
 
 	// random seed used in the algorithms
 	/*
@@ -331,6 +343,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int totalNumberOfVNDSlaves = -1;
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
+	CommandLineInterfaceController::SearchName searchType = CommandLineInterfaceController::SEQUENTIAL_SEARCH;
 	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and Random instances 
 	//int iterMaxILS = 5, perturbationLevelMax = 7; // for UNGA instances
 
@@ -364,6 +377,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("jobid", po::value<string>(&jobid), "job identifier (string)")
 		("strategy", po::value<StategyName>(&strategy),
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
+		("search", po::value<CommandLineInterfaceController::SearchName>(&searchType),
+                                         "Local search to be used. Accepted values: SEQUENTIAL (default), PARALLEL.")
 	;
 	po::positional_options_description p;
 	p.add("input-file", -1);
@@ -373,7 +388,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	po::notify(vm);
 
 	// job id is obtained through command line parameter from PBS Scheduler
-	cout << "Job id is " << jobid << "\n";
+	//cout << "Job id is " << jobid << "\n";
 	// initializes the logging subsystem
 	if(jobid.length() == 0) {
 		jobid = TimeDateUtil::generateRandomId();
@@ -398,7 +413,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 	// Leader process code (rank 0)
 	if(myRank == 0) {
-		cout << "Correlation clustering problem solver" << endl;
+		//cout << "Correlation clustering problem solver" << endl;
 		// id used for output folders
 		string executionId = jobid;
 
@@ -427,6 +442,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			} else if(strategy == ILS) {
 				BOOST_LOG_TRIVIAL(info) << "Resolution strategy is ILS.";
 			}
+			if(searchType == CommandLineInterfaceController::SEQUENTIAL_SEARCH) {
+                                BOOST_LOG_TRIVIAL(info) << "Local search type is SEQUENTIAL.";
+                        } else if(searchType == CommandLineInterfaceController::PARALLEL_SEARCH) {
+                                BOOST_LOG_TRIVIAL(info) << "Local search type is PARALLEL.";
+                        }
 			BOOST_LOG_TRIVIAL(info) << "Neighborhood size (l) is " << l << "\n";
 			BOOST_LOG_TRIVIAL(info) << "Gain function type is ";
 			if(functionType == GainFunction::MODULARITY) {
@@ -469,11 +489,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			}
 
 			BOOST_LOG_TRIVIAL(info) << "Total number of processes is " << np << endl;
-            cout << "Total number of processes is " << np << endl;
+            //cout << "Total number of processes is " << np << endl;
 			BOOST_LOG_TRIVIAL(info) << "Number of master processes in parallel is " << (numberOfMasters + 1);
-			cout << "Number of master processes in parallel is " << (numberOfMasters + 1) << endl;
+			//cout << "Number of master processes in parallel is " << (numberOfMasters + 1) << endl;
 			BOOST_LOG_TRIVIAL(info) << "Number of VND processes in parallel is " << totalNumberOfVNDSlaves << endl;
-            cout << "Number of VND processes in parallel is " << totalNumberOfVNDSlaves << endl;
+            //cout << "Number of VND processes in parallel is " << totalNumberOfVNDSlaves << endl;
 			std::vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
@@ -504,10 +524,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			}
 
 			unsigned int numberOfSearchSlavesPerMaster = 0;
-			MPIInitParams mpiparams(numberOfMasters, numberOfSearchSlavesPerMaster, MPIUtil::ALL_MASTERS_FIRST);
+			MPIInitParams mpiparams(numberOfMasters, numberOfSearchSlavesPerMaster, MPIUtil::ALL_MASTERS_FIRST, searchType);
 			if(totalNumberOfVNDSlaves > 0) {
 				numberOfSearchSlavesPerMaster = MPIUtil::calculateNumberOfSearchSlaves(np, numberOfMasters);
 				mpiparams.numberOfSearchSlavesPerMaster = numberOfSearchSlavesPerMaster;
+				mpiparams.machineProcessAllocationStrategy = MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER;
+			} else if(np / (numberOfMasters+1) == 4) {
 				mpiparams.machineProcessAllocationStrategy = MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER;
 			}
 			if(np > 1) {
@@ -527,14 +549,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 							numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, iterMaxILS, perturbationLevelMax);
+							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, iterMaxILS, perturbationLevelMax);
+								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
 					}
 				}
 			}
@@ -574,7 +596,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		BOOST_LOG_TRIVIAL(info) << "number of masters received: " << mpiparams.numberOfMasters;
 		BOOST_LOG_TRIVIAL(info) << "number of VND slaves per master received: " << mpiparams.numberOfSearchSlavesPerMaster;
 		BOOST_LOG_TRIVIAL(info) << "Machine-process allocation strategy received: " << mpiparams.machineProcessAllocationStrategy;
-		cout << "number of masters received: " << mpiparams.numberOfMasters << "\n";
+		BOOST_LOG_TRIVIAL(info) << "Local search type received: " << mpiparams.searchType;
+		//cout << "number of masters received: " << mpiparams.numberOfMasters << "\n";
 
 		// Controls the number of messages received
 		unsigned int messageCount = 0;
@@ -587,7 +610,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		try {
 			if(MPIUtil::isMaster(mpiparams.machineProcessAllocationStrategy, myRank, mpiparams.numberOfMasters, mpiparams.numberOfSearchSlavesPerMaster)) {  // master process
 				BOOST_LOG_TRIVIAL(info) << "Process " << myRank << " ready [master process].";
-				cout << "Process " << myRank << " ready [master process]." << endl;
+				//cout << "Process " << myRank << " ready [master process]." << endl;
 				while(true) {
 					mpi::status stat = world.probe(MPIMessage::LEADER_ID, mpi::any_tag);
 					if(stat.tag() == MPIMessage::TERMINATE_MSG_TAG) {
@@ -616,7 +639,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// Chooses between the sequential or parallel search algorithm
 						NeighborhoodSearch* neigborhoodSearch;
 						NeighborhoodSearchFactory nsFactory(mpiparams.machineProcessAllocationStrategy, imsgpg.numberOfMasters, imsgpg.numberOfSearchSlaves);
-						if(mpiparams.numberOfSearchSlavesPerMaster > 0) {
+						if(mpiparams.searchType == MPIUtil::PARALLEL_SEARCH) {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 						} else {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
@@ -660,7 +683,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						NeighborhoodSearch* neigborhoodSearch;
 						NeighborhoodSearchFactory nsFactory(mpiparams.machineProcessAllocationStrategy,
 								imsgpils.numberOfMasters, imsgpils.numberOfSearchSlaves);
-						if(mpiparams.numberOfSearchSlavesPerMaster > 0) {
+						if(mpiparams.searchType == MPIUtil::PARALLEL_SEARCH) { 
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 						} else {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);

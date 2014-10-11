@@ -27,6 +27,7 @@ public:
 	virtual ~CommandLineInterfaceController();
 
 	enum StategyName {GRASP, ILS};
+	enum SearchName {SEQUENTIAL_SEARCH, PARALLEL_SEARCH};
 	string getTimeAndDateAsString();
 	int processArgumentsAndExecute(int argc, char *argv[],
 			const unsigned int &myRank, const int &np);
@@ -38,6 +39,7 @@ private:
 			const int& numberOfSlaves, const int& numberOfSearchSlaves, const int& myRank,
 			const int& functionType, const unsigned long& seed,	const bool& CCEnabled,
 			const bool& RCCEnabled, long k, const StategyName& resolutionStrategy,
+			const SearchName& searchType,
 			const int& iterMaxILS, const int& perturbationLevelMax);
 
 	void readPropertiesFile();
