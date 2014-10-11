@@ -98,22 +98,28 @@ public:
 	// Machine x process allocation stategies
 	static const int ALL_MASTERS_FIRST = 0;
 	static const int MASTER_AND_VND_SLAVES_TOGETHER = 1;
+
+	enum SearchName {SEQUENTIAL_SEARCH, PARALLEL_SEARCH};
 };
+
 
 class MPIInitParams {
 public:
 	MPIInitParams() : numberOfMasters(0), numberOfSearchSlavesPerMaster(0),
 			machineProcessAllocationStrategy(MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER)  { }
+			searchType(0)  { }
 
-	MPIInitParams(int masters, int slavesPerMaster, int machineAllocationStrategy) : numberOfMasters(masters),
+	MPIInitParams(int masters, int slavesPerMaster, int machineAllocationStrategy, int searchTp) : 
+			numberOfMasters(masters),
 			numberOfSearchSlavesPerMaster(slavesPerMaster),
-			machineProcessAllocationStrategy(machineAllocationStrategy)  { }
+			machineProcessAllocationStrategy(machineAllocationStrategy),
+			searchType(searchTp)  { }
 
 	int numberOfMasters;
 	int numberOfSearchSlavesPerMaster;
 	// The following variable defines the strategy for machine x process allocation
 	int machineProcessAllocationStrategy;
-
+	int searchType;
 private:
 
 	// serialization-specific code
@@ -124,6 +130,7 @@ private:
 		ar & numberOfMasters;
 		ar & numberOfSearchSlavesPerMaster;
 		ar & machineProcessAllocationStrategy;
+		ar & searchType;
 	}
 };
 
