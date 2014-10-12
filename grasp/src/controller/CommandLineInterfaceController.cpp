@@ -708,7 +708,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			} else {  // Parallel VND slave
 				BOOST_LOG_TRIVIAL(info) << "Process " << myRank << " ready [VND slave process].";
 				while(true) {
-					mpi::status stat = world.probe(mpi::any_source, mpi::any_tag);
+					InputMessageParallelVND imsgvns;
+                    mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgvns);
 					if(stat.tag() == MPIMessage::TERMINATE_MSG_TAG) {
 						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": terminate message received.";
 						return 0;
@@ -718,9 +719,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						continue;
 					} else if(stat.tag() == MPIMessage::INPUT_MSG_PARALLEL_VND_TAG) {
 						// Receives a parallel VND message with parameters and triggers local VND execution
-						InputMessageParallelVND imsgvns;
 						// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_VND_TAG or a terminate msg
-						mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgvns);
 						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel VND]: Received message from master." << endl;
 						messageCount++;
 
