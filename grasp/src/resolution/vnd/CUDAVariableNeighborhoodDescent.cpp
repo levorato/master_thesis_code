@@ -157,7 +157,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	}
 	// TODO transform into class constant
 	// number of threads per block
-	unsigned short threadsCount = 128;  // limited by shared memory size
+	unsigned short threadsCount = 256;  // limited by shared memory size
 
 	// Pass raw array and its size to kernel
 	std::vector<uint> sourceVertexList;

@@ -19,7 +19,12 @@
 // higher. They can be replaced with bitwise operations in some cases: If n is a power of 2, (i/n) is equivalent to
 // (i>>log2(n)) and (i%n) is equivalent to (i&(n-1)); the compiler will perform these conversions if n is literal.
 
-#define BLOCK_SIZE 512
+// Always check return codes of CUDA calls for errors. Do not use __syncthreads() in conditional code unless the condition 
+// is guaranteed to evaluate identically for all threads of each block. Run your program under cuda-memcheck to detect stray 
+// memory accesses. If your kernel dies for larger problem sizes, it might exceed the runtime limit and trigger the watchdog timer.
+
+// Thread block size should always be a multiple of 32, because kernels issue instructions in warps (32 threads).
+#define BLOCK_SIZE 256
 
 namespace clusteringgraph {
 	
@@ -145,6 +150,8 @@ namespace clusteringgraph {
 	__global__ void updateVertexClusterSumArrays(const float* weightArray, const int* destArray, const int* numArray,
 			const int* offsetArray, const ulong* clusterArray, float* vertexClusterPosSumArray, float* vertexClusterNegSumArray, 
 			int n, uint* ncArray) {
+		
+		// TODO: fazer cada thread da GPU processar uma aresta do grafo
 		int i = blockDim.x*blockIdx.x + threadIdx.x;
 		uint nc = ncArray[0];
 		// shared memory
@@ -229,22 +236,17 @@ namespace clusteringgraph {
 		uint k1 = clusterArray[i];
 		
 		if(idx < numberOfChunks) {
-			if((k1 != k2)) {  //  && (i < n)
-				// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
-				// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
-	            
-	            // calculates the cost of removing vertex i from cluster1 and inserting into cluster2		
-				// positiveSum = +(positiveSumArray[nc] - positiveSumArray[k2]) - (positiveSumArray[nc] - positiveSumArray[k1]);
-				
-				float positiveSum = +(- positiveSumArray[i*(nc+1)+k2]) - (- positiveSumArray[i*(nc+1)+k1]);
-				float negativeSum = -negativeSumArray[i*(nc+1)+k1] + negativeSumArray[i*(nc+1)+k2];
-				
-				// numberOfTestedCombinations++;
-				// updates thread idx / vertex i from k1 to k2 imbalance result
-				destImbArray[idx] = funcArray[0] + positiveSum + negativeSum;			
-			} else {
-				destImbArray[idx] = funcArray[0];
-			}
+			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
+			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
+            // calculates the cost of removing vertex i from cluster1 and inserting into cluster2		
+			// positiveSum = +(positiveSumArray[nc] - positiveSumArray[k2]) - (positiveSumArray[nc] - positiveSumArray[k1]);
+			
+			float positiveSum = +(- positiveSumArray[i*(nc+1)+k2]) - (- positiveSumArray[i*(nc+1)+k1]);
+			float negativeSum = -negativeSumArray[i*(nc+1)+k1] + negativeSumArray[i*(nc+1)+k2];
+			
+			// numberOfTestedCombinations++;
+			// updates thread idx / vertex i from k1 to k2 imbalance result
+			destImbArray[idx] = funcArray[0] + positiveSum + negativeSum;			
 		}
 	}
 	
