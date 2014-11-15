@@ -13,10 +13,10 @@
 #include "graph/include/Clustering.h"
 #include "problem/include/ClusteringProblem.h"
 #include "graph/include/NeighborhoodSearch.h"
-// #include "graph/include/SequentialNeighborhoodSearch.h"
-#include "SequentialNeighborhoodSearch.h"
+#include "graph/include/SequentialNeighborhoodSearch.h"
 #include "graph/include/ParallelNeighborhoodSearch.h"
-#include "../../include/LocalSearch.h"
+// #include "../../include/LocalSearch.h"
+#include "VariableNeighborhoodDescent.h"
 
 
 using namespace clusteringgraph;
@@ -25,7 +25,7 @@ using namespace problem;
 namespace resolution {
 namespace vnd {
 
-class CUDAVariableNeighborhoodDescent : public LocalSearch {
+class CUDAVariableNeighborhoodDescent : public VariableNeighborhoodDescent {
 public:
 	/**
 	 * @param seed random seed
@@ -33,7 +33,7 @@ public:
 	 * @param firstImprovement1Opt true if first-improvement on 1-opt is enabled
 	 * @param tlimit time limit in seconds
 	 */
-	CUDAVariableNeighborhoodDescent(unsigned long seed,
+	CUDAVariableNeighborhoodDescent(NeighborhoodSearch &neighborhoodSearch, unsigned long seed,
 			const int &lsize, const bool& firstImprovement1Opt, const long &tlimit);
 	virtual ~CUDAVariableNeighborhoodDescent();
 

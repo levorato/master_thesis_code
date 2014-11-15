@@ -23,11 +23,9 @@
 #include "problem/include/ClusteringProblemFactory.h"
 #include "../resolution/construction/include/GainFunctionFactory.h"
 #include "../resolution/construction/include/GainFunction.h"
-// #include "graph/include/NeighborhoodSearchFactory.h"
+#include "graph/include/NeighborhoodSearchFactory.h"
 #include "graph/include/ParallelNeighborhoodSearch.h"
-// #include "graph/include/SequentialNeighborhoodSearch.h"
-#include "../resolution/vnd/include/SequentialNeighborhoodSearch.h"
-#include "../resolution/vnd/include/VariableNeighborhoodDescent.h"
+#include "graph/include/SequentialNeighborhoodSearch.h"
 #include "../resolution/construction/include/ConstructClustering.h"
 #include "util/include/RandomUtil.h"
 #include "../resolution/vnd/include/vnd.h"
@@ -167,7 +165,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		CUDANeighborhoodSearch neighborhoodSearchCUDA;
 		SequentialNeighborhoodSearch neighborhoodSearchSeq;
 		VariableNeighborhoodDescent vnd(neighborhoodSearchCUDA, seed, l, firstImprovementOnOneNeig, timeLimit);
-		CUDAVariableNeighborhoodDescent cudavnd(seed, l, firstImprovementOnOneNeig, timeLimit);
+		CUDAVariableNeighborhoodDescent cudavnd(neighborhoodSearchSeq, seed, l, firstImprovementOnOneNeig, timeLimit);
 		// VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, l, firstImprovementOnOneNeig, timeLimit);
 		// Execution additional info
 		ExecutionInfo info(executionId, fileId, outputFolder, myRank);
@@ -182,24 +180,24 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   G R A S P
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution;
-					c = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+					c = resolution.executeGRASP(construct, &cudavnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfSlaves processes and summarizes the result
 					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-					c = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+					c = parallelResolution.executeGRASP(construct, &vnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
 			} else if(resolutionStrategy == ILS) {
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
-					c = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+					c = resolution.executeILS(construct, &cudavnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-					c = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+					c = parallelResolution.executeILS(construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
 			}
@@ -247,24 +245,24 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   G R A S P
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution;
-					RCCCluster = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+					RCCCluster = resolution.executeGRASP(construct, &vnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfMasters processes and summarizes the result
 					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-					RCCCluster = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+					RCCCluster = parallelResolution.executeGRASP(construct, &vnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				}
 			} else if(resolutionStrategy == ILS) {
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
-					RCCCluster = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+					RCCCluster = resolution.executeILS(construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-					RCCCluster = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+					RCCCluster = parallelResolution.executeILS(construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				}
 			}
@@ -660,7 +658,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// Execution additional info
 						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
 						Grasp resolution;
-						Clustering bestClustering = resolution.executeGRASP(construct, vnd, g.get(), imsgpg.iter,
+						Clustering bestClustering = resolution.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
 								problemFactory.build(imsgpg.problemType, imsgpg.k), info);
 
 						// Sends the result back to the leader process
@@ -704,7 +702,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// Additional execution info
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
 						resolution::ils::ILS resolution;
-						Clustering bestClustering = resolution.executeILS(construct, vnd, g.get(), imsgpils.iter,
+						Clustering bestClustering = resolution.executeILS(construct, &vnd, g.get(), imsgpils.iter,
 								imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 								problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 

@@ -9,7 +9,9 @@
 #include "problem/include/ClusteringProblem.h"
 #include "graph/include/Imbalance.h"
 #include "util/include/RandomUtil.h"
-#include "../include/LocalSearch.h"
+// #include "../include/LocalSearch.h"
+#include "graph/include/Graph.h"
+#include "graph/include/SequentialNeighborhoodSearch.h"
 
 #include <algorithm>
 #include <iostream>
@@ -37,9 +39,9 @@ using namespace util;
 namespace resolution {
 namespace vnd {
 
-CUDAVariableNeighborhoodDescent::CUDAVariableNeighborhoodDescent(
+CUDAVariableNeighborhoodDescent::CUDAVariableNeighborhoodDescent(NeighborhoodSearch &neighborhoodSearch,
 		unsigned long seed, const int &lsize, const bool& firstImprovement1Opt, const long &tlimit) :
-		LocalSearch(seed, lsize, firstImprovement1Opt, tlimit, 0.0, 0, 0.0),
+		VariableNeighborhoodDescent(neighborhoodSearch, seed, lsize, firstImprovement1Opt, tlimit),
 				timeResults(), timeSum(0.0) {
 	// TODO Auto-generated constructor stub
 
@@ -67,23 +69,13 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	RandomUtil randomUtil;
 	// stores the best Cc combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = Cc;
-	// pre-calculates, in an array, to which cluster each vertex belongs
-	boost::shared_ptr<unsigned long[]> myCluster(new unsigned long[n]);
-	for(unsigned long k = 0; k < nc; k++) {  // for each cluster k
-		BoolArray clusterK = Cc.getCluster(k);
-		for(unsigned long i = 0; i < n; i++) {  // for each vertex i
-			if(clusterK[i]) {  // vertex i is in cluster k
-				myCluster[i] = k;
-			}
-		}
-	}
+	ClusterArray myCluster = Cc.getClusterArray();
 
 	BOOST_LOG_TRIVIAL(trace) << "[CUDA] Begin transfer to device...";
 	// A -> Transfer to device
 	// transfers the myClusters array to CUDA device
 	unsigned long numberOfChunks = n * (nc + 1);  // the search space for each vertex (dest cluster) will be split into 4 chunks
-	unsigned long* cluster = myCluster.get();
-	thrust::host_vector<unsigned long> h_mycluster(cluster, cluster + n);
+	thrust::host_vector<unsigned long> h_mycluster(myCluster);
 	// objective function value
 	thrust::host_vector<float> h_functionValue(1);
 	h_functionValue[0] = Cc.getImbalance().getValue();
@@ -247,25 +239,33 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 		}
 		cout << endl;
 		*/
-		Clustering CStar; // Cc = empty
-		for(int k = 0; k < nc; k++) {
-			BoolArray array(n);
-			CStar.addCluster(array);
+		Clustering newClustering(Cc);
+		for(int x = 0; x < sourceVertexList.size(); x++) {
+			unsigned long bestSrcVertex = sourceVertexList[x];
+			unsigned long bestDestCluster = destinationClusterList[x];
+	                int k1 = myCluster[bestSrcVertex];
+	                int k2 = bestDestCluster;
+	                bool newClusterK2 = (k2 == nc);
+	                newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
+	                if(not newClusterK2) {  // existing cluster k2
+	                        if((newClustering.getNumberOfClusters() < nc) && (k2 >= k1)) {
+	                                // cluster k1 has been removed
+	                                newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
+	                        } else {
+	                                newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2);
+	                        }
+	                } else {  // new cluster k2
+	                        newClustering.addCluster(*g, problem, bestSrcVertex);
+	                }
+			nc = newClustering.getNumberOfClusters();
 		}
-		for(int i = 0; i < n; i++) {
-			if(h_mycluster[i] < nc) {
-				CStar.addNodeToCluster(*g, problem, i, h_mycluster[i]);
-			} else {
-				BOOST_LOG_TRIVIAL(error) << "Invalid cluster index: " << h_mycluster[i];
-			}
-		}
-		CStar.setImbalance(problem.objectiveFunction(*g, CStar));
-		cBest = CStar;
-		if(CStar.getImbalance().getValue() != bestImbalance) {
-			BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH! " << bestImbalance;
-		}
-		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. Best result: I(P) = " << CStar.getImbalance().getValue() << " "
-				<< CStar.getImbalance().getPositiveValue() << " " << CStar.getImbalance().getNegativeValue();
+                if(newClustering.getImbalance().getValue() != bestImbalance) {
+                        BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH! " << bestImbalance;
+                }
+                BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
+                                << newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
+
+		cBest = newClustering;
 	} else {
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. No improvement.";
 	}

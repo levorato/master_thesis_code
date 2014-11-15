@@ -77,7 +77,7 @@ Clustering CUDANeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 			" search slaves (threads) will process " << sizeOfChunk << " vertice(s) each one." << endl;
 
 	BOOST_LOG_TRIVIAL(debug) << "[Parallel Search CUDA] Best solution found: Obj = " << bestClustering.getImbalance().getValue() << endl;
-	bestClustering.printClustering();
+	//bestClustering.printClustering();
 	return bestClustering;
 }
 
@@ -129,23 +129,13 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	RandomUtil randomUtil;
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
-	// pre-calculates, in an array, to which cluster each vertex belongs
-	boost::shared_ptr<unsigned long[]> myCluster(new unsigned long[n]);
-	for(unsigned long k = 0; k < nc; k++) {  // for each cluster k
-		BoolArray clusterK = clustering->getCluster(k);
-		for(unsigned long i = 0; i < n; i++) {  // for each vertex i
-			if(clusterK[i]) {  // vertex i is in cluster k
-				myCluster[i] = k;
-			}
-		}
-	}
+	ClusterArray myCluster = clustering->getClusterArray();
 
 	BOOST_LOG_TRIVIAL(trace) << "[CUDA] Begin transfer to device...";
 	// A -> Transfer to device
 	// transfers the myClusters array to CUDA device
 	unsigned long numberOfChunks = n * 4;  // the search space for each vertex (dest cluster) will be split into 4 chunks
-	unsigned long* cluster = myCluster.get();
-	thrust::host_vector<unsigned long> h_mycluster(cluster, cluster + n);
+	thrust::host_vector<unsigned long> h_mycluster(myCluster);
 	// objective function value
 	thrust::host_vector<float> h_functionValue(1);
 	h_functionValue[0] = clustering->getImbalance().getValue();
@@ -351,23 +341,13 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 	RandomUtil randomUtil;
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
-	// pre-calculates, in an array, to which cluster each vertex belongs
-	boost::shared_ptr<unsigned long[]> myCluster(new unsigned long[n]);
-	for(unsigned long k = 0; k < nc; k++) {  // for each cluster k
-		BoolArray clusterK = clustering->getCluster(k);
-		for(unsigned long i = 0; i < n; i++) {  // for each vertex i
-			if(clusterK[i]) {  // vertex i is in cluster k
-				myCluster[i] = k;
-			}
-		}
-	}
+	ClusterArray myCluster = clustering->getClusterArray();
 
 	BOOST_LOG_TRIVIAL(trace) << "[CUDA 2-opt] Begin transfer to device...";
 	// A -> Transfer to device
 	// transfers the myClusters array to CUDA device
 	unsigned long numberOfChunks = n * n;  // the search space for each pair of vertices (dest cluster)
-	unsigned long* cluster = myCluster.get();
-	thrust::host_vector<unsigned long> h_mycluster(cluster, cluster + n);
+	thrust::host_vector<unsigned long> h_mycluster(myCluster);
 	// objective function value
 	thrust::host_vector<float> h_functionValue(2);
 	h_functionValue[0] = clustering->getImbalance().getPositiveValue();

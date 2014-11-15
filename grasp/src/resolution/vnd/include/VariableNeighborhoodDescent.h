@@ -49,7 +49,7 @@ public:
 	 * @param problem the ClusteringProblem object for the objective function calculation
 	 * @return Clustering C(l), the local optimum solution
 	 */
-	Clustering localSearch(SignedGraph *g, Clustering& Cc, const int& graspIteration,
+	virtual Clustering localSearch(SignedGraph *g, Clustering& Cc, const int& graspIteration,
 			ClusteringProblem& problem, const long& timeSpentSoFar, const int& myRank);
 
 	unsigned long getNumberOfTestedCombinations();
@@ -74,7 +74,7 @@ public:
 		return timeSpentOnLocalSearch;
 	}
 
-private:
+protected:
 	/**
 	 * Computes the best known search result at each time interval.
 	 */
