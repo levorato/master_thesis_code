@@ -74,7 +74,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	BOOST_LOG_TRIVIAL(trace) << "[CUDA] Begin transfer to device...";
 	// A -> Transfer to device
 	// transfers the myClusters array to CUDA device
-	unsigned long numberOfChunks = n * (nc + 1);  // the search space for each vertex (dest cluster) will be split into 4 chunks
+	unsigned long numberOfChunks = n * (nc + 1);  // the search space for each vertex (dest cluster) will be split into n*(nc+1) chunks
 	thrust::host_vector<unsigned long> h_mycluster(myCluster);
 	// objective function value
 	thrust::host_vector<float> h_functionValue(1);
@@ -240,11 +240,14 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 		cout << endl;
 		*/
 		Clustering newClustering(Cc);
+		assert(sourceVertexList.size() == destinationClusterList.size());
 		for(int x = 0; x < sourceVertexList.size(); x++) {
 			unsigned long bestSrcVertex = sourceVertexList[x];
 			unsigned long bestDestCluster = destinationClusterList[x];
-	                int k1 = myCluster[bestSrcVertex];
+			ClusterArray cluster = newClustering.getClusterArray();
+	                int k1 = cluster[bestSrcVertex];
 	                int k2 = bestDestCluster;
+			nc = newClustering.getNumberOfClusters();
 	                bool newClusterK2 = (k2 == nc);
 	                newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
 	                if(not newClusterK2) {  // existing cluster k2
@@ -257,10 +260,19 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	                } else {  // new cluster k2
 	                        newClustering.addCluster(*g, problem, bestSrcVertex);
 	                }
-			nc = newClustering.getNumberOfClusters();
+		}
+		// Validate if cluster arrays have the same content
+		ClusterArray cluster = newClustering.getClusterArray();
+		bool equality = true;
+		assert(cluster.size() == h_mycluster.size());
+		for(int x = 0; x < cluster.size(); x++) {
+			if(h_mycluster[x] != cluster[x]) {  equality = false;  }
+		}
+		if(not equality) {
+			BOOST_LOG_TRIVIAL(error) << "CUDA and effective cluster arrays DO NOT MATCH!";
 		}
                 if(newClustering.getImbalance().getValue() != bestImbalance) {
-                        BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH! " << bestImbalance;
+                        BOOST_LOG_TRIVIAL(error) << "CUDA and CPU objective function values DO NOT MATCH! CUDA=" << bestImbalance << " CPU=" << newClustering.getImbalance().getValue();
                 }
                 BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
                                 << newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();

@@ -462,8 +462,8 @@ namespace clusteringgraph {
 					ulong sourceCluster = d_mycluster[bestSrcVertex];
 					// printf("The best src vertex is %d to cluster %d with I(P) = %.2f\n", bestSrcVertex, destcluster, destFunctionValue);
 					updateClustering1opt<<< 1, 1 >>>(bestSrcVertex, destcluster, destFunctionValue, clusterArray, funcArray, n, ncArray);
-					// sourceVertexList.push_back(bestSrcVertex);
-					// destinationClusterList.push_back(destcluster);
+					sourceVertexList.push_back(bestSrcVertex);
+					destinationClusterList.push_back(destcluster);
 
 					blocksPerGrid = (n + BLOCK_SIZE - 1) / BLOCK_SIZE;
 					updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)+2*(nc+1)*sizeof(float)>>>(weightArray, destArray, numArray,
