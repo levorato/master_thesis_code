@@ -40,12 +40,15 @@ typedef adjacency_list<vecS, vecS, bidirectionalS, Vertex, Edge, no_property, ve
  *  uses dynamic_bitset for bool array, a high performance and space saving structure
  *  based on real bits
  *  the following array is initially empty and needs to be dynamically intialized.
+ *  DISABLED.
  */
-typedef dynamic_bitset<> BoolArray;
+// typedef dynamic_bitset<> BoolArray;
 
 // Defines the cluster list
 // the list is made of boolean arrays, indicating that node i is in the cluster
-typedef vector<BoolArray> ClusterList;
+// typedef std::vector<BoolArray> ClusterList;
+
+typedef std::vector<long> ClusterArray;
 
 class SignedGraph {
 public:

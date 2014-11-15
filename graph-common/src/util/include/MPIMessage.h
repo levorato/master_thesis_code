@@ -74,6 +74,7 @@ public:
 	int iter;
 	int gainFunctionType;
 	int problemType;
+	unsigned long k;  // number of clusters of solution (for RCC Problem)
 	string executionId;
 	string fileId;
 	string outputFolder;
@@ -81,17 +82,17 @@ public:
 	bool firstImprovementOnOneNeig;
 
 	InputMessageParallelGrasp() : InputMessage(),
-			alpha(0.0F), iter(500), gainFunctionType(0), problemType(0),
+			alpha(0.0F), iter(500), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false) {
 
 	}
 
 	InputMessageParallelGrasp(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
-			unsigned int searchSlaves, bool fiOneNeig) :
+			unsigned int searchSlaves, bool fiOneNeig, unsigned long numberOfClustersInSolution = 0) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
-					problemType(pType), executionId(eid), fileId(fid),
+					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig) {
 
 	}
@@ -122,6 +123,7 @@ public:
 		ar & iter;
 		ar & gainFunctionType;
 		ar & problemType;
+		ar & k;
 		ar & executionId;
 		ar & fileId;
 		ar & outputFolder;
@@ -137,6 +139,7 @@ public:
 	int iter;
 	int gainFunctionType;
 	int problemType;
+	unsigned long k;  // number of clusters of solution (for RCC Problem)
 	string executionId;
 	string fileId;
 	string outputFolder;
@@ -146,7 +149,7 @@ public:
 	int perturbationLevelMax;
 
 	InputMessageParallelILS() : InputMessage(),
-			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0),
+			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
 			iterMaxILS(3), perturbationLevelMax(7) {
 
@@ -154,10 +157,11 @@ public:
 
 	InputMessageParallelILS(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
-			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel) :
+			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel,
+			unsigned long numberOfClustersInSolution = 0) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
-					problemType(pType), executionId(eid), fileId(fid),
+					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
 					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel) {
 
@@ -189,6 +193,7 @@ public:
 		ar & iter;
 		ar & gainFunctionType;
 		ar & problemType;
+		ar & k;
 		ar & executionId;
 		ar & fileId;
 		ar & outputFolder;
@@ -279,7 +284,7 @@ public:
 class MPIMessage {
 public:
 	// Message with the number of heuristic masters
-	static const int INPUT_MSG_NUM_MASTERS_TAG = 40;
+	static const int INPUT_MSG_MPI_PARAMS_TAG = 40;
 	// Parallel Grasp message tag
 	static const int INPUT_MSG_PARALLEL_GRASP_TAG = 50;
 	static const int OUTPUT_MSG_PARALLEL_GRASP_TAG = 55;

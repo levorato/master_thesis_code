@@ -62,13 +62,12 @@ GainCalculation ModularityGainFunction::calculateIndividualGain(
 
 	// For each cluster k...
 	int nc = c.getNumberOfClusters();
+	ClusterArray myCluster = c.getClusterArray();
 	for (unsigned long k = 0; k < nc; k++) {
 		double sum = 0.0;
-		// Cluster(k)
-		BoolArray cluster = c.getCluster(k);
 		// j in Cluster(k)
 		for (int j = 0; j < n; j++) {
-			if (cluster[j]) {
+			if (myCluster[j] == k) {
 				sum += 2 * modularityMatrix[i][j];
 			}
 		}
@@ -91,6 +90,7 @@ void ModularityGainFunction::calculateGainList(ClusteringProblem &p,
 	list<GainCalculation, allocator<GainCalculation> >::iterator pos;
 	// cout << "Calculating gain list..." << endl;
 	unsigned int i = 0;
+	ClusterArray myCluster = c.getClusterArray();
 	for (i = 0, pos = nodeList.begin(); i < nodeList.size(); ++pos, ++i) {
 		GainCalculation& gainCalculation = *pos;
 		long a = gainCalculation.vertex;
@@ -101,11 +101,9 @@ void ModularityGainFunction::calculateGainList(ClusteringProblem &p,
 		int nc = c.getNumberOfClusters();
 		for (unsigned long k = 0; k < nc; k++) {
 			double sum = 0.0;
-			// Cluster(k)
-			BoolArray cluster = c.getCluster(k);
 			// j in Cluster(k)
 			for (int j = 0; j < n; j++) {
-				if (cluster[j]) {
+				if (myCluster[j] == k) {
 					sum += 2 * modularityMatrix[a][j];
 				}
 			}

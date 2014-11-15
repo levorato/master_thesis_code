@@ -8,6 +8,8 @@
 #include "include/ParallelGrasp.h"
 #include "util/include/MPIMessage.h"
 #include "util/parallel/include/MPIUtil.h"
+#include "problem/include/CCProblem.h"
+#include "problem/include/RCCProblem.h"
 #include <cstring>
 #include <vector>
 #include <boost/mpi/communicator.hpp>
@@ -26,8 +28,8 @@ namespace mpi = boost::mpi;
  * @param numberOfSlaves number of slaves used for parallel ILS processing
  * @param numberOfSearchSlaves number of slaves used for parallel VND processing
  */
-ParallelGrasp::ParallelGrasp(const int& slaves, const int& searchSlaves) :
-		Grasp(), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
+ParallelGrasp::ParallelGrasp(const int& allocationStrategy, const int& slaves, const int& searchSlaves) :
+		Grasp(), machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
 
 }
 
@@ -39,14 +41,20 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableN
 		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Initiating parallel GRASP...";
+	// max number of clusters (RCC Problem Only)
+	long k = 0;
+	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		k = rp.getK();
+	}
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	std::vector<int> slaveList;
-	MPIUtil::populateListOfMasters(slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
+	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd.getNeighborhoodSize(),
 				problem.getType(), construct.getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd.getTimeLimit(),
-				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig());
+				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig(), k);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}
@@ -71,7 +79,7 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableN
 		}
 	}
 	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
-	bestClustering.printClustering();
+	bestClustering.printClustering(g->getN());
 	return bestClustering;
 }
 

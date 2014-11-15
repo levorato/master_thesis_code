@@ -14,7 +14,7 @@ namespace clusteringgraph {
 
 class ParallelNeighborhoodSearch: public clusteringgraph::NeighborhoodSearch {
 public:
-	ParallelNeighborhoodSearch(unsigned int offset, unsigned int numproc);
+	ParallelNeighborhoodSearch(int allocStrategy, unsigned int offset, unsigned int numproc);
 	virtual ~ParallelNeighborhoodSearch();
 
 	/**
@@ -41,6 +41,10 @@ public:
 					bool firstImprovementOnOneNeig, unsigned long k);
 
 private:
+	/**
+	 * Machine-process allocation strategy for VND slave processes.
+	 */
+	int machineProcessAllocationStrategy;
 	/**
 	 * Number of slave processes that will execute the grasp iterations in parallel.
 	 */

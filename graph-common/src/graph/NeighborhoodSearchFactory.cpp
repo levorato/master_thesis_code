@@ -9,9 +9,9 @@
 
 namespace clusteringgraph {
 
-NeighborhoodSearchFactory::NeighborhoodSearchFactory(unsigned long numberOfSlaves,
+NeighborhoodSearchFactory::NeighborhoodSearchFactory(int machineProcessAllocationStrategy, unsigned long numberOfSlaves,
 		unsigned long numberOfSearchSlaves) : sequentialNeighborhoodSearch(),
-				parallelNeighborhoodSearch(numberOfSlaves, numberOfSearchSlaves) {
+				parallelNeighborhoodSearch(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves) {
 
 }
 

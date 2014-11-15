@@ -25,15 +25,23 @@ using namespace problem;
 
 namespace clusteringgraph {
 
-Clustering::Clustering() : clusterList(), clusterSize(),
+const long Clustering::NEW_CLUSTER;
+const long Clustering::NO_CLUSTER;
+
+Clustering::Clustering() : clusterArray(), clusterSize(),
 		imbalance(0.0, 0.0), problemType(0), positiveSum(),
 		negativeSum()
 {
 
 }
 
+Clustering::Clustering(SignedGraph& g) : clusterArray(g.getN(), NO_CLUSTER), clusterSize(),
+		imbalance(0.0, 0.0), problemType(0), positiveSum(), negativeSum() {
+
+}
+
 Clustering::Clustering(const Clustering& clustering) :
-		clusterList(clustering.clusterList.begin(), clustering.clusterList.end()),
+		clusterArray(clustering.clusterArray.begin(), clustering.clusterArray.end()),
 		clusterSize(clustering.clusterSize.begin(), clustering.clusterSize.end()),
 		imbalance(clustering.imbalance), problemType(clustering.problemType),
 		positiveSum(clustering.positiveSum),
@@ -41,67 +49,85 @@ Clustering::Clustering(const Clustering& clustering) :
 
 }
 
+Clustering::Clustering(const ClusterArray cArray, SignedGraph& g, ClusteringProblem &p) : clusterArray(cArray),
+		clusterSize(), imbalance(0.0, 0.0), problemType(p.getType()), positiveSum(), negativeSum(){
+	std::vector<unsigned long>::iterator pos = std::max_element(clusterSize.begin(), clusterSize.end());
+	unsigned long numberOfClusters = *pos;
+	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
+
+	long n = g.getN();
+	for(unsigned long i = 0; i < n; i++) {
+		clusters[clusterArray[i]].push_back(i);
+	}
+	// compute clusters' size
+	for(long k = 0; k < numberOfClusters; k++) {
+		clusterSize.push_back(clusters[k].size());
+	}
+	// compute the imbalance
+	this->setImbalance(p.objectiveFunction(g, *this));
+}
+
 Clustering::~Clustering() {
 	// cout << "Freeing memory of Clustering object..." << endl;
 }
 
 unsigned long Clustering::getNumberOfClusters() const {
-	return this->clusterList.size();
+	return this->clusterSize.size();
 }
 
-BoolArray Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i) {
-	// 1. Create a new cluster in the list
-	BoolArray array(g.getN());
-
-	// Add i to the newly created cluster
-	// BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
-	array[i] = true;
-	this->clusterList.push_back(array);
+void Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, bool updateImbalance) {
+	assert(clusterArray.size() > 0);
+	// 1. Increase the number of clusters
 	this->clusterSize.push_back(1);
-	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
-		this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
-	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
-		this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, clusterList.size()-1, i);
+
+	// Adds i to the newly created cluster
+	// BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
+	this->clusterArray[i] = this->getNumberOfClusters() - 1;
+
+	if(updateImbalance) {
+		if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+			this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, clusterArray.size()-1, i);
+		} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+			this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, clusterArray.size()-1, i);
+		}
 	}
-	return array;
-}
-
-void Clustering::addCluster(BoolArray b) {
-	clusterList.push_back(b);
-	clusterSize.push_back(b.count());
-}
-
-BoolArray& Clustering::getCluster(unsigned long clusterNumber) {
-	return clusterList.at(clusterNumber);
-}
-
-void Clustering::setCluster(unsigned long clusterNumber, BoolArray b) {
-	clusterList[clusterNumber] = b;
 }
 
 int Clustering::getBiggestClusterIndex() {
-	ClusterList::iterator pos = std::min_element(clusterList.begin(), clusterList.end(),
-			ClusterSizeComparison(false));
-	return std::distance(clusterList.begin(), pos);
+	std::vector<unsigned long>::iterator pos = std::max_element(clusterSize.begin(), clusterSize.end());
+	return std::distance(clusterSize.begin(), pos);
 }
 
-void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
+void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k,
+		bool updateImbalance) {
+	assert(clusterArray.size() > 0);
 	//BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
-	this->getCluster(k)[i] = true;
+	this->clusterArray[i] = k;
 	this->clusterSize[k]++;
-	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
-		this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
-	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
-		this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+
+	if(updateImbalance) {
+		if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+			this->imbalance += p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+		} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+			this->imbalance = p.calculateDeltaPlusObjectiveFunction(g, *this, k, i);
+		}
 	}
 }
 
 void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
-	// Swaps the k-th and the last element, to avoid linear-time removal
-	//swap(clusterList[k], clusterList[clusterList.size() - 1]);
-	//clusterList.erase(clusterList.end() - 1);
-	clusterList.erase(clusterList.begin()+k);
+	assert(clusterArray.size() > 0);
+	// clusterArray.erase(clusterArray.begin()+k);
+	// TODO complete code
+	// only if cluster has been removed
 	clusterSize.erase(clusterSize.begin()+k);
+	// if cluster k was removed, all cluster numbers above k
+	// must be subtracted by one
+	long n = g.getN();
+	for(long i = 0; i < n; i++) {
+		if(clusterArray[i] > k) {
+			clusterArray[i]--;
+		}
+	}
 }
 
 unsigned long Clustering::getClusterSize(unsigned long k) {
@@ -112,60 +138,66 @@ void Clustering::setClusterSize(unsigned long k, unsigned long size) {
 	this->clusterSize[k] = size;
 }
 
-void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k) {
+void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, 
+		const unsigned long& k, bool updateImbalance) {
+	assert(clusterArray.size() > 0);
 	// verifica se o cluster eh unitario
-	// TODO possivel otimizacao: verificar se pelo menos 2 bits estao setados
 	//BOOST_LOG_TRIVIAL(trace) << "Removing vertex " << i << " from cluster " << k;
-	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
-		this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
-	} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
-		this->imbalance = p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+	if(updateImbalance) {
+		if(p.getType() == ClusteringProblem::CC_PROBLEM) {
+			this->imbalance -= p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+		} else if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+			this->imbalance = p.calculateDeltaMinusObjectiveFunction(g, *this, k, i);
+		}
 	}
+	this->clusterArray[i] = NO_CLUSTER;
 	if(clusterSize[k] <= 1) {
 		//BOOST_LOG_TRIVIAL(trace) << "Deleting cluster " << k;
 		this->removeCluster(g, k);
 	} else {
-		this->getCluster(k)[i] = false;
 		this->clusterSize[k]--;
 	}
 }
 
-void Clustering::printClustering() {
+void Clustering::printClustering(unsigned long n) {
 	BOOST_LOG_TRIVIAL(trace) << "Clustering configuration: I(P) = " << fixed << setprecision(2)
 			<< this->imbalance.getValue();
-	BOOST_LOG_TRIVIAL(trace) << toString();
+	BOOST_LOG_TRIVIAL(trace) << toString(n);
 }
 
-void Clustering::printClustering(ostream& os) {
+void Clustering::printClustering(ostream& os, unsigned long n) {
 	os << "Clustering configuration: " << std::endl;
-	print(os, clusterList);
+	print(os, clusterArray, n);
 }
 
-void Clustering::print(std::ostream& os, ClusterList& l)
+void Clustering::print(std::ostream& os, ClusterArray& a, unsigned long n)
 {
-	unsigned long numberOfClusters = l.size();
+	unsigned long numberOfClusters = *std::max_element(a.begin(), a.end()) + 1;
+	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
+
+	for(unsigned long i = 0; i < n; i++) {
+		clusters[clusterArray[i]].push_back(i);
+	}
+
 	for(unsigned long k = 0; k < numberOfClusters; k++) {
     	os << " Partition " << k << " (" << getClusterSize(k) <<  "): [ ";
-    	BoolArray array = l.at(k);
-    	for(unsigned long i = 0; i < array.size(); i++) {
-    		if(array[i]) {
-    			os << i << " ";
-    		}
+    	for(unsigned long i = 0; i < clusters[k].size(); i++) {
+    		os << clusters[k][i] << " ";
     	}
     	os << "] \n";
     }
 }
 
-string Clustering::toString() {
+string Clustering::toString(unsigned long n) {
 	stringstream ss;
-	printClustering(ss);
+	printClustering(ss, n);
 	return ss.str();
 }
 
 // TODO verificar se essa igualdade funciona
 bool Clustering::equals(Clustering& c) {
-	if(std::equal(&this->clusterList, &this->clusterList +
-			this->clusterList.size(), &c.clusterList))
+	if(std::equal(&this->clusterArray, &this->clusterArray +
+			this->clusterArray.size(), &c.clusterArray))
 		return true;
 	else
 		return false;

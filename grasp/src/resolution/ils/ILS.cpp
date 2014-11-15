@@ -7,9 +7,11 @@
 
 #include "include/ILS.h"
 #include "../construction/include/VertexSet.h"
+#include "graph/include/SequentialNeighborhoodSearch.h"
 #include "graph/include/ParallelNeighborhoodSearch.h"
 #include "problem/include/ClusteringProblem.h"
 #include "problem/include/CCProblem.h"
+#include "graph/include/NeighborhoodSearchFactory.h"
 #include "graph/include/Imbalance.h"
 #include "graph/include/Perturbation.h"
 
@@ -42,11 +44,11 @@ ILS::~ILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ILS::executeILS(ConstructClustering &construct, LocalSearch &ls,
+Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
 		SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
 		ClusteringProblem& problem,	ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = "
-			<< construct.getAlpha() << " and l = " << ls.getNeighborhoodSize();
+			<< construct.getAlpha() << " and l = " << vnd.getNeighborhoodSize();
 
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
@@ -90,7 +92,8 @@ Clustering ILS::executeILS(ConstructClustering &construct, LocalSearch &ls,
 		int perturbationLevel = 1;
 		for(int j = 1, total = 0; j <= iterMaxILS; total++) {  // internal ILS loop
 			// 2. Execute local search algorithm
-			Cl = ls.localSearch(g, Cl, i, problem, timeSpentInILS, info.processRank);
+			Cl = vnd.localSearch(g, Cl, i, problem, timeSpentInILS, info.processRank);
+			numberOfTestedCombinations += vnd.getNumberOfTestedCombinations();
 			// 3. Select the best clustring so far
 			// if Q(Cl) > Q(Cstar)
 			Imbalance newValue = Cl.getImbalance();
@@ -119,7 +122,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, LocalSearch &ls,
 				}
 			}
 			// 4. Generate perturbation over C*
-			Perturbation perturbation(ls.getRandomSeed());
+			Perturbation perturbation(vnd.getRandomSeed());
 			Cl = perturbation.randomMove(g, CStar, problem, perturbationLevel);
 
 			// 5. Stops the timer and stores the elapsed time
@@ -134,6 +137,11 @@ Clustering ILS::executeILS(ConstructClustering &construct, LocalSearch &ls,
 					<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
 			timer.resume();
 			start_time = timer.elapsed();
+			// if elapsed time is bigger than timeLimit, break
+			if(timeSpentInILS >= vnd.getTimeLimit()) {
+				BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
+				break;
+			}
 		}
 		Imbalance newValue = CStar.getImbalance();
 		Imbalance bestValue = CBest.getImbalance();
@@ -149,17 +157,18 @@ Clustering ILS::executeILS(ConstructClustering &construct, LocalSearch &ls,
 		end_time = timer.elapsed();
 		timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
 		// if elapsed time is bigger than timeLimit, break
-		if(timeSpentInILS >= ls.getTimeLimit()) {
+		if(timeSpentInILS >= vnd.getTimeLimit()) {
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
+		timer.resume();
+		start_time = timer.elapsed();
 		// guarantees at least one execution of the ILS when the number of iterations is smaller than one
 		if(iterMax <= 0) {  break;  }
 
 		// Avoids constructClustering if loop break condition is met
-		if(i <= iterMax) {
+		if((i + 1) < iterMax) {
 			// 0. Triggers local processing time calculation
-			timer.resume();
 			start_time = timer.elapsed();
 
 			// 1. Construct the next clustering
@@ -189,13 +198,13 @@ Clustering ILS::executeILS(ConstructClustering &construct, LocalSearch &ls,
 
 	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
-	CStar.printClustering(iterationResults);
-	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), ls.getNeighborhoodSize(), iterMax);
+	CStar.printClustering(iterationResults, g->getN());
+	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iterMax);
 	// saves the best result to output time file
 	measureTimeResults(0.0, iterMax);
-	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), ls.getNeighborhoodSize(), iterMax);
+	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), vnd.getNeighborhoodSize(), iterMax);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), ls.getNeighborhoodSize(), iterMax);
+	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), vnd.getNeighborhoodSize(), iterMax);
 
 	return CBest;
 }

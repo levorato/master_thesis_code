@@ -18,7 +18,8 @@ class NeighborhoodSearchFactory {
 public:
 	static const int SEQUENTIAL = 0, PARALLEL = 1;
 
-	NeighborhoodSearchFactory(unsigned long numberOfSlaves, unsigned long numberOfSearchSlaves);
+	NeighborhoodSearchFactory(int machineProcessAllocationStrategy, unsigned long numberOfSlaves,
+			unsigned long numberOfSearchSlaves);
 	virtual ~NeighborhoodSearchFactory();
 
 	SequentialNeighborhoodSearch sequentialNeighborhoodSearch;

@@ -49,11 +49,11 @@ Clustering Perturbation::randomMove1opt(SignedGraph* g, Clustering clustering, C
 		k1 = randomUtil.next(0, nc - 1);
 	}
 	// BOOST_LOG_TRIVIAL(trace)<< "Random k1 = " << k1;
-	BoolArray cluster1 = cTemp.getCluster(k1);
 	// (B) ==== Random node i from cluster 1 ====
 	int idx_i = randomUtil.next(0, cTemp.getClusterSize(k1) - 1);
+	ClusterArray myCluster = clustering.getClusterArray();
 	for(int j = 0, count = 0; j < n; j++) {
-		if(cluster1[j]) {
+		if(myCluster[j] == k1) {
 			if(count == idx_i) {
 				node = j;
 				break;

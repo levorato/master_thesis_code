@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <boost/log/trivial.hpp>
+#include <boost/serialization/access.hpp>
 
 namespace util {
 namespace parallel {
@@ -25,9 +26,9 @@ public:
 	/**
 	 * Returns true if a process rank is considered a master process.
 	 */
-	static bool isMaster(const unsigned int& myRank, const unsigned int& numberOfMasters,
+	static bool isMaster(int machineProcessAllocationStrategy, const unsigned int& myRank, const unsigned int& numberOfMasters,
 			const unsigned int& numberOfSearchSlaves) {
-		if(MACHINE_PROCESS_ALLOCATION_STRATEGY == ALL_MASTERS_FIRST) {
+		if(machineProcessAllocationStrategy == ALL_MASTERS_FIRST) {
 			return myRank <= numberOfMasters;
 		} else { // if(MACHINE_PROCESS_ALLOCATION_STRATEGY == MASTER_AND_VND_SLAVES_TOGETHER)
 			return myRank % (numberOfSearchSlaves + 1) == 0;
@@ -37,9 +38,9 @@ public:
 	/**
 	 * Returns true if a process rank is considered a VND Slave process.
 	 */
-	static bool isVNDSlave(const unsigned int& myRank, const unsigned int& numberOfMasters,
+	static bool isVNDSlave(int machineProcessAllocationStrategy, const unsigned int& myRank, const unsigned int& numberOfMasters,
 			const unsigned int& numberOfSearchSlaves) {
-		return not isMaster(myRank, numberOfMasters, numberOfSearchSlaves);
+		return not isMaster(machineProcessAllocationStrategy, myRank, numberOfMasters, numberOfSearchSlaves);
 	}
 
 	static unsigned int calculateNumberOfSearchSlaves(const unsigned int& np, const unsigned int& numberOfMasters) {
@@ -52,9 +53,10 @@ public:
 		return numberOfSearchSlaves;
 	}
 
-	static void populateListOfMasters(std::vector<int>& masterList, const unsigned int& myRank,
+	static void populateListOfMasters(int machineProcessAllocationStrategy,
+			std::vector<int>& masterList, const unsigned int& myRank,
 			const unsigned int& numberOfMasters, const unsigned int& numberOfSearchSlaves) {
-		if(MACHINE_PROCESS_ALLOCATION_STRATEGY == ALL_MASTERS_FIRST) {
+		if(machineProcessAllocationStrategy == ALL_MASTERS_FIRST) {
 			for(int i = 1; i <= numberOfMasters; i++) {
 				masterList.push_back(i);
 			}
@@ -65,9 +67,9 @@ public:
 		}
 	}
 
-	static void populateListOfVNDSlaves(std::vector<int>& slaveList, const unsigned int& myRank,
+	static void populateListOfVNDSlaves(int machineProcessAllocationStrategy, std::vector<int>& slaveList, const unsigned int& myRank,
 			const unsigned int& numberOfMasters, const unsigned int& numberOfSearchSlaves) {
-		if(MACHINE_PROCESS_ALLOCATION_STRATEGY == ALL_MASTERS_FIRST) {
+		if(machineProcessAllocationStrategy == ALL_MASTERS_FIRST) {
 			// The formulas below determine the first and last search slaves of this master process
 			// IMPORTANT! Process mapping:
 			// * 1..numberOfSlaves => p(i) master processes (execute parellel GRASP iterations with MPI)
@@ -97,8 +99,39 @@ public:
 	static const int ALL_MASTERS_FIRST = 0;
 	static const int MASTER_AND_VND_SLAVES_TOGETHER = 1;
 
+	enum SearchName {SEQUENTIAL_SEARCH, PARALLEL_SEARCH};
+};
+
+
+class MPIInitParams {
+public:
+	MPIInitParams() : numberOfMasters(0), numberOfSearchSlavesPerMaster(0),
+			machineProcessAllocationStrategy(MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER)  { }
+			searchType(0)  { }
+
+	MPIInitParams(int masters, int slavesPerMaster, int machineAllocationStrategy, int searchTp) : 
+			numberOfMasters(masters),
+			numberOfSearchSlavesPerMaster(slavesPerMaster),
+			machineProcessAllocationStrategy(machineAllocationStrategy),
+			searchType(searchTp)  { }
+
+	int numberOfMasters;
+	int numberOfSearchSlavesPerMaster;
 	// The following variable defines the strategy for machine x process allocation
-	static const int MACHINE_PROCESS_ALLOCATION_STRATEGY = MASTER_AND_VND_SLAVES_TOGETHER;
+	int machineProcessAllocationStrategy;
+	int searchType;
+private:
+
+	// serialization-specific code
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & numberOfMasters;
+		ar & numberOfSearchSlavesPerMaster;
+		ar & machineProcessAllocationStrategy;
+		ar & searchType;
+	}
 };
 
 } /* namespace parallel */

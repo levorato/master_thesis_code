@@ -8,6 +8,7 @@
 #include "include/ParallelILS.h"
 #include "util/include/MPIMessage.h"
 #include "util/parallel/include/MPIUtil.h"
+#include "problem/include/RCCProblem.h"
 #include <cstring>
 #include <vector>
 #include <boost/mpi/communicator.hpp>
@@ -22,8 +23,8 @@ using namespace util::parallel;
 using namespace resolution::construction;
 namespace mpi = boost::mpi;
 
-ParallelILS::ParallelILS(const int& slaves, const int& searchSlaves) : ILS(),
-		numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
+ParallelILS::ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves) : ILS(),
+		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves) {
 
 }
 
@@ -36,14 +37,20 @@ Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeigh
 		ClusteringProblem& problem, ExecutionInfo& info) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Initiating parallel ILS...";
+	// max number of clusters (RCC Problem Only)
+	long k = 0;
+	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		k = rp.getK();
+	}
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
 	std::vector<int> slaveList;
-	MPIUtil::populateListOfMasters(slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
+	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd.getNeighborhoodSize(),
 				problem.getType(), construct.getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd.getTimeLimit(),
-				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax);
+				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}
@@ -68,7 +75,7 @@ Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeigh
 		}
 	}
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
-	bestClustering.printClustering();
+	bestClustering.printClustering(g->getN());
 	return bestClustering;
 }
 

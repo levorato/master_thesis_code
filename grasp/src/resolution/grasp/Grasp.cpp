@@ -39,10 +39,10 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering Grasp::executeGRASP(ConstructClustering &construct, LocalSearch &ls,
+Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
 		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info)<< "Initializing " << " GRASP "<< problem.getName() <<
-	" procedure for alpha = " << construct.getAlpha() << " and l = " << ls.getNeighborhoodSize();
+	" procedure for alpha = " << construct.getAlpha() << " and l = " << vnd.getNeighborhoodSize();
 
 	double totalTimeSpentOnConstruction = 0.0;
 	// 0. Triggers local processing time calculation
@@ -85,9 +85,9 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, LocalSearch &ls,
 		notifyNewValue(Cc, 0.0, totalIter);
 
 		// 2. Execute local search algorithm: RVND
-		Clustering Cl = ls.localSearch(g, Cc, totalIter, problem, timeSpentInGRASP, info.processRank);
-		numberOfTestedCombinations += ls.getNumberOfTestedCombinations();
-		timeSpentOnLocalSearch += ls.getTimeSpentOnLocalSearch();
+		Clustering Cl = vnd.localSearch(g, Cc, totalIter, problem, timeSpentInGRASP, info.processRank);
+		numberOfTestedCombinations += vnd.getNumberOfTestedCombinations();
+		timeSpentOnLocalSearch += vnd.getTimeSpentOnLocalSearch();
 		// 3. Select the best clustring so far
 		// if Q(Cl) > Q(Cstar)
 		Imbalance newValue = Cl.getImbalance();
@@ -114,7 +114,8 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, LocalSearch &ls,
 			timeSpentOnBestSolution = timeSpentInGRASP;
 			// Registers the best result at time intervals
 			notifyNewValue(CStar, timeSpentInGRASP, totalIter);
-			i = 0;
+			// NUMBER OF ITERATIONS IS NOW FIXED !!!
+			// i = 0;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue.getValue() == 0) break;
 		}
@@ -122,7 +123,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, LocalSearch &ls,
 		end_time = timer.elapsed();
 		timeSpentInGRASP += (end_time.wall - start_time.wall) / double(1000000000);
 		// if elapsed time is bigger than timeLimit, break
-		if(timeSpentInGRASP >= ls.getTimeLimit()) {
+		if(timeSpentInGRASP >= vnd.getTimeLimit()) {
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
@@ -161,22 +162,22 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, LocalSearch &ls,
 	<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
 	<< "," << (totalIter+1)
 	<< "," << numberOfTestedCombinations
-	<< "," << fixed << setprecision(4) << timeSpentOnLocalSearch << endl;
+	<< "," << fixed << setprecision(2) << timeSpentOnLocalSearch << endl;
 
 	constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << (initialImbalanceSum / (totalIter+1))
 	<< endl;
 
 	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
-	BOOST_LOG_TRIVIAL(info) << "Time spent on construction phase: " << fixed << setprecision(4) << totalTimeSpentOnConstruction << "s, " << (100 * totalTimeSpentOnConstruction / timeSpentInGRASP) << "%.";
-	BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(4) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInGRASP) << "%.";
+	BOOST_LOG_TRIVIAL(info) << "Time spent on construction phase: " << fixed << setprecision(2) << totalTimeSpentOnConstruction << "s, " << (100 * totalTimeSpentOnConstruction / timeSpentInGRASP) << "%.";
+	BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(2) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInGRASP) << "%.";
 	// CStar.printClustering();
-	CStar.printClustering(iterationResults);
-	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), ls.getNeighborhoodSize(), iter);
+	CStar.printClustering(iterationResults, g->getN());
+	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), ls.getNeighborhoodSize(), iter);
+	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), ls.getNeighborhoodSize(), iter);
+	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), vnd.getNeighborhoodSize(), iter);
 
 	return CStar;
 }

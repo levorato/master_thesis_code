@@ -35,19 +35,31 @@ namespace clusteringgraph {
  */
 class Clustering {
 public:
-	static const int NEW_CLUSTER = -1;
+	static const long NEW_CLUSTER = -1;
+	static const long NO_CLUSTER = -2;
+
 	/* Matrices used by RCC relaxed imbalance calculation */
 	matrix<double> positiveSum, negativeSum;
 
 	/**
-	 * Creates a Clustering object.
+	 * Creates an empty Clustering object.
 	 */
 	Clustering();
 
 	/**
-	 * Creates a Clustering object based on the clusterList.
+	 * Creates an empty Clustering object.
+	 */
+	Clustering(SignedGraph& g);
+
+	/**
+	 * Creates a Clustering object based on another Clustering object.
 	 */
 	Clustering(const Clustering& clustering);
+
+	/**
+	 * Creates a Clustering object based on the clusterArray.
+	 */
+	Clustering(const ClusterArray cArray, SignedGraph& g, ClusteringProblem &p);
 
 	virtual ~Clustering();
 
@@ -56,20 +68,8 @@ public:
 	 * Recalculates the objective function associated with
 	 * the clustering, based on the modification.
 	 */
-	BoolArray addCluster(SignedGraph& g, ClusteringProblem& p,
-			const unsigned long& i);
-
-	/**
-	 * Adds a new cluster based on the bool array passed as parameter.
-	 */
-	void addCluster(BoolArray b);
-
-	/**
-	 * Returns the n-th cluster of the list.
-	 */
-	BoolArray& getCluster(unsigned long clusterNumber);
-
-	void setCluster(unsigned long clusterNumber, BoolArray b);
+	void addCluster(SignedGraph& g, ClusteringProblem& p,
+			const unsigned long& i, bool updateImbalance = true);
 
 	/**
 	 * Returns the biggest cluster (index) of the cluster (the one with more elements).
@@ -82,7 +82,7 @@ public:
 	 * modification.
 	 */
 	void addNodeToCluster(SignedGraph& g, ClusteringProblem& p,
-			const unsigned long& i, const unsigned long& k);
+			const unsigned long& i, const unsigned long& k, bool updateImbalance = true);
 
 	/**
 	 * Removes a node i from cluster k. Recalculates the objective
@@ -90,17 +90,17 @@ public:
 	 * modification.
 	 */
 	void removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p,
-			const unsigned long& i, const unsigned long& k);
+			const unsigned long& i, const unsigned long& k, bool updateImbalance = true);
 
 	/**
 	 * Prints the clustering config on the screen.
 	 */
-	void printClustering();
+	void printClustering(unsigned long n);
 
 	/**
 	 * Prints the clustering config on the ostream os.
 	 */
-	void printClustering(ostream& os);
+	void printClustering(ostream& os, unsigned long n);
 
 	/**
 	 * Returns the number of clusters in this clustering configuration.
@@ -131,7 +131,7 @@ public:
 	 */
 	bool equals(Clustering& c);
 
-	string toString();
+	string toString(unsigned long n);
 
 	/**
 	 * Returns the value of the objective function corresponding to this cluster.
@@ -144,30 +144,13 @@ public:
 		this->imbalance = imbalance;
 	}
 
-	const ClusterList& getClusterList() {
-		return clusterList;
+	const ClusterArray& getClusterArray() {
+		return clusterArray;
 	}
 
-	class ClusterSizeComparison {
-	private:
-		bool ascendingOrder;
-	public:
-		ClusterSizeComparison(bool ascending) :
-				ascendingOrder(ascending) {
-		}
-
-		bool operator ()(const BoolArray& a, const BoolArray& b) const {
-			if (ascendingOrder) {
-				return a.count() < b.count();
-			} else {
-				return a.count() > b.count();
-			}
-		}
-	};
-
 private:
-	/** the cluster list, with dimensions k x n */
-	ClusterList clusterList;
+	/** the cluster array, with dimension n */
+	ClusterArray clusterArray;
 	/** the size of each cluster */
 	std::vector<unsigned long> clusterSize;
 	/** the value of the objective function corresponding to this cluster */
@@ -175,14 +158,14 @@ private:
 	/** The problem type this clustering refers to (CC, RCC) */
 	int problemType;
 
-	void print(std::ostream& os, ClusterList& l);
+	void print(std::ostream& os, ClusterArray& a, unsigned long n);
 
 	// serialization-specific code
 	friend class boost::serialization::access;
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		ar & clusterList;
+		ar & clusterArray;
 		ar & clusterSize;
 		ar & imbalance;
 		ar & problemType;

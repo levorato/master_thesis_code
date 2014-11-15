@@ -113,7 +113,19 @@ std::istream& operator>>(std::istream& in, CommandLineInterfaceController::State
     return in;
 }
 
-CommandLineInterfaceController::CommandLineInterfaceController() : logSeverity("warning") {
+std::istream& operator>>(std::istream& in, CommandLineInterfaceController::SearchName& search)
+{
+    std::string token;
+    in >> token;
+    if (token == "SEQUENTIAL")
+        search = CommandLineInterfaceController::SEQUENTIAL_SEARCH;
+    else if (token == "PARALLEL")
+        search = CommandLineInterfaceController::PARALLEL_SEARCH;
+//    else throw boost::program_options::validation_error("Invalid unit");
+    return in;
+}
+
+CommandLineInterfaceController::CommandLineInterfaceController() : logSeverity("info") {
 	// TODO Auto-generated constructor stub
 
 }
@@ -124,9 +136,10 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
 		string& executionId, const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
-		const int& numberOfIterations, const long& timeLimit, const int& numberOfMasters, const int& numberOfSearchSlaves,
+		const int& numberOfIterations, const long& timeLimit, const int& machineProcessAllocationStrategy,
+		const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
-		long k, const StategyName& resolutionStrategy, const int& iterMaxILS, const int& perturbationLevelMax) {
+		long k, const StategyName& resolutionStrategy, const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -142,20 +155,20 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		// Construct clustering module
 		ConstructClustering construct(functionFactory.build(functionType), seed, alpha);
 		// Chooses between the sequential or parallel search algorithm
-		// NeighborhoodSearch* neigborhoodSearch;
-		// NeighborhoodSearchFactory nsFactory(numberOfMasters, numberOfSearchSlaves);
-		/*
-		if(numberOfSearchSlaves > 0) {
+		NeighborhoodSearch* neigborhoodSearch;
+		NeighborhoodSearchFactory nsFactory(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
+		if(searchType == CommandLineInterfaceController::PARALLEL_SEARCH) {
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 		} else {
 			neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-		}*/
+		}
+		// VND - local search module
 		// Replaced by CUDA neighborhood search
 		CUDANeighborhoodSearch neighborhoodSearchCUDA;
 		SequentialNeighborhoodSearch neighborhoodSearchSeq;
-		// VND - local search module
 		VariableNeighborhoodDescent vnd(neighborhoodSearchCUDA, seed, l, firstImprovementOnOneNeig, timeLimit);
 		CUDAVariableNeighborhoodDescent cudavnd(seed, l, firstImprovementOnOneNeig, timeLimit);
+		// VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, l, firstImprovementOnOneNeig, timeLimit);
 		// Execution additional info
 		ExecutionInfo info(executionId, fileId, outputFolder, myRank);
 
@@ -169,11 +182,11 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   G R A S P
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution;
-					c = resolution.executeGRASP(construct, cudavnd, g.get(), numberOfIterations,
+					c = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfSlaves processes and summarizes the result
-					ParallelGrasp parallelResolution(numberOfMasters, numberOfSearchSlaves);
+					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
 					c = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
@@ -181,11 +194,11 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
-					c = resolution.executeILS(construct, cudavnd, g.get(), numberOfIterations, iterMaxILS,
+					c = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
-					resolution::ils::ParallelILS parallelResolution(numberOfMasters, numberOfSearchSlaves);
+					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
 					c = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
@@ -207,7 +220,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			Imbalance imb = c.getImbalance();
 			out << "I(P) = " << imb.getValue() << endl;
 			stringstream ss;
-			c.printClustering(ss);
+			c.printClustering(ss, g->getN());
 			out << ss.str();
 			// Outputs additional graph analysis data
 			CCProblem& ccp = static_cast<CCProblem&>(problemFactory.build(ClusteringProblem::CC_PROBLEM));
@@ -238,7 +251,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfMasters processes and summarizes the result
-					ParallelGrasp parallelResolution(numberOfMasters, numberOfSearchSlaves);
+					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
 					RCCCluster = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				}
@@ -250,7 +263,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
-					resolution::ils::ParallelILS parallelResolution(numberOfMasters, numberOfSearchSlaves);
+					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
 					RCCCluster = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 				}
@@ -272,7 +285,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			Imbalance imb = RCCCluster.getImbalance();
 			out << "SRI(P) = " << imb.getValue() << endl;
 			stringstream ss;
-			RCCCluster.printClustering(ss);
+			RCCCluster.printClustering(ss, g->getN());
 			out << ss.str();
 			// Outputs additional graph analysis data
 			RCCProblem& rccp = static_cast<RCCProblem&>(problemFactory.build(ClusteringProblem::RCC_PROBLEM));
@@ -310,7 +323,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	std::set_terminate( handler );
 
 	mpi::communicator world;
-	cout << "Correlation clustering problem solver" << endl;
+	//cout << "Correlation clustering problem solver" << endl;
 
 	// random seed used in the algorithms
 	/*
@@ -336,9 +349,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int timeLimit = 1800;
 	int functionType = GainFunction::IMBALANCE;
 	int numberOfMasters = np - 1;
+	int totalNumberOfVNDSlaves = -1;
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
-	int iterMaxILS = 5, perturbationLevelMax = 30;
+	CommandLineInterfaceController::SearchName searchType = CommandLineInterfaceController::SEQUENTIAL_SEARCH;
+	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and Random instances 
+	//int iterMaxILS = 5, perturbationLevelMax = 7; // for UNGA instances
 
 	po::options_description desc("Available options:");
 	desc.add_options()
@@ -365,10 +381,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				"3 for max positive-negative modularity gain function, 4 for max pos-neg mod gain function II, "
 				"5 for max pos-neg mod gain function III  (Gain Function is used in construction phase)")
 		("slaves,s", po::value<int>(&numberOfMasters)->default_value(np - 1), "number of masters (main multi-start heuristic slaves) in parallel")
+		("vndslaves", po::value<int>(&totalNumberOfVNDSlaves)->default_value(-1), "number of VND slaves in parallel")
 		("firstImprovementOnOneNeig", po::value<bool>(&firstImprovementOnOneNeig)->default_value(true), "first improvement in 1-opt neighborhood (** sequential VND only **)")
 		("jobid", po::value<string>(&jobid), "job identifier (string)")
 		("strategy", po::value<StategyName>(&strategy),
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
+		("search", po::value<CommandLineInterfaceController::SearchName>(&searchType),
+                                         "Local search to be used. Accepted values: SEQUENTIAL (default), PARALLEL.")
 	;
 	po::positional_options_description p;
 	p.add("input-file", -1);
@@ -378,8 +397,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	po::notify(vm);
 
 	// job id is obtained through command line parameter from PBS Scheduler
-	cout << "Job id is " << jobid << "\n";
-	testcuda();
+	//cout << "Job id is " << jobid << "\n";
 	// initializes the logging subsystem
 	if(jobid.length() == 0) {
 		jobid = TimeDateUtil::generateRandomId();
@@ -404,7 +422,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 	// Leader process code (rank 0)
 	if(myRank == 0) {
-		cout << "Correlation clustering problem solver" << endl;
+		//cout << "Correlation clustering problem solver" << endl;
 		// id used for output folders
 		string executionId = jobid;
 
@@ -433,6 +451,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			} else if(strategy == ILS) {
 				BOOST_LOG_TRIVIAL(info) << "Resolution strategy is ILS.";
 			}
+			if(searchType == CommandLineInterfaceController::SEQUENTIAL_SEARCH) {
+                                BOOST_LOG_TRIVIAL(info) << "Local search type is SEQUENTIAL.";
+                        } else if(searchType == CommandLineInterfaceController::PARALLEL_SEARCH) {
+                                BOOST_LOG_TRIVIAL(info) << "Local search type is PARALLEL.";
+                        }
 			BOOST_LOG_TRIVIAL(info) << "Neighborhood size (l) is " << l << "\n";
 			BOOST_LOG_TRIVIAL(info) << "Gain function type is ";
 			if(functionType == GainFunction::MODULARITY) {
@@ -470,13 +493,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			if(alpha <= 0.0) {
 				BOOST_LOG_TRIVIAL(info) << "VOTE is enabled. Will always choose best-gain vertex on constructionPhase." << endl;
 			}
+			if(totalNumberOfVNDSlaves < 0) {  // if numberOfVNDSlaves is not specified, defaults to numproc - (masters - 1)
+				totalNumberOfVNDSlaves = np - numberOfMasters - 1;
+			}
 
 			BOOST_LOG_TRIVIAL(info) << "Total number of processes is " << np << endl;
-            cout << "Total number of processes is " << np << endl;
+            //cout << "Total number of processes is " << np << endl;
 			BOOST_LOG_TRIVIAL(info) << "Number of master processes in parallel is " << (numberOfMasters + 1);
-			cout << "Number of master processes in parallel is " << (numberOfMasters + 1) << endl;
-			BOOST_LOG_TRIVIAL(info) << "Number of VND processes in parallel is " << (np - numberOfMasters - 1) << endl;
-            cout << "Number of VND processes in parallel is " << (np - numberOfMasters - 1) << endl;
+			//cout << "Number of master processes in parallel is " << (numberOfMasters + 1) << endl;
+			BOOST_LOG_TRIVIAL(info) << "Number of VND processes in parallel is " << totalNumberOfVNDSlaves << endl;
+            //cout << "Number of VND processes in parallel is " << totalNumberOfVNDSlaves << endl;
 			std::vector<fs::path> fileList;
 
 			if (vm.count("input-file")) {
@@ -506,12 +532,20 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				return 1;
 			}
 
-			unsigned int numberOfSearchSlaves = MPIUtil::calculateNumberOfSearchSlaves(np, numberOfMasters);
+			unsigned int numberOfSearchSlavesPerMaster = 0;
+			MPIInitParams mpiparams(numberOfMasters, numberOfSearchSlavesPerMaster, MPIUtil::ALL_MASTERS_FIRST, searchType);
+			if(totalNumberOfVNDSlaves > 0) {
+				numberOfSearchSlavesPerMaster = MPIUtil::calculateNumberOfSearchSlaves(np, numberOfMasters);
+				mpiparams.numberOfSearchSlavesPerMaster = numberOfSearchSlavesPerMaster;
+				mpiparams.machineProcessAllocationStrategy = MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER;
+			} else if(np / (numberOfMasters+1) == 4) {
+				mpiparams.machineProcessAllocationStrategy = MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER;
+			}
 			if(np > 1) {
-				// broadcasts the numberOfMasters to all processes
+				// broadcasts the mpi params to all processes
 				// mpi::broadcast(world, numberOfSlaves, 0);
 				for(int i = 1; i < np; i++) {
-					world.send(i, MPIMessage::INPUT_MSG_NUM_MASTERS_TAG, numberOfMasters);
+					world.send(i, MPIMessage::INPUT_MSG_MPI_PARAMS_TAG, mpiparams);
 				}
 			}
 
@@ -523,15 +557,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					BOOST_LOG_TRIVIAL(info) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
-							numberOfIterations, timeLimit, numberOfMasters, numberOfSearchSlaves,
-							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, iterMaxILS, perturbationLevelMax);
+							numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
+							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
-								numberOfIterations, timeLimit, numberOfMasters, numberOfSearchSlaves,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, iterMaxILS, perturbationLevelMax);
+								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
+								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
 					}
 				}
 			}
@@ -542,7 +576,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				InputMessageParallelGrasp imsgpgrasp;
                                 InputMessageParallelVND imsgpvns;
 				for(int i = 1; i < np; i++) {
-					if(MPIUtil::isMaster(i, numberOfMasters, numberOfSearchSlaves)) {  // GRASP slave
+					if(MPIUtil::isMaster(mpiparams.machineProcessAllocationStrategy, i, numberOfMasters, numberOfSearchSlavesPerMaster)) {  // GRASP slave
 						world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpgrasp);
 					} else {  // VND slave
 						world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpvns);
@@ -566,11 +600,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	} else { // slave processes
 		// First message received from leader contains the number of masters
 		// and is used for a process to discover if it is a master or a VND slave
-		unsigned int numberOfMasters = 0;
-		world.recv(MPIMessage::LEADER_ID, MPIMessage::INPUT_MSG_NUM_MASTERS_TAG, numberOfMasters);
-		BOOST_LOG_TRIVIAL(info) << "number of masters received: " << numberOfMasters;
-		cout << "number of masters received: " << numberOfMasters << "\n";
-		unsigned int numberOfSearchSlaves = MPIUtil::calculateNumberOfSearchSlaves(np, numberOfMasters);
+		MPIInitParams mpiparams;
+		world.recv(MPIMessage::LEADER_ID, MPIMessage::INPUT_MSG_MPI_PARAMS_TAG, mpiparams);
+		BOOST_LOG_TRIVIAL(info) << "number of masters received: " << mpiparams.numberOfMasters;
+		BOOST_LOG_TRIVIAL(info) << "number of VND slaves per master received: " << mpiparams.numberOfSearchSlavesPerMaster;
+		BOOST_LOG_TRIVIAL(info) << "Machine-process allocation strategy received: " << mpiparams.machineProcessAllocationStrategy;
+		BOOST_LOG_TRIVIAL(info) << "Local search type received: " << mpiparams.searchType;
+		//cout << "number of masters received: " << mpiparams.numberOfMasters << "\n";
 
 		// Controls the number of messages received
 		unsigned int messageCount = 0;
@@ -581,9 +617,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		unsigned int previousId = 0;
 
 		try {
-			if(MPIUtil::isMaster(myRank, numberOfMasters, numberOfSearchSlaves)) {  // master process
+			if(MPIUtil::isMaster(mpiparams.machineProcessAllocationStrategy, myRank, mpiparams.numberOfMasters, mpiparams.numberOfSearchSlavesPerMaster)) {  // master process
 				BOOST_LOG_TRIVIAL(info) << "Process " << myRank << " ready [master process].";
-				cout << "Process " << myRank << " ready [master process]." << endl;
+				//cout << "Process " << myRank << " ready [master process]." << endl;
 				while(true) {
 					mpi::status stat = world.probe(MPIMessage::LEADER_ID, mpi::any_tag);
 					if(stat.tag() == MPIMessage::TERMINATE_MSG_TAG) {
@@ -610,23 +646,22 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 						// triggers the local GRASP routine
 						// Chooses between the sequential or parallel search algorithm
-						/* NeighborhoodSearch* neigborhoodSearch;
-						NeighborhoodSearchFactory nsFactory(imsgpg.numberOfMasters, imsgpg.numberOfSearchSlaves);
-						if(numberOfSearchSlaves > 0) {
+						NeighborhoodSearch* neigborhoodSearch;
+						NeighborhoodSearchFactory nsFactory(mpiparams.machineProcessAllocationStrategy, imsgpg.numberOfMasters, imsgpg.numberOfSearchSlaves);
+						if(mpiparams.searchType == MPIUtil::PARALLEL_SEARCH) {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 						} else {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-						}*/
-						SequentialNeighborhoodSearch neighborhoodSearchSeq;
+						}
 						GainFunctionFactory functionFactory(g.get());
 						ConstructClustering construct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
-						VariableNeighborhoodDescent vnd(neighborhoodSearchSeq, seed, imsgpg.l, imsgpg.firstImprovementOnOneNeig,
+						VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, imsgpg.l, imsgpg.firstImprovementOnOneNeig,
 								imsgpg.timeLimit);
 						// Execution additional info
 						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
 						Grasp resolution;
 						Clustering bestClustering = resolution.executeGRASP(construct, vnd, g.get(), imsgpg.iter,
-								problemFactory.build(imsgpg.problemType), info);
+								problemFactory.build(imsgpg.problemType, imsgpg.k), info);
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());
@@ -654,25 +689,24 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 						// triggers the local ILS routine
 						// Chooses between the sequential or parallel search algorithm
-						/*
 						NeighborhoodSearch* neigborhoodSearch;
-						NeighborhoodSearchFactory nsFactory(imsgpils.numberOfMasters, imsgpils.numberOfSearchSlaves);
-						if(numberOfSearchSlaves > 0) {
+						NeighborhoodSearchFactory nsFactory(mpiparams.machineProcessAllocationStrategy,
+								imsgpils.numberOfMasters, imsgpils.numberOfSearchSlaves);
+						if(mpiparams.searchType == MPIUtil::PARALLEL_SEARCH) { 
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::PARALLEL);
 						} else {
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
-						}*/
-						SequentialNeighborhoodSearch neighborhoodSearchSeq;
+						}
 						GainFunctionFactory functionFactory(g.get());
 						ConstructClustering construct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
-						VariableNeighborhoodDescent vnd(neighborhoodSearchSeq, seed, imsgpils.l, imsgpils.firstImprovementOnOneNeig,
+						VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, imsgpils.l, imsgpils.firstImprovementOnOneNeig,
 								imsgpils.timeLimit);
 						// Additional execution info
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
 						resolution::ils::ILS resolution;
 						Clustering bestClustering = resolution.executeILS(construct, vnd, g.get(), imsgpils.iter,
 								imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-								problemFactory.build(imsgpils.problemType), info);
+								problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());
@@ -683,44 +717,47 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			} else {  // Parallel VND slave
 				BOOST_LOG_TRIVIAL(info) << "Process " << myRank << " ready [VND slave process].";
 				while(true) {
-					// Receives a parallel VND message with parameters and triggers local VND execution
 					InputMessageParallelVND imsgvns;
-					// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_VND_TAG or a terminate msg
-					mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgvns);
-					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel VND]: Received message from master." << endl;
-					messageCount++;
+                    mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, imsgvns);
 					if(stat.tag() == MPIMessage::TERMINATE_MSG_TAG) {
-						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": terminate msg received.\n";
+						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": terminate message received.";
 						return 0;
 					} else if(stat.tag() == MPIMessage::INTERRUPT_MSG_PARALLEL_VND_TAG) {
 						// ignores interrupt message from previous VND processing
-						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": ignoring VND interrupt msg received.\n";
+						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": ignoring VND interrupt message received.";
 						continue;
-					}
+					} else if(stat.tag() == MPIMessage::INPUT_MSG_PARALLEL_VND_TAG) {
+						// Receives a parallel VND message with parameters and triggers local VND execution
+						// receives a message of type ParallelGrasp::INPUT_MSG_PARALLEL_VND_TAG or a terminate msg
+						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel VND]: Received message from master." << endl;
+						messageCount++;
 
-					if(imsgvns.l == 0) {
-						BOOST_LOG_TRIVIAL(fatal) << "ERROR: Empty VND message received. Terminating.\n";
-						return 1;
-					}
-					// builds a new graph object only if it has changed (saves time)
-					if(previousId != imsgvns.id) {
-						g.reset();
-						g = reader.readGraphFromFile(imsgvns.graphInputFilePath);
-						previousId = imsgvns.id;
-					}
+						if(imsgvns.l == 0) {
+							BOOST_LOG_TRIVIAL(fatal) << "ERROR: Empty VND message received. Terminating.\n";
+							return 1;
+						}
+						// builds a new graph object only if it has changed (saves time)
+						if(previousId != imsgvns.id) {
+							g.reset();
+							g = reader.readGraphFromFile(imsgvns.graphInputFilePath);
+							previousId = imsgvns.id;
+						}
 
-					// triggers the local partial VND search to be done between initial and final cluster indices
-					ParallelNeighborhoodSearch pnSearch(numberOfMasters, numberOfSearchSlaves);
-					Clustering bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
-							problemFactory.build(imsgvns.problemType), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
-							imsgvns.initialClusterIndex, imsgvns.finalClusterIndex, false, imsgvns.k);
+						// triggers the local partial VND search to be done between initial and final cluster indices
+						// TODO: include firstImprovementOnOneNeig as a parameter inside the MPI message
+						bool firstImprovementOnOneNeig = true;
+						ParallelNeighborhoodSearch pnSearch(mpiparams.machineProcessAllocationStrategy, mpiparams.numberOfMasters, mpiparams.numberOfSearchSlavesPerMaster);
+						Clustering bestClustering = pnSearch.searchNeighborhood(imsgvns.l, g.get(), &imsgvns.clustering,
+								problemFactory.build(imsgvns.problemType, imsgvns.k), imsgvns.timeSpentSoFar, imsgvns.timeLimit, seed, myRank,
+								imsgvns.initialClusterIndex, imsgvns.finalClusterIndex, firstImprovementOnOneNeig, imsgvns.k);
 
-					// Sends the result back to the master process
-					int leader = stat.source();
-					OutputMessage omsg(bestClustering, pnSearch.getNumberOfTestedCombinations());
-					world.send(leader, MPIMessage::OUTPUT_MSG_PARALLEL_VND_TAG, omsg);
-					BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VND Output Message sent to master number "
-							<< leader << ". I(P) = " << bestClustering.getImbalance().getValue();
+						// Sends the result back to the master process
+						int leader = stat.source();
+						OutputMessage omsg(bestClustering, pnSearch.getNumberOfTestedCombinations());
+						world.send(leader, MPIMessage::OUTPUT_MSG_PARALLEL_VND_TAG, omsg);
+						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VND Output Message sent to master number "
+								<< leader << ". I(P) = " << bestClustering.getImbalance().getValue();
+					}
 				}
 			}
 		} catch(std::exception& e) {
@@ -741,7 +778,7 @@ void CommandLineInterfaceController::readPropertiesFile() {
 	pt::ptree propTree;
 
 	if ( !boost::filesystem::exists( "config.ini" ) ) {
-	  cout << "Can't find config.ini file! Assuming default properties." << endl;
+		cout << "Can't find config.ini file! Assuming default properties." << endl;
 	} else {
 		read_ini("config.ini", propTree);
 

@@ -9,12 +9,14 @@
 #include <cmath>
 #include <boost/log/trivial.hpp>
 #include "../graph/include/Clustering.h"
+#include <boost/numeric/ublas/matrix.hpp>
 
 namespace problem {
 
 using namespace std;
 using namespace clusteringgraph;
 using namespace boost;
+using namespace boost::numeric::ublas;
 
 CCProblem::CCProblem() {
 	// TODO Auto-generated constructor stub
@@ -41,25 +43,20 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	double positiveSum = 0, negativeSum = 0;
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
+	ClusterArray myCluster = c.getClusterArray();
 
 	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Starting obj function calculation.";
 
 	// For each vertex i
-	for(int i = 0; i < n; i++) {
-		BoolArray cluster;
-		// Find out to which cluster vertex i belongs
-		for(unsigned long k = 0; k < nc; k++) {
-			cluster = c.getCluster(k);
-			if(cluster[i]) {
-				break;
-			}
-		}
+	for(long i = 0; i < n; i++) {
+		long ki = myCluster[i];
 		DirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			double weight = ((Edge*)f->get_property())->weight;
-			int j = target(*f, g.graph);
-			bool sameCluster = cluster[j];
+			long j = target(*f, g.graph);
+			long kj = myCluster[j];
+			bool sameCluster = (ki == kj);
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
 				negativeSum += fabs(weight);
@@ -87,7 +84,8 @@ Imbalance CCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g, Cluste
 Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering& c,
 			const unsigned long& k, const unsigned long& i) {
 	double negativeSum = 0, positiveSum = 0;
-	BoolArray cluster = c.getCluster(k);
+	ClusterArray myCluster = c.getClusterArray();
+	long ki = myCluster[i];
 	// unsigned long n = g.getN();
 
 	// iterates over out-edges of vertex i
@@ -100,7 +98,7 @@ Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering&
 		e = *out_i;
 		Vertex src = source(e, g.graph), targ = target(e, g.graph);
 		double weight = ((Edge*)out_i->get_property())->weight;
-		if(cluster[targ.id]) {
+		if(myCluster[targ.id] == ki) {
 			if(weight < 0) {
 				negativeSum += fabs(weight);
 			}
@@ -119,7 +117,7 @@ Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering&
 		e = *in_i;
 		Vertex src = source(e, g.graph), targ = target(e, g.graph);
 		double weight = ((Edge*)in_i->get_property())->weight;
-		if(cluster[src.id]) {
+		if(myCluster[src.id] == ki) {
 			if(weight < 0) {
 				negativeSum += fabs(weight);
 			}
@@ -142,8 +140,11 @@ Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering&
 string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
-	stringstream ss1, ss2;
+	ClusterArray myCluster = c.getClusterArray();
+	stringstream ss1, ss2, ss3;
 	DirectedGraph::edge_descriptor e;
+	// Cluster to cluster matrix containing positive / negative contribution to imbalance
+	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
 
 	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Starting imbalance analysis.";
 	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
@@ -152,15 +153,8 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	ss2 << "Vertex,PositiveSum,NegativeSum" << endl;
 
 	// For each vertex i
-	for(int i = 0; i < n; i++) {
-		BoolArray cluster;
-		// Find out to which cluster vertex i belongs
-		for(unsigned long k = 0; k < nc; k++) {
-			cluster = c.getCluster(k);
-			if(cluster[i]) {
-				break;
-			}
-		}
+	for(long i = 0; i < n; i++) {
+		long ki = myCluster[i];
 		DirectedGraph::out_edge_iterator f, l;
 		double positiveSum = 0, negativeSum = 0;
 		// For each out edge of i
@@ -168,13 +162,15 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 			e = *f;
 			Vertex src = source(e, g.graph), targ = target(e, g.graph);
 			double weight = ((Edge*)f->get_property())->weight;
-			bool sameCluster = cluster[targ.id];
+			bool sameCluster = (myCluster[targ.id] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
 				negativeSum += fabs(weight);
+				clusterImbMatrix(ki, myCluster[targ.id]) += fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
 				positiveSum += weight;
+				clusterImbMatrix(ki, myCluster[targ.id]) += fabs(weight);
 			}
 		}
 		ss1 << i << "," << positiveSum << "," << negativeSum << endl;
@@ -186,7 +182,7 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 			e = *f2;
 			Vertex src = source(e, g.graph), targ = target(e, g.graph);
 			double weight = ((Edge*)f2->get_property())->weight;
-			bool sameCluster = cluster[src.id];
+			bool sameCluster = (myCluster[src.id] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
 				negativeSum += fabs(weight);
@@ -197,8 +193,16 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 		}
 		ss2 << i << "," << positiveSum << "," << negativeSum << endl;
 	}
+
+	ss3 << endl << "Cluster contribution to imbalance analysis (cluster-cluster matrix):" << endl;
+	for(int i = 0; i < nc; i++) {
+		for(int j = 0; j < nc; j++) {
+			ss3 << clusterImbMatrix(i, j) << ", ";
+		}
+		ss3 << endl;
+	}
 	
 	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Graph analysis done." << endl;
-	return ss1.str() + ss2.str();
+	return ss1.str() + ss2.str() + ss3.str();
 }
 } /* namespace problem */

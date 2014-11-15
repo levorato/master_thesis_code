@@ -5,16 +5,15 @@
  *      Author: Mario Levorato
  */
 
-#ifndef VND_H_
-#define VND_H_
+#ifndef RCCLOCALSEARCH_H_
+#define RCCLOCALSEARCH_H_
 
-#include "../../include/LocalSearch.h"
+#include "../../include/ResolutionStrategy.h"
 #include "graph/include/Graph.h"
 #include "graph/include/Clustering.h"
 #include "problem/include/ClusteringProblem.h"
 #include "graph/include/NeighborhoodSearch.h"
-// #include "graph/include/SequentialNeighborhoodSearch.h"
-#include "SequentialNeighborhoodSearch.h"
+#include "graph/include/SequentialNeighborhoodSearch.h"
 #include "graph/include/ParallelNeighborhoodSearch.h"
 
 
@@ -24,7 +23,7 @@ using namespace problem;
 namespace resolution {
 namespace vnd {
 
-class VariableNeighborhoodDescent : public LocalSearch {
+class VariableNeighborhoodDescent : public ResolutionStrategy {
 public:
 	/**
 	 * @param neighborhoodSearch neighborhood search algorithm (sequential, parallel)
@@ -50,8 +49,30 @@ public:
 	 * @param problem the ClusteringProblem object for the objective function calculation
 	 * @return Clustering C(l), the local optimum solution
 	 */
-	virtual Clustering localSearch(SignedGraph *g, Clustering& Cc, const int& graspIteration,
+	Clustering localSearch(SignedGraph *g, Clustering& Cc, const int& graspIteration,
 			ClusteringProblem& problem, const long& timeSpentSoFar, const int& myRank);
+
+	unsigned long getNumberOfTestedCombinations();
+
+	unsigned int getNeighborhoodSize() {
+		return l;
+	}
+
+	unsigned long getTimeLimit() {
+		return timeLimit;
+	}
+
+	bool isFirstImprovementOnOneNeig() {
+		return firstImprovementOnOneNeig;
+	}
+
+	unsigned long getRandomSeed() {
+		return randomSeed;
+	}
+
+	double getTimeSpentOnLocalSearch() {
+		return timeSpentOnLocalSearch;
+	}
 
 private:
 	/**
@@ -61,6 +82,10 @@ private:
 
 	void notifyNewValue(Clustering& CStar, const double& timeSpentOnLocalSearch, const int& iteration);
 
+	/**
+	 * Time spent so far in the Local Search in seconds.
+	 */
+	double timeSpentInSearch;
 
 	/**
 	 * Stringstream containing the best result found at each moment of time.
@@ -69,19 +94,46 @@ private:
 	stringstream timeResults;
 
 	/**
+	 * Random seed.
+	 */
+	unsigned long randomSeed;
+
+	/**
 	 * Time measure interval for search results in seconds.
 	 */
 	static const double timeMeasureInterval = 10.0;
 	double timeSum;
+	/**
+	 * Total number of tested combinations in local search.
+	 */
+	unsigned long numberOfTestedCombinations;
 
 	/**
 	 * Associated NeigborhoodSearch class.
 	 */
 	NeighborhoodSearch& _neighborhoodSearch;
 
+	/**
+	 * Controls if first-improvement is enabled on 1-opt neighborhood.
+	 */
+	bool firstImprovementOnOneNeig;
 
+	/**
+	 * Neighborhood size of local search.
+	 */
+	int l;
+
+	/**
+	 * Time limit of local search execution in seconds.
+	 */
+	long timeLimit;
+
+	/**
+	 * Time spent on local search.
+	 */
+	double timeSpentOnLocalSearch;
 };
 
 } /* namespace vnd */
 } /* namespace resolution */
-#endif /* VND_H_ */
+#endif /* RCCLOCALSEARCH_H_ */

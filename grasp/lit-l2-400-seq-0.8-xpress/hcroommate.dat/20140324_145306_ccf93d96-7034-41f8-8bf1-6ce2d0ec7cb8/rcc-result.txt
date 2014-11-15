@@ -1,3 +1,0 @@
-RCC Global time spent: 1800.08
-RI(P) = 2
-Clustering configuration: 
