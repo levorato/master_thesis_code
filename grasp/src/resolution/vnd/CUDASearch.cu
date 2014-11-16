@@ -212,19 +212,19 @@ namespace clusteringgraph {
 				int j = destArray[edgenum];
 				float weight = weightArray[edgenum];
 				if(weight > 0) {
-					if(i != j) {  // out-edges of i
+					//if(i != j) {  // out-edges of i
 						vertexClusterPosSumArray[s_cluster[j] + (nc+1) * i] += fabs(weight);
-					} else {  // in-edges of i
+					//} else {  // in-edges of i
 						vertexClusterPosSumArray[old_cluster + (nc+1) * j] -= fabs(weight);
 						vertexClusterPosSumArray[s_cluster[i] + (nc+1) * j] += fabs(weight);
-					}
+					//}
 				} else {
-					if(i != j) {
+					//if(i != j) {
 						vertexClusterNegSumArray[s_cluster[j] + (nc+1) * i] += fabs(weight);
-					} else {
+					//} else {
 						vertexClusterNegSumArray[old_cluster + (nc+1) * j] -= fabs(weight);
 						vertexClusterNegSumArray[s_cluster[i] + (nc+1) * j] += fabs(weight);	
-					}
+					//}
 				}
 			}
 		}
@@ -441,15 +441,15 @@ namespace clusteringgraph {
 		sourceVertexList.clear();
 		destinationClusterList.clear();
 		int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-		//updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
-		//	offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
+		updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
+			offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
 		//updateVertexClusterSumArrays2<<<1, 1>>>(weightArray, destArray, numArray,
                 //      offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
 		checkCudaErrors(cudaDeviceSynchronize());
-		updateVertexClusterSumArraysCPU(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_VertexClusterPosSum, h_VertexClusterNegSum, n, h_nc[0]);
+		// updateVertexClusterSumArraysCPU(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_VertexClusterPosSum, h_VertexClusterNegSum, n, h_nc[0]);
                 // updates GPU arrays with CPU result
-                d_VertexClusterPosSum = h_VertexClusterPosSum;
-                d_VertexClusterNegSum = h_VertexClusterNegSum;
+                //d_VertexClusterPosSum = h_VertexClusterPosSum;
+                //d_VertexClusterNegSum = h_VertexClusterNegSum;
 		
 		while (r <= l /* && (timeSpentSoFar + timeSpentOnLocalSearch < timeLimit)*/) {
 			printf("*** Local search iteration %d, r = %d, nc = %ld\n", iteration, r, h_nc[0]);
@@ -525,14 +525,14 @@ namespace clusteringgraph {
 					blocksPerGrid = (n + threadsCount - 1) / threadsCount;
 					// updateVertexClusterSumArrays2<<<1, 1>>>(weightArray, destArray, numArray,
                       			//	offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
-					// updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
+					updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
 					// updateVertexClusterSumArraysDelta<<<blocksPerGrid, threadsCount, n*sizeof(long)+2*(nc+1)*sizeof(float)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray, bestSrcVertex, sourceCluster);
-					// checkCudaErrors(cudaDeviceSynchronize());
+					checkCudaErrors(cudaDeviceSynchronize());
 					// int moved_vertex, int old_cluster	
-					updateVertexClusterSumArraysCPU(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_VertexClusterPosSum, h_VertexClusterNegSum, n, h_nc[0]);
+					// updateVertexClusterSumArraysCPU(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_VertexClusterPosSum, h_VertexClusterNegSum, n, h_nc[0]);
 					// updates GPU arrays with CPU result
-					d_VertexClusterPosSum = h_VertexClusterPosSum;
-					d_VertexClusterNegSum = h_VertexClusterNegSum;
+					// d_VertexClusterPosSum = h_VertexClusterPosSum;
+					// d_VertexClusterNegSum = h_VertexClusterNegSum;
 				} 
 				checkCudaErrors(cudaDeviceSynchronize());
 				// printf("Preparing new VND loop...\n");
