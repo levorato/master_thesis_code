@@ -260,6 +260,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	                } else {  // new cluster k2
 	                        newClustering.addCluster(*g, problem, bestSrcVertex);
 	                }
+			nc = newClustering.getNumberOfClusters();
 		}
 		// Validate if cluster arrays have the same content
 		ClusterArray cluster = newClustering.getClusterArray();
