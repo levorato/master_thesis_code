@@ -106,7 +106,7 @@ public:
 class MPIInitParams {
 public:
 	MPIInitParams() : numberOfMasters(0), numberOfSearchSlavesPerMaster(0),
-			machineProcessAllocationStrategy(MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER)  { }
+			machineProcessAllocationStrategy(MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER),
 			searchType(0)  { }
 
 	MPIInitParams(int masters, int slavesPerMaster, int machineAllocationStrategy, int searchTp) : 
