@@ -344,14 +344,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 	CommandLineInterfaceController::SearchName searchType = CommandLineInterfaceController::SEQUENTIAL_SEARCH;
-	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and Random instances 
-	//int iterMaxILS = 5, perturbationLevelMax = 7; // for UNGA instances
+	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and Random instances
+	// int iterMaxILS = 5, perturbationLevelMax = 3; // for UNGA instances
 
 	po::options_description desc("Available options:");
 	desc.add_options()
 		("help", "show program options")
-		//("iter-max-ils", po::value<int>(&iterMaxILS), "number of iterations of ILS loop")
-		//("perturbation-level-max,pmax", po::value<int>(&perturbationLevelMax), "maximum perturbation level in ILS")
 		("alpha,a", po::value<string>(&s_alpha),
 			  "alpha - randomness factor of constructive phase")
 		("iterations,iter", po::value<int>(&numberOfIterations)->default_value(400),
@@ -379,6 +377,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
 		("search", po::value<CommandLineInterfaceController::SearchName>(&searchType),
                                          "Local search to be used. Accepted values: SEQUENTIAL (default), PARALLEL.")
+		//("iterils", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
+		//("perturbation", po::value<int>(&perturbationLevelMax)->default_value(30), "maximum perturbation level in ILS")
 	;
 	po::positional_options_description p;
 	p.add("input-file", -1);

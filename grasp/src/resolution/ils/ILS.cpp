@@ -122,6 +122,10 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 				}
 			}
 			// 4. Generate perturbation over C*
+			if((problem.getType() == ClusteringProblem::RCC_PROBLEM) and (CStar.getNumberOfClusters() == 1)) {
+				// perturbation does not work if k = 1 and RCC Problem
+				break;
+			}
 			Perturbation perturbation(vnd.getRandomSeed());
 			Cl = perturbation.randomMove(g, CStar, problem, perturbationLevel);
 

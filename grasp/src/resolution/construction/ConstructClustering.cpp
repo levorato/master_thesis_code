@@ -129,7 +129,7 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 				Cc.addNodeToCluster(*g, problem, v.vertex, new_c, false);
 			}
 		}
-		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";
+		BOOST_LOG_TRIVIAL(debug)<< "RCC post-processing completed.";
 		// Cc.printClustering();
 	}
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
