@@ -52,6 +52,7 @@ def natsorted(l):
     temp.sort()
 
 def main(argv):
+   csv.field_size_limit(sys.maxsize)
 
    folder = ''
    filter = ''
@@ -150,14 +151,14 @@ def main(argv):
 		       else:
 		          N = int(values[0])
 		       # print 'N is {0}'.format(str(N))
-		       matrix = [[0 for x in xrange(N)] for x in xrange(N)]
+		       #matrix = [[0 for x in xrange(N)] for x in xrange(N)]
 		       pos_edge_sum = 0.0
 		       neg_edge_sum = 0.0		    
 		       for line in r:
 		          i = int(line[0])
 		          j = int(line[1])
 		          w = float(line[2])
-		          matrix[i][j] = w
+		          #matrix[i][j] = w
 		          # print '({0}, {1}) = {2}\n'.format(str(i), str(j), str(w))
 		          if(w < 0):
 		             neg_edge_sum += math.fabs(w)
@@ -347,14 +348,14 @@ def main(argv):
 		       else:
 		          N = int(values[0])
 		       # print 'N is {0}'.format(str(N))
-		       matrix = [[0 for x in xrange(N)] for x in xrange(N)]
+		       #matrix = [[0 for x in xrange(N)] for x in xrange(N)]
 		       pos_edge_sum = 0.0
 		       neg_edge_sum = 0.0		    
 		       for line in r:
 		          i = int(line[0])
 		          j = int(line[1])
 		          w = float(line[2])
-		          matrix[i][j] = w
+		          #matrix[i][j] = w
 		          # print '({0}, {1}) = {2}\n'.format(str(i), str(j), str(w))
 		          if(w < 0):
 		             neg_edge_sum += math.fabs(w)

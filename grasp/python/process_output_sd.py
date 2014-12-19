@@ -52,6 +52,7 @@ def natsorted(l):
     temp.sort()
 
 def main(argv):
+   csv.field_size_limit(sys.maxsize)
 
    folder = ''
    filter = ''
