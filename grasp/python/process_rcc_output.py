@@ -1,3 +1,9 @@
+# Script de processamento de resultados do RCC que aponta potenciais grupos de mediadores
+# The existence of a group of individuals who have only positive relationships with everyone 
+# in the network counts as imbalance in the CC Problem. Nonetheless, the individuals in this group 
+# could be construed as mediators (i.e. their relations probably won't change over time) and 
+# their relations should not be considered as a contribution to the imbalance of the network.
+
 import sys, getopt
 import csv
 import StringIO
@@ -136,10 +142,30 @@ def main(argv):
                   for node in nodeList:
                     cluster[int(node.strip())] = partitionNumber
                   partitionNumber += 1
-       			
-               print str(matrix[1960][1988])
           finally:
               content_file.close()
+
+          # for each partition, try to find a partition where most of the external edges are positive
+          for c in xrange(partitionNumber):
+            numberOfExtPosEdges = 0
+            numberOfIntNegEdges = 0
+            totalNumberOfIntEdges = 0
+            totalNumberOfExtEdges = 0
+            for i in xrange(N):
+              if cluster[i] == c:
+                for j in xrange(N):
+                  if matrix[i][j] != 0:
+                    if cluster[j] == c:
+                      totalNumberOfIntEdges += 1
+                      if matrix[i][j] < 0:
+                        numberOfIntNegEdges += 1
+                    else:
+                      totalNumberOfExtEdges += 1
+                      if matrix[i][j] > 0:
+                        numberOfExtPosEdges += 1
+            print "Cluster " + str(c) + ": {0} e {1}".format(str(numberOfExtPosEdges), str(totalNumberOfExtEdges))
+            print "Cluster " + str(c) + ": percentual_external_pos_edges = {0}".format(str(float(numberOfExtPosEdges) / totalNumberOfExtEdges))
+
           count = count - 1
 	 # end process results
 
