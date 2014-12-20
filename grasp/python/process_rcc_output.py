@@ -110,24 +110,55 @@ def main(argv):
           graphfile = prefix[0:prefix.rfind('/')]
           graphfile = graphfile[0:graphfile.rfind('/')]
           graphfile = graphfile[graphfile.rfind('/')+1:]
-          # reads graph file, filling adjecency matrix
+          # reads graph file, filling the adjecency matrix
           print 'Reading graph file: {0}'.format(str(instances_path + '/' + graphfile))
           with open(instances_path + '/' + graphfile, 'rb') as csvfile:
-             dialect = csv.Sniffer().sniff(csvfile.read(1024), delimiters=" \t")
-             csvfile.seek(0)
-             r = csv.reader(csvfile, dialect)
-             line1=r.next()
-             values = [col for col in line1]
-             if(values[0].find(' ') > 0):
-                N = int(values[0][:values[0].find(' ')])
-             else:
-                N = int(values[0])
-             matrix = [[0 for x in xrange(N)] for x in xrange(N)]
-             for line in r:
-                i = int(line[0])
-                j = int(line[1])
-                w = float(line[2])
-                matrix[i][j] = w
+             lines = [line.strip() for line in open(instances_path + '/' + graphfile, 'rb')]
+             if str(lines[0]).find("people") >= 0:  # xpress mrel format
+                 print "Detected xpress mrel format"
+                 line = str(lines[0])
+                 N = int(line[line.find(':')+1:].strip())
+                 print "n = {0}".format(str(N))
+                 matrix = [[0 for x in xrange(N)] for x in xrange(N)]
+                 i = 0
+                 while str(lines[i]).find("Mrel") < 0:
+                    i += 1
+                 line = str(lines[i])
+                 line = line[line.find('[')+1:].strip()
+                 i = int(line[line.find('(')+1:line.find(',')]) - 1
+                 j = int(line[line.find(',')+1:line.find(')')]) - 1
+                 w = float(line[line.find(')')+1:])
+                 matrix[i][j] = w
+                 #print "{0} {1} {2}".format(i, j, w)
+                 for line in lines:
+                    line = str(line)
+                    if len(line) == 0:
+                        continue
+                    if not line[0] == '(':
+                        continue
+                    #print line
+                    i = int(line[line.find('(')+1:line.find(',')]) - 1
+                    j = int(line[line.find(',')+1:line.find(')')]) - 1
+                    w = float(line[line.find(')')+1:])
+                    matrix[i][j] = w
+                    i += 1
+             else:  # traditional graph edge tabulated format
+                 dialect = csv.Sniffer().sniff(csvfile.read(1024), delimiters=" \t")
+                 csvfile.seek(0)
+                 r = csv.reader(csvfile, dialect)
+                 line1=r.next()
+                 print "Detected traditional graph edge tabulated format"
+                 values = [col for col in line1]
+                 if(values[0].find(' ') > 0):
+                    N = int(values[0][:values[0].find(' ')])
+                 else:
+                    N = int(values[0])
+                 matrix = [[0 for x in xrange(N)] for x in xrange(N)]
+                 for line in r:
+                    i = int(line[0])
+                    j = int(line[1])
+                    w = float(line[2])
+                    matrix[i][j] = w
 
           # reads rcc results file, with cluster X node configuration
           content_file = open(file_list[count], 'r')
@@ -176,10 +207,16 @@ def main(argv):
                         numberOfExtPosEdges += 1
                       else:
                         numberOfExtNegEdges += 1
-            PIntPosEdges = float(numberOfIntPosEdges)*100 / totalNumberOfIntEdges
-            PIntNegEdges = float(numberOfIntNegEdges)*100 / totalNumberOfIntEdges
-            PExtPosEdges = float(numberOfExtPosEdges)*100 / totalNumberOfExtEdges
-            PExtNegEdges = float(numberOfExtNegEdges)*100 / totalNumberOfExtEdges
+            if totalNumberOfIntEdges > 0:
+                PIntPosEdges = float(numberOfIntPosEdges)*100 / totalNumberOfIntEdges
+                PIntNegEdges = float(numberOfIntNegEdges)*100 / totalNumberOfIntEdges
+            else:
+                PIntPosEdges = PIntNegEdges = 0
+            if totalNumberOfExtEdges > 0:
+                PExtPosEdges = float(numberOfExtPosEdges)*100 / totalNumberOfExtEdges
+                PExtNegEdges = float(numberOfExtNegEdges)*100 / totalNumberOfExtEdges
+            else:
+                PExtPosEdges = PExtNegEdges = 0
             print str(c) + ",%.2f,%.2f,%.2f,%.2f" % (PIntPosEdges, PIntNegEdges, PExtPosEdges, PExtNegEdges)
             
             # internal pos + external pos : "plus mediators" fig 2, according to Doreian et. al
