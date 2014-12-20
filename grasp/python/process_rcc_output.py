@@ -60,6 +60,7 @@ def main(argv):
 
    folder = ''
    filter = ''
+   threshold = float(90.0)  # percentual threshold for the quantity of relashionships
    try:
       opts, args = getopt.getopt(argv,"hi:o:",["folder=","filter=","instancespath="])
    except getopt.GetoptError:
@@ -84,10 +85,12 @@ def main(argv):
    print 'Input dir is ', folder
    print 'File filter is ', filter
    print 'Graph instances dir is ', instances_path
+   print 'Threshold is ', threshold
    matrix = []
 
    # RCC results
    all_files_summary = dict()
+   print "\nProcessing RCC Results...\n"
 
    for root, subFolders, files in os.walk(folder):
       # sort dirs and files
@@ -144,40 +147,74 @@ def main(argv):
                   partitionNumber += 1
           finally:
               content_file.close()
-
+          # lists of interesting clusters (with mediation properties)
+          PlusMediators = []
+          PlusMutuallyHostileMediators = []
+          InternalSubgroupHostility = []
           # for each partition, try to find a partition where most of the external edges are positive
+          print "Cluster,%IntPosEdges,%IntNegEdges,%ExtPosEdges,%ExtNegEdges"
           for c in xrange(partitionNumber):
+            numberOfExtNegEdges = 0
             numberOfExtPosEdges = 0
             numberOfIntNegEdges = 0
+            numberOfIntPosEdges = 0
             totalNumberOfIntEdges = 0
             totalNumberOfExtEdges = 0
             for i in xrange(N):
               if cluster[i] == c:
                 for j in xrange(N):
                   if matrix[i][j] != 0:
-                    if cluster[j] == c:
+                    if cluster[j] == c:  # internal edges (within the same cluster)
                       totalNumberOfIntEdges += 1
                       if matrix[i][j] < 0:
                         numberOfIntNegEdges += 1
-                    else:
+                      else:
+                        numberOfIntPosEdges += 1
+                    else:  # external edges (between clusters)
                       totalNumberOfExtEdges += 1
                       if matrix[i][j] > 0:
                         numberOfExtPosEdges += 1
-            print "Cluster " + str(c) + ": {0} e {1}".format(str(numberOfExtPosEdges), str(totalNumberOfExtEdges))
-            print "Cluster " + str(c) + ": percentual_external_pos_edges = {0}".format(str(float(numberOfExtPosEdges) / totalNumberOfExtEdges))
-
+                      else:
+                        numberOfExtNegEdges += 1
+            PIntPosEdges = float(numberOfIntPosEdges)*100 / totalNumberOfIntEdges
+            PIntNegEdges = float(numberOfIntNegEdges)*100 / totalNumberOfIntEdges
+            PExtPosEdges = float(numberOfExtPosEdges)*100 / totalNumberOfExtEdges
+            PExtNegEdges = float(numberOfExtNegEdges)*100 / totalNumberOfExtEdges
+            print str(c) + ",%.2f,%.2f,%.2f,%.2f" % (PIntPosEdges, PIntNegEdges, PExtPosEdges, PExtNegEdges)
+            
+            # internal pos + external pos : "plus mediators" fig 2, according to Doreian et. al
+            # internal neg + external pos : "plus mutually hostile mediators" fig 3
+            # maybe internal neg + external neg would be "internal subgroup hostility" ???
+            if (PIntPosEdges > threshold and PExtPosEdges > threshold):
+              PlusMediators.append(str(c) + str(" (PercIntPosEdges = %.2f" % (PIntPosEdges)) + str(" and PercExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
+            if (PIntNegEdges > threshold and PExtPosEdges > threshold):
+              PlusMutuallyHostileMediators.append(str(c) + str(" (PercIntNegEdges = %.2f" % (PIntNegEdges)) + str(" and PercExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
+            if (PIntNegEdges > threshold and PExtNegEdges > threshold):
+              InternalSubgroupHostility.append(str(c) + str(" (PercIntNegEdges = %.2f" % (PIntNegEdges)) + str(" and PercExtNegEdges = %.2f" % (PExtNegEdges)) + ")")
+              
+          print "\nProcessing mediation properties...\n"
+          # Print results on display
+          #result_file = open(folder + "/xpress-summary.csv", "w")
+          print "Clusters with plus mediators (internal pos + external pos): "
+          if not PlusMediators:
+              print "None"
+          for elem in (PlusMediators):
+              print "%s" % (elem)
+          print "\nClusters with plus mutually hostile mediators (internal neg + external pos): "
+          if not PlusMutuallyHostileMediators:
+              print "None"
+          for elem in (PlusMutuallyHostileMediators):
+              print "%s" % (elem)
+          print "\nClusters with internal subgroup hostility (maybe internal neg + external neg): "
+          if not InternalSubgroupHostility:
+              print "None   "
+          for elem in (InternalSubgroupHostility):
+              print "%s" % (elem)
+                  
           count = count - 1
 	 # end process results
 
-   print "\nProcessing RCC Results...\n"
-   # Print results on display
-   #result_file = open(folder + "/xpress-summary.csv", "w")
-   #print "Instance, n, e, e+, e-, I(P), I(P)+, I(P)-, k, Time, Status"
-   #result_file.write("Instance, n, e, e+, e-, I(P), I(P)+, I(P)-, k, Time, Status\n")
-   #for key in sorted(all_files_summary.iterkeys()):
-   #   print "%s, %s" % (key, all_files_summary[key])
-   #   result_file.write("%s, %s\n" % (key, all_files_summary[key]))
-   #result_file.close()
 
+   
 if __name__ == "__main__":
    main(sys.argv[1:])
