@@ -32,7 +32,7 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		ClusteringProblem& problem, const int& myRank) {
 	Clustering Cc(*g); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP construct clustering...\n";
+	BOOST_LOG_TRIVIAL(debug)<< "Construct clustering...\n";
 	// 0. Triggers local processing time calculation
         boost::timer::cpu_timer timer;
         timer.start();
@@ -139,7 +139,7 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
         timeSpent = (end_time.wall - start_time.wall)
                          / double(1000000000);
         if(timeSpent >= 3600) {
-                BOOST_LOG_TRIVIAL(info)<< "GRASP construct clustering done and post-processing done. Total time: " << timeSpent;
+                BOOST_LOG_TRIVIAL(info)<< "Construct clustering done and post-processing done. Total time: " << timeSpent;
         }
 
 	// Cc.printClustering();

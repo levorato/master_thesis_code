@@ -233,31 +233,37 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			timer.start();
 			start_time = timer.elapsed();
 			Clustering RCCCluster;
+			Imbalance CCimb = c.getImbalance();
 
-			if(resolutionStrategy == GRASP) {
-				//   G R A S P
-				if(numberOfMasters == 0) {	// sequential version of GRASP
-					Grasp resolution;
-					RCCCluster = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
-				} else {  // parallel version
-					// distributes GRASP processing among numberOfMasters processes and summarizes the result
-					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-					RCCCluster = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
-							problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
+			// if the CC result is already zero, no need to execute RCC at all
+			if(CCimb.getValue() > 0.0) {
+				if(resolutionStrategy == GRASP) {
+					//   G R A S P
+					if(numberOfMasters == 0) {	// sequential version of GRASP
+						Grasp resolution;
+						RCCCluster = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
+					} else {  // parallel version
+						// distributes GRASP processing among numberOfMasters processes and summarizes the result
+						ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
+						RCCCluster = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
+					}
+				} else if(resolutionStrategy == ILS) {
+					//   I L S
+					if(numberOfMasters == 0) {	// sequential version of ILS
+						resolution::ils::ILS resolution;
+						RCCCluster = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
+					} else {  // parallel version
+						// distributes ILS processing among numberOfMasters processes and summarizes the result
+						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
+						RCCCluster = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
+					}
 				}
-			} else if(resolutionStrategy == ILS) {
-				//   I L S
-				if(numberOfMasters == 0) {	// sequential version of ILS
-					resolution::ils::ILS resolution;
-					RCCCluster = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
-							perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
-				} else {  // parallel version
-					// distributes ILS processing among numberOfMasters processes and summarizes the result
-					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-					RCCCluster = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
-							perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
-				}
+			} else {  // RCC equals CC solution ( I(P) = RI(P) = 0 )
+				RCCCluster = c;
 			}
 			// Stops the timer and stores the elapsed time
 			timer.stop();
@@ -273,8 +279,14 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 
 			BOOST_LOG_TRIVIAL(info) << "Global time spent: " << timeSpent << " s";
 			out << "RCC Global time spent: " << timeSpent << endl;
-			Imbalance imb = RCCCluster.getImbalance();
-			out << "SRI(P) = " << imb.getValue() << endl;
+			// If the RCC solution value is WORSE than the CC Solution, discard the RCC solution and
+			// present the CC solution
+			Imbalance RCCimb = RCCCluster.getImbalance();
+			if(CCimb.getValue() < RCCimb.getValue()) {
+				RCCCluster = c;
+				RCCimb = CCimb;
+			}
+			out << "SRI(P) = " << RCCimb.getValue() << endl;
 			stringstream ss;
 			RCCCluster.printClustering(ss, g->getN());
 			out << ss.str();
@@ -284,7 +296,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			out << analysis << endl;
 			// Closes the file
 			out.close();
-			BOOST_LOG_TRIVIAL(info) << "RCC Solve done. Obj = " << imb.getValue();
+			BOOST_LOG_TRIVIAL(info) << "RCC Solve done. Obj = " << RCCimb.getValue();
  		}
 
 	} else {
@@ -344,8 +356,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 	CommandLineInterfaceController::SearchName searchType = CommandLineInterfaceController::SEQUENTIAL_SEARCH;
-	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and Random instances
-	// int iterMaxILS = 5, perturbationLevelMax = 3; // for UNGA instances
+	// int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and completely Random instances
+	int iterMaxILS = 5, perturbationLevelMax = 3; // for UNGA instances
 
 	po::options_description desc("Available options:");
 	desc.add_options()
