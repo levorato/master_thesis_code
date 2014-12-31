@@ -19,8 +19,8 @@ namespace construction {
 using namespace problem;
 
 ConstructClustering::ConstructClustering(GainFunction* f,
-		const unsigned long& seed, const double& alpha) :
-		gainFunction(f), randomSeed(seed), _alpha(alpha) {
+		const unsigned long& seed, const double& alpha, Clustering* cl) :
+		gainFunction(f), randomSeed(seed), _alpha(alpha), CCclustering(cl) {
 
 }
 
@@ -34,9 +34,15 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	BOOST_LOG_TRIVIAL(debug)<< "Construct clustering...\n";
 	// 0. Triggers local processing time calculation
-        boost::timer::cpu_timer timer;
-        timer.start();
-        boost::timer::cpu_times start_time = timer.elapsed();
+	boost::timer::cpu_timer timer;
+	timer.start();
+	boost::timer::cpu_times start_time = timer.elapsed();
+
+	// if CC Clustering object is not null, skips the construct clustering and returns CC Clustering
+	if(CCclustering != NULL) {
+		CCclustering->setImbalance(problem.objectiveFunction(*g, *CCclustering));
+		return *CCclustering;
+	}
 
 	while (lc.size() > 0) { // lc != empty
 		GainCalculation gainCalculation;

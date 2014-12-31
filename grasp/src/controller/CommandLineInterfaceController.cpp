@@ -223,10 +223,14 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 
  		// -------------------  R C C     P R O C E S S I N G -------------------------
  		if(RCCEnabled) {
+ 			ConstructClustering* RCCConstruct = &construct;
+ 			ConstructClustering NoConstruct(functionFactory.build(functionType), seed, alpha, &c);
  			// 	If k = 0 (not specified), uses CC best result (cluster c) number of clusters as input (k)
  			if(k == 0) {
  				k = c.getNumberOfClusters();
  				BOOST_LOG_TRIVIAL(info) << "RCC Problem: Using CC solution number of clusters as RCC k value: " << k << ".";
+ 			} else if(k < 0) {  // if k < 0, skips the construct clustering phase in the metaheuristic and uses the best solution from CC alg.
+                RCCConstruct = &NoConstruct;
  			}
 
  			// medicao de tempo do RCC
@@ -241,24 +245,24 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 					//   G R A S P
 					if(numberOfMasters == 0) {	// sequential version of GRASP
 						Grasp resolution;
-						RCCCluster = resolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+						RCCCluster = resolution.executeGRASP(*RCCConstruct, vnd, g.get(), numberOfIterations,
 								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes GRASP processing among numberOfMasters processes and summarizes the result
 						ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-						RCCCluster = parallelResolution.executeGRASP(construct, vnd, g.get(), numberOfIterations,
+						RCCCluster = parallelResolution.executeGRASP(*RCCConstruct, vnd, g.get(), numberOfIterations,
 								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}
 				} else if(resolutionStrategy == ILS) {
 					//   I L S
 					if(numberOfMasters == 0) {	// sequential version of ILS
 						resolution::ils::ILS resolution;
-						RCCCluster = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+						RCCCluster = resolution.executeILS(*RCCConstruct, vnd, g.get(), numberOfIterations, iterMaxILS,
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes ILS processing among numberOfMasters processes and summarizes the result
 						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-						RCCCluster = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+						RCCCluster = parallelResolution.executeILS(*RCCConstruct, vnd, g.get(), numberOfIterations, iterMaxILS,
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}
 				}
@@ -389,8 +393,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
 		("search", po::value<CommandLineInterfaceController::SearchName>(&searchType),
                                          "Local search to be used. Accepted values: SEQUENTIAL (default), PARALLEL.")
-		//("iterils", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
-		//("perturbation", po::value<int>(&perturbationLevelMax)->default_value(30), "maximum perturbation level in ILS")
+		//("ils,i", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
+		//("perturb,p", po::value<int>(&perturbationLevelMax)->default_value(30), "maximum perturbation level in ILS")
 	;
 	po::positional_options_description p;
 	p.add("input-file", -1);
@@ -484,10 +488,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				BOOST_LOG_TRIVIAL(info) << "RCC is enabled.";
 				// if k parameter was not informed, CC problem should be enabled
 				// if CC is not enabled, issue an error
-				if((k == -1) and (not CCEnabled)) {
+				if((k <= 0) and (not CCEnabled)) {
 					BOOST_LOG_TRIVIAL(fatal) << "Please specify RCC k value or enable CC Problem resolution.";
 					return 1;
-				} else if(k > 0) {
+				} else if(k != 0) {
 					BOOST_LOG_TRIVIAL(info) << "RCC k value is " << k << ".";
 				}
 			} else {
