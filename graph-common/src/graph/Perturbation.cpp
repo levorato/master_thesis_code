@@ -22,7 +22,7 @@ Perturbation::~Perturbation() {
 Clustering Perturbation::randomMove(SignedGraph* g, Clustering clustering, ClusteringProblem& p,
 		unsigned long numberOfMoves) {
 
-	BOOST_LOG_TRIVIAL(debug)<< "Generating perturbation of level " << numberOfMoves;
+	// BOOST_LOG_TRIVIAL(debug)<< "Generating perturbation of level " << numberOfMoves;
 	Clustering c = clustering;
 	for(int i = 0; i < numberOfMoves; i++) {
 		// TODO avoid cyclic moves
@@ -70,7 +70,6 @@ Clustering Perturbation::randomMove1opt(SignedGraph* g, Clustering clustering, C
 			return cTemp;
 		}
 	}
-	// BOOST_LOG_TRIVIAL(trace)<< "nc = " << nc;
 	k2 = randomUtil.next(startc, nc - 1);
 	// k2 must be different from k1
 	while(k2 == k1) {
