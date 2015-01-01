@@ -40,6 +40,10 @@ public:
 		return gainFunction->getType();
 	}
 
+	Clustering* getCCclustering() {
+		return CCclustering;
+	}
+
 private:
 	GainFunction* gainFunction;
 	unsigned long randomSeed;

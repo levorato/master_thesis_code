@@ -43,9 +43,13 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableN
 	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Initiating parallel GRASP...";
 	// max number of clusters (RCC Problem Only)
 	long k = 0;
+	Clustering* CCclustering = NULL;
 	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
 		RCCProblem& rp = static_cast<RCCProblem&>(problem);
 		k = rp.getK();
+		if(k < 0) {  // reuses CC problem's best solution in the constructive phase
+			CCclustering = construct.getCCclustering();
+		}
 	}
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
@@ -54,7 +58,7 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableN
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd.getNeighborhoodSize(),
 				problem.getType(), construct.getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd.getTimeLimit(),
-				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig(), k);
+				numberOfSlaves, numberOfSearchSlaves, vnd.isFirstImprovementOnOneNeig(), k, CCclustering);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}

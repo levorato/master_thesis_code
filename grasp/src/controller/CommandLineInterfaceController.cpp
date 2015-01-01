@@ -661,13 +661,18 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 						}
 						GainFunctionFactory functionFactory(g.get());
-						ConstructClustering construct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
+						ConstructClustering defaultConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
+						ConstructClustering noConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha, &imsgpg.CCclustering);
+						ConstructClustering* construct = &defaultConstruct;
+						if((imsgpg.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpg.k < 0)) {
+								construct = &noConstruct;
+						}
 						VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, imsgpg.l, imsgpg.firstImprovementOnOneNeig,
 								imsgpg.timeLimit);
 						// Execution additional info
 						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
 						Grasp resolution;
-						Clustering bestClustering = resolution.executeGRASP(construct, vnd, g.get(), imsgpg.iter,
+						Clustering bestClustering = resolution.executeGRASP(*construct, vnd, g.get(), imsgpg.iter,
 								problemFactory.build(imsgpg.problemType, imsgpg.k), info);
 
 						// Sends the result back to the leader process
@@ -705,13 +710,18 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 						}
 						GainFunctionFactory functionFactory(g.get());
-						ConstructClustering construct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
+						ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
+						ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering);
+						ConstructClustering* construct = &defaultConstruct;
+						if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
+								construct = &noConstruct;
+						}
 						VariableNeighborhoodDescent vnd(*neigborhoodSearch, seed, imsgpils.l, imsgpils.firstImprovementOnOneNeig,
 								imsgpils.timeLimit);
 						// Additional execution info
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
 						resolution::ils::ILS resolution;
-						Clustering bestClustering = resolution.executeILS(construct, vnd, g.get(), imsgpils.iter,
+						Clustering bestClustering = resolution.executeILS(*construct, vnd, g.get(), imsgpils.iter,
 								imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 								problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 
