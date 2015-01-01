@@ -114,8 +114,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 			timeSpentOnBestSolution = timeSpentInGRASP;
 			// Registers the best result at time intervals
 			notifyNewValue(CStar, timeSpentInGRASP, totalIter);
-			// NUMBER OF ITERATIONS IS NOW FIXED !!!
-			// i = 0;
+			i = 0;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue.getValue() == 0) break;
 		}
