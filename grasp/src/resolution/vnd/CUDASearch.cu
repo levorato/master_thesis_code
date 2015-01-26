@@ -24,7 +24,7 @@
 // memory accesses. If your kernel dies for larger problem sizes, it might exceed the runtime limit and trigger the watchdog timer.
 
 // Thread block size should always be a multiple of 32, because kernels issue instructions in warps (32 threads).
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 256.0
 
 namespace clusteringgraph {
 	
