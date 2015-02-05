@@ -2,10 +2,16 @@
 
 #include <thrust/host_vector.h>
 #include <vector>
+#include "problem/include/ClusteringProblem.h"
+#include "../../construction/include/ConstructClustering.h"
+#include "graph/include/Graph.h"
 
 namespace clusteringgraph {
 
 using namespace thrust;
+using namespace problem;
+using namespace resolution::construction;
+using namespace clusteringgraph;
 
 	typedef unsigned char ubyte;
 	typedef unsigned short ushort;
@@ -37,5 +43,12 @@ using namespace thrust;
 				bool firstImprovement,
 				thrust::host_vector<uint>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
 				thrust::host_vector<float>& h_VertexClusterNegSum);
+
+	bool runGRASPKernel(ClusteringProblem& problem, ConstructClustering &construct,
+				SignedGraph *g, int processRank, ulong timeLimit, int iter,
+				thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
+				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
+				ulong n, ulong m, ushort threadsCount, bool firstImprovement,
+				float& destFunctionValue, Clustering& result, int &totalIterations);
 
 }
