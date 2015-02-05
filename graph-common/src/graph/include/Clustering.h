@@ -59,7 +59,7 @@ public:
 	/**
 	 * Creates a Clustering object based on the clusterArray.
 	 */
-	Clustering(const ClusterArray cArray, SignedGraph& g, ClusteringProblem &p);
+	Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p);
 
 	virtual ~Clustering();
 

@@ -49,10 +49,10 @@ Clustering::Clustering(const Clustering& clustering) :
 
 }
 
-Clustering::Clustering(const ClusterArray cArray, SignedGraph& g, ClusteringProblem &p) : clusterArray(cArray),
+Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p) : clusterArray(cArray),
 		clusterSize(), imbalance(0.0, 0.0), problemType(p.getType()), positiveSum(), negativeSum(){
-	std::vector<unsigned long>::iterator pos = std::max_element(cArray.begin(), cArray.end());
-	unsigned long numberOfClusters = *pos;
+	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
+	long numberOfClusters = *pos;
 	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
 
 	long n = g.getN();
