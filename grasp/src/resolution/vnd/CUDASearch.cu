@@ -5,7 +5,8 @@
 #include "../construction/include/ConstructClustering.h"
 #include "graph/include/Graph.h"
 
-//#include <boost/timer/timer.hpp>
+#include <boost/timer/timer.hpp>
+#include <iostream>
 
 #include <assert.h>
 #include <cuda_runtime.h>
@@ -37,6 +38,7 @@ namespace clusteringgraph {
 using namespace problem;
 using namespace resolution::construction;
 using namespace clusteringgraph;
+using namespace std;
 	
 	/// CUDA Kernel to update the cluster array and the objective function value on 1-opt search.
 	__global__ void updateClustering1opt(const int bestSrcVertex, const int destcluster, const float destFunctionValue, 
@@ -612,13 +614,12 @@ using namespace clusteringgraph;
 			thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 			thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 			ulong n, ulong m, ushort threadsCount, bool firstImprovement,
-			float& destFunctionValue, Clustering& result, int &totalIterations) {
+			Clustering& result, int &totalIterations) {
 
 		// 0. Triggers local processing time calculation
-		/*
 		boost::timer::cpu_timer timer;
 		timer.start();
-		boost::timer::cpu_times start_time = timer.elapsed(); */
+		boost::timer::cpu_times start_time = timer.elapsed();
 
 		// declaration and initialization of variables
 		// Graph data - read only, copy of host data
@@ -631,7 +632,7 @@ using namespace clusteringgraph;
 		Clustering previousCc = CStar;
 		Clustering CBest = CStar;
 		Clustering Cc = CStar;
-		double bestValue = CStar.getImbalance().getValue();
+		float bestGRASPValue = CStar.getImbalance().getValue();
 		unsigned long nc = Cc.getNumberOfClusters();
 
 		// current clustering data - changes every GRASP iteration
@@ -656,7 +657,7 @@ using namespace clusteringgraph;
 		
 		int i = 0, totalIter = 0;
 		while(i <= iter || iter < 0) {
-			// BOOST_LOG_TRIVIAL(debug) << "CUDA GRASP iteration " << i;
+			// cout << "CUDA GRASP iteration " << totalIter << endl;
 			
 			ClusterArray myCluster = Cc.getClusterArray();
 			thrust::host_vector<unsigned long> h_mycluster(myCluster);
@@ -686,7 +687,7 @@ using namespace clusteringgraph;
 			checkCudaErrors(cudaDeviceSynchronize());
 		
 			while (true) {
-				// printf("*** Local search iteration %d, r = %d, nc = %ld\n", iteration, r, h_nc[0]);
+				// printf("*** Local search iteration %d, nc = %ld, I(P) = %.2f\n", iteration, h_nc[0], bestImbalance);
 				numberOfChunks = (h_nc[0] + 1) * n;
 				// result / destination vector
 				d_destFunctionValue.resize(numberOfChunks);
@@ -694,7 +695,7 @@ using namespace clusteringgraph;
 			
 				// printf("The current number of clusters is %ld and bestImbalance = %.2f\n", h_nc[0], bestImbalance);
 				blocksPerGrid = ((n * (h_nc[0] + 1)) + threadsCount - 1) / threadsCount;
-			    	simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(clusterArray, funcArray, 
+			    simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(clusterArray, funcArray,
 						uint(n), uint(m), destImbArray, 
 						ulong(h_nc[0]), ulong(numberOfChunks), firstImprovement, 
 						vertexClusterPosSumArray, vertexClusterNegSumArray, threadsCount);
@@ -712,7 +713,7 @@ using namespace clusteringgraph;
 					ulong bestSrcVertex = resultIdx / (h_nc[0] + 1);
 					ulong sourceCluster = d_mycluster[bestSrcVertex];
 					// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destcluster, destFunctionValue);
-					if(destFunctionValue < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
+					if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
 					updateClustering1opt<<< 1, 1 >>>(bestSrcVertex, destcluster, bestImbalance, clusterArray, funcArray, n, ncArray);
 					int old_nc = h_nc[0];
 					h_nc = d_nc;
@@ -728,44 +729,48 @@ using namespace clusteringgraph;
 					h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
 
 					blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-					updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
+					updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
+							offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
 					checkCudaErrors(cudaDeviceSynchronize());
 					// printf("Preparing new VND loop...\n");
 					// if(bestImbalance < 0)  break;
 				} else {  // no better result found in neighborhood
+					// printf("Breaking VND loop...\n");
 					break;
 				}
 				iteration++;
 			}
-			h_mycluster = d_mycluster;
+			// h_mycluster = d_mycluster;
 			nc = h_nc[0];
-			destFunctionValue = bestImbalance;
 
 			// 3. Select the best clustring so far
 			// if Q(Cl) > Q(Cstar)
 			// Imbalance newValue = Cl.getImbalance();
-			if(destFunctionValue < bestValue) {
+			if(bestImbalance < bestGRASPValue) {
 				ClusterArray cArray;
 				for(int x = 0; x < h_mycluster.size(); x++) {
 					cArray.push_back(h_mycluster[x]);
 				}
+				bestGRASPValue = bestImbalance;
+				// printf("Rebuilding clustering object.\n");
+				/*
 				Clustering Cl(cArray, *g, problem);
+				printf("I(P) = %.2f\n", Cl.getImbalance().getValue());
 				CStar = Cl;
-				bestValue = destFunctionValue;
+				printf("Clustering object REBUILT.\n"); */
 				// iterationValue = totalIter;
 				i = 0;
-				if(bestValue <= 0) break;
+				if(bestGRASPValue <= 0) break;
 			}
-			/*
 			timer.stop();
 			boost::timer::cpu_times end_time = timer.elapsed();
 			timer.resume();
 			double timeSpentInGRASP = (end_time.wall - start_time.wall) / double(1000000000);
 			// if elapsed time is bigger than timeLimit, break
 			if(timeSpentInGRASP >= timeLimit) {
-				// BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
+				cout << "Time limit exceeded." << endl;
 				break;
-			} */
+			}
 
 			// Increment to next loop
 			i++, totalIter++, previousCc = Cc;
@@ -777,18 +782,21 @@ using namespace clusteringgraph;
 			// Avoids constructClustering if loop break condition is met
 			if(i <= iter) {
 				// 1. Construct the next clustering
+				// printf("New construct clustering\n");
 				Cc = construct.constructClustering(g, problem, processRank);
 				int old_nc = nc;
 				nc = Cc.getNumberOfClusters();
 				if(old_nc != nc) {  // the number of clusters in the solution changed
-	                        	d_VertexClusterPosSum.resize(n * (nc+1));
-	                        	d_VertexClusterNegSum.resize(n * (nc+1));
-	                        	vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
-	                        	vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
+					d_VertexClusterPosSum.resize(n * (nc+1));
+					d_VertexClusterNegSum.resize(n * (nc+1));
+					vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
+					vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 					// printf("Number of clusters has changed.\n");
 	            }
 			}
+			// printf("I(P) = %.2f\n", bestGRASPValue);
 		}
+		printf("I(P) = %.2f\n", bestGRASPValue);
 		result = CStar;
 		totalIterations = totalIter;
 		return true;

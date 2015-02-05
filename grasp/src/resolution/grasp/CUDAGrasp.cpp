@@ -103,12 +103,11 @@ Clustering CUDAGrasp::executeGRASP(ConstructClustering &construct, VariableNeigh
 	// number of threads per block
 	unsigned short threadsCount = 256;  // limited by shared memory size
 	// Pass raw array and its size to kernel
-	float bestImbalance = -1.0;
 	int totalIter = 0;
 	Clustering CStar;
 	runGRASPKernel(problem, construct, g, info.processRank, vnd->getTimeLimit(), iter,
 			h_weights, h_dest, h_numedges, h_offset, n, m, threadsCount,
-			vnd->isFirstImprovementOnOneNeig(), bestImbalance, CStar, totalIter);
+			vnd->isFirstImprovementOnOneNeig(), CStar, totalIter);
 
 	// h_mycluster and h_functionValue
 	// TODO capture CUDA GRASP kernel results
