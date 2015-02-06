@@ -70,9 +70,9 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 				myNeighborClusterList[i].insert(myCluster[j]);
 			}
 			if(weight > 0) {
-				h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+				h_VertexClusterPosSum[i + myCluster[j] * n] += fabs(weight);
 			} else {
-				h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+				h_VertexClusterNegSum[i + myCluster[j] * n] += fabs(weight);
 			}
 		}
 		// iterates over in-edges of vertex i
@@ -84,9 +84,9 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 				myNeighborClusterList[i].insert(myCluster[j]);
 			}
 			if(weight > 0) {
-					h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+					h_VertexClusterPosSum[i + myCluster[j] * n] += fabs(weight);
 			} else {
-					h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+					h_VertexClusterNegSum[i + myCluster[j] * n] += fabs(weight);
 			}
 		}
 	}
@@ -440,7 +440,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
 		// REMOVAL of vertex i from cluster k1 -> avoids recalculating
 		//   the same thing in the k2 (destination cluster) loop
-		double _negativeSumK1 = -vertexClusterNegSum[i*(nc+1) + k1];
+		double _negativeSumK1 = -vertexClusterNegSum[i + k1 * n];
 		bool timeLimitExceeded = false;
 		// Node i is moved from k1 to another existing cluster k2 != k1
 		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
@@ -449,8 +449,8 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 			unsigned long k2 = *itr;
 			if(k2 != k1) {
 				// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
-				double negativeSum = _negativeSumK1 + vertexClusterNegSum[i*(nc+1) + k2];
-				double positiveSum = -(- vertexClusterPosSum[i*(nc+1) + k1]) + (-vertexClusterPosSum[i*(nc+1) + k2]);
+				double negativeSum = _negativeSumK1 + vertexClusterNegSum[i + k2 * n];
+				double positiveSum = -(- vertexClusterPosSum[i + k1 * n]) + (-vertexClusterPosSum[i + k2 * n]);
 				numberOfTestedCombinations++;
 				if(clustering->getImbalance().getValue() + positiveSum + negativeSum < bestImbalance.getValue()) {  // improvement in imbalance
 					bestImbalance = Imbalance(positiveSum + clustering->getImbalance().getPositiveValue(), negativeSum + clustering->getImbalance().getNegativeValue());
@@ -482,6 +482,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		}
 	}
 	// Reproduce the best clustering found using host data structures
+	int new_nc = nc;
 	if(bestSrcVertex >= 0) {
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
 		//			<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance.getValue() << " " << bestImbalance.getPositiveValue() << " " << bestImbalance.getNegativeValue();
@@ -499,6 +500,10 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 			}
 		} else {  // new cluster k2
 			newClustering.addCluster(*g, problem, bestSrcVertex);
+			new_nc++;
+		}
+		if(newClustering.getNumberOfClusters() < nc) {
+			new_nc--;
 		}
 		cBest = newClustering;
 		/*
@@ -508,6 +513,113 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		}*/
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
 		// 		<< newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
+
+		// CODIGO DE VALIDACAO DO CALCULO INCREMENTAL DE ARRAYS DE SOMA
+		/*
+		// INCREMENTAL CALCULATION
+		int i = bestSrcVertex;
+		ClusterArray cluster = newClustering.getClusterArray();
+
+		// For each out edge of i
+		DirectedGraph::out_edge_iterator f, l;
+		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
+			int j = target(*f, g->graph);
+			double weight = ((Edge*)f->get_property())->weight;
+			if(weight > 0) {
+				vertexClusterPosSum[j + k1 * n] -= fabs(weight);
+				vertexClusterPosSum[j + k2 * n] += fabs(weight);
+			} else {
+				vertexClusterNegSum[j + k1 * n] -= fabs(weight);
+				vertexClusterNegSum[j + k2 * n] += fabs(weight);
+			}
+		}
+		// iterates over in-edges of vertex i
+		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
+		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
+			double weight = ((Edge*)f2->get_property())->weight;
+			int j = source(*f2, g->graph);
+			if(weight > 0) {
+				vertexClusterPosSum[j + k1 * n] -= fabs(weight);
+				vertexClusterPosSum[j + k2 * n] += fabs(weight);
+			} else {
+				vertexClusterNegSum[j + k1 * n] -= fabs(weight);
+				vertexClusterNegSum[j + k2 * n] += fabs(weight);
+			}
+		}
+		// TODO: dúvida - fazer os processamentos abaixo antes ou depois da atualizacao da matriz de somas?
+		// CASO ESPECIAL 1: o cluster k1 foi removido
+		if(new_nc < nc) {
+			// verifica se a fileira inteira correspondente ao cluster removido ficou zerada: OK
+			bool zerado = true;
+			for(int v = 0; v < n; v++) {
+				if( (vertexClusterPosSum[v + k1 * n] > 0) or (vertexClusterNegSum[v + k1 * n] > 0) ) {
+					zerado = false;
+					break;
+				}
+			}
+			BOOST_LOG_TRIVIAL(debug) << "*** Cluster removido. Zerado = " << zerado << endl;
+			// remove a fileira correspondente ao cluster k1 na matriz de soma, shiftando os dados
+			for(int k = k1 + 1; k <= nc; k++) {
+				for(int v = 0; v < n; v++) {
+					vertexClusterPosSum[(k - 1) * n + v] = vertexClusterPosSum[(k) * n + v];
+					vertexClusterNegSum[(k - 1) * n + v] = vertexClusterNegSum[(k) * n + v];
+				}
+			}
+			// remove fisicamente a ultima fileira da matriz
+			vertexClusterPosSum.resize(n * (new_nc + 1));
+			vertexClusterNegSum.resize(n * (new_nc + 1));
+		}
+
+		// CASO ESPECIAL 2: um novo cluster k2 foi criado
+		if(new_nc > nc) {
+			// acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
+			BOOST_LOG_TRIVIAL(debug) << "New cluster. Growing vectors." << endl;
+			vertexClusterPosSum.resize(n * (new_nc + 1));
+			vertexClusterNegSum.resize(n * (new_nc + 1));
+			BOOST_LOG_TRIVIAL(debug) << "New element value: " << vertexClusterPosSum[new_nc * n + 2] << endl;
+		}
+
+		nc = new_nc;
+		// FULL CALCULATION: Array that stores the sum of edge weights between vertex i and all clusters
+		std::vector<double> h_VertexClusterPosSum2(n * (nc + 1), double(0));
+		std::vector<double> h_VertexClusterNegSum2(n * (nc + 1), double(0));
+		for(int i = 0; i < n; i++) {  // for each vertex i
+			// For each out edge of i
+			for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
+				int j = target(*f, g->graph);
+				double weight = ((Edge*)f->get_property())->weight;
+				if(weight > 0) {
+					h_VertexClusterPosSum2[i + cluster[j] * n] += fabs(weight);
+				} else {
+					h_VertexClusterNegSum2[i + cluster[j] * n] += fabs(weight);
+				}
+			}
+			// iterates over in-edges of vertex i
+			for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
+				double weight = ((Edge*)f2->get_property())->weight;
+				int j = source(*f2, g->graph);
+				if(weight > 0) {
+						h_VertexClusterPosSum2[i + cluster[j] * n] += fabs(weight);
+				} else {
+						h_VertexClusterNegSum2[i + cluster[j] * n] += fabs(weight);
+				}
+			}
+		}
+		// TODO: tratar caso em que o vetor aumenta ou diminui
+		// CHECKS IF INCREMENTAL AND FULL CALCULATION MATCH
+		bool match = true;
+		for(int v = 0; v < n; v++) {
+			for(int k = 0; k <= nc; k++) {
+				if( (vertexClusterPosSum[v + k * n] != h_VertexClusterPosSum2[v + k * n]) or
+						(vertexClusterNegSum[v + k * n] != h_VertexClusterNegSum2[v + k * n]) ) {
+					match = false;
+					BOOST_LOG_TRIVIAL(debug) << "Match failed at k = " << k << " and v = " << v << endl;
+					break;
+				}
+			}
+		}
+		BOOST_LOG_TRIVIAL(debug) << "Match = " << match << endl;
+		*/
 	} else {
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Validation. No improvement.";
 	}
