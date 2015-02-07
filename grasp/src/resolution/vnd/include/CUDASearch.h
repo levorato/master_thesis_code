@@ -49,6 +49,6 @@ using namespace clusteringgraph;
 				thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 				ulong n, ulong m, ushort threadsCount, bool firstImprovement,
-				Clustering& result, int &totalIterations);
+				Clustering& result, int &totalIterations, double& timeSpentConstruct, double& timeSpentGRASP);
 
 }

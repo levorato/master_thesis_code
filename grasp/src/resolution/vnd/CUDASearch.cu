@@ -612,9 +612,10 @@ using namespace std;
 			thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 			thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 			ulong n, ulong m, ushort threadsCount, bool firstImprovement,
-			Clustering& result, int &totalIterations) {
+			Clustering& result, int &totalIterations, double& timeSpentConstruct, double& timeSpentGRASP) {
 
 		// 0. Triggers local processing time calculation
+		double timeSpentInGRASP = 0;
 		boost::timer::cpu_timer timer;
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
@@ -627,6 +628,11 @@ using namespace std;
 		thrust::device_vector<int> d_offset = h_offset;  // initial edge number for vertex i
 		// 1. Construct clustering
 		Clustering CStar = construct.constructClustering(g, problem, processRank);
+		timer.stop();
+		boost::timer::cpu_times end_time = timer.elapsed();
+		timer.resume();
+		double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+
 		Clustering previousCc = CStar;
 		Clustering CBest = CStar;
 		Clustering Cc = CStar;
@@ -779,7 +785,7 @@ using namespace std;
 				}
 				bestGRASPValue = bestImbalance;
 				// printf("Rebuilding clustering object.\n");
-				/*
+				/*  TODO FIXME consertar esse bug aqui
 				Clustering Cl(cArray, *g, problem);
 				printf("I(P) = %.2f\n", Cl.getImbalance().getValue());
 				CStar = Cl;
@@ -791,7 +797,7 @@ using namespace std;
 			timer.stop();
 			boost::timer::cpu_times end_time = timer.elapsed();
 			timer.resume();
-			double timeSpentInGRASP = (end_time.wall - start_time.wall) / double(1000000000);
+			timeSpentInGRASP = (end_time.wall - start_time.wall) / double(1000000000);
 			// if elapsed time is bigger than timeLimit, break
 			if(timeSpentInGRASP >= timeLimit) {
 				cout << "Time limit exceeded." << endl;
@@ -807,6 +813,10 @@ using namespace std;
 
 			// Avoids constructClustering if loop break condition is met
 			if(i <= iter) {
+				timer.stop();
+				boost::timer::cpu_times start_timeC = timer.elapsed();
+				timer.resume();
+
 				// 1. Construct the next clustering
 				// printf("New construct clustering\n");
 				Cc = construct.constructClustering(g, problem, processRank);
@@ -819,12 +829,19 @@ using namespace std;
 					vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 					// printf("Number of clusters has changed.\n");
 	            }
+
+				timer.stop();
+				end_time = timer.elapsed();
+				timer.resume();
+				timeSpentInConstruction += (end_time.wall - start_timeC.wall) / double(1000000000);
 			}
 			// printf("I(P) = %.2f\n", bestGRASPValue);
 		}
 		printf("I(P) = %.2f\n", bestGRASPValue);
 		result = CStar;
 		totalIterations = totalIter;
+		timeSpentConstruct = timeSpentInConstruction;
+		timeSpentGRASP = timeSpentInGRASP;
 		return true;
 	}
 

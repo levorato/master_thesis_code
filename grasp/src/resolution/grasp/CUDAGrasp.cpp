@@ -105,9 +105,11 @@ Clustering CUDAGrasp::executeGRASP(ConstructClustering &construct, VariableNeigh
 	// Pass raw array and its size to kernel
 	int totalIter = 0;
 	Clustering CStar;
+	double totalTimeSpentOnConstruction = 0, timeSpentOnLocalSearch = 0;
 	runGRASPKernel(problem, construct, g, info.processRank, vnd->getTimeLimit(), iter,
 			h_weights, h_dest, h_numedges, h_offset, n, m, threadsCount,
-			vnd->isFirstImprovementOnOneNeig(), CStar, totalIter);
+			vnd->isFirstImprovementOnOneNeig(), CStar, totalIter, totalTimeSpentOnConstruction, timeSpentInGRASP);
+	timeSpentOnLocalSearch = timeSpentInGRASP - totalTimeSpentOnConstruction;
 
 	// h_mycluster and h_functionValue
 	// TODO capture CUDA GRASP kernel results
@@ -128,8 +130,8 @@ Clustering CUDAGrasp::executeGRASP(ConstructClustering &construct, VariableNeigh
 	<< "," << fixed << setprecision(2) << 0.0 << endl;
 
 	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
-	// BOOST_LOG_TRIVIAL(info) << "Time spent on construction phase: " << fixed << setprecision(2) << totalTimeSpentOnConstruction << "s, " << (100 * totalTimeSpentOnConstruction / timeSpentInGRASP) << "%.";
-	// BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(2) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInGRASP) << "%.";
+	BOOST_LOG_TRIVIAL(info) << "Time spent on construction phase: " << fixed << setprecision(2) << totalTimeSpentOnConstruction << "s, " << (100 * totalTimeSpentOnConstruction / timeSpentInGRASP) << "%.";
+	BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(2) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInGRASP) << "%.";
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults, g->getN());
 	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd->getNeighborhoodSize(), iter);
