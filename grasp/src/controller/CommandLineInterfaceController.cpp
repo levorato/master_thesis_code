@@ -32,6 +32,7 @@
 #include "../resolution/vnd/include/CUDAVariableNeighborhoodDescent.h"
 #include "../resolution/vnd/include/CUDANeighborhoodSearch.h"
 #include "../resolution/grasp/include/CUDAGrasp.h"
+#include "../resolution/construction/include/CUDAConstructClustering.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -180,8 +181,9 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			if(resolutionStrategy == GRASP) {
 				//   G R A S P
 				if(numberOfMasters == 0) {	// sequential version of GRASP
-					CUDAGrasp resolution;
-					c = resolution.executeGRASP(construct, &cudavnd, g.get(), numberOfIterations,
+					Grasp resolution;
+					CUDAConstructClustering CUDAConstruct(g, seed);
+					c = resolution.executeGRASP(CUDAConstruct, &cudavnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfSlaves processes and summarizes the result
