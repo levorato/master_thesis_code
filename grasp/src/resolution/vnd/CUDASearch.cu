@@ -4,6 +4,7 @@
 #include "problem/include/ClusteringProblem.h"
 #include "../construction/include/ConstructClustering.h"
 #include "graph/include/Graph.h"
+#include "util/RandomUtil.h"
 
 #include <boost/timer/timer.hpp>
 #include <iostream>
@@ -284,6 +285,17 @@ using namespace std;
 		}
 	}
 	
+	__global__ void shuffleBestResult1opt(const float* destImbArray, uint imbArraySize, float bestImbalance, 
+						uint randomInitialIndex, uint* resultIndexArray) {
+		// Starts the search for the bestImbalance element from the randomInitialIndex provided as parameter
+		for(uint count = 0, uint i = randomInitialIndex; count < imbArraySize; i = (i + 1) % imbArraySize, count++) {
+			if(destImbArray[i] == bestImbalance) {
+				resultIndexArray[0] = i;
+				break;
+			}
+		}
+	}
+
 	/// CUDA kernel for 2-opt search.
 	__global__ void doubleSearchKernel(const ulong* clusterArray, const float* funcArray, uint n, uint m,
 		ulong* destClusterArray1, ulong* destClusterArray2, float* destImbArray, ulong nc, ulong numberOfChunks,
@@ -439,6 +451,7 @@ using namespace std;
 		thrust::device_vector<float> d_VertexClusterNegSum(n * (nc+1));
 		thrust::device_vector<uint> d_nc(1);
 		thrust::device_vector<uint> d_old_nc(1);
+		thrust::device_vector<uint> d_result_index(1);
 		thrust::device_vector<float> d_destFunctionValue(numberOfChunks);
 		thrust::device_vector<unsigned long> d_destCluster1(numberOfChunks);
 		thrust::device_vector<unsigned long> d_destCluster2(numberOfChunks);	
@@ -455,6 +468,7 @@ using namespace std;
 		float* vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 		uint* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 		uint* old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
+		uint* resultIndexArray = thrust::raw_pointer_cast( &d_result_index[0] );
 		
 		// number of clusters - changes every iteration of VND
 		thrust::host_vector<ulong> h_nc(1);
@@ -516,9 +530,17 @@ using namespace std;
 						
 			if(min_val < bestImbalance) {  // improvement in imbalance
 				bestImbalance = min_val;
+				// as there may be more than one combination with the same imbalance, 
+				// chooses one combination at random
+				// the algorithm starts the search with a random initial index
+				uint randomInitialIndex = RandomUtil::next(0, numberOfChunks - 1);
+				shuffleBestResult1opt<<< 1,1 >>>(destImbArray, numberOfChunks, bestImbalance, 
+									randomInitialIndex, resultIndexArray);
+
 				// determines the position of the best improvement found in the result vector
-				uint position = iter - d_destFunctionValue.begin();
-				int resultIdx = position;
+				// uint position = iter - d_destFunctionValue.begin();
+				// int resultIdx = position;
+				uint resultIdx = resultIndexArray[0];
 				ulong destcluster = resultIdx / n;
 				ulong bestSrcVertex = resultIdx % n;
 				ulong sourceCluster = d_mycluster[bestSrcVertex];
@@ -614,7 +636,7 @@ using namespace std;
 		float* destImbArray = thrust::raw_pointer_cast( &d_destFunctionValue[0] );
 		
 		int blocksPerGrid = (numberOfChunks + threadsCount - 1) / threadsCount;
-    	// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
+    		// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
 		doubleSearchKernel<<<blocksPerGrid, threadsCount, threadsCount*4*(nc+1)*sizeof(float)>>>(clusterArray, funcArray, 
 				uint(n), uint(m), destClusterArray1, destClusterArray2, destImbArray, 
 				ulong(nc), ulong(numberOfChunks), firstImprovement,
@@ -724,7 +746,7 @@ using namespace std;
 			
 				// printf("The current number of clusters is %ld and bestImbalance = %.2f\n", h_nc[0], bestImbalance);
 				blocksPerGrid = ((n * (h_nc[0] + 1)) + threadsCount - 1) / threadsCount;
-			    simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(clusterArray, funcArray,
+				simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(clusterArray, funcArray,
 						uint(n), uint(m), destImbArray, 
 						ulong(h_nc[0]), ulong(numberOfChunks), firstImprovement, 
 						vertexClusterPosSumArray, vertexClusterNegSumArray, threadsCount);
@@ -851,7 +873,7 @@ using namespace std;
 					vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
 					vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 					// printf("Number of clusters has changed.\n");
-	            }
+				}
 
 				timer.stop();
 				end_time = timer.elapsed();
