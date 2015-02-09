@@ -86,7 +86,8 @@ def main(argv):
    print 'File filter is ', filter
    print 'Graph instances dir is ', instances_path
    print 'Threshold is ', threshold
-   matrix = []
+   matrix = []   # original directed graph from file
+   smatrix = []  # symmetric version of the directed graph
 
    # RCC results
    all_files_summary = dict()
@@ -160,6 +161,20 @@ def main(argv):
                     w = float(line[2])
                     matrix[i][j] = w
 
+          # converts the graph from directed to undirected version
+          smatrix = [[0 for x in xrange(N)] for x in xrange(N)]
+          for i in xrange(N):
+              for j in xrange(N):
+                  if (i < j):
+                      mult = matrix[i][j] * matrix[j][i]
+                      if (mult > 0):  # opposite edges with the same sign become one undirected edge
+                          smatrix[i][j] = matrix[i][j] + matrix[j][i]
+                      elif (mult < 0):  # opposite edges with different signs remain as 2 diff. edges
+                          smatrix[i][j] = matrix[i][j]
+                          smatrix[j][i] = matrix[j][i]
+                      else:  # mult = 0
+                          smatrix[i][j] = matrix[i][j] + matrix[j][i]
+          
           # reads rcc results file, with cluster X node configuration
           content_file = open(file_list[count], 'r')
           cluster = [int(0) for x in xrange(N)]
@@ -182,7 +197,9 @@ def main(argv):
           PlusMediators = []
           PlusMutuallyHostileMediators = []
           InternalSubgroupHostility = []
+          DifferentialPopularity = []
           # for each partition, try to find a partition where most of the external edges are positive
+          # the search is done over the UNDIRECTED version of the graph (smatrix)
           print "Cluster,%IntPosEdges,%IntNegEdges,%ExtPosEdges,%ExtNegEdges"
           for c in xrange(partitionNumber):
             numberOfExtNegEdges = 0
@@ -194,16 +211,16 @@ def main(argv):
             for i in xrange(N):
               if cluster[i] == c:
                 for j in xrange(N):
-                  if matrix[i][j] != 0:
+                  if smatrix[i][j] != 0:
                     if cluster[j] == c:  # internal edges (within the same cluster)
                       totalNumberOfIntEdges += 1
-                      if matrix[i][j] < 0:
+                      if smatrix[i][j] < 0:
                         numberOfIntNegEdges += 1
                       else:
                         numberOfIntPosEdges += 1
                     else:  # external edges (between clusters)
                       totalNumberOfExtEdges += 1
-                      if matrix[i][j] > 0:
+                      if smatrix[i][j] > 0:
                         numberOfExtPosEdges += 1
                       else:
                         numberOfExtNegEdges += 1
@@ -228,21 +245,56 @@ def main(argv):
               PlusMutuallyHostileMediators.append(str(c) + str(" (PercIntNegEdges = %.2f" % (PIntNegEdges)) + str(" and PercExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
             if (PIntNegEdges > threshold and PExtNegEdges > threshold):
               InternalSubgroupHostility.append(str(c) + str(" (PercIntNegEdges = %.2f" % (PIntNegEdges)) + str(" and PercExtNegEdges = %.2f" % (PExtNegEdges)) + ")")
-              
+
+          # the processing below is done over the DIRECTED version of the graph (matrix)
+          # detects differential popularity in the directed graph
+          # (from a different cluster to the current one)
+          for c in xrange(partitionNumber):
+            numberOfExtNegEdges = 0
+            numberOfExtPosEdges = 0
+            totalNumberOfIntEdges = 0
+            totalNumberOfExtEdges = 0
+            for i in xrange(N):
+              if cluster[i] <> c:
+                for j in xrange(N):
+                  if matrix[i][j] != 0:
+                    if cluster[j] == c:  # external edges (between clusters)
+                      totalNumberOfExtEdges += 1
+                      if matrix[i][j] > 0:
+                        numberOfExtPosEdges += 1
+                      else:
+                        numberOfExtNegEdges += 1
+            if totalNumberOfExtEdges > 0:
+                PExtPosEdges = float(numberOfExtPosEdges)*100 / totalNumberOfExtEdges
+                PExtNegEdges = float(numberOfExtNegEdges)*100 / totalNumberOfExtEdges
+            else:
+                PExtPosEdges = PExtNegEdges = 0
+            
+            # external pos : Differential popularity
+            if (PExtPosEdges > threshold):
+              DifferentialPopularity.append(str(c) + str(" PercExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
+          
+
           print "\nProcessing mediation properties...\n"
           # Print results on display
           #result_file = open(folder + "/xpress-summary.csv", "w")
-          print "Clusters with plus mediators (internal pos + external pos): "
+          print "Clusters with plus mediators - undirected (90%+ internal + edges and 90%+ external - edges): "
           if not PlusMediators:
               print "None"
           for elem in (PlusMediators):
               print "%s" % (elem)
-          print "\nClusters with plus mutually hostile mediators (internal neg + external pos): "
+          print "\nClusters with plus mutually hostile mediators - undirected (90%+ internal - edges and 90%+ external + edges): "
           if not PlusMutuallyHostileMediators:
               print "None"
           for elem in (PlusMutuallyHostileMediators):
               print "%s" % (elem)
-          print "\nClusters with internal subgroup hostility (maybe internal neg + external neg): "
+          print "\nClusters with differential popularity ( (any internal) and (90%+ directed external + edges) ): "
+          if not DifferentialPopularity:
+              print "None"
+          for elem in (DifferentialPopularity):
+              print "%s" % (elem)         
+
+          print "\n\nClusters with internal subgroup hostility (maybe internal neg + external neg): "
           if not InternalSubgroupHostility:
               print "None   "
           for elem in (InternalSubgroupHostility):
