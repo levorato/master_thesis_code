@@ -260,6 +260,29 @@ using namespace std;
 			//}
 		}
 	}
+
+	/// CUDA kernel for simple construct clustering (addition of a vertex into all possible clusters).
+	__global__ void simpleConstructKernel(const ulong* clusterArray, const float* funcArray, uint n, uint m,
+		float* destImbArray, ulong nc, float* positiveSumArray, 
+		float* negativeSumArray, int threadsPerBlock, ulong i) {
+
+		ulong idx = blockIdx.x * blockDim.x + threadIdx.x;
+		// kernel executes local search for vertex i
+		ulong k2 = idx;  // kernel executes local search for vertex i, moving it to cluster k2
+		
+		if(k2 <= nc) {
+			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
+			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
+	                // only calculates the cost of inserting vertex i into cluster k2		
+			// positiveSum = +(positiveSumArray[nc] - positiveSumArray[k2]) - (positiveSumArray[nc] - positiveSumArray[k1]);
+			// vertex i is in no cluster
+			float positiveSum = +(- positiveSumArray[i+k2*n]);
+			float negativeSum = negativeSumArray[i+k2*n];
+			
+			// updates thread idx / vertex i from k1 to k2 imbalance result
+			destImbArray[idx] = funcArray[0] + positiveSum + negativeSum;
+		}
+	}
 	
 	/// CUDA kernel for 2-opt search.
 	__global__ void doubleSearchKernel(const ulong* clusterArray, const float* funcArray, uint n, uint m,
@@ -842,6 +865,73 @@ using namespace std;
 		totalIterations = totalIter;
 		timeSpentConstruct = timeSpentInConstruction;
 		timeSpentGRASP = timeSpentInGRASP;
+		return true;
+	}
+
+	/// Runs the kernel for metaheuristic construct clustering's gain function calculation.
+	bool runConstructKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
+			thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
+			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue, 
+			ulong n, ulong m, ulong nc, ushort threadsCount, ulong i, ulong& clusterNumber, double& gainValue) {
+
+		// declaration and initialization of variables
+		// Graph data - read only, copy of host data
+		thrust::device_vector<float> d_weights = h_weights;  // edge weights
+		thrust::device_vector<int> d_dest = h_dest;  // edge destination (vertex j)
+		thrust::device_vector<int> d_numedges = h_numedges;  // number of edges of each vertex i
+		thrust::device_vector<int> d_offset = h_offset;  // initial edge number for vertex i
+		// 1. Current (partial) clustering data
+		thrust::device_vector<float> d_functionValue = h_functionValue;
+		thrust::device_vector<unsigned long> d_mycluster = h_mycluster;
+		thrust::device_vector<float> d_VertexClusterPosSum(n * (nc+1), 0.0);
+		thrust::device_vector<float> d_VertexClusterNegSum(n * (nc+1), 0.0);
+		thrust::device_vector<uint> d_nc(1);
+		thrust::device_vector<float> d_destFunctionValue(1);
+		
+		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
+		int* destArray = thrust::raw_pointer_cast( &d_dest[0] );
+		int* numArray = thrust::raw_pointer_cast( &d_numedges[0] );
+		int* offsetArray = thrust::raw_pointer_cast( &d_offset[0] );
+		
+		unsigned long* clusterArray = thrust::raw_pointer_cast( &d_mycluster[0] );
+		float* funcArray = thrust::raw_pointer_cast( &d_functionValue[0] );
+		float* vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
+		float* vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
+		uint* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
+		
+		unsigned long numberOfChunks = n * (nc + 1);  // the search space for each vertex (dest cluster) will be split into n*(nc+1) chunks
+		thrust::host_vector<ulong> h_nc(1);
+		h_nc[0] = nc;
+		d_nc = h_nc;
+
+		int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
+		updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
+			offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, n, ncArray);
+		checkCudaErrors(cudaDeviceSynchronize());
+		
+		// result / destination vector
+		numberOfChunks = (h_nc[0] + 1);	
+		d_destFunctionValue.resize(numberOfChunks);
+		float* destImbArray = thrust::raw_pointer_cast( &d_destFunctionValue[0] );		
+		blocksPerGrid = ((h_nc[0] + 1) + threadsCount - 1) / threadsCount;
+		simpleConstructKernel(clusterArray, funcArray, uint(n), uint(m), destImbArray, 
+			ulong(h_nc[0]), vertexClusterPosSumArray, 
+			vertexClusterNegSumArray, threadsCount, i);		
+		checkCudaErrors(cudaDeviceSynchronize());
+
+		// printf("Begin reduce / post-process...\n");
+		thrust::device_vector<float>::iterator iter = thrust::min_element(d_destFunctionValue.begin(), d_destFunctionValue.begin()+numberOfChunks);
+		float min_val = *iter;
+		bestImbalance = min_val;
+		// determines the position of the best improvement found in the result vector
+		uint position = iter - d_destFunctionValue.begin();
+		int resultIdx = position;
+		clusterNumber = resultIdx;
+		gainValue = bestImbalance;
+		// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destcluster, destFunctionValue);
+		if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
+		printf("I(P) = %.2f\n", bestImbalance);
+		
 		return true;
 	}
 
