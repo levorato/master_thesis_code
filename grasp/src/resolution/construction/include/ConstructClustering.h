@@ -29,7 +29,7 @@ public:
 	 * @param problem the ClusteringProblem object for the objective function calculation
 	 * @return Clustering Cc
 	 */
-	Clustering constructClustering(SignedGraph *g, ClusteringProblem& problem,
+	virtual Clustering constructClustering(SignedGraph *g, ClusteringProblem& problem,
 			const int& myRank);
 
 	double getAlpha() {

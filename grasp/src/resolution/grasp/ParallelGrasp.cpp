@@ -37,7 +37,7 @@ ParallelGrasp::~ParallelGrasp() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent *vnd,
+Clustering ParallelGrasp::executeGRASP(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Initiating parallel GRASP...";
@@ -52,8 +52,8 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering &construct, VariableN
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
-		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd->getNeighborhoodSize(),
-				problem.getType(), construct.getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+		InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
+				problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
 				numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), k);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];

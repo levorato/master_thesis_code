@@ -39,17 +39,17 @@ Grasp::~Grasp() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent *vnd,
+Clustering Grasp::executeGRASP(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info)<< "Initializing " << " GRASP "<< problem.getName() <<
-	" procedure for alpha = " << construct.getAlpha() << " and l = " << vnd->getNeighborhoodSize();
+	" procedure for alpha = " << construct->getAlpha() << " and l = " << vnd->getNeighborhoodSize();
 
 	double totalTimeSpentOnConstruction = 0.0;
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
-	Clustering CStar = construct.constructClustering(g, problem, info.processRank);
+	Clustering CStar = construct->constructClustering(g, problem, info.processRank);
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
@@ -114,8 +114,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 			timeSpentOnBestSolution = timeSpentInGRASP;
 			// Registers the best result at time intervals
 			notifyNewValue(CStar, timeSpentInGRASP, totalIter);
-			// NUMBER OF ITERATIONS IS NOW FIXED !!!
-			// i = 0;
+			i = 0;
 			// TODO validar se essa saida eh valida: nao ha valor de FO menor que zero
 			if(newValue.getValue() == 0) break;
 		}
@@ -142,7 +141,7 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 			start_time = timer.elapsed();
 
 			// 1. Construct the next clustering
-			Cc = construct.constructClustering(g, problem, info.processRank);
+			Cc = construct->constructClustering(g, problem, info.processRank);
 
 			timer.stop();
 			end_time = timer.elapsed();
@@ -172,12 +171,12 @@ Clustering Grasp::executeGRASP(ConstructClustering &construct, VariableNeighborh
 	BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(2) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInGRASP) << "%.";
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults, g->getN());
-	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd->getNeighborhoodSize(), iter);
+	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), vnd->getNeighborhoodSize(), iter);
+	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), vnd->getNeighborhoodSize(), iter);
+	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
 
 	return CStar;
 }

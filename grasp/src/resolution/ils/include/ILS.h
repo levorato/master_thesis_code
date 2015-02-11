@@ -46,7 +46,7 @@ public:
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param executionInfo auxiliary data about execution
 	 */
-	Clustering executeILS(ConstructClustering &construct, VariableNeighborhoodDescent *vnd,
+	Clustering executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem,	ExecutionInfo& info);
 

@@ -2,9 +2,8 @@
 #include "include/CUDAHelper.h"
 
 #include "problem/include/ClusteringProblem.h"
-#include "../construction/include/ConstructClustering.h"
 #include "graph/include/Graph.h"
-#include "util/RandomUtil.h"
+#include "util/include/RandomUtil.h"
 
 #include <boost/timer/timer.hpp>
 #include <iostream>
@@ -189,10 +188,12 @@ using namespace std;
 			for (ulong edgenum = offset; edgenum < count; edgenum++) {   
 				int j = destArray[edgenum];
 				float weight = weightArray[edgenum];
-				if(weight > 0) {
-					vertexClusterPosSumArray[s_cluster[j] * n + i] += fabs(weight);
-				} else {
-					vertexClusterNegSumArray[s_cluster[j] * n + i] += fabs(weight);
+				if(s_cluster[j] >= 0) {
+					if(weight > 0) {
+						vertexClusterPosSumArray[s_cluster[j] * n + i] += fabs(weight);
+					} else {
+						vertexClusterNegSumArray[s_cluster[j] * n + i] += fabs(weight);
+					}
 				}
 			}
         }
@@ -265,7 +266,7 @@ using namespace std;
 	/// CUDA kernel for simple construct clustering (addition of a vertex into all possible clusters).
 	__global__ void simpleConstructKernel(const ulong* clusterArray, const float* funcArray, uint n, uint m,
 		float* destImbArray, ulong nc, float* positiveSumArray, 
-		float* negativeSumArray, int threadsPerBlock, ulong i) {
+		float* negativeSumArray, int threadsPerBlock, ulong v) {
 
 		ulong idx = blockIdx.x * blockDim.x + threadIdx.x;
 		// kernel executes local search for vertex i
@@ -274,23 +275,33 @@ using namespace std;
 		if(k2 <= nc) {
 			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
 			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
-	                // only calculates the cost of inserting vertex i into cluster k2		
-			// positiveSum = +(positiveSumArray[nc] - positiveSumArray[k2]) - (positiveSumArray[nc] - positiveSumArray[k1]);
 			// vertex i is in no cluster
-			float positiveSum = +(- positiveSumArray[i+k2*n]);
-			float negativeSum = negativeSumArray[i+k2*n];
-			
-			// updates thread idx / vertex i from k1 to k2 imbalance result
-			destImbArray[idx] = funcArray[0] + positiveSum + negativeSum;
+			/*
+			 * Na inserção em cluster novo, contar apenas as relações externas entre o vértice i e os vértices
+			 * que estão sem cluster. Não incluir as relações internas quando k = nc.
+			 * Quando o vértice i for inserido em cluster existente, contar as relações internas a k2 negativas,
+			 * bem como as relações externas a k2 positivas com i.
+			 */
+			destImbArray[k2] = funcArray[0];
+			if(k2 < nc) {
+				destImbArray[k2] += negativeSumArray[v + k2 * n];
+			}
+			for(int k = 0; k < nc; k++) {
+				if(k != k2) {
+					destImbArray[k2] += positiveSumArray[v + k * n];
+				}
+			}
+			destImbArray[k2] += positiveSumArray[v + nc * n];
 		}
 	}
 	
 	__global__ void shuffleBestResult1opt(const float* destImbArray, uint imbArraySize, float bestImbalance, 
-						uint randomInitialIndex, uint* resultIndexArray) {
+						uint randomInitialIndex, uint* resultIndexArray, float* resultValueArray) {
 		// Starts the search for the bestImbalance element from the randomInitialIndex provided as parameter
-		for(uint count = 0, uint i = randomInitialIndex; count < imbArraySize; i = (i + 1) % imbArraySize, count++) {
-			if(destImbArray[i] == bestImbalance) {
+		for(uint count = 0, i = randomInitialIndex; count < imbArraySize; i = (i + 1) % imbArraySize, count++) {
+			if(destImbArray[i] < bestImbalance) {
 				resultIndexArray[0] = i;
+				resultValueArray[0] = destImbArray[i];
 				break;
 			}
 		}
@@ -451,10 +462,12 @@ using namespace std;
 		thrust::device_vector<float> d_VertexClusterNegSum(n * (nc+1));
 		thrust::device_vector<uint> d_nc(1);
 		thrust::device_vector<uint> d_old_nc(1);
-		thrust::device_vector<uint> d_result_index(1);
 		thrust::device_vector<float> d_destFunctionValue(numberOfChunks);
 		thrust::device_vector<unsigned long> d_destCluster1(numberOfChunks);
-		thrust::device_vector<unsigned long> d_destCluster2(numberOfChunks);	
+		thrust::device_vector<unsigned long> d_destCluster2(numberOfChunks);
+		// Result arrays for imbalance reduction
+		thrust::device_vector<uint> d_result_index(1);
+		thrust::device_vector<float> d_result_value(1);
 		
 		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
 		int* destArray = thrust::raw_pointer_cast( &d_dest[0] );
@@ -469,6 +482,7 @@ using namespace std;
 		uint* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 		uint* old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
 		uint* resultIndexArray = thrust::raw_pointer_cast( &d_result_index[0] );
+		float* resultValueArray = thrust::raw_pointer_cast( &d_result_value[0] );
 		
 		// number of clusters - changes every iteration of VND
 		thrust::host_vector<ulong> h_nc(1);
@@ -527,24 +541,29 @@ using namespace std;
 			// printf("Begin reduce...\n");
 			thrust::device_vector<float>::iterator iter = thrust::min_element(d_destFunctionValue.begin(), d_destFunctionValue.begin()+numberOfChunks);
 			float min_val = *iter;
-						
-			if(min_val < bestImbalance) {  // improvement in imbalance
-				bestImbalance = min_val;
-				// as there may be more than one combination with the same imbalance, 
-				// chooses one combination at random
-				// the algorithm starts the search with a random initial index
-				uint randomInitialIndex = RandomUtil::next(0, numberOfChunks - 1);
-				shuffleBestResult1opt<<< 1,1 >>>(destImbArray, numberOfChunks, bestImbalance, 
-									randomInitialIndex, resultIndexArray);
 
-				// determines the position of the best improvement found in the result vector
-				// uint position = iter - d_destFunctionValue.begin();
+			if(min_val < bestImbalance) {  // improvement in imbalance
+				// As there may be more than one combination with a better imbalance,
+				// chooses one better combination at random.
+				// The algorithm starts the search with a random initial index.
+				uint randomInitialIndex = util::RandomUtil::next(0, numberOfChunks - 1);
+				// printf("Best imbalance is %.2f and random index is %d\n", bestImbalance, randomInitialIndex);
+				shuffleBestResult1opt<<< 1,1 >>>(destImbArray, numberOfChunks, bestImbalance, 
+									randomInitialIndex, resultIndexArray, resultValueArray);
+				thrust::host_vector<uint> h_result_index = d_result_index;
+				thrust::host_vector<float> h_result_value = d_result_value;
+				//printf("Result index is %d and result value is %.2f\n", h_result_index[0], h_result_value[0]);
+
+				// determines the position of the best improvement found in the result vector - DISABLED
+				//uint position = iter - d_destFunctionValue.begin();
+				//printf("Original position would be %d and original imbalance would be %.2f\n", position, min_val);
 				// int resultIdx = position;
-				uint resultIdx = resultIndexArray[0];
+				uint resultIdx = h_result_index[0];
+				bestImbalance = h_result_value[0];
 				ulong destcluster = resultIdx / n;
 				ulong bestSrcVertex = resultIdx % n;
 				ulong sourceCluster = d_mycluster[bestSrcVertex];
-				// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destcluster, destFunctionValue);
+				// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destcluster, bestImbalance);
 				if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
 				d_old_nc = d_nc;
 				old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
@@ -894,7 +913,7 @@ using namespace std;
 	bool runConstructKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 			thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 			thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue, 
-			ulong n, ulong m, ulong nc, ushort threadsCount, ulong i, ulong& clusterNumber, double& gainValue) {
+			ulong n, ulong m, ulong nc, ushort threadsCount, ulong v, long& clusterNumber, double& gainValue) {
 
 		// declaration and initialization of variables
 		// Graph data - read only, copy of host data
@@ -932,27 +951,37 @@ using namespace std;
 		checkCudaErrors(cudaDeviceSynchronize());
 		
 		// result / destination vector
+		// cout << "The number of clusters is " << h_nc[0] << endl;
 		numberOfChunks = (h_nc[0] + 1);	
 		d_destFunctionValue.resize(numberOfChunks);
 		float* destImbArray = thrust::raw_pointer_cast( &d_destFunctionValue[0] );		
 		blocksPerGrid = ((h_nc[0] + 1) + threadsCount - 1) / threadsCount;
-		simpleConstructKernel(clusterArray, funcArray, uint(n), uint(m), destImbArray, 
-			ulong(h_nc[0]), vertexClusterPosSumArray, 
-			vertexClusterNegSumArray, threadsCount, i);		
+		simpleConstructKernel<<< blocksPerGrid, threadsCount >>>(clusterArray, funcArray, uint(n), uint(m), destImbArray,
+			ulong(h_nc[0]), vertexClusterPosSumArray, vertexClusterNegSumArray, threadsCount, v);
 		checkCudaErrors(cudaDeviceSynchronize());
 
-		// printf("Begin reduce / post-process...\n");
+		thrust::host_vector<float> h_destFunctionValue = d_destFunctionValue;
+		/*cout << "destFunctionValue array: ";
+		for(int x = 0; x < h_destFunctionValue.size(); x++) {
+			cout << h_destFunctionValue[x] << " ";
+		}
+		cout << endl; */
+
+		//printf("Begin reduce / post-process...\n");
 		thrust::device_vector<float>::iterator iter = thrust::min_element(d_destFunctionValue.begin(), d_destFunctionValue.begin()+numberOfChunks);
 		float min_val = *iter;
-		bestImbalance = min_val;
+		double bestImbalance = min_val;
 		// determines the position of the best improvement found in the result vector
 		uint position = iter - d_destFunctionValue.begin();
 		int resultIdx = position;
 		clusterNumber = resultIdx;
+		if (clusterNumber == nc) {
+			clusterNumber = Clustering::NEW_CLUSTER;
+		}
 		gainValue = bestImbalance;
-		// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destcluster, destFunctionValue);
+		//printf("Idx = %d: The best src vertex is %ld to cluster %ld with I(P) = %.2f\n", resultIdx, v, clusterNumber, gainValue);
 		if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
-		printf("I(P) = %.2f\n", bestImbalance);
+		//printf("I(P) = %.2f\n", bestImbalance);
 		
 		return true;
 	}

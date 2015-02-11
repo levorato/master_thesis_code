@@ -32,7 +32,7 @@ ParallelILS::~ParallelILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent *vnd,
+Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 		ClusteringProblem& problem, ExecutionInfo& info) {
 	mpi::communicator world;
@@ -48,8 +48,8 @@ Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeigh
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 	for(int i = 0; i < numberOfSlaves; i++) {
-		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct.getAlpha(), vnd->getNeighborhoodSize(),
-				problem.getType(), construct.getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
+				problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
 				numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];

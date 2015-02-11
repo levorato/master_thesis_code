@@ -20,7 +20,7 @@ CUDAImbalanceGainFunction::~CUDAImbalanceGainFunction() {
 
 }
 
-GainCalculation ImbalanceGainFunction::calculateIndividualGain(
+GainCalculation CUDAImbalanceGainFunction::calculateIndividualGain(
 		ClusteringProblem& p, Clustering& c, int i,
 		thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 		thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset) {
@@ -34,26 +34,31 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 	unsigned short threadsCount = 256;  // limited by shared memory size
 
 	// Pass raw array and its size to kernel
-	ulong clusterNumber = -1;
+	long clusterNumber = -1;
 	double gainValue = 0.0;
 	// objective function value
 	thrust::host_vector<float> h_functionValue(1);
 	h_functionValue[0] = c.getImbalance().getValue();
 	thrust::host_vector<unsigned long> h_mycluster(c.getClusterArray());
-	runConstructKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, graph->getN(),
+	ulong nc = c.getNumberOfClusters();
+	for(int e = 0; e < h_mycluster.size(); e++) {
+		if (h_mycluster[e] == Clustering::NO_CLUSTER) {
+			h_mycluster[e] = nc;
+		}
+	}
+	runConstructKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, graph->getN(),
 			graph->getM(), c.getNumberOfClusters(), threadsCount, i, clusterNumber, gainValue);
 
 	gainCalculationCUDA.vertex = i;
 	gainCalculationCUDA.clusterNumber = clusterNumber;
 	gainCalculationCUDA.gainValue = gainValue;
-	// return gainCalculationCUDA;
-
+	return gainCalculationCUDA;
+/*
 	// VALIDANDO o calculo acima com o calculo tradicional na CPU
 	double min = std::numeric_limits<double>::max();
 	Clustering cTemp = c;
 	GainCalculation gainCalculation;
 	// For each cluster ci...
-	int nc = c.getNumberOfClusters();
 	for (unsigned long ci = 0; ci < nc; ci++) {
 		cTemp = c;
 		cTemp.addNodeToCluster(*graph, p, i, ci);
@@ -64,7 +69,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 		}
 	}
 	// For a new cluster ci+1
-	if ((p.getType() == ClusteringProblem::CC_PROBLEM))) {
+	if (p.getType() == ClusteringProblem::CC_PROBLEM) {
 		cTemp = c;
 		cTemp.addCluster(*graph, p, i);
 		Imbalance imb = cTemp.getImbalance();
@@ -75,11 +80,14 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 	}
 	gainCalculation.gainValue = min;
 
+	// cout << "CUDA value: " << gainCalculationCUDA.gainValue << "; CPU value: " << gainCalculation.gainValue << endl;
+	// cout << "CUDA cluster: " << gainCalculationCUDA.clusterNumber << "; CPU cluster: " << gainCalculation.clusterNumber << endl;
 	assert(gainCalculationCUDA.gainValue == gainCalculation.gainValue);
 	assert(gainCalculationCUDA.clusterNumber == gainCalculation.clusterNumber);
+	return gainCalculationCUDA; */
 }
 
-void ImbalanceGainFunction::calculateGainList(ClusteringProblem &p,
+void CUDAImbalanceGainFunction::calculateGainList(ClusteringProblem &p,
 		Clustering &c, list<GainCalculation>& nodeList, thrust::host_vector<float>& h_weights,
 		thrust::host_vector<int>& h_dest, thrust::host_vector<int>& h_numedges,
 		thrust::host_vector<int>& h_offset) {

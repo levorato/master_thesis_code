@@ -9,13 +9,14 @@
 #define CUDACONSTRUCTCLUSTERING_H_
 
 #include "ConstructClustering.h"
+#include "CUDAImbalanceGainFunction.h"
 
 namespace resolution {
 namespace construction {
 
 class CUDAConstructClustering : public ConstructClustering {
 public:
-	CUDAConstructClustering(SignedGraph *g, const unsigned long& seed);
+	CUDAConstructClustering(CUDAImbalanceGainFunction *f, const unsigned long& seed);
 	virtual ~CUDAConstructClustering();
 
 	/**
@@ -29,7 +30,7 @@ public:
 	 * @param problem the ClusteringProblem object for the objective function calculation
 	 * @return Clustering Cc
 	 */
-	Clustering constructClustering(SignedGraph *g, ClusteringProblem& problem,
+	virtual Clustering constructClustering(SignedGraph *g, ClusteringProblem& problem,
 			const int& myRank);
 
 	/**

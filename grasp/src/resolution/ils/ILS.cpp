@@ -44,18 +44,18 @@ ILS::~ILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent *vnd,
+Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
 		ClusteringProblem& problem,	ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = "
-			<< construct.getAlpha() << " and l = " << vnd->getNeighborhoodSize();
+			<< construct->getAlpha() << " and l = " << vnd->getNeighborhoodSize();
 
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
 	// 1. Initial clustering (construct)
-	Clustering CStar = construct.constructClustering(g, problem, info.processRank);
+	Clustering CStar = construct->constructClustering(g, problem, info.processRank);
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
@@ -172,7 +172,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 			start_time = timer.elapsed();
 
 			// 1. Construct the next clustering
-			Cc = construct.constructClustering(g, problem, info.processRank);
+			Cc = construct->constructClustering(g, problem, info.processRank);
 
 			timer.stop();
 			end_time = timer.elapsed();
@@ -199,12 +199,12 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults, g->getN());
-	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd->getNeighborhoodSize(), iterMax);
+	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
 	// saves the best result to output time file
 	measureTimeResults(0.0, iterMax);
-	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), vnd->getNeighborhoodSize(), iterMax);
+	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), vnd->getNeighborhoodSize(), iterMax);
+	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
 
 	return CBest;
 }

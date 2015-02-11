@@ -48,7 +48,7 @@ public:
 	 * @param problem the ClusteringProblem (objective function) to be used
 	 * @param executionInfo auxiliary data about execution
 	 */
-	Clustering executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent *vnd,
+	Clustering executeGRASP(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info);
 
 	unsigned long getNumberOfTestedCombinations();

@@ -6,7 +6,7 @@
  */
 
 #include "include/CUDAConstructClustering.h"
-#include "include/ConstructClustering.h"
+#include "include/CUDAImbalanceGainFunction.h"
 
 #include "../construction/include/VertexSet.h"
 #include <boost/log/trivial.hpp>
@@ -20,8 +20,8 @@ using namespace thrust;
 namespace resolution {
 namespace construction {
 
-CUDAConstructClustering::CUDAConstructClustering(SignedGraph *g, const unsigned long& seed) :
-		ConstructClustering(CUDAImbalanceGainFunction(g), seed, double(1.0)) {
+CUDAConstructClustering::CUDAConstructClustering(CUDAImbalanceGainFunction *f, const unsigned long& seed) :
+		ConstructClustering(f, seed, double(1.0)) {
 
 }
 
@@ -30,7 +30,7 @@ CUDAConstructClustering::~CUDAConstructClustering() {
 }
 
 
-Clustering ConstructClustering::constructClustering(SignedGraph *g,
+Clustering CUDAConstructClustering::constructClustering(SignedGraph *g,
 		ClusteringProblem& problem, const int& myRank) {
 	Clustering Cc(*g); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
@@ -75,15 +75,16 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 
 	while (lc.size() > 0) { // lc != empty
 		GainCalculation gainCalculation;
+		CUDAImbalanceGainFunction* f = (CUDAImbalanceGainFunction*) gainFunction;
 		if (_alpha == 1.0) {
 			// alpha = 1.0 (completely random): no need to calculate all gains (saves time)
 			int i = lc.chooseRandomVertex(lc.size()).vertex;
-			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc,
+			gainCalculation = f->calculateIndividualGain(problem, Cc,
 					i, h_weights, h_dest, h_numedges, h_offset);
 		} else {
 			// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 			// according to the value of the gain function
-			gainFunction->calculateGainList(problem, Cc, lc.getVertexList(),
+			f->calculateGainList(problem, Cc, lc.getVertexList(),
 					h_weights, h_dest, h_numedges, h_offset);
 
 			// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
