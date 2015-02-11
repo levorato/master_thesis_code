@@ -175,6 +175,20 @@ def main(argv):
 		             pos_edge_sum += w
 		   print 'neg_edge_sum = {0}, pos_edge_sum = {1}'.format(str(neg_edge_sum), str(pos_edge_sum))
 
+		   # converts the graph from directed to undirected version
+		   smatrix = [[0 for x in xrange(N)] for x in xrange(N)]
+		   for i in xrange(N):
+		      for j in xrange(N):
+		          if (i < j):
+		              mult = matrix[i][j] * matrix[j][i]
+		              if (mult > 0):  # opposite edges with the same sign become one undirected edge
+		                  smatrix[i][j] = matrix[i][j] + matrix[j][i]
+		              elif (mult < 0):  # opposite edges with different signs remain as 2 diff. edges
+		                  smatrix[i][j] = matrix[i][j]
+		                  smatrix[j][i] = matrix[j][i]
+		              else:  # mult = 0
+		                  smatrix[i][j] = matrix[i][j] + matrix[j][i]
+
 		   try:  # process *-result.txt file
 		    content = content_file.read()
 		    reader = csv.reader(StringIO.StringIO(content), delimiter='\n')
@@ -277,16 +291,16 @@ def main(argv):
 			    for i in xrange(N):
 			      if cluster[i] == c:  # i is in cluster c
 				for j in xrange(N):
-				  if matrix[i][j] != 0:  # edge (i, j)
+				  if smatrix[i][j] != 0:  # edge (i, j)
 				    if cluster[j] == c:  # internal edges (within the same cluster)
 				      totalNumberOfIntEdges += 1
-				      if matrix[i][j] < 0:
+				      if smatrix[i][j] < 0:
 				        numberOfIntNegEdges += 1
 				      else:
 				        numberOfIntPosEdges += 1
 				    else:  # external edges (between clusters)
 				      totalNumberOfExtEdges += 1
-				      if matrix[i][j] > 0:
+				      if smatrix[i][j] > 0:
 				        numberOfExtPosEdges += 1
 				      else:
 				        numberOfExtNegEdges += 1
@@ -464,7 +478,7 @@ def main(argv):
          t.rows.append(item)
          
       html += str(t)
-      html += '</p><br/><h4>Mediation and differential popularity analysis</h4>'
+      html += '</p><br/><h4>Mediation analysis</h4>'
       
       html += "\n<br>Clusters with plus mediators (internal positive edges + external positive edges): <br>"
       if not key in PlusMediators:
