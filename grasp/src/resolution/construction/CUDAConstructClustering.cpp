@@ -7,8 +7,9 @@
 
 #include "include/CUDAConstructClustering.h"
 #include "include/CUDAImbalanceGainFunction.h"
-
+#include "../vnd/include/CUDASearch.h"
 #include "../construction/include/VertexSet.h"
+
 #include <boost/log/trivial.hpp>
 #include <boost/timer/timer.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -33,7 +34,6 @@ CUDAConstructClustering::~CUDAConstructClustering() {
 Clustering CUDAConstructClustering::constructClustering(SignedGraph *g,
 		ClusteringProblem& problem, const int& myRank) {
 	Clustering Cc(*g); // Cc = empty
-	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
 	BOOST_LOG_TRIVIAL(debug)<< "CUDA parallel construct clustering...\n";
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
@@ -73,58 +73,31 @@ Clustering CUDAConstructClustering::constructClustering(SignedGraph *g,
 		offset += count;
 	}
 
-	while (lc.size() > 0) { // lc != empty
-		GainCalculation gainCalculation;
-		CUDAImbalanceGainFunction* f = (CUDAImbalanceGainFunction*) gainFunction;
-		if (_alpha == 1.0) {
-			// alpha = 1.0 (completely random): no need to calculate all gains (saves time)
-			int i = lc.chooseRandomVertex(lc.size()).vertex;
-			gainCalculation = f->calculateIndividualGain(problem, Cc,
-					i, h_weights, h_dest, h_numedges, h_offset);
-		} else {
-			// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
-			// according to the value of the gain function
-			f->calculateGainList(problem, Cc, lc.getVertexList(),
-					h_weights, h_dest, h_numedges, h_offset);
-
-			// 2. Choose i randomly among the first (alpha x |lc|) elements of lc
-			// (alpha x |lc|) is a rounded number
-			// IMPORTANT: if alpha < 0, the constructClustering method will always
-			//             choose the first vertex in the gainFunction list, that is,
-			//             the one that minimizes the objective (VOTE algorithm).
-			if (_alpha <= 0.0) {
-				// chooses first element (min) without ordering (saves time)
-				gainCalculation = lc.chooseFirstElement(gainFunction);
-			} else {
-				lc.sort(gainFunction);
-				gainCalculation = lc.chooseRandomVertex(
-						boost::math::iround(_alpha * lc.size()));
-			}
-			// std::cout << "Random vertex between 0 and " << boost::math::iround(alpha * lc.size()) << " is " << i << std::endl;
+	// objective function value
+	thrust::host_vector<float> h_functionValue(1);
+	h_functionValue[0] = c.getImbalance().getValue();
+	thrust::host_vector<unsigned long> h_mycluster(c.getClusterArray());
+	ulong nc = c.getNumberOfClusters();
+	for(int e = 0; e < h_mycluster.size(); e++) {
+		if (h_mycluster[e] == Clustering::NO_CLUSTER) {
+			h_mycluster[e] = nc;
 		}
-		// 3. Cc = C union {i}
-		// Adds the vertex i to the partial clustering C, in a way so defined by
-		// its gain function. The vertex i can be augmented to C either as a
-		// separate cluster {i} or as a member of an existing cluster c in C.
-		// cout << "Selected vertex is " << i << endl;
-		// The gain function ensures no clusters of size > k are created if RCC Problem
-		if (gainCalculation.clusterNumber == Clustering::NEW_CLUSTER) {
-			// inserts i as a separate cluster
-			Cc.addCluster(*g, problem, gainCalculation.vertex);
-		} else {
-			// inserts i into existing cluster
-			Cc.addNodeToCluster(*g, problem, gainCalculation.vertex,
-					gainCalculation.clusterNumber);
-		}
-
-		// 4. lc = lc - {i}
-		// the choosing vertex i automatically removes it from the list
-		// Removal already done by the chooseVertex methods above
-		// Cc->printClustering();
 	}
+	thrust::host_vector<unsigned long> h_newcluster;
+	double imbalance = 0.0;
+	runConstructKernel(randomSeed, h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, graph->getN(),
+			graph->getM(), c.getNumberOfClusters(), threadsCount, h_newcluster, imbalance);
+
+	// recreates clustering object based on cluster array
+	ClusterArray cArray;
+	for(int x = 0; x < h_newcluster.size(); x++) {
+		cArray.push_back(h_newcluster[x]);
+	}
+	Clustering newCc(cArray, *g, problem);
 	// Cc.setImbalance(problem.objectiveFunction(*g, Cc));
 	// => Finally: Stops the timer and stores the elapsed time
-	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
+	newCc.setImbalance(problem.objectiveFunction(*g, newCc));
+	assert(imbalance == newCc.getImbalance().getValue());
 	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed. Obj = " << Cc.getImbalance().getValue();
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();

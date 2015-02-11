@@ -51,9 +51,10 @@ using namespace clusteringgraph;
 				ulong n, ulong m, ushort threadsCount, bool firstImprovement,
 				Clustering& result, int &totalIterations, double& timeSpentConstruct, double& timeSpentGRASP);
 
-	bool runConstructKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
+	bool runConstructKernel(ulong randomSeed, thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 				thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
-				ulong n, ulong m, ulong nc, ushort threadsCount, ulong i, long& clusterNumber, double& gainValue);
+				ulong n, ulong m, ulong nc, ushort threadsCount, thrust::host_vector<unsigned long>& h_newcluster,
+				double& imbalance);
 
 }
