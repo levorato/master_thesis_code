@@ -72,12 +72,15 @@ Clustering CUDAConstructClustering::constructClustering(SignedGraph *g,
 		h_numedges[i] = count;
 		offset += count;
 	}
+	// TODO transform into class constant
+	// number of threads per block
+	unsigned short threadsCount = 256;  // limited by shared memory size
 
 	// objective function value
 	thrust::host_vector<float> h_functionValue(1);
-	h_functionValue[0] = c.getImbalance().getValue();
-	thrust::host_vector<unsigned long> h_mycluster(c.getClusterArray());
-	ulong nc = c.getNumberOfClusters();
+	h_functionValue[0] = Cc.getImbalance().getValue();
+	thrust::host_vector<unsigned long> h_mycluster(Cc.getClusterArray());
+	ulong nc = Cc.getNumberOfClusters();
 	for(int e = 0; e < h_mycluster.size(); e++) {
 		if (h_mycluster[e] == Clustering::NO_CLUSTER) {
 			h_mycluster[e] = nc;
@@ -85,8 +88,8 @@ Clustering CUDAConstructClustering::constructClustering(SignedGraph *g,
 	}
 	thrust::host_vector<unsigned long> h_newcluster;
 	double imbalance = 0.0;
-	runConstructKernel(randomSeed, h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, graph->getN(),
-			graph->getM(), c.getNumberOfClusters(), threadsCount, h_newcluster, imbalance);
+	runConstructKernel(randomSeed, h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, g->getN(),
+			g->getM(), Cc.getNumberOfClusters(), threadsCount, h_newcluster, imbalance);
 
 	// recreates clustering object based on cluster array
 	ClusterArray cArray;
@@ -97,15 +100,15 @@ Clustering CUDAConstructClustering::constructClustering(SignedGraph *g,
 	// Cc.setImbalance(problem.objectiveFunction(*g, Cc));
 	// => Finally: Stops the timer and stores the elapsed time
 	newCc.setImbalance(problem.objectiveFunction(*g, newCc));
-	assert(imbalance == newCc.getImbalance().getValue());
-	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed. Obj = " << Cc.getImbalance().getValue();
+	// assert(imbalance == newCc.getImbalance().getValue());
+	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed. Obj = " << newCc.getImbalance().getValue();
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpent = (end_time.wall - start_time.wall)
 					 / double(1000000000);
 
 	// Cc.printClustering();
-	return Cc;
+	return newCc;
 }
 
 

@@ -46,8 +46,10 @@ GainCalculation CUDAImbalanceGainFunction::calculateIndividualGain(
 			h_mycluster[e] = nc;
 		}
 	}
+	/*
 	runConstructKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, graph->getN(),
 			graph->getM(), c.getNumberOfClusters(), threadsCount, i, clusterNumber, gainValue);
+			*/
 
 	gainCalculationCUDA.vertex = i;
 	gainCalculationCUDA.clusterNumber = clusterNumber;
