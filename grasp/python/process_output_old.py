@@ -299,6 +299,10 @@ def main(argv):
                  best_time = 0
                  best_param = ''
 
+                 if count < 0:  # no result files for RCC found (imbalance = 0), uses the same result from CC
+                   file_list.extend(glob.glob(root + "/CC*.csv"))
+                   count = len(file_list) - 1
+
                  while count >= 0:
 
                    content_file = open(file_list[count], 'r')

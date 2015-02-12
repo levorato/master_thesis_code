@@ -359,22 +359,40 @@ def main(argv):
                         pos_imbalance = pos_contrib_sum
                         neg_imbalance = neg_contrib_sum
                     csv_file_list.extend(glob.glob(root + '/' + prfx + '-Node0-*-iterations.csv'))
-                    with open(csv_file_list[0], 'r') as r_csv_file:
-                       r2 = csv.reader(r_csv_file)
-		       line = r2.next()
-                       while (not line[0].startswith('Best')):
-                          line = r2.next()
-                       # extracts total, positive and negative imbalance of the best result
-                       imbalance = float(line[1])
-                       if(result_file_name.startswith('cc')):
-                          pos_imbalance = float(line[2])
-                          neg_imbalance = float(line[3])
-                          print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
-                       else:  # for RCC problem the numbers are internal and external imbalance values
-                          int_imbalance = float(line[2])
-                          ext_imbalance = float(line[3])
-                          print 'imbalances {0} (int){1} (ext){2}'.format(str(imbalance), str(int_imbalance), str(ext_imbalance))
-                          print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+                    if not csv_file_list:  # if there is no file, I(P) is probably zero
+                    	with open(root + '/' + result_file_name + '.txt', 'r') as r_csv_file:
+				r2 = csv.reader(r_csv_file)
+				line = r2.next()
+				while (line[0].find('I(P) = ') < 0):
+				  line = r2.next()
+				# extracts total, positive and negative imbalance of the best result
+				imbalance = float(line[0][line[0].find('=')+1:])
+				if(result_file_name.startswith('cc')):
+				  pos_imbalance = imbalance
+				  neg_imbalance = 0
+				  print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+				else:  # for RCC problem the numbers are internal and external imbalance values
+				  int_imbalance = imbalance
+				  ext_imbalance = 0
+				  print 'imbalances {0} (int){1} (ext){2}'.format(str(imbalance), str(int_imbalance), str(ext_imbalance))
+				  print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+                    else:
+			with open(csv_file_list[0], 'r') as r_csv_file:
+				r2 = csv.reader(r_csv_file)
+				line = r2.next()
+				while (not line[0].startswith('Best')):
+				  line = r2.next()
+				# extracts total, positive and negative imbalance of the best result
+				imbalance = float(line[1])
+				if(result_file_name.startswith('cc')):
+				  pos_imbalance = float(line[2])
+				  neg_imbalance = float(line[3])
+				  print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+				else:  # for RCC problem the numbers are internal and external imbalance values
+				  int_imbalance = float(line[2])
+				  ext_imbalance = float(line[3])
+				  print 'imbalances {0} (int){1} (ext){2}'.format(str(imbalance), str(int_imbalance), str(ext_imbalance))
+				  print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
 
                     for line in clustering_full_names:
                        result_file.write(line)
