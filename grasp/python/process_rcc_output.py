@@ -12,6 +12,9 @@ import os
 import os.path
 import re
 
+import numpy as np
+from scipy.sparse import dok_matrix
+
 #gambit para python 2.4
 class _minmax(object):
     def __init__(self, func):
@@ -85,9 +88,7 @@ def main(argv):
    print 'Input dir is ', folder
    print 'File filter is ', filter
    print 'Graph instances dir is ', instances_path
-   print 'Threshold is ', threshold
-   matrix = []   # original directed graph from file
-   smatrix = []  # symmetric version of the directed graph
+   print 'Mediator detection threshold is ', threshold
 
    # RCC results
    all_files_summary = dict()
@@ -120,7 +121,8 @@ def main(argv):
                  line = str(lines[0])
                  N = int(line[line.find(':')+1:].strip())
                  print "n = {0}".format(str(N))
-                 matrix = [[0 for x in xrange(N)] for x in xrange(N)]
+                 # uses scipy's dictionary of keys sparse matrix (http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.dok_matrix.html#scipy.sparse.dok_matrix)
+                 matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
                  i = 0
                  while str(lines[i]).find("Mrel") < 0:
                     i += 1
@@ -129,7 +131,7 @@ def main(argv):
                  i = int(line[line.find('(')+1:line.find(',')]) - 1
                  j = int(line[line.find(',')+1:line.find(')')]) - 1
                  w = float(line[line.find(')')+1:])
-                 matrix[i][j] = w
+                 matrix[i,j] = w
                  #print "{0} {1} {2}".format(i, j, w)
                  for line in lines:
                     line = str(line)
@@ -141,7 +143,7 @@ def main(argv):
                     i = int(line[line.find('(')+1:line.find(',')]) - 1
                     j = int(line[line.find(',')+1:line.find(')')]) - 1
                     w = float(line[line.find(')')+1:])
-                    matrix[i][j] = w
+                    matrix[i,j] = w
                     i += 1
              else:  # traditional graph edge tabulated format
                  dialect = csv.Sniffer().sniff(csvfile.read(1024), delimiters=" \t")
@@ -154,27 +156,32 @@ def main(argv):
                     N = int(values[0][:values[0].find(' ')])
                  else:
                     N = int(values[0])
-                 matrix = [[0 for x in xrange(N)] for x in xrange(N)]
+                 matrix = matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
                  for line in r:
                     i = int(line[0])
                     j = int(line[1])
                     w = float(line[2])
-                    matrix[i][j] = w
+                    matrix[i,j] = w
 
+          print "Successfully read graph file. Converting to symmetric...\n"
           # converts the graph from directed to undirected version
-          smatrix = [[0 for x in xrange(N)] for x in xrange(N)]
+          smatrix = dok_matrix((N, N), dtype=np.float32)  # symmetric version of the directed graph
           for i in xrange(N):
+              print "i = " + str(i)
               for j in xrange(N):
                   if (i < j):
-                      mult = matrix[i][j] * matrix[j][i]
+                      mij = matrix[i,j]
+                      mji = matrix[j,i]
+                      mult = mij * mji
                       if (mult > 0):  # opposite edges with the same sign become one undirected edge
-                          smatrix[i][j] = matrix[i][j] + matrix[j][i]
+                          smatrix[i,j] = mij + mji
                       elif (mult < 0):  # opposite edges with different signs remain as 2 diff. edges
-                          smatrix[i][j] = matrix[i][j]
-                          smatrix[j][i] = matrix[j][i]
+                          smatrix[i,j] = mij
+                          smatrix[j,i] = mji
                       else:  # mult = 0
-                          smatrix[i][j] = matrix[i][j] + matrix[j][i]
+                          smatrix[i,j] = mij + mji
           
+          print "Graph converted. Reading SRCC results files...\n"
           # reads rcc results file, with cluster X node configuration
           content_file = open(file_list[count], 'r')
           cluster = [int(0) for x in xrange(N)]
@@ -193,6 +200,8 @@ def main(argv):
                   partitionNumber += 1
           finally:
               content_file.close()
+
+          print "Results file OK. Processing percentage of edges..."
           # lists of interesting clusters (with mediation properties)
           PlusMediators = []
           PlusMutuallyHostileMediators = []
@@ -211,16 +220,16 @@ def main(argv):
             for i in xrange(N):
               if cluster[i] == c:
                 for j in xrange(N):
-                  if smatrix[i][j] != 0:
+                  if smatrix[i,j] != 0:
                     if cluster[j] == c:  # internal edges (within the same cluster)
                       totalNumberOfIntEdges += 1
-                      if smatrix[i][j] < 0:
+                      if smatrix[i,j] < 0:
                         numberOfIntNegEdges += 1
                       else:
                         numberOfIntPosEdges += 1
                     else:  # external edges (between clusters)
                       totalNumberOfExtEdges += 1
-                      if smatrix[i][j] > 0:
+                      if smatrix[i,j] > 0:
                         numberOfExtPosEdges += 1
                       else:
                         numberOfExtNegEdges += 1
@@ -257,10 +266,10 @@ def main(argv):
             for i in xrange(N):
               if cluster[i] <> c:
                 for j in xrange(N):
-                  if matrix[i][j] != 0:
+                  if matrix[i,j] != 0:
                     if cluster[j] == c:  # external edges (between clusters)
                       totalNumberOfExtEdges += 1
-                      if matrix[i][j] > 0:
+                      if matrix[i,j] > 0:
                         numberOfExtPosEdges += 1
                       else:
                         numberOfExtNegEdges += 1
