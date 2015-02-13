@@ -493,8 +493,6 @@ using namespace std;
 		thrust::device_vector<uint> d_nc(1);
 		thrust::device_vector<uint> d_old_nc(1);
 		thrust::device_vector<float> d_destFunctionValue(numberOfChunks);
-		thrust::device_vector<unsigned long> d_destCluster1(numberOfChunks);
-		thrust::device_vector<unsigned long> d_destCluster2(numberOfChunks);
 		// Result arrays for imbalance reduction
 		thrust::device_vector<uint> d_result_index(1);
 		thrust::device_vector<float> d_result_value(1);
@@ -536,10 +534,6 @@ using namespace std;
 			numberOfChunks = (h_nc[0] + 1) * n;
 			// result / destination vectors
 			d_destFunctionValue.resize(numberOfChunks);
-			d_destCluster1.resize(numberOfChunks);
-			d_destCluster2.resize(numberOfChunks);
-			unsigned long* destClusterArray1 = thrust::raw_pointer_cast( &d_destCluster1[0] );
-			unsigned long* destClusterArray2 = thrust::raw_pointer_cast( &d_destCluster2[0] );
 			float* destImbArray = thrust::raw_pointer_cast( &d_destFunctionValue[0] );
 			
 			// printf("The current number of clusters is %ld and bestImbalance = %.2f\n", h_nc[0], bestImbalance);
