@@ -23,12 +23,12 @@ ImbalanceGainFunction::~ImbalanceGainFunction() {
 }
 
 GainCalculation ImbalanceGainFunction::calculateIndividualGain(
-		ClusteringProblem& p, Clustering& c, int i) {
+		ClusteringProblem& p, Clustering& c, int v) {
 
 	Clustering cTemp = c;
 	GainCalculation gainCalculation;
 	double min = std::numeric_limits<double>::max();
-	gainCalculation.vertex = i;
+	gainCalculation.vertex = v;
 	gainCalculation.clusterNumber = Clustering::NEW_CLUSTER;
 	long k = 0;
 	if (p.getType() == ClusteringProblem::RCC_PROBLEM) {
@@ -41,7 +41,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 	for (unsigned long ci = 0; ci < nc; ci++) {
 		// cout << "Cluster " << k << endl;
 		cTemp = c;
-		cTemp.addNodeToCluster(*graph, p, i, ci);
+		cTemp.addNodeToCluster(*graph, p, v, ci);
 		Imbalance imb = cTemp.getImbalance();
 		if (imb.getValue() < min) {
 			min = imb.getValue();
@@ -54,7 +54,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 					or ((p.getType() == ClusteringProblem::RCC_PROBLEM)
 							and (c.getNumberOfClusters() < k))) {
 		cTemp = c;
-		cTemp.addCluster(*graph, p, i);
+		cTemp.addCluster(*graph, p, v);
 		Imbalance imb = cTemp.getImbalance();
 		if (imb.getValue() < min) {
 			min = imb.getValue();
