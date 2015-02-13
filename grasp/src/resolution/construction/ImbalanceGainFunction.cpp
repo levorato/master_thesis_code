@@ -43,6 +43,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 
 	int nc = c.getNumberOfClusters();
 	int n = this->graph->getN();
+	/*
 	ClusterArray myCluster = c.getClusterArray();
 	int count = 0;
 	for (int e = 0; e < myCluster.size(); e++) {
@@ -51,12 +52,12 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 			count++;
 		}
 	}
-	/*
+
 	cout << "Converted " << count << " vertices to nc cluster." << endl;
 	cout << "The current number of clusters is " << nc << " and imbalance is "
 			<< c.getImbalance().getValue() << endl;
 	cout << "Finding the best cluster to move vertex " << v << " to..." << endl;
-	*/
+
 
 	// Array that stores the sum of edge weights between vertex i and all clusters
 	std::vector<double> h_VertexClusterPosSum(n * (nc + 1));
@@ -105,12 +106,12 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 		// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
 		// only calculates the cost of inserting vertex i into cluster k2
 		// vertex i is in no cluster
-		/*
-		 * Na inserção em cluster novo, contar apenas as relações externas entre o vértice i e os vértices
-		 * que estão sem cluster. Não incluir as relações internas quando k = nc.
-		 * Quando o vértice i for inserido em cluster existente, contar as relações internas a k2 negativas,
-		 * bem como as relações externas a k2 positivas com i.
-		 */
+		//
+		// * Na inserção em cluster novo, contar apenas as relações externas entre o vértice i e os vértices
+		// * que estão sem cluster. Não incluir as relações internas quando k = nc.
+		// * Quando o vértice i for inserido em cluster existente, contar as relações internas a k2 negativas,
+		// * bem como as relações externas a k2 positivas com i.
+		//
 		// updates thread idx / vertex i to cluster k2 imbalance result
 		d_destFunctionValue[k2] = c.getImbalance().getValue();
 		if(k2 < nc) {
@@ -135,12 +136,12 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 			d_destFunctionValue.begin(),
 			d_destFunctionValue.begin() + numberOfChunks);
 	std::vector<float>::iterator it;
-	/*
+
 	for (it = d_destFunctionValue.begin();
 			it != d_destFunctionValue.begin() + numberOfChunks; ++it) {
 		std::cout << (*it) << ' ';
 	}
-	std::cout << endl; */
+	std::cout << endl;
 
 	for (int e = 0; e < myCluster.size(); e++) {
 		if (myCluster[e] == nc) {
@@ -161,6 +162,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 		clusterNumber = Clustering::NEW_CLUSTER;
 	}
 	// printf("CUDA I(P) = %.2f : vertex %d goes to cluster %d\n", min_val, v, clusterNumber);
+	*/
 
 	// For each cluster ci...
 	nc = c.getNumberOfClusters();
@@ -191,9 +193,10 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 
 	// printf("CPU I(P) = %.2f : vertex %d goes to cluster %d\n", gainCalculation.gainValue, v, gainCalculation.clusterNumber);
 
+	/*
 	assert(min_val == gainCalculation.gainValue);
 	gainCalculation.gainValue = min_val;
-	gainCalculation.clusterNumber = clusterNumber;
+	gainCalculation.clusterNumber = clusterNumber; */
 
 	// cout << "gain(a) = " << min << endl;
 	return gainCalculation;

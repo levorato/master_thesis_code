@@ -223,6 +223,7 @@ using namespace std;
 		uint nc = old_ncArray[0];
 		uint new_nc = ncArray[0];
 
+		/*  THIS PEACE OF CODE IS NEEEDED ONLY WHEN USING THE CUDA CONSTRUCTIVE KERNEL - DISABLED
 		if(new_nc > nc) {  // vertex i is being moved to a new cluster
 			// move a fileira correspondente ao cluster k = nc na matriz de soma, shiftando os dados para a direita (nc + 1)
 			for(int v = 0; v < n; v++) {
@@ -234,7 +235,7 @@ using namespace std;
 				vertexClusterPosSumArray[(nc) * n + v] = 0.0;
 				vertexClusterNegSumArray[(nc) * n + v] = 0.0;
 			}
-		}
+		}*/
 
 		// in/out-edges of vertex i
 		int offset = offsetArray[i];
@@ -573,7 +574,7 @@ using namespace std;
 				ulong destCluster = resultIdx / n;
 				ulong bestSrcVertex = resultIdx % n;
 				ulong sourceCluster = d_mycluster[bestSrcVertex];
-				// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, bestImbalance);
+				// printf("Idx = %d: The best src vertex is %d to cluster %d (nc = %d) with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, h_nc[0], bestImbalance);
 				if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
 				updateClustering1opt<<< 1, 1 >>>(bestSrcVertex, destCluster, bestImbalance, clusterArray, funcArray, n, ncArray);
 				thrust::host_vector<uint> h_old_nc(1);
@@ -587,7 +588,7 @@ using namespace std;
 				// CASO ESPECIAL 1 (um novo cluster k2 foi criado)
 				if(h_nc[0] > h_old_nc[0]) {
 					// acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
-					// BOOST_LOG_TRIVIAL(debug) << "New cluster. Growing vectors." << endl;
+					// printf("New cluster. Growing vectors.\n");
 					d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
 					d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
 					vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );

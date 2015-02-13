@@ -178,8 +178,9 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			// medicao de tempo do CC
 			timer.start();
 			start_time = timer.elapsed();
+			/*
 			CUDAImbalanceGainFunction f(g.get());
-			CUDAConstructClustering CUDAConstruct(&f, seed);
+			CUDAConstructClustering CUDAConstruct(&f, seed); */
 
 			if(resolutionStrategy == GRASP) {
 				//   G R A S P
