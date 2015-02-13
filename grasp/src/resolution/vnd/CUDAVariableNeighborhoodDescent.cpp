@@ -234,11 +234,6 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 		// BOOST_LOG_TRIVIAL(info) << "Number of clusters is " << nc;
 		// cout << "Number of clusters is " << nc << endl;
 		/*
-		for(int i = 0; i < n; i++) {
-			cout << h_mycluster[i] << " ";
-		}
-		cout << endl;
-		*/
 		Clustering newClustering(Cc);
 		assert(sourceVertexList.size() == destinationClusterList.size());
 		for(int x = 0; x < sourceVertexList.size(); x++) {
@@ -278,6 +273,14 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
                 BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
                                 << newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
 
+		cBest = newClustering; */
+
+		// recreates clustering object based on cluster array
+		ClusterArray cArray;
+		for(int x = 0; x < h_mycluster.size(); x++) {
+			cArray.push_back(h_mycluster[x]);
+		}
+		Clustering newClustering(cArray, *g, problem);
 		cBest = newClustering;
 	} else {
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. No improvement.";
