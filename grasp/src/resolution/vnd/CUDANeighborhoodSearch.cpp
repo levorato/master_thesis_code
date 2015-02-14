@@ -156,6 +156,8 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	thrust::host_vector<int> h_dest(2 * m);  // edge destination (vertex j)
 	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
 	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
+	// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
+	thrust::host_vector<uint> h_neighbor_cluster(n * (nc+1), 0);
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
@@ -168,10 +170,13 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
+			if(myCluster[i] != myCluster[j]) {  // different cluster
+				h_neighbor_cluster[i+myCluster[j]*n] = 1;
+			}
 			if(weight > 0) {
-				h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
-				h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+				h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
 			}
 		}
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
@@ -181,10 +186,13 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
+			if(myCluster[i] != myCluster[j]) {  // different cluster
+				h_neighbor_cluster[i+myCluster[j]*n] = 1;
+			}
 			if(weight > 0) {
-					h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+					h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
-					h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
+					h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
 			}
 		}
 		h_numedges[i] = count;
@@ -218,7 +226,7 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	int l = 1;
 	runVNDKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m, threadsCount, nc,
 			numberOfChunks, firstImprovement, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum,
-			sourceVertexList, destinationClusterList, bestImbalance, timeSpentSoFar, l);
+			h_neighbor_cluster, sourceVertexList, destinationClusterList, bestImbalance, timeSpentSoFar, l);
 	uint bestSrcVertex = sourceVertexList[0];
 	uint bestDestCluster = destinationClusterList[0];
 

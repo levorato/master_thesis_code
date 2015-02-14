@@ -32,8 +32,8 @@ using namespace clusteringgraph;
 				thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
 				ulong n, ulong m, ushort threadsCount, ulong& nc, ulong numberOfChunks, bool firstImprovement,
 				thrust::host_vector<uint>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
-				thrust::host_vector<float>& h_VertexClusterNegSum, std::vector<uint>& sourceVertexList,
-				std::vector<uint>& destinationClusterList,
+				thrust::host_vector<float>& h_VertexClusterNegSum, thrust::host_vector<uint> &h_neighbor_cluster,
+				std::vector<uint>& sourceVertexList, std::vector<uint>& destinationClusterList,
 				float& destFunctionValue, const long& timeSpentSoFar, const unsigned int& l);
 
 	extern "C" bool run2optSearchKernel(thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,

@@ -23,6 +23,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/unordered_set.hpp>
 #include "include/CUDASearch.h"
 #include "util/include/RandomUtil.h"
 #include <limits>
@@ -96,6 +97,8 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	thrust::host_vector<int> h_dest(2 * m);  // edge destination (vertex j)
 	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
 	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
+	// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
+	thrust::host_vector<uint> h_neighbor_cluster(n * (nc+1), 0);
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
@@ -108,6 +111,9 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
+			if(myCluster[i] != myCluster[j]) {  // different cluster
+				h_neighbor_cluster[i+myCluster[j]*n] = 1;
+			}
 			if(weight > 0) {
 				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
@@ -121,6 +127,9 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
+			if(myCluster[i] != myCluster[j]) {  // different cluster
+				h_neighbor_cluster[i+myCluster[j]*n] = 1;
+			}
 			if(weight > 0) {
 					h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
@@ -158,7 +167,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	int l = 1;
 	runVNDKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m, threadsCount, nc,
 			numberOfChunks, firstImprovementOnOneNeig, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum,
-			sourceVertexList, destinationClusterList, bestImbalance, timeSpentSoFar, l);
+			h_neighbor_cluster, sourceVertexList, destinationClusterList, bestImbalance, timeSpentSoFar, l);
 
 	// validate arrays calculation
 /*
