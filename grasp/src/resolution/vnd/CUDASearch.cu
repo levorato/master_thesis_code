@@ -624,15 +624,16 @@ using namespace boost;
 					vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 					isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 				}
-
+				/*
 				updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(long)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
 						vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
-				/*
+				*/
 				blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-				d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
+				d_neighbor_cluster = thrust::device_vector<uint>(n * (h_nc[0]+1), 0);
+				uint* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 				isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 				updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
-					offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray); */
+					offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
 				checkCudaErrors(cudaDeviceSynchronize());
 				// CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
 				// h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
