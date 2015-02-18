@@ -13,6 +13,8 @@
 #include "../util/include/MPIMessage.h"
 #include "../util/include/RandomUtil.h"
 #include <boost/numeric/ublas/matrix.hpp>
+
+#define EPS 10e-6
 using namespace boost::numeric::ublas;
 
 using namespace boost::mpi;
@@ -424,12 +426,174 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 	for(int i = 0; i < n; i++) {  // inserts nc (aka new cluster) into the list of cluster neighbors of each vertex
 		myNeighborClusterList[i].insert(nc);
 	}
+
+	// Array that stores the sum of edge weights between vertex i and all clusters
+	std::vector<float> h_VertexClusterPosSum(n * (nc + 1));
+	std::vector<float> h_VertexClusterNegSum(n * (nc + 1));
+	std::vector<int> isNeighborClusterArray(n * (nc + 1));
+	for (int i = 0; i < n * (nc + 1); i++) {
+		h_VertexClusterPosSum[i] = 0.0;
+		h_VertexClusterNegSum[i] = 0.0;
+		isNeighborClusterArray[i] = 0;
+	}
+	// For each vertex, creates a list of in and out edges
+	for (int edge = 0, i = 0; i < n; i++) {  // For each vertex i
+		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
+		int count = 0;
+		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) { // out edges of i
+			double weight = ((Edge*) f->get_property())->weight;
+			int j = target(*f, g->graph);
+			count++;
+			edge++;
+			if(myCluster[i] != myCluster[j]){
+				isNeighborClusterArray[myCluster[j] * n + i] = 1;
+				isNeighborClusterArray[myCluster[i] * n + j] = 1;
+			}
+			if (weight > 0) {
+				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
+			} else {
+				h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
+			}
+		}
+		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
+		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) { // in edges of i
+			double weight = ((Edge*) f2->get_property())->weight;
+			int j = source(*f2, g->graph);
+			count++;
+			edge++;
+			if(myCluster[i] != myCluster[j]){
+				isNeighborClusterArray[myCluster[j] * n + i] = 1;
+				isNeighborClusterArray[myCluster[i] * n + j] = 1;
+			}
+			if (weight > 0) {
+				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
+			} else {
+				h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
+			}
+		}
+	}
+	for(int v = 0; v < n; v++) {
+		isNeighborClusterArray[nc * n + v] = 1;
+	}
+
+	std::vector<float> d_destFunctionValue;
+	// result / destination vector
+	int numberOfChunks = n * (nc + 1);
+	d_destFunctionValue.resize(numberOfChunks, clustering->getImbalance().getValue());
+
+	for (unsigned long i = randomUtil.next(initialSearchIndex, finalSearchIndex), cont2 = 0; cont2 < numberOfVerticesInInterval; cont2++) {
+		// vertex i is in cluster(k1)
+		ulong k1 = myCluster[i];
+		for (int k2 = 0; k2 <= nc; k2++) {
+		// for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
+		// cluster(k2)
+		// unsigned long k2 = *itr;
+		ulong idx = k2 * n + i;
+		if(k2 != k1 and (isNeighborClusterArray[i+k2*n])) {
+			// executes local search for vertex i, moving it to cluster k2
+			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
+			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
+			// only calculates the cost of inserting vertex i into cluster k2
+			// vertex i is in no cluster
+			//
+			// * Na inserção em cluster novo, contar apenas as relações externas entre o vértice i e os vértices
+			// * que estão sem cluster. Não incluir as relações internas quando k = nc.
+			// * Quando o vértice i for inserido em cluster existente, contar as relações internas a k2 negativas,
+			// * bem como as relações externas a k2 positivas com i.
+			//
+			// updates thread idx / vertex i to cluster k2 imbalance result
+			d_destFunctionValue[idx] = clustering->getImbalance().getValue();
+
+			float positiveSum = +(- h_VertexClusterPosSum[i+k2*n]) - (- h_VertexClusterPosSum[i+k1*n]);
+			float negativeSum = -h_VertexClusterNegSum[i+k1*n] + h_VertexClusterNegSum[i+k2*n];
+
+			// numberOfTestedCombinations++;
+			// updates thread idx / vertex i from k1 to k2 imbalance result
+			d_destFunctionValue[idx] += positiveSum + negativeSum;
+			// printf("destFunctionValue[%d] = %.2f\n", k2, d_destFunctionValue[k2]);
+		} else {
+			d_destFunctionValue[idx] = clustering->getImbalance().getValue();
+		}
+		}
+		// increment rule
+		i++;
+		if(i > finalSearchIndex) {
+			i = initialSearchIndex;
+		}
+	}
+
+	// cout << "Begin reduce / post-process...\n";
+	std::vector<float>::iterator iter = std::min_element(
+			d_destFunctionValue.begin(),
+			d_destFunctionValue.begin() + numberOfChunks);
+
+
+	float min_val = *iter;
+	// determines the position of the best improvement found in the result vector
+	uint position = iter - d_destFunctionValue.begin();
+	int resultIdx = position;
+	printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destcluster, destFunctionValue);
+	if (min_val < 0) {
+		printf("WARNING: I(P) < 0 !!!\n");
+	}
+
+	float bestImbalance = clustering->getImbalance().getValue();
+	Clustering newClustering1(*clustering);
+	if((min_val - bestImbalance < EPS) && (fabs(min_val - bestImbalance) > EPS)) {  // (min_val < bestImbalance) => improvement in imbalance
+		// As there may be more than one combination with a better imbalance,
+		// chooses one better combination at random.
+		// The algorithm starts the search with a random initial index.
+		uint randomInitialIndex = util::RandomUtil::next(0, numberOfChunks - 1);
+		// printf("Best imbalance is %.2f and random index is %d\n", bestImbalance, randomInitialIndex);
+
+		uint resultIndex = -1;
+		float resultValue = -1.0;
+		for(uint count = 0, i = randomInitialIndex; count < d_destFunctionValue.size(); i = (i + 1) % d_destFunctionValue.size(), count++) {
+			if((d_destFunctionValue[i] - bestImbalance < EPS) && (fabs(d_destFunctionValue[i] - bestImbalance) > EPS)){   // (destImbArray[i] < bestImbalance)
+				resultIndex = i;
+				resultValue = d_destFunctionValue[i];
+				break;
+			}
+		}
+		// printf("Result index is %d and result value is %.2f\n", h_result_index[0], h_result_value[0]);
+
+		// determines the position of the best improvement found in the result vector - DISABLED
+		//uint position = iter - d_destFunctionValue.begin();
+		//printf("Original position would be %d and original imbalance would be %.2f\n", position, min_val);
+		// int resultIdx = position;
+		bestImbalance = resultValue;
+		ulong destCluster = resultIndex / n;
+		ulong bestSrcVertex = resultIndex % n;
+		ulong sourceCluster = myCluster[bestSrcVertex];
+		// printf("Idx = %d: The best src vertex is %d to cluster %d (nc = %d) with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, h_nc[0], bestImbalance);
+		if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
+
+		// Reproduce the best clustering found using host data structures
+		int k1 = sourceCluster;
+		int k2 = destCluster;
+		bool newClusterK2 = (k2 == nc);
+		newClustering1.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
+		if(not newClusterK2) {  // existing cluster k2
+			if((newClustering1.getNumberOfClusters() < nc) && (k2 >= k1)) {
+				// cluster k1 has been removed
+				newClustering1.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
+			} else {
+				newClustering1.addNodeToCluster(*g, problem, bestSrcVertex, k2);
+			}
+		} else {  // new cluster k2
+			newClustering1.addCluster(*g, problem, bestSrcVertex);
+		}
+	}
+
+	// printf("CUDA I(P) = %.2f : vertex %d goes to cluster %d\n", min_val, v, clusterNumber);
+
+
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
 	numberOfTestedCombinations = 0;
 	int bestDestCluster = -1;
 	int bestSrcVertex = -1;
-	Imbalance bestImbalance = clustering->getImbalance();
+	Imbalance bestImbalance2 = clustering->getImbalance();
 	bool foundBetterSolution = false;
 	// for each vertex i, tries to move i to another cluster in myNeighborClusterList[i]
 	// For each node i in cluster(k1)
@@ -440,20 +604,20 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
 		// REMOVAL of vertex i from cluster k1 -> avoids recalculating
 		//   the same thing in the k2 (destination cluster) loop
-		double _negativeSumK1 = -vertexClusterNegSum[i*(nc+1) + k1];
+		double _negativeSumK1 = -vertexClusterNegSum[i + k1 * n];
 		bool timeLimitExceeded = false;
 		// Node i is moved from k1 to another existing cluster k2 != k1
 		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
 			MPI_IPROBE_RETURN(cBest)
 			// cluster(k2)
 			unsigned long k2 = *itr;
-			if(k2 != k1) {
+			//if(k2 != k1) {
 				// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
-				double negativeSum = _negativeSumK1 + vertexClusterNegSum[i*(nc+1) + k2];
-				double positiveSum = -(- vertexClusterPosSum[i*(nc+1) + k1]) + (-vertexClusterPosSum[i*(nc+1) + k2]);
+				double negativeSum = _negativeSumK1 + vertexClusterNegSum[i + k2 * n];
+				double positiveSum = -(- vertexClusterPosSum[i + k1 * n]) + (-vertexClusterPosSum[i + k2 * n]);
 				numberOfTestedCombinations++;
-				if(clustering->getImbalance().getValue() + positiveSum + negativeSum < bestImbalance.getValue()) {  // improvement in imbalance
-					bestImbalance = Imbalance(positiveSum + clustering->getImbalance().getPositiveValue(), negativeSum + clustering->getImbalance().getNegativeValue());
+				if(clustering->getImbalance().getValue() + positiveSum + negativeSum < bestImbalance2.getValue()) {  // improvement in imbalance
+					bestImbalance2 = Imbalance(positiveSum + clustering->getImbalance().getPositiveValue(), negativeSum + clustering->getImbalance().getNegativeValue());
 					bestDestCluster = k2;
 					bestSrcVertex = i;
 					foundBetterSolution = true;
@@ -470,7 +634,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 					break;
 				}
                         	timer.resume();
-			}
+			//}
 		}
 		if((firstImprovement and foundBetterSolution) or timeLimitExceeded) {
 			break;
@@ -482,10 +646,11 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		}
 	}
 	// Reproduce the best clustering found using host data structures
+	int new_nc = nc;
+	Clustering newClustering(*clustering);
 	if(bestSrcVertex >= 0) {
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
 		//			<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance.getValue() << " " << bestImbalance.getPositiveValue() << " " << bestImbalance.getNegativeValue();
-		Clustering newClustering(*clustering);
 		int k1 = myCluster[bestSrcVertex];
 		int k2 = bestDestCluster;
 		bool newClusterK2 = (k2 == nc);
@@ -501,16 +666,16 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 			newClustering.addCluster(*g, problem, bestSrcVertex);
 		}
 		cBest = newClustering;
-		/*
-		if(newClustering.getImbalance().getValue() != bestImbalance.getValue()) {
-			BOOST_LOG_TRIVIAL(error) << "New and old objective function values DO NOT MATCH! Correct = " << newClustering.getImbalance().getValue()
-					<< " vs obtained = " << bestImbalance.getValue();
-		}*/
-		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
-		// 		<< newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
 	} else {
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Validation. No improvement.";
 	}
+
+	// Compares the best clustering obtained by both methods (1 and 2)
+	BOOST_LOG_TRIVIAL(debug) << "CUDA: " << newClustering1.getImbalance().getValue() <<
+			"CPU: " << newClustering.getImbalance().getValue() <<
+			" Equals = " << (newClustering1.getImbalance().getValue() == newClustering.getImbalance().getValue()) << endl;
+	cBest = newClustering1;
+
 	// returns the best combination found in 1-opt
 	return cBest;
 }
