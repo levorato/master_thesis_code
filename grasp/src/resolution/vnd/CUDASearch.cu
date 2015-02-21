@@ -180,14 +180,13 @@ using namespace boost;
 	/// CUDA Kernel to update the vertex-cluster edge-weight sum arrays after a change in the clustering.
 	__global__ void updateVertexClusterSumArrays(const float* weightArray, const int* destArray, const int* numArray,
 			const int* offsetArray, const ulong* clusterArray, float* vertexClusterPosSumArray, float* vertexClusterNegSumArray, 
-			uint* isNeighborClusterArray, int n, uint* ncArray) {
+			int* isNeighborClusterArray, int n, uint* ncArray) {
 		
-		// TODO: fazer cada thread da GPU processar uma aresta do grafo
 		int i = blockDim.x*blockIdx.x + threadIdx.x;
 		uint nc = ncArray[0];
 		// shared memory
-		extern __shared__ long sc[];       // n longs
-		long *s_cluster = sc;              // n longs
+		extern __shared__ int sc[];       // n longs
+		int *s_cluster = sc;              // n longs
 		
 		for(ulong j = 0; j < n; j++) {
 			s_cluster[j] = clusterArray[j];
@@ -198,6 +197,7 @@ using namespace boost;
             for(int k = 0; k <= nc; k++) {
             	vertexClusterPosSumArray[k * n + i] = 0.0;
             	vertexClusterNegSumArray[k * n + i] = 0.0;
+            	isNeighborClusterArray[k * n + i] = 0;
             }
             // in/out-edges of vertex i
             int offset = offsetArray[i];
@@ -208,8 +208,8 @@ using namespace boost;
 				float weight = weightArray[edgenum];
 				if(s_cluster[j] >= 0) {
 					if(s_cluster[i] != s_cluster[j]) {  // different cluster
-						isNeighborClusterArray[s_cluster[j] * n + i] = 1;  // vertex i now has external connection to cluster kj
-						// isNeighborClusterArray[s_cluster[i] * n + j] = 1;  // vertex j now has external connection to cluster ki
+						isNeighborClusterArray[s_cluster[j] * n + i]++;  // vertex i now has external connection to cluster kj
+						isNeighborClusterArray[s_cluster[i] * n + j]++;  // vertex j now has external connection to cluster ki
 					}
 					if(weight > 0) {
 						vertexClusterPosSumArray[s_cluster[j] * n + i] += fabs(weight);
@@ -226,12 +226,12 @@ using namespace boost;
 	/// CUDA Kernel to update the vertex-cluster edge-weight sum arrays after a change in the clustering.
 	__global__ void updateVertexClusterSumArraysDelta(const float* weightArray, const int* destArray, const int* numArray,
 			const int* offsetArray, const ulong* clusterArray, float* vertexClusterPosSumArray, float* vertexClusterNegSumArray, 
-			uint* isNeighborClusterArray, int n, uint* old_ncArray, uint* ncArray, int i, int k1, int k2) {  // vertex i is being moved from cluster k1 to k2
+			int* isNeighborClusterArray, int n, uint* old_ncArray, uint* ncArray, int i, int k1, int k2) {  // vertex i is being moved from cluster k1 to k2
 		uint nc = old_ncArray[0];
 		uint new_nc = ncArray[0];
 		// shared memory
-		extern __shared__ long sc[];       // n longs
-		long *s_cluster = sc;              // n longs
+		extern __shared__ int sc[];       // n longs
+		int *s_cluster = sc;              // n longs
 
 		for(ulong j = 0; j < n; j++) {
 			s_cluster[j] = clusterArray[j];
@@ -263,14 +263,15 @@ using namespace boost;
 		ulong count = offset + numedges;
 		// isNeighborClusterArray[i+k1*n] = 1;  // vertex i now has external connection to cluster k1
 		// for(ulong k = 0; k < nc; k++) {
-		// 	isNeighborClusterArray[i + k * n] = 0;
+		//  	isNeighborClusterArray[i + k * n] = 0;
 		// }
 		for (ulong edgenum = offset; edgenum < count; edgenum++) {
 			int j = destArray[edgenum];
 			float weight = weightArray[edgenum];
+			isNeighborClusterArray[j + k1 * n] -= 2;
 			if(s_cluster[j] != k2) {
-				isNeighborClusterArray[i + s_cluster[j] * n] = 1;  // vertex i now has external connection to cluster kj
-				isNeighborClusterArray[j + k2 * n] = 1;  // vertex j now has external connection to cluster k2
+				isNeighborClusterArray[i + s_cluster[j] * n]++;  // vertex i now has external connection to cluster kj
+				isNeighborClusterArray[j + k2 * n]++;  // vertex j now has external connection to cluster k2
 			} else {  // cluster[i] == cluster[j] == k2
 				isNeighborClusterArray[i + s_cluster[j] * n] = 0;  // vertex i now has NO external connections to cluster kj
 				isNeighborClusterArray[j + k2 * n] = 0;  // vertex j now has NO external connections to cluster k2
@@ -299,7 +300,7 @@ using namespace boost;
 	/// CUDA kernel for simple 1-opt search.
 	__global__ void simpleSearchKernel(const ulong* clusterArray, const float* funcArray, uint n, uint m,
 		float* destImbArray, ulong nc, ulong numberOfChunks, float* positiveSumArray,
-		float* negativeSumArray, uint* isNeighborClusterArray) {
+		float* negativeSumArray, int* isNeighborClusterArray) {
 
 		ulong idx = blockIdx.x * blockDim.x + threadIdx.x;
 		ulong i  = idx % n;  // kernel executes local search for vertex i
@@ -307,7 +308,7 @@ using namespace boost;
 		
 		if(i < n && k2 <= nc) {
 			ulong k1 = clusterArray[i];
-			if( (k1 != k2) && (isNeighborClusterArray[i+k2*n] == 1) ) {
+			if( (k1 != k2) && (isNeighborClusterArray[i+k2*n] > 0) ) {
 				// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
 				// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
 						// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
@@ -554,11 +555,11 @@ using namespace boost;
 		float bestImbalance = h_functionValue[0];
 		sourceVertexList.clear();
 		destinationClusterList.clear();
-		thrust::device_vector<uint> d_neighbor_cluster(n * (h_nc[0]+1), 0);
-		uint* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+		thrust::device_vector<int> d_neighbor_cluster(n * (h_nc[0]+1), 0);
+		int* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 
 		int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-		updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
+		updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray,
 			offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
 		checkCudaErrors(cudaDeviceSynchronize());
 		
@@ -574,31 +575,32 @@ using namespace boost;
 			blocksPerGrid = ((n * (h_nc[0] + 1)) + threadsCount - 1) / threadsCount;
 			
 			// (r == 1)
-			// printf("CUDA kernel launch with %d blocks of %d threads, shmem = %d\n", blocksPerGrid, threadsCount, threadsCount*2*h_nc[0]*sizeof(float));
+			// printf("CUDA kernel launch with %d blocks of %d threads, shmem = 0\n", blocksPerGrid, threadsCount);
 			simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(clusterArray, funcArray, uint(n), uint(m), destImbArray,
 					ulong(h_nc[0]), ulong(numberOfChunks), vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray);
 			checkCudaErrors(cudaDeviceSynchronize());
 			// printf("Begin reduce...\n");
 			thrust::device_vector<float>::iterator iter = thrust::min_element(d_destFunctionValue.begin(), d_destFunctionValue.begin()+numberOfChunks);
 			float min_val = *iter;
+			// printf("min element is %.2f\n", min_val);
 
 			if((min_val - bestImbalance < EPS) && (fabs(min_val - bestImbalance) > EPS)) {  // (min_val < bestImbalance) => improvement in imbalance
 				// As there may be more than one combination with a better imbalance,
 				// chooses one better combination at random.
 				// The algorithm starts the search with a random initial index.
-				uint randomInitialIndex = util::RandomUtil::next(0, numberOfChunks - 1);
+				// uint randomInitialIndex = util::RandomUtil::next(0, numberOfChunks - 1);
 				// printf("Best imbalance is %.2f and random index is %d\n", bestImbalance, randomInitialIndex);
-				shuffleBestResult1opt<<< 1,1 >>>(destImbArray, numberOfChunks, bestImbalance, randomInitialIndex, resultIndexArray, resultValueArray);
-				thrust::host_vector<uint> h_result_index = d_result_index;
-				thrust::host_vector<float> h_result_value = d_result_value;
+				// shuffleBestResult1opt<<< 1,1 >>>(destImbArray, numberOfChunks, bestImbalance, randomInitialIndex, resultIndexArray, resultValueArray);
+				// thrust::host_vector<uint> h_result_index = d_result_index;
+				// thrust::host_vector<float> h_result_value = d_result_value;
 				// printf("Result index is %d and result value is %.2f\n", h_result_index[0], h_result_value[0]);
 
 				// determines the position of the best improvement found in the result vector - DISABLED
-				//uint position = iter - d_destFunctionValue.begin();
+				uint position = iter - d_destFunctionValue.begin();
 				//printf("Original position would be %d and original imbalance would be %.2f\n", position, min_val);
-				// int resultIdx = position;
-				uint resultIdx = h_result_index[0];
-				bestImbalance = h_result_value[0];
+				int resultIdx = position;
+				bestImbalance = *iter;
+				// bestImbalance = h_result_value[0];
 				ulong destCluster = resultIdx / n;
 				ulong bestSrcVertex = resultIdx % n;
 				ulong sourceCluster = d_mycluster[bestSrcVertex];
@@ -624,16 +626,17 @@ using namespace boost;
 					vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 					isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 				}
-				/*
-				updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(long)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
+
+				updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
 						vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
-				*/
+				/*
 				blocksPerGrid = (n + threadsCount - 1) / threadsCount;
 				d_neighbor_cluster = thrust::device_vector<uint>(n * (h_nc[0]+1), 0);
 				uint* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 				isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 				updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
 					offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
+				*/
 				checkCudaErrors(cudaDeviceSynchronize());
 				// CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
 				// h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
@@ -749,7 +752,7 @@ using namespace boost;
 		thrust::device_vector<uint> d_nc(1);
 		thrust::device_vector<uint> d_old_nc(1);
 		thrust::device_vector<float> d_destFunctionValue(1);
-		thrust::device_vector<uint> d_neighbor_cluster;
+		thrust::device_vector<int> d_neighbor_cluster;
 		
 		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
 		int* destArray = thrust::raw_pointer_cast( &d_dest[0] );
@@ -762,7 +765,7 @@ using namespace boost;
 		float* vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 		uint* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 		uint* old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
-		uint* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+		int* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 		
 		int i = 0, totalIter = 0;
 		while(i <= iter || iter < 0) {
@@ -968,7 +971,7 @@ using namespace boost;
 		thrust::device_vector<uint> d_nc(1);
 		thrust::device_vector<uint> d_old_nc(1);
 		thrust::device_vector<float> d_destFunctionValue(1);
-		thrust::device_vector<uint> d_neighbor_cluster;
+		thrust::device_vector<int> d_neighbor_cluster;
 		
 		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
 		int* destArray = thrust::raw_pointer_cast( &d_dest[0] );
@@ -981,7 +984,7 @@ using namespace boost;
 		float* vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 		uint* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 		uint* old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
-		uint* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] ); // TODO calcular valor aqui
+		int* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] ); // TODO calcular valor aqui
 		
 		VertexSet lc(randomSeed, n); // L(Cc) = V(G)
 		thrust::host_vector<ulong> h_nc(1);
