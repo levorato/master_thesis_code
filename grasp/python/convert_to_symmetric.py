@@ -64,31 +64,93 @@ def natsorted(l):
     temp = [(alphanum_key(x), x) for x in l]
     temp.sort()
 
-def process_edges(matrix, x, n, output):
-          edges = ""
-          size = n / double(4)
-          start = x * size
-          end = (x + 1) * size - 1
-          print "Processing from " + str(start) + " to " + str(end)
+def process_edges(graphfile, x, n, np):
+
+	  # reads graph file, filling the adjecency matrix
+	  print 'Reading graph file: {0}'.format(str(graphfile))
+	  edgecount = 0
+	  with open(graphfile, 'rb') as csvfile:
+	     lines = [line.strip() for line in open(graphfile, 'rb')]
+	     if str(lines[0]).find("people") >= 0:  # xpress mrel format
+	         #print "Detected xpress mrel format"
+	         line = str(lines[0])
+	         N = int(line[line.find(':')+1:].strip())
+	         #print "n = {0}".format(str(N))
+	         # uses scipy's dictionary of keys sparse matrix (http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.dok_matrix.html#scipy.sparse.dok_matrix)
+	         matrix = dok_matrix((N, N))   # original directed graph from file
+	         i = 0
+	         while str(lines[i]).find("Mrel") < 0:
+	            i += 1
+	         line = str(lines[i])
+	         line = line[line.find('[')+1:].strip()
+	         i = int(line[line.find('(')+1:line.find(',')]) - 1
+	         j = int(line[line.find(',')+1:line.find(')')]) - 1
+	         w = float(line[line.find(')')+1:])
+	         matrix[i,j] = w
+	         #print "{0} {1} {2}".format(i, j, w)
+	         for line in lines:
+	            line = str(line)
+	            if len(line) == 0:
+	                continue
+	            if not line[0] == '(':
+	                continue
+	            #print line
+	            i = int(line[line.find('(')+1:line.find(',')]) - 1
+	            j = int(line[line.find(',')+1:line.find(')')]) - 1
+	            w = float(line[line.find(')')+1:])
+	            matrix[i,j] = w
+	            i += 1
+	            edgecount += 1
+	     else:  # traditional graph edge tabulated format
+	         dialect = csv.Sniffer().sniff(csvfile.read(1024), delimiters=" \t")
+	         csvfile.seek(0)
+	         r = csv.reader(csvfile, dialect)
+	         line1=r.next()
+	         #print "Detected traditional graph edge tabulated format"
+	         values = [col for col in line1]
+	         if(values[0].find(' ') > 0):
+	            N = int(values[0][:values[0].find(' ')])
+	         else:
+	            N = int(values[0])
+	         matrix = dok_matrix((N, N))   # original directed graph from file
+	         for line in r:
+	            i = int(line[0])
+	            j = int(line[1])
+	            w = float(line[2])
+	            matrix[i,j] = w
+	            edgecount += 1
+
+	  #print "Successfully read graph file. Converting to symmetric..."
+
+          edges = []
+          size = n / np
+          start = int(x * size)
+          end = int((x + 1) * size - 1)
+          # print "Processing graph from n = " + str(start) + " to n = " + str(end)
+          
           for i in xrange(start, end):
-              print "i = " + str(i)
-              for j in xrange(N):
+              if x == 0:
+                  print "i = " + str(i)
+              for j in xrange(n):
+                  # print "j = " + str(j)
                   if (i < j):
                       mij = matrix[i,j]
                       mji = matrix[j,i]
                       mult = mij * mji
                       if (mult > 0):  # opposite edges with the same sign become one undirected edge
-                          edges.append( i + '\t' + j + '\t' + str(mij + mji) + '\n' )
+                          edges.append( str(i) + '\t' + str(j) + '\t' + str(mij + mji) )
                       elif (mult < 0):  # opposite edges with different signs remain as 2 diff. edges
-                          edges.append( i + '\t' + j + '\t' + str(mij) + '\n' )
-                          edges.append( j + '\t' + i + '\t' + str(mji) + '\n' )
+                          edges.append( str(i) + '\t' + str(j) + '\t' + str(mij) )
+                          edges.append( str(j) + '\t' + str(i) + '\t' + str(mji) )
                       else:  # mult = 0
-                          edges.append( i + '\t' + j + '\t' + str(mij + mji) + '\n' )
+                          edges.append( str(i) + '\t' + str(j) + '\t' + str(mij + mji) )
 
-          output.put(edges)
+          return edges
+
 
 def main(argv):
 
+   global matrix
    folder = ''
    filter = '*'
    try:
@@ -126,75 +188,91 @@ def main(argv):
          print 'Found {0} files\n'.format(str(count))
          
          while count >= 0:
-          print "Processing file " + file_list[count] + "\n"
-          prefix = file_list[count]
-          graphfile = prefix
-          # reads graph file, filling the adjecency matrix
-          print 'Reading graph file: {0}'.format(str(graphfile))
-          with open(graphfile, 'rb') as csvfile:
-             lines = [line.strip() for line in open(graphfile, 'rb')]
-             if str(lines[0]).find("people") >= 0:  # xpress mrel format
-                 print "Detected xpress mrel format"
-                 line = str(lines[0])
-                 N = int(line[line.find(':')+1:].strip())
-                 print "n = {0}".format(str(N))
-                 # uses scipy's dictionary of keys sparse matrix (http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.dok_matrix.html#scipy.sparse.dok_matrix)
-                 matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
-                 i = 0
-                 while str(lines[i]).find("Mrel") < 0:
-                    i += 1
-                 line = str(lines[i])
-                 line = line[line.find('[')+1:].strip()
-                 i = int(line[line.find('(')+1:line.find(',')]) - 1
-                 j = int(line[line.find(',')+1:line.find(')')]) - 1
-                 w = float(line[line.find(')')+1:])
-                 matrix[i,j] = w
-                 #print "{0} {1} {2}".format(i, j, w)
-                 for line in lines:
-                    line = str(line)
-                    if len(line) == 0:
-                        continue
-                    if not line[0] == '(':
-                        continue
-                    #print line
-                    i = int(line[line.find('(')+1:line.find(',')]) - 1
-                    j = int(line[line.find(',')+1:line.find(')')]) - 1
-                    w = float(line[line.find(')')+1:])
-                    matrix[i,j] = w
-                    i += 1
-             else:  # traditional graph edge tabulated format
-                 dialect = csv.Sniffer().sniff(csvfile.read(1024), delimiters=" \t")
-                 csvfile.seek(0)
-                 r = csv.reader(csvfile, dialect)
-                 line1=r.next()
-                 print "Detected traditional graph edge tabulated format"
-                 values = [col for col in line1]
-                 if(values[0].find(' ') > 0):
-                    N = int(values[0][:values[0].find(' ')])
-                 else:
-                    N = int(values[0])
-                 matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
-                 for line in r:
-                    i = int(line[0])
-                    j = int(line[1])
-                    w = float(line[2])
-                    matrix[i,j] = w
+          if os.path.isfile(file_list[count]):
+		  print "Processing file " + file_list[count] + "\n"
+		  prefix = file_list[count]
+		  graphfile = prefix
 
-          print "Successfully read graph file. Converting to symmetric...\n"
-          # converts the graph from directed to undirected version
-          # Setup a list of processes that we want to run
-          processes = [mp.Process(target=process_edges, args=(matrix, x, N, output)) for x in range(4)]
-          # results = [pool.apply(process_edges, args=(matrix,x,output)) for x in range(1,N)]
-          # Get process results from the output queue
-          results = [output.get() for p in processes]
-          
-          print "Graph converted. Generating output file...\n" + str(len(results))
-          # writes all edges to output graph file
-          output_file = open(graphfile[:graphfile.rfind('.')] + "-sym.g", 'w')
-          try:
-             content = output_file.write('Test')
-          finally:
-              content_file.close()
+		  # reads graph file, filling the adjecency matrix
+		  print 'Reading graph file: {0}'.format(str(graphfile))
+		  edgecount = 0
+		  with open(graphfile, 'rb') as csvfile:
+		     lines = [line.strip() for line in open(graphfile, 'rb')]
+		     if str(lines[0]).find("people") >= 0:  # xpress mrel format
+		         print "Detected xpress mrel format"
+		         line = str(lines[0])
+		         N = int(line[line.find(':')+1:].strip())
+		         print "n = {0}".format(str(N))
+		         # uses scipy's dictionary of keys sparse matrix (http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.dok_matrix.html#scipy.sparse.dok_matrix)
+		         matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
+		         i = 0
+		         while str(lines[i]).find("Mrel") < 0:
+		            i += 1
+		         line = str(lines[i])
+		         line = line[line.find('[')+1:].strip()
+		         i = int(line[line.find('(')+1:line.find(',')]) - 1
+		         j = int(line[line.find(',')+1:line.find(')')]) - 1
+		         w = float(line[line.find(')')+1:])
+		         matrix[i,j] = w
+		         #print "{0} {1} {2}".format(i, j, w)
+		         for line in lines:
+		            line = str(line)
+		            if len(line) == 0:
+		                continue
+		            if not line[0] == '(':
+		                continue
+		            #print line
+		            i = int(line[line.find('(')+1:line.find(',')]) - 1
+		            j = int(line[line.find(',')+1:line.find(')')]) - 1
+		            w = float(line[line.find(')')+1:])
+		            matrix[i,j] = w
+		            i += 1
+		            edgecount += 1
+		     else:  # traditional graph edge tabulated format
+		         dialect = csv.Sniffer().sniff(csvfile.read(1024), delimiters=" \t")
+		         csvfile.seek(0)
+		         r = csv.reader(csvfile, dialect)
+		         line1=r.next()
+		         print "Detected traditional graph edge tabulated format"
+		         values = [col for col in line1]
+		         if(values[0].find(' ') > 0):
+		            N = int(values[0][:values[0].find(' ')])
+		         else:
+		            N = int(values[0])
+		         matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
+		         for line in r:
+		            i = int(line[0])
+		            j = int(line[1])
+		            w = float(line[2])
+		            matrix[i,j] = w
+		            edgecount += 1
+
+		  print "Successfully read graph file. Converting to symmetric..."
+
+
+		  # converts the graph from directed to undirected version
+		  # Setup a list of processes that we want to run
+		  print "Graph size is n = " + str(N)
+		  pool = mp.Pool(processes=4)
+		  results = [pool.apply_async(process_edges, args=(graphfile, x, N, 4.0)) for x in range(0,4)]
+		  # merge the results
+		  output = [p.get() for p in results]
+		  #map(output.extend, [p for p in results])
+
+		  destdir = graphfile[:graphfile.rfind('/')] + "/undirected"
+		  if not os.path.exists(destdir):
+		     os.makedirs(destdir)
+		  output_file = open(destdir + "/" + graphfile[graphfile.rfind('/')+1:], 'w')
+		  print "Graph converted. Generating output file..." + str(output_file)
+		  # writes all edges to output graph file
+		  try:
+		     # header
+		     output_file.write(str(N) + " " + str(edgecount) + "\r\n")
+		     # edges
+		     for elem in output:
+		        output_file.write(elem + "\r\n")
+		  finally:
+		      output_file.close()
                 
           count = count - 1
 	 # end process results
