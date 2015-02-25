@@ -63,6 +63,7 @@ def main(argv):
 
    folder = ''
    filter = ''
+
    threshold = float(90.0)  # percentual threshold for the quantity of relashionships
    try:
       opts, args = getopt.getopt(argv,"hi:o:",["folder=","filter=","instancespath="])
@@ -163,7 +164,10 @@ def main(argv):
                     w = float(line[2])
                     matrix[i,j] = w
 
-          print "Successfully read graph file. Converting to symmetric...\n"
+          print "Successfully read graph file."
+          smatrix = matrix
+          '''
+          print "Converting to symmetric...\n"
           # converts the graph from directed to undirected version
           smatrix = dok_matrix((N, N), dtype=np.float32)  # symmetric version of the directed graph
           for i in xrange(N):
@@ -181,7 +185,10 @@ def main(argv):
                       else:  # mult = 0
                           smatrix[i,j] = mij + mji
           
-          print "Graph converted. Reading SRCC results files...\n"
+          print "Graph converted."
+          '''
+
+          print "Reading SRCC results files..."
           # reads rcc results file, with cluster X node configuration
           content_file = open(file_list[count], 'r')
           cluster = [int(0) for x in xrange(N)]
@@ -255,6 +262,7 @@ def main(argv):
             if (PIntNegEdges > threshold and PExtNegEdges > threshold):
               InternalSubgroupHostility.append(str(c) + str(" (PercIntNegEdges = %.2f" % (PIntNegEdges)) + str(" and PercExtNegEdges = %.2f" % (PExtNegEdges)) + ")")
 
+          ''' DISABLED
           # the processing below is done over the DIRECTED version of the graph (matrix)
           # detects differential popularity in the directed graph
           # (from a different cluster to the current one)
@@ -282,7 +290,7 @@ def main(argv):
             # external pos : Differential popularity
             if (PExtPosEdges > threshold):
               DifferentialPopularity.append(str(c) + str(" PercExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
-          
+          '''
 
           print "\nProcessing mediation properties...\n"
           # Print results on display
