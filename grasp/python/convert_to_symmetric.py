@@ -143,7 +143,8 @@ def process_edges(graphfile, x, n, np):
                           edges.append( str(i) + '\t' + str(j) + '\t' + str(mij) )
                           edges.append( str(j) + '\t' + str(i) + '\t' + str(mji) )
                       else:  # mult = 0
-                          edges.append( str(i) + '\t' + str(j) + '\t' + str(mij + mji) )
+                          if (mij != 0 or mji != 0):  # avoids writing non-existing edge (weight = 0)
+                             edges.append( str(i) + '\t' + str(j) + '\t' + str(mij + mji) )
 
           return edges
 
@@ -153,19 +154,22 @@ def main(argv):
    global matrix
    folder = ''
    filter = '*'
+   np = 4
    try:
-      opts, args = getopt.getopt(argv,"hi:o:",["filter=","instancespath="])
+      opts, args = getopt.getopt(argv,"hi:o:",["filter=","instancespath=","np="])
    except getopt.GetoptError:
-      print 'convert_to_symmetric.py --filter <filter> --instancespath <instances_path>'
+      print 'convert_to_symmetric.py --filter <filter> --instancespath <instances_path> --np <number_of_processes>'
       sys.exit(2)
    for opt, arg in opts:
       if opt == '-h':
-         print 'convert_to_symmetric.py --filter <filter> --instancespath <instances_path>'
+         print 'convert_to_symmetric.py --filter <filter> --instancespath <instances_path> --np <number_of_processes>'
          sys.exit()
       if opt in ("-f", "--filter"):
          filter = arg
       if opt in ("-p", "--instancespath"):
          instances_path = arg
+      if opt in ("-np", "--np"):
+         np = int(arg)
    if(instances_path == ''):
       print 'Please specify the graph instances path'
       sys.exit()
@@ -178,6 +182,8 @@ def main(argv):
    for root, subFolders, files in os.walk(instances_path):
       # sort dirs and files
       subFolders.sort()
+      while len(subFolders) > 0:  # non-recursive folder traversal
+         subFolders.pop()
       files.sort()      
       print 'Found {0} files\n'.format(str(len(files)))
       print "Processing folder " + ''.join(root)
@@ -239,7 +245,7 @@ def main(argv):
 		            N = int(values[0][:values[0].find(' ')])
 		         else:
 		            N = int(values[0])
-		         matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
+		         matrix = dok_matrix((N, N))   # original directed graph from file
 		         for line in r:
 		            i = int(line[0])
 		            j = int(line[1])
@@ -253,8 +259,8 @@ def main(argv):
 		  # converts the graph from directed to undirected version
 		  # Setup a list of processes that we want to run
 		  print "Graph size is n = " + str(N)
-		  pool = mp.Pool(processes=4)
-		  results = [pool.apply_async(process_edges, args=(graphfile, x, N, 4.0)) for x in range(0,4)]
+		  pool = mp.Pool(processes=np)
+		  results = [pool.apply_async(process_edges, args=(graphfile, x, N, float(np))) for x in range(0,np)]
 		  # merge the results
 		  output = [p.get() for p in results]
 		  #map(output.extend, [p for p in results])
@@ -266,11 +272,15 @@ def main(argv):
 		  print "Graph converted. Generating output file..." + str(output_file)
 		  # writes all edges to output graph file
 		  try:
+		     edgecount = 0
+		     for listing in output:
+		        edgecount += len(listing)
 		     # header
 		     output_file.write(str(N) + " " + str(edgecount) + "\r\n")
 		     # edges
-		     for elem in output:
-		        output_file.write(elem + "\r\n")
+		     for listing in output:
+		        for elem in listing:
+		           output_file.write(elem + "\r\n")
 		  finally:
 		      output_file.close()
                 
