@@ -186,8 +186,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   G R A S P
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution;
-
-					c = resolution.executeGRASP(&construct, &cudavnd, g.get(), numberOfIterations,
+					CUDAGrasp CUDAgrasp;
+					c = CUDAgrasp.executeGRASP(&construct, &cudavnd, g.get(), numberOfIterations,
 							problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfSlaves processes and summarizes the result

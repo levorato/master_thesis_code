@@ -24,7 +24,7 @@ public:
 	/**
 	 * Triggers the execution of the GRASP algorithm using CUDA VND.
 	 */
-	Clustering executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent *vnd,
+	Clustering executeGRASP(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info);
 
 private:

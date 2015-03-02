@@ -54,10 +54,10 @@ CUDAGrasp::~CUDAGrasp() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering CUDAGrasp::executeGRASP(ConstructClustering &construct, VariableNeighborhoodDescent *vnd,
+Clustering CUDAGrasp::executeGRASP(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info)<< "Initializing " << " CUDA GRASP "<< problem.getName() <<
-	" procedure for alpha = " << construct.getAlpha() << " and l = " << vnd->getNeighborhoodSize();
+	" procedure for alpha = " << construct->getAlpha() << " and l = " << vnd->getNeighborhoodSize();
 
 	int iterationValue = 0;
 	stringstream iterationResults;
@@ -106,7 +106,7 @@ Clustering CUDAGrasp::executeGRASP(ConstructClustering &construct, VariableNeigh
 	int totalIter = 0;
 	Clustering CStar;
 	double totalTimeSpentOnConstruction = 0, timeSpentOnLocalSearch = 0;
-	runGRASPKernel(problem, construct, g, info.processRank, vnd->getTimeLimit(), iter,
+	runGRASPKernel(problem, *construct, g, info.processRank, vnd->getTimeLimit(), iter,
 			h_weights, h_dest, h_numedges, h_offset, n, m, threadsCount,
 			vnd->isFirstImprovementOnOneNeig(), CStar, totalIter, totalTimeSpentOnConstruction, timeSpentInGRASP);
 	timeSpentOnLocalSearch = timeSpentInGRASP - totalTimeSpentOnConstruction;
@@ -134,12 +134,12 @@ Clustering CUDAGrasp::executeGRASP(ConstructClustering &construct, VariableNeigh
 	BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(2) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInGRASP) << "%.";
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults, g->getN());
-	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct.getAlpha(), vnd->getNeighborhoodSize(), iter);
+	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
 	// saves the best result to output time file
 	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct.getAlpha(), vnd->getNeighborhoodSize(), iter);
+	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct.getAlpha(), vnd->getNeighborhoodSize(), iter);
+	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
 
 	return CStar;
 }
