@@ -57,9 +57,17 @@ public:
 	Clustering(const Clustering& clustering);
 
 	/**
-	 * Creates a Clustering object based on the clusterArray.
+	 * Creates a Clustering object based on the clusterArray and
+	 * calculates full objective function.
 	 */
 	Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p);
+
+	/**
+	 * Creates a Clustering object based on the clusterArray and
+	 * objective function supplied.
+	 */
+	Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
+			double positiveImbalance, double negativeImbalance);
 
 	virtual ~Clustering();
 

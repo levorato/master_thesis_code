@@ -13,6 +13,9 @@
 #include "../../problem/include/ClusteringProblem.h"
 #include "../../problem/include/RCCProblem.h"
 
+#include <utility>
+#include <vector>
+
 namespace clusteringgraph {
 
 class Perturbation {
@@ -25,6 +28,11 @@ public:
 
 	Clustering randomMove(SignedGraph* g, Clustering clustering, ClusteringProblem& p,
 			unsigned long numberOfMoves);
+
+	std::pair< std::vector<int>, std::vector<int> > generateRandomMoveListCCProblem(int n,
+			int nc, unsigned long numberOfMoves);
+
+	std::pair<int, int> randomMove1optCCProblem(int n, int nc);
 
 private:
     Clustering randomMove1opt(SignedGraph* g, Clustering clustering, ClusteringProblem& p);

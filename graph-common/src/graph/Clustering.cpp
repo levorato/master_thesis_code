@@ -70,6 +70,27 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 	this->setImbalance(p.objectiveFunction(g, *this));
 }
 
+Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
+		double positiveImbalance, double negativeImbalance) : clusterArray(cArray),
+		clusterSize(), imbalance(positiveImbalance, negativeImbalance), problemType(p.getType()),
+		positiveSum(), negativeSum(){
+	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
+	long numberOfClusters = (*pos) + 1;
+	// cout << "number of clusters = " << numberOfClusters << endl;
+	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
+
+	long n = g.getN();
+	for(unsigned long i = 0; i < n; i++) {
+		assert(clusterArray[i] < numberOfClusters);
+		clusters[clusterArray[i]].push_back(i);
+	}
+	// compute clusters' size
+	for(long k = 0; k < numberOfClusters; k++) {
+		clusterSize.push_back(clusters[k].size());
+		// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
+	}
+}
+
 Clustering::~Clustering() {
 	// cout << "Freeing memory of Clustering object..." << endl;
 }

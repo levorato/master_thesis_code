@@ -22,7 +22,7 @@ Perturbation::~Perturbation() {
 Clustering Perturbation::randomMove(SignedGraph* g, Clustering clustering, ClusteringProblem& p,
 		unsigned long numberOfMoves) {
 
-	BOOST_LOG_TRIVIAL(debug)<< "Generating perturbation of level " << numberOfMoves;
+	// BOOST_LOG_TRIVIAL(debug)<< "Generating perturbation of level " << numberOfMoves;
 	Clustering c = clustering;
 	for(int i = 0; i < numberOfMoves; i++) {
 		// TODO avoid cyclic moves
@@ -89,6 +89,37 @@ Clustering Perturbation::randomMove1opt(SignedGraph* g, Clustering clustering, C
 	// BOOST_LOG_TRIVIAL(trace)<< "Generated cluster:";
 	// cTemp.printClustering();
 	return cTemp;
+}
+
+std::pair<int, int> Perturbation::randomMove1optCCProblem(int n, int nc) {
+	// BOOST_LOG_TRIVIAL(trace)<< "Random move 1-opt .";
+	// cTemp.printClustering();
+	// random number generators used in loop randomization
+	RandomUtil randomUtil;
+	// (A) ==== Random node i from any cluster ====
+	int node = randomUtil.next(0, n - 1);
+	// BOOST_LOG_TRIVIAL(trace)<< "Random node = " << node;
+	// (B) ==== Random cluster k2 ====
+	// k2 is a cluster offset to which cluster node i is being moved to
+	// if k2 == cluster[node] then node is moved to a new cluster
+	int k2 = randomUtil.next(0, nc - 1);
+	// BOOST_LOG_TRIVIAL(trace)<< "Random k2 = " << k2;
+	// removes node from cluster1 and inserts in cluster2
+	return std::make_pair(node, k2);
+}
+
+std::pair< std::vector<int>, std::vector<int> > Perturbation::generateRandomMoveListCCProblem(int n,
+		int nc, unsigned long numberOfMoves) {
+	// BOOST_LOG_TRIVIAL(debug)<< "Generating perturbation of level " << numberOfMoves;
+	std::pair< std::vector<int>, std::vector<int> > movementList;
+	std::vector<int> nodeList;
+	std::vector<int> k2List;
+	for(int i = 0; i < numberOfMoves; i++) {
+		std::pair<int, int> movement = randomMove1optCCProblem(n, nc);
+		nodeList.push_back(movement.first);
+		k2List.push_back(movement.second);
+	}
+	return std::make_pair(nodeList, k2List);
 }
 
 } /* namespace clusteringgraph */
