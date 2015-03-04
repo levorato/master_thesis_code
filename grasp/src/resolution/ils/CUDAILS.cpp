@@ -1,16 +1,20 @@
 /*
- * CUDAGrasp.cpp
+ * CUDAILS.cpp
  *
- *  Created on: 4/2/2015
- *      Author: Mario Levorato
+ *  Created on: Mar 2, 2015
+ *      Author: mlevorato
  */
 
-#include "include/CUDAGrasp.h"
-#include "problem/include/ClusteringProblem.h"
-#include "graph/include/Imbalance.h"
-#include "util/include/RandomUtil.h"
-#include "graph/include/Graph.h"
+#include "include/CUDAILS.h"
+#include "../construction/include/VertexSet.h"
 #include "graph/include/SequentialNeighborhoodSearch.h"
+#include "graph/include/ParallelNeighborhoodSearch.h"
+#include "problem/include/ClusteringProblem.h"
+#include "problem/include/CCProblem.h"
+#include "graph/include/NeighborhoodSearchFactory.h"
+#include "graph/include/Imbalance.h"
+#include "graph/include/Perturbation.h"
+#include "../vnd/include/CUDASearch.h"
 
 #include <algorithm>
 #include <iostream>
@@ -22,18 +26,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
-#include "../vnd/include/CUDASearch.h"
-#include "util/include/RandomUtil.h"
-#include <limits>
-#include <cstdio>
 #include <thrust/host_vector.h>
-#include <vector>
 
-#include "include/Grasp.h"
-#include "problem/include/ClusteringProblem.h"
-#include "problem/include/CCProblem.h"
-#include "problem/include/RCCProblem.h"
-#include "graph/include/Imbalance.h"
 
 using namespace problem;
 using namespace boost;
@@ -42,27 +36,26 @@ using namespace thrust;
 using namespace util;
 
 namespace resolution {
-namespace grasp {
+namespace ils {
 
-CUDAGrasp::CUDAGrasp() :
-		Grasp() {
+CUDAILS::CUDAILS() {
 	// TODO Auto-generated constructor stub
 
 }
 
-CUDAGrasp::~CUDAGrasp() {
+CUDAILS::~CUDAILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering CUDAGrasp::executeGRASP(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
-		SignedGraph *g, const int& iter, ClusteringProblem& problem, ExecutionInfo& info) {
-	BOOST_LOG_TRIVIAL(info)<< "Initializing " << " CUDA GRASP "<< problem.getName() <<
-	" procedure for alpha = " << construct->getAlpha() << " and l = " << vnd->getNeighborhoodSize();
+Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+		SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
+		ClusteringProblem& problem,	ExecutionInfo& info) {
+	BOOST_LOG_TRIVIAL(info) << "Initializing CUDA ILS "<< problem.getName() << " procedure for alpha = "
+			<< construct->getAlpha() << " and l = " << vnd->getNeighborhoodSize();
 
-	int iterationValue = 0;
 	stringstream iterationResults;
 	stringstream constructivePhaseResults;
-	
+
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
@@ -106,11 +99,12 @@ Clustering CUDAGrasp::executeGRASP(ConstructClustering *construct, VariableNeigh
 	int totalIter = 0;
 	Clustering CStar;
 	double totalTimeSpentOnConstruction = 0, timeSpentOnLocalSearch = 0;
-	runGRASPKernel(problem, *construct, g, info.processRank, vnd->getTimeLimit(), iter,
+	runILSKernel(problem, *construct, g, info.processRank, vnd->getTimeLimit(),
+			iterMax, iterMaxILS, perturbationLevelMax,
 			h_weights, h_dest, h_numedges, h_offset, n, m, threadsCount,
-			vnd->isFirstImprovementOnOneNeig(), CStar, totalIter, totalTimeSpentOnConstruction, timeSpentInGRASP,
+			vnd->isFirstImprovementOnOneNeig(), CStar, totalIter, totalTimeSpentOnConstruction, timeSpentInILS,
 			constructivePhaseResults, iterationResults);
-	timeSpentOnLocalSearch = timeSpentInGRASP - totalTimeSpentOnConstruction;
+	timeSpentOnLocalSearch = timeSpentInILS - totalTimeSpentOnConstruction;
 
 	// h_mycluster and h_functionValue
 	Imbalance bestValue = CStar.getImbalance();
@@ -118,34 +112,29 @@ Clustering CUDAGrasp::executeGRASP(ConstructClustering *construct, VariableNeigh
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentOnBestSolution = (end_time.wall - start_time.wall) / double(1000000000);
 
+	int iterationValue = 0;
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
-	<< "," << bestValue.getPositiveValue()
-	<< "," << bestValue.getNegativeValue()
-	<< setprecision(0)
-	<< "," << CStar.getNumberOfClusters()
-	<< "," << (iterationValue+1)
-	<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
-	<< "," << (totalIter+1)
-	<< "," << numberOfTestedCombinations
-	<< "," << fixed << setprecision(2) << 0.0 << endl;
+			<< "," << bestValue.getPositiveValue()
+			<< "," << bestValue.getNegativeValue()
+			<< setprecision(0)
+			<< "," << CStar.getNumberOfClusters()
+			<< "," << (iterationValue+1)
+			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
+			<< "," << iterMax
+			<< "," << numberOfTestedCombinations << endl;
 
-	BOOST_LOG_TRIVIAL(info) << "GRASP procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
-	BOOST_LOG_TRIVIAL(info) << "Time spent on construction phase: " << fixed << setprecision(2) << totalTimeSpentOnConstruction << "s, " << (100 * totalTimeSpentOnConstruction / timeSpentInGRASP) << "%.";
-	BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(2) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInGRASP) << "%.";
+	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults, g->getN());
-	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
+	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
 	// saves the best result to output time file
-	measureTimeResults(0.0, totalIter);
-	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
+	measureTimeResults(0.0, iterMax);
+	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
 	// saves the initial solutions data to file
-	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
+	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
 
 	return CStar;
 }
 
-
-} /* namespace grasp */
+} /* namespace ils */
 } /* namespace resolution */
-
-

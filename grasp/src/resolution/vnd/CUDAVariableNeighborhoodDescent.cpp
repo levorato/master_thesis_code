@@ -78,8 +78,9 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	unsigned long numberOfChunks = n * (nc + 1);  // the search space for each vertex (dest cluster) will be split into n*(nc+1) chunks
 	thrust::host_vector<unsigned long> h_mycluster(myCluster);
 	// objective function value
-	thrust::host_vector<float> h_functionValue(1);
-	h_functionValue[0] = Cc.getImbalance().getValue();
+	thrust::host_vector<float> h_functionValue(2);
+	h_functionValue[0] = Cc.getImbalance().getPositiveValue();
+	h_functionValue[1] = Cc.getImbalance().getNegativeValue();
 	// destination (result) host vectors
 	thrust::host_vector<unsigned long> h_destcluster(numberOfChunks);  // destination cluster (k2)
 	thrust::host_vector<float> h_destPosFunctionValue(numberOfChunks);  // positive imbalance value
@@ -163,11 +164,12 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	// Pass raw array and its size to kernel
 	std::vector<uint> sourceVertexList;
 	std::vector<uint> destinationClusterList;
-	float bestImbalance = Cc.getImbalance().getValue();
+	float positiveImbalance = Cc.getImbalance().getPositiveValue();
+	float negativeImbalance = Cc.getImbalance().getNegativeValue();
 	int l = 1;
 	runVNDKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m, threadsCount, nc,
 			numberOfChunks, firstImprovementOnOneNeig, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum,
-			h_neighbor_cluster, sourceVertexList, destinationClusterList, bestImbalance, timeSpentSoFar, l);
+			h_neighbor_cluster, sourceVertexList, destinationClusterList, positiveImbalance, negativeImbalance, timeSpentSoFar, l);
 
 	// validate arrays calculation
 /*
@@ -227,19 +229,9 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	}
 	assert(equal);
 */
-	// To simulate sequential first improvement, chooses a random initial index for the following loop
-	/*
-	for(int i = RandomUtil::next(0, numberOfChunks - 1), cont = 0; cont < numberOfChunks; cont++, i = (i + 1) % numberOfChunks) {
-		if(h_destPosFunctionValue[i] + h_destNegFunctionValue[i] < bestImbalance) {
-			bestSrcVertex = i % n;
-			bestDestCluster = h_destcluster[i];
-			bestImbalance = h_destPosFunctionValue[i] + h_destNegFunctionValue[i];
-			if(firstImprovement)  break;
-		}
-	}*/
 
 	// Reproduce the best Cc found using host data structures
-	if(bestImbalance < Cc.getImbalance().getValue()) {
+	if(positiveImbalance + negativeImbalance < Cc.getImbalance().getValue()) {
 		// BOOST_LOG_TRIVIAL(info) << "Number of clusters is " << nc;
 		// cout << "Number of clusters is " << nc << endl;
 		/*
@@ -289,8 +281,9 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 		for(int x = 0; x < h_mycluster.size(); x++) {
 			cArray.push_back(h_mycluster[x]);
 		}
-		Clustering newClustering(cArray, *g, problem);
+		Clustering newClustering(cArray, *g, problem, positiveImbalance, negativeImbalance);
 		cBest = newClustering;
+
 	} else {
 		BOOST_LOG_TRIVIAL(debug) << "[CUDA] Validation. No improvement.";
 	}

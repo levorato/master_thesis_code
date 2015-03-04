@@ -222,13 +222,15 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	// Pass raw array and its size to kernel
 	std::vector<uint> sourceVertexList;
 	std::vector<uint> destinationClusterList;
-	float bestImbalance = clustering->getImbalance().getValue();
+	float bestPosImbalance = clustering->getImbalance().getPositiveValue();
+	float bestNegImbalance = clustering->getImbalance().getNegativeValue();
 	int l = 1;
 	runVNDKernel(h_weights, h_dest, h_numedges, h_offset, h_mycluster, h_functionValue, n, m, threadsCount, nc,
 			numberOfChunks, firstImprovement, h_randomIndex, h_VertexClusterPosSum, h_VertexClusterNegSum,
-			h_neighbor_cluster, sourceVertexList, destinationClusterList, bestImbalance, timeSpentSoFar, l);
+			h_neighbor_cluster, sourceVertexList, destinationClusterList, bestPosImbalance, bestNegImbalance, timeSpentSoFar, l);
 	uint bestSrcVertex = sourceVertexList[0];
 	uint bestDestCluster = destinationClusterList[0];
+	float bestImbalance = bestPosImbalance + bestNegImbalance;
 
 	// validate arrays calculation
 

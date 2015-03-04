@@ -40,6 +40,10 @@ public:
 		return gainFunction->getType();
 	}
 
+	unsigned long getRandomSeed() {
+		return randomSeed;
+	}
+
 protected:
 	GainFunction* gainFunction;
 	unsigned long randomSeed;

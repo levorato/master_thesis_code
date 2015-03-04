@@ -34,6 +34,7 @@
 #include "../resolution/grasp/include/CUDAGrasp.h"
 #include "../resolution/construction/include/CUDAConstructClustering.h"
 #include "../resolution/construction/include/CUDAImbalanceGainFunction.h"
+#include "../resolution/ils/include/CUDAILS.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -199,7 +200,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
-					c = resolution.executeILS(&construct, &cudavnd, g.get(), numberOfIterations, iterMaxILS,
+					resolution::ils::CUDAILS CUDAils;
+					c = CUDAils.executeILS(&construct, &cudavnd, g.get(), numberOfIterations, iterMaxILS,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
