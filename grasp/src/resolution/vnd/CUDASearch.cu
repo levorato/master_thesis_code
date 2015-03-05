@@ -256,11 +256,10 @@ using namespace std;
 				vertexClusterNegSumArray[(nc) * n + v] = 0.0;
 			}
 			// preenche a possibilidade de se mover todos os vertices para um cluster novo (k = new_nc)
-			/*
 			for(int v = 0; v < n; v++) {
 				isNeighborClusterArray[v + new_nc * n] = 1;
 				isNeighborClusterArray[v + nc * n] = 0;
-			} */
+			}
 		}
 
 		// in/out-edges of vertex i
@@ -274,7 +273,7 @@ using namespace std;
 		for (ulong edgenum = offset; edgenum < count; edgenum++) {
 			int j = destArray[edgenum];
 			float weight = weightArray[edgenum];
-			/*
+
 			isNeighborClusterArray[j + k1 * n] -= 2;
 			if(s_cluster[j] != k2) {
 				isNeighborClusterArray[i + s_cluster[j] * n]++;  // vertex i now has external connection to cluster kj
@@ -282,7 +281,7 @@ using namespace std;
 			} else {  // cluster[i] == cluster[j] == k2
 				isNeighborClusterArray[i + s_cluster[j] * n] = 0;  // vertex i now has NO external connections to cluster kj
 				isNeighborClusterArray[j + k2 * n] = 0;  // vertex j now has NO external connections to cluster k2
-			} */
+			}
 			if(weight > 0) {
 				vertexClusterPosSumArray[j + k1 * n] -= fabs(weight);
 				vertexClusterPosSumArray[j + k2 * n] += fabs(weight);
@@ -298,7 +297,7 @@ using namespace std;
 				for(int v = 0; v < n; v++) {
 					vertexClusterPosSumArray[(k - 1) * n + v] = vertexClusterPosSumArray[(k) * n + v];
 					vertexClusterNegSumArray[(k - 1) * n + v] = vertexClusterNegSumArray[(k) * n + v];
-					// isNeighborClusterArray[(k - 1) * n + v] = isNeighborClusterArray[(k) * n + v];
+					isNeighborClusterArray[(k - 1) * n + v] = isNeighborClusterArray[(k) * n + v];
 				}
 			}
 		}
@@ -987,6 +986,7 @@ using namespace std;
 			thrust::host_vector<float> h_functionValue(2);
 			float destPositiveImbalance = Cc.getImbalance().getPositiveValue();
 			float destNegativeImbalance = Cc.getImbalance().getNegativeValue();
+			h_nc[0] = Cc.getNumberOfClusters();
 			// A -> Transfer to device
 			// transfers the arrays to CUDA device
 			d_mycluster.resize(h_nc[0]);
@@ -999,6 +999,7 @@ using namespace std;
 			// 2. Execute local search algorithm: CUDA VND
 			// number of clusters - changes every iteration of VND
 			d_nc = h_nc;
+			ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 
 			// VND loop
 			int iteration = 0;
@@ -1029,7 +1030,6 @@ using namespace std;
 				checkCudaErrors(cudaDeviceSynchronize());
 
 				// printf("Begin reduce / post-process...\n");
-
 				thrust::device_vector<float>::iterator iter = thrust::min_element(d_destFunctionValue.begin(),
 						d_destFunctionValue.begin()+numberOfChunks);
 				float min_val = *iter;
@@ -1053,8 +1053,8 @@ using namespace std;
 				if(min_val < bestImbalance) {  // improvement in imbalance
 					bestImbalance = min_val;
 					// determines the position of the best improvement found in the result vector
-					 uint position = iter - d_destFunctionValue.begin();
-					 int resultIdx = position;
+					uint position = iter - d_destFunctionValue.begin();
+					int resultIdx = position;
 					ulong destCluster = resultIdx / n;
 					ulong bestSrcVertex = resultIdx % n;
 					ulong sourceCluster = d_mycluster[bestSrcVertex];
@@ -1075,7 +1075,7 @@ using namespace std;
 
 					if(h_nc[0] > h_old_nc[0]) {
 						// acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
-						// printf("New cluster. Growing vectors to size %d.\n", n * (h_nc[0]+1));
+						// printf("New cluster. Growing vectors.\n");
 						d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
 						d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
 						d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
@@ -1083,37 +1083,16 @@ using namespace std;
 						vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 						isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 					}
-					/*
+
 					updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-							vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster); */
-					if(h_nc[0] > h_old_nc[0]) {  // new_nc > nc
-						blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-						updateVertexClusterSumArraysDeltaA<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-											vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
-						checkCudaErrors(cudaDeviceSynchronize());
-					}
-
-					int numedges = h_numedges[bestSrcVertex];  // numArray[i]
-					blocksPerGrid = (numedges + threadsCount - 1) / threadsCount;
-					updateVertexClusterSumArraysDeltaB<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-											vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
+							vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
 					checkCudaErrors(cudaDeviceSynchronize());
-
-					if(h_nc[0] < h_old_nc[0]) {  // new_nc < nc
-						blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-						// for(int k = sourceCluster + 1; k <= nc; k++) {  // sourceCluster = k1
-							updateVertexClusterSumArraysDeltaC<<<1, 1>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-											vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster /*k*/);
-							checkCudaErrors(cudaDeviceSynchronize());
-						// }
-					}
-
 					// CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
 					// h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
 					// CASO ESPECIAL 2: cluster removido
 					if(h_nc[0] < h_old_nc[0]) {
 						// remove uma fileira correpondente a um cluster removido na matriz de soma
-						// printf("Deleted cluster. Shrinking vectors to size %d.\n", n * (h_nc[0]+1));
+						// BOOST_LOG_TRIVIAL(debug) << "Deleted cluster. Shrinking vectors." << endl;
 						d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
 						d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
 						d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
@@ -1326,6 +1305,7 @@ using namespace std;
 
 		double timeSpentInILS = 0;
 		Perturbation perturbation(construct.getRandomSeed());
+		util::RandomUtil randomUtil;
 		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
 		timer.start();
@@ -1384,7 +1364,7 @@ using namespace std;
 		
 		// Multi-start ILS
 		for (int i = 0; i < iterMax || iterMax < 0 ; i++, previousCc = Cc) {
-			printf("ILS iteration %d\n", i);
+			// printf("ILS iteration %d\n", i);
 			// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 			//    Store initial solution value in corresponding results file
 			constructivePhaseResults << (i+1) << "," << Cc.getImbalance().getValue() << ","
@@ -1397,38 +1377,42 @@ using namespace std;
 
 			CStar = Cc;
 			Clustering Cl = Cc;
-			float bestILSValue = CStar.getImbalance().getValue();
-			printf("Constructive phase I(P) = %.2f\n", bestILSValue);
+			float bestImbalance = CStar.getImbalance().getValue();
+			// printf("Constructive phase I(P) = %.2f\n", bestImbalance);
 			int perturbationLevel = 1;
-			// CARGA INICIAL DO VETOR DE CLUSTER A PARTIR DA FASE CONSTRUTIVA DA METAHEURISTICA
-			ClusterArray myCluster = Cl.getClusterArray();
-			thrust::host_vector<unsigned long> h_mycluster(myCluster);
-			thrust::host_vector<float> h_functionValue(2);
-			h_functionValue[0] = Cl.getImbalance().getPositiveValue();
-			h_functionValue[1] = Cl.getImbalance().getNegativeValue();
-			float bestImbalance = h_functionValue[0] + h_functionValue[1];
-			// A -> Transfer to device
-			// transfers the arrays to CUDA device
-			d_mycluster.resize(h_nc[0]);
-			d_mycluster = h_mycluster;
-			d_functionValue = h_functionValue;
-			clusterArray = thrust::raw_pointer_cast( &d_mycluster[0] );
-			funcArray = thrust::raw_pointer_cast( &d_functionValue[0] );
-
-			int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-			updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray,
-				offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
-			checkCudaErrors(cudaDeviceSynchronize());
 			bool perturbated = false;
 			
 			for(int j = 1, total = 0; j <= iterMaxILS; total++) {  // internal ILS loop
 				// printf("ILS internal loop iteration %d\n", j);
+				ClusterArray cArrayCl = Cl.getClusterArray();
+				thrust::host_vector<unsigned long> h_myclusterCl(cArrayCl);
+				thrust::host_vector<float> h_functionValue(2);
+				h_functionValue[0] = Cl.getImbalance().getPositiveValue();
+				h_functionValue[1] = Cl.getImbalance().getNegativeValue();
+				h_nc[0] = Cl.getNumberOfClusters();
 				unsigned long numberOfChunks = n * (h_nc[0] + 1);  // the search space for each vertex (dest cluster) will be split into n*(nc+1) chunks
-				// 2. Execute local search algorithm: CUDA VND
-				// VND loop EXECUTED OVER THE CURRENT CLUSTERING OF THE ILS LOOP
+				// A -> Transfer to device
+				// transfers the arrays to CUDA device
+				d_mycluster.resize(h_nc[0]);
+				d_mycluster = h_myclusterCl;
+				d_functionValue = h_functionValue;
+				clusterArray = thrust::raw_pointer_cast( &d_mycluster[0] );
+				funcArray = thrust::raw_pointer_cast( &d_functionValue[0] );
 				d_nc = h_nc;
-				int iteration = 0;			
+				ncArray = thrust::raw_pointer_cast( &d_nc[0] );
+				// recalculates sum matrices
+				d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
+				d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
+				d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
+				vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
+				vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
+				isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+				int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
+				updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray,
+					offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
+				checkCudaErrors(cudaDeviceSynchronize());
 
+				int iteration = 0;
 				while (true) {
 					// printf("*** Local search iteration %d, nc = %ld, best I(P) = %.2f\n", iteration, h_nc[0], bestImbalance);
 					numberOfChunks = (h_nc[0] + 1) * n;
@@ -1448,13 +1432,14 @@ using namespace std;
 					checkCudaErrors(cudaDeviceSynchronize());
 
 					// printf("Begin reduce / post-process...\n");
-					/*
+
 					thrust::device_vector<float>::iterator iter = thrust::min_element(d_destFunctionValue.begin(), 
 							d_destFunctionValue.begin()+numberOfChunks);
-					float min_val = *iter;*/
+					float min_val = *iter;
 					// as there may be more than one combination with the same imbalance,
 					// chooses one combination at random
 					// the algorithm starts the search with a random initial index
+					/*
 					thrust::host_vector<int> h_result_index(1);
 					h_result_index[0] = -1;
 					thrust::device_vector<int> d_result_index = h_result_index;
@@ -1466,14 +1451,14 @@ using namespace std;
 					float min_val = bestImbalance;
 					if(resultIdx >= 0) {
 						min_val = d_destFunctionValue[resultIdx];
-					}
+					} */
 					// printf("min val is %.2f\n", min_val);
 
 					if(min_val < bestImbalance) {  // improvement in imbalance
 						bestImbalance = min_val;
 						// determines the position of the best improvement found in the result vector
-						// uint position = iter - d_destFunctionValue.begin();
-						// int resultIdx = position;
+						 uint position = iter - d_destFunctionValue.begin();
+						 int resultIdx = position;
 						ulong destCluster = resultIdx / n;
 						ulong bestSrcVertex = resultIdx % n;
 						ulong sourceCluster = d_mycluster[bestSrcVertex];
@@ -1494,7 +1479,7 @@ using namespace std;
 
 						if(h_nc[0] > h_old_nc[0]) {
 							// acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
-							// printf("New cluster. Growing vectors to size %d.\n", n * (h_nc[0]+1));
+							// printf("New cluster. Growing vectors.\n");
 							d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
 							d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
 							d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
@@ -1502,31 +1487,16 @@ using namespace std;
 							vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 							isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 						}
-						if(h_nc[0] > h_old_nc[0]) {  // new_nc > nc
-							blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-							updateVertexClusterSumArraysDeltaA<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-												vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
-							checkCudaErrors(cudaDeviceSynchronize());
-						}
 
-						int numedges = h_numedges[bestSrcVertex];  // numArray[i]
-						blocksPerGrid = (numedges + threadsCount - 1) / threadsCount;
-						updateVertexClusterSumArraysDeltaB<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-												vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
+						updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
+								vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
 						checkCudaErrors(cudaDeviceSynchronize());
-
-						if(h_nc[0] < h_old_nc[0]) {  // new_nc < nc
-							blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-								updateVertexClusterSumArraysDeltaC<<<1, 1>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-												vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster /*k*/);
-								checkCudaErrors(cudaDeviceSynchronize());
-						}
 						// CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
 						// h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
 						// CASO ESPECIAL 2: cluster removido
 						if(h_nc[0] < h_old_nc[0]) {
 							// remove uma fileira correpondente a um cluster removido na matriz de soma
-							// printf("Deleted cluster. Shrinking vectors to size %d.\n", n * (h_nc[0]+1));
+							// BOOST_LOG_TRIVIAL(debug) << "Deleted cluster. Shrinking vectors." << endl;
 							d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
 							d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
 							d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
@@ -1543,30 +1513,32 @@ using namespace std;
 					iteration++;
 				}
 				// 3. Select the best clustring so far
-				if(bestImbalance < bestILSValue) {
+				if(bestImbalance < CStar.getImbalance().getValue()) {
 					// printf("Imbalance improved in the current iteration.\n");
 					if(perturbated) {
-						printf("Improved because of perturbation.\n");
+						printf("Improved because of perturbation: j = %d, perturb = %d\n", j, perturbationLevel);
 					} else {
-						printf("Improved because of constructive phase.\n");
+						// printf("Improved because of constructive phase.\n");
 					}
-					h_mycluster = d_mycluster;
+					thrust::host_vector<unsigned long> h_mycluster = d_mycluster;
 					ClusterArray cArray(h_mycluster.size(), 0);
 					for(int x = 0; x < h_mycluster.size(); x++) {
 						cArray[x] = h_mycluster[x];
 					}
-					bestILSValue = bestImbalance;
 					iterationValue = total;
 					// printf("Rebuilding clustering object.\n");
-					Clustering Cl(cArray, *g, problem);
-					printf("I(P) = %.2f\n", Cl.getImbalance().getValue());
-					CStar = Cl;
+					Clustering Clnew(cArray, *g, problem);
+					// printf("I(P) = %.2f\n", Clnew.getImbalance().getValue());
+					CStar = Clnew;
+					if(bestImbalance != CStar.getImbalance().getValue()) {
+						printf("!!! WARNING: Imbalance of Cstar clustering does NOT match!\n");
+					}
 					// printf("Clustering object REBUILT.\n");
 					// restarts the internal ILS loop and the perturbation
 					j = 1;
 					perturbationLevel = 1;
 					timeSpentOnBestSolution = timeSpentInILS;
-					if(bestILSValue == 0)  break;
+					if(bestImbalance == 0)  break;
 				} else {  // did not improve solution
 					j++;
 					if(j > iterMaxILS) {
@@ -1579,92 +1551,25 @@ using namespace std;
 					}
 				}
 				// 4. Generate perturbation over C* -> kernel perturbation
-				// Cl = perturbation.randomMove(g, CStar, problem, perturbationLevel);+
-				ClusterArray cArrayStar = CStar.getClusterArray();
-				thrust::host_vector<unsigned long> h_mycluster(cArrayStar);
-				thrust::host_vector<float> h_functionValue(2);
-				h_functionValue[0] = CStar.getImbalance().getPositiveValue();
-				h_functionValue[1] = CStar.getImbalance().getNegativeValue();
-				h_nc[0] = CStar.getNumberOfClusters();
-				// A -> Transfer to device
-				// transfers the arrays to CUDA device
-				d_mycluster.resize(h_nc[0]);
-				d_mycluster = h_mycluster;
-				d_functionValue = h_functionValue;
-				clusterArray = thrust::raw_pointer_cast( &d_mycluster[0] );
-				funcArray = thrust::raw_pointer_cast( &d_functionValue[0] );
-				d_nc = h_nc;
-				ncArray = thrust::raw_pointer_cast( &d_nc[0] );
+				// Cl = perturbation.randomMove(g, CStar, problem, perturbationLevel);
+				Cl = CStar;
 
-				// recalculates sum matrices
-				blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-				updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray,
-					offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
-				checkCudaErrors(cudaDeviceSynchronize());
-
-				for(int p = 0; p < perturbationLevel; p++) {  // processes each perturbation on GPU
-					std::pair<int, int> movement = perturbation.randomMove1optCCProblem(g->getN(), h_nc[0]);
-					int bestSrcVertex = movement.first;
-					int destCluster = movement.second;
-					ulong sourceCluster = d_mycluster[bestSrcVertex];
-					if(destCluster == sourceCluster) {
-						destCluster = h_nc[0];
-					}
-					// printf("Moving vertex %d from cluster %ld to cluster %d\n", bestSrcVertex, sourceCluster, destCluster);
-					perturbationKernel<<< 1, 1 >>>(bestSrcVertex, destCluster, clusterArray, funcArray, n, ncArray,
-							vertexClusterPosSumArray, vertexClusterNegSumArray);
-					checkCudaErrors(cudaDeviceSynchronize());
-					
-					thrust::host_vector<uint> h_old_nc(1);
-					h_old_nc = h_nc;
-					h_nc = d_nc;
-
-					if(h_nc[0] > h_old_nc[0]) {
-						// acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
-						// printf("New cluster. Growing vectors to size %d.\n", n * (h_nc[0]+1));
-						d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
-						d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
-						d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
-						vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
-						vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
-						isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
-					}
-
-					if(h_nc[0] > h_old_nc[0]) {  // new_nc > nc
-						blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-						updateVertexClusterSumArraysDeltaA<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-											vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
-						checkCudaErrors(cudaDeviceSynchronize());
-					}
-
-					int numedges = h_numedges[bestSrcVertex];  // numArray[i]
-					blocksPerGrid = (numedges + threadsCount - 1) / threadsCount;
-					updateVertexClusterSumArraysDeltaB<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-											vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
-					checkCudaErrors(cudaDeviceSynchronize());
-
-					if(h_nc[0] < h_old_nc[0]) {  // new_nc < nc
-						blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-						updateVertexClusterSumArraysDeltaC<<<1, 1>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-										vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster);
-						checkCudaErrors(cudaDeviceSynchronize());
-					}
-					// CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
-					// h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
-					// CASO ESPECIAL 2: cluster removido
-					if(h_nc[0] < h_old_nc[0]) {
-						// remove uma fileira correpondente a um cluster removido na matriz de soma
-						// printf("Deleted cluster. Shrinking vectors to size %d.\n", n * (h_nc[0]+1));
-						d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
-						d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
-						d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
-						vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
-						vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
-						isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
-					}
+				int n = g->getN();
+				int nc = Cl.getNumberOfClusters();
+				std::vector<int> nodeList(n, 0);
+				for(int i = 0; i < n; i++) {
+					nodeList[i] = i;
 				}
-				h_functionValue = d_functionValue;  // TODO comentar esta linha
-				// printf("After perturb: nc = %d, imbalance = %.2f\n", h_nc[0], h_functionValue[0] + h_functionValue[1]);
+				std::random_shuffle(nodeList.begin(), nodeList.end());
+				for(int i = 0; i < perturbationLevel; i++) {
+					nc = Cl.getNumberOfClusters();
+					int k2 = randomUtil.next(0, nc - 1);
+					int idx = randomUtil.next(0, n - 1);
+					// cout << "k2 = " << k2 << endl;
+					Cl = perturbation.move1optCCProblem(g, Cl, problem, nodeList[n - i - 1], k2);
+				}
+				// printf("Perturbated I(P) = %.2f\n", Cl.getImbalance().getValue());
+				// printf("After perturb: nc = %d, imbalance = %.2f\n", h_nc[0], h_functionValue[0]);
 				perturbated = true;
 				
 				// 5. Stops the timer and stores the elapsed time
@@ -1674,10 +1579,6 @@ using namespace std;
 				// 6. Write the results into ostream os, using csv format
 				// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
 				timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
-				/*
-				iterationResults << (total+1) << "," << bestValue.getValue() << "," << bestValue.getPositiveValue()
-						<< "," << bestValue.getNegativeValue() << "," << CStar.getNumberOfClusters()
-						<< "," << fixed << setprecision(4) << timeSpentInILS << "\n"; */
 				timer.resume();
 				start_time = timer.elapsed();
 				// if elapsed time is bigger than timeLimit, break
@@ -1713,21 +1614,8 @@ using namespace std;
 			if((i + 1) < iterMax) {
 				// 0. Triggers local processing time calculation
 				start_time = timer.elapsed();
-
 				// 1. Construct the next clustering
 				Cc = construct.constructClustering(g, problem, processRank);
-
-				int old_nc = h_nc[0];
-				h_nc[0] = Cc.getNumberOfClusters();
-				if(old_nc != h_nc[0]) {  // the number of clusters in the new solution changed
-					d_VertexClusterPosSum.resize(n * (h_nc[0]+1));
-					d_VertexClusterNegSum.resize(n * (h_nc[0]+1));
-					d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
-					vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
-					vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
-					isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
-					// printf("Number of clusters has changed.\n");
-				}
 				
 				timer.stop();
 				end_time = timer.elapsed();
