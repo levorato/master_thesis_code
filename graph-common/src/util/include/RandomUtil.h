@@ -17,12 +17,14 @@
 namespace util {
 
 // other options of generator: minstd_rand, mt19937
-typedef boost::minstd_rand RandomGeneratorType;
+typedef boost::mt19937 RandomGeneratorType;
 
 class RandomUtil {
 public:
 	virtual ~RandomUtil();
-	RandomUtil();
+	RandomUtil() {
+		rg.seed(boost::random::random_device()());
+	}
 
 	static void setSeed(int seed) {
 		// other option for seed: generator.seed(boost::random::random_device()());
@@ -31,8 +33,7 @@ public:
 	}
 
 	static int next(int lowerLimit, int upperLimit) {
-		// we are supposing the random generator is already seeded here
-		rg.seed(boost::random::random_device()());
+
 		boost::uniform_int<> distribution(lowerLimit, upperLimit);
 		boost::variate_generator<RandomGeneratorType&, boost::uniform_int<> > LimitedInt(
 				rg, distribution);

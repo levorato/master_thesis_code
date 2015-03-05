@@ -12,10 +12,6 @@ namespace util {
 bool RandomUtil::isSeeded = false;
 RandomGeneratorType RandomUtil::rg;
 
-RandomUtil::RandomUtil() {
-	// TODO Auto-generated constructor stub
-
-}
 
 RandomUtil::~RandomUtil() {
 	// TODO Auto-generated destructor stub

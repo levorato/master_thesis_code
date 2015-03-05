@@ -9,9 +9,13 @@
 #include "../util/include/RandomUtil.h"
 
 #include <boost/log/trivial.hpp>
+#include <vector>
+#include <algorithm>
+#include <iostream>
 
 namespace clusteringgraph {
 
+using namespace std;
 using namespace util;
 using namespace boost;
 
@@ -24,11 +28,56 @@ Clustering Perturbation::randomMove(SignedGraph* g, Clustering clustering, Clust
 
 	// BOOST_LOG_TRIVIAL(debug)<< "Generating perturbation of level " << numberOfMoves;
 	Clustering c = clustering;
+	RandomUtil randomUtil;
+	randomUtil.setSeed(this->_randomSeed);
+
+	int n = g->getN();
+	int nc = c.getNumberOfClusters();
+	std::vector<int> nodeList(n, 0);
+	std::vector<int> k2List(nc + numberOfMoves, 0);
+	for(int i = 0; i < n; i++) {
+		nodeList[i] = i;
+	}
+	std::random_shuffle(nodeList.begin(), nodeList.end());
 	for(int i = 0; i < numberOfMoves; i++) {
-		// TODO avoid cyclic moves
-		c = randomMove1opt(g, c, p);
+		nc = c.getNumberOfClusters();
+		int k2 = randomUtil.next(0, nc - 1);
+		int idx = randomUtil.next(0, n - 1);
+		// cout << "k2 = " << k2 << endl;
+		c = move1optCCProblem(g, c, p, idx, k2);
 	}
 	return c;
+}
+
+Clustering Perturbation::move1optCCProblem(SignedGraph* g, Clustering clustering, ClusteringProblem& p, int node, int k2) {
+	Clustering cTemp = clustering;
+	int nc = cTemp.getNumberOfClusters();
+	int n = g->getN();
+	// BOOST_LOG_TRIVIAL(trace)<< "Random move 1-opt .";
+	// cTemp.printClustering();
+	// (A) ==== Random node i from cluster k1 ====
+	// (B) ==== Random cluster k2 ====
+	ClusterArray cluster = clustering.getClusterArray();
+	int k1 = cluster[node];
+	if(k2 == k1) {
+		k2 = Clustering::NEW_CLUSTER;
+	}
+	// removes node from cluster k1 and inserts in cluster k2
+	cTemp.removeNodeFromCluster(*g, p, node, k1);
+	if(k2 >= 0) {
+		// recalculates the number of clusters, as one of them may have been removed
+		if((cTemp.getNumberOfClusters() < nc) && (k2 >= k1)) {
+			// cluster k1 has been removed
+			cTemp.addNodeToCluster(*g, p, node, k2 - 1);
+		} else {
+			cTemp.addNodeToCluster(*g, p, node, k2);
+		}
+	} else {  // inserts node into a new cluster
+		cTemp.addCluster(*g, p, node);
+	}
+	// BOOST_LOG_TRIVIAL(trace)<< "Generated cluster:";
+	// cTemp.printClustering();
+	return cTemp;
 }
 
 Clustering Perturbation::randomMove1opt(SignedGraph* g, Clustering clustering, ClusteringProblem& p) {

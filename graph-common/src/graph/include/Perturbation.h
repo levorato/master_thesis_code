@@ -34,8 +34,13 @@ public:
 
 	std::pair<int, int> randomMove1optCCProblem(int n, int nc);
 
+	Clustering move1optCCProblem(SignedGraph* g, Clustering clustering,
+			ClusteringProblem& p, int node, int k2);
+
 private:
     Clustering randomMove1opt(SignedGraph* g, Clustering clustering, ClusteringProblem& p);
+
+
 
     unsigned long _randomSeed;
     static const int NEW_CLUSTER = -1;
