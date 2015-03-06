@@ -18,6 +18,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/extrema.h>
 #include <stdio.h>
+#include <curand.h>
 #include <curand_kernel.h>
 #include <vector>
 #include <utility>
@@ -41,10 +42,18 @@
 // Thread block size should always be a multiple of 32, because kernels issue instructions in warps (32 threads).
 #define BLOCK_SIZE 256.0
 
+#define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
+    printf("Error at %s:%d\n",__FILE__,__LINE__);\
+    return EXIT_FAILURE;}} while(0)
+#define CURAND_CALL(x) do { if((x)!=CURAND_STATUS_SUCCESS) { \
+    printf("Error at %s:%d\n",__FILE__,__LINE__);\
+    return EXIT_FAILURE;}} while(0)
+
 namespace clusteringgraph {
 
 using namespace problem;
 using namespace resolution::construction;
+using namespace resolution::vnd;
 using namespace clusteringgraph;
 using namespace std;
 	
@@ -63,8 +72,8 @@ using namespace std;
 	}	
 	
 	/// CUDA Kernel to update the cluster array and the objective function value on 1-opt search.
-	__global__ void updateClustering1opt(const int bestSrcVertex, const int destcluster, const float positiveFunctionValue,
-			const float negativeFunctionValue, ulong* clusterArray, float* funcArray, int n, uint* nc) {
+	__global__ void updateClustering1opt(const int bestSrcVertex, const int destcluster, float positiveFunctionValue,
+			float negativeFunctionValue, ulong* clusterArray, float* funcArray, int n, uint* nc) {
 		funcArray[0] = positiveFunctionValue;
 		funcArray[1] = negativeFunctionValue;
 		int previousCluster = clusterArray[bestSrcVertex];
@@ -740,17 +749,9 @@ using namespace std;
 			// printf("The current number of clusters is %ld and bestImbalance = %.2f\n", h_nc[0], bestImbalance);
 			int blocksPerGrid = ((n * (h_nc[0] + 1)) + threadsCount - 1) / threadsCount;
 			
-			if(r == 1) {
-		    	// printf("CUDA kernel launch with %d blocks of %d threads, shmem = %d\n", blocksPerGrid, threadsCount, threadsCount*2*h_nc[0]*sizeof(float));
-				simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(clusterArray, funcArray, uint(n), uint(m), destImbArray, destPosImbArray, destNegImbArray,
-									ulong(h_nc[0]), ulong(numberOfChunks), vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray);
-			} else {
-		    	// printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsCount);
-				doubleSearchKernel<<<blocksPerGrid, threadsCount, threadsCount*4*(h_nc[0]+1)*sizeof(float)>>>(clusterArray, funcArray,
-						uint(n), uint(m), destClusterArray1, destClusterArray2, destImbArray,
-						ulong(h_nc[0]), ulong(numberOfChunks), firstImprovement,
-						vertexClusterPosSumArray, vertexClusterNegSumArray, threadsCount);
-			}
+			// printf("CUDA kernel launch with %d blocks of %d threads, shmem = %d\n", blocksPerGrid, threadsCount, threadsCount*2*h_nc[0]*sizeof(float));
+			simpleSearchKernel<<<blocksPerGrid, threadsCount>>>(clusterArray, funcArray, uint(n), uint(m), destImbArray, destPosImbArray, destNegImbArray,
+								ulong(h_nc[0]), ulong(numberOfChunks), vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray);
 			checkCudaErrors(cudaDeviceSynchronize());
 			// printf("Begin reduce...\n");
 
@@ -1222,7 +1223,7 @@ using namespace std;
 		h_nc[0] = nc;
 		
 		int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-		updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(long)>>>(weightArray, destArray, numArray,
+		updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray,
 			offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
 		checkCudaErrors(cudaDeviceSynchronize());
 		
@@ -1294,6 +1295,49 @@ using namespace std;
 		return true;
 	}
 
+	 int generateRandomNumbers(size_t n, int lowerBound, int upperBound, std::vector<int>& randomNumbers) {
+	    size_t i;
+	    curandGenerator_t gen;
+	    float *devData, *hostData;
+
+	    /* Allocate n floats on host */
+	    hostData = (float *)calloc(n, sizeof(float));
+
+	    /* Allocate n floats on device */
+	    CUDA_CALL(cudaMalloc((void **)&devData, n*sizeof(float)));
+
+	    /* Create pseudo-random number generator */
+	    CURAND_CALL(curandCreateGenerator(&gen,
+	                CURAND_RNG_PSEUDO_DEFAULT));
+
+	    /* Set seed */
+	    CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen,
+	    		boost::random::random_device()()));
+
+	    /* Generate n floats on device */
+	    CURAND_CALL(curandGenerateUniform(gen, devData, n));
+
+	    /* Copy device memory to host */
+	    CUDA_CALL(cudaMemcpy(hostData, devData, n * sizeof(float),
+	        cudaMemcpyDeviceToHost));
+
+	    /* Show result */
+	    randomNumbers.resize(n, 0);
+	    for(i = 0; i < n; i++) {
+	        int rnd_integer_range = lowerBound + hostData[i] * (upperBound - lowerBound);
+	        // printf("%1.4f  %d  ", hostData[i], rnd_integer_range);
+	        randomNumbers[i] = rnd_integer_range;
+	    }
+	    // printf("\n");
+
+	    /* Cleanup */
+	    CURAND_CALL(curandDestroyGenerator(gen));
+	    CUDA_CALL(cudaFree(devData));
+	    free(hostData);
+
+	    return EXIT_SUCCESS;
+	}
+
 	bool runILSKernel(ClusteringProblem& problem, ConstructClustering &construct,
 					SignedGraph *g, int processRank, ulong timeLimit,
 					const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
@@ -1316,6 +1360,18 @@ using namespace std;
 		thrust::device_vector<int> d_dest = h_dest;  // edge destination (vertex j)
 		thrust::device_vector<int> d_numedges = h_numedges;  // number of edges of each vertex i
 		thrust::device_vector<int> d_offset = h_offset;  // initial edge number for vertex i
+		// random number engine
+		thrust::host_vector<float> h_random;
+		thrust::host_vector<float> h_random2;
+		thrust::device_vector<float> d_random;
+		curandGenerator_t gen;
+		curandGenerator_t gen2;
+		/* Create pseudo-random number generator */
+		curandCreateGenerator(&gen,	CURAND_RNG_PSEUDO_DEFAULT);
+		curandCreateGenerator(&gen2,	CURAND_RNG_PSEUDO_DEFAULT);
+		/* Set seed */
+		curandSetPseudoRandomGeneratorSeed(gen,	boost::random::random_device()());
+		curandSetPseudoRandomGeneratorSeed(gen2, boost::random::random_device()());
 
 		// 1. Initial clustering (construct)
 		Clustering Cc = construct.constructClustering(g, problem, processRank);
@@ -1378,6 +1434,8 @@ using namespace std;
 			CStar = Cc;
 			Clustering Cl = Cc;
 			float bestImbalance = CStar.getImbalance().getValue();
+			float destPositiveImbalance = Cc.getImbalance().getPositiveValue();
+			float destNegativeImbalance = Cc.getImbalance().getNegativeValue();
 			// printf("Constructive phase I(P) = %.2f\n", bestImbalance);
 			int perturbationLevel = 1;
 			bool perturbated = false;
@@ -1389,6 +1447,8 @@ using namespace std;
 				thrust::host_vector<float> h_functionValue(2);
 				h_functionValue[0] = Cl.getImbalance().getPositiveValue();
 				h_functionValue[1] = Cl.getImbalance().getNegativeValue();
+				destPositiveImbalance = Cl.getImbalance().getPositiveValue();
+				destNegativeImbalance = Cl.getImbalance().getNegativeValue();
 				h_nc[0] = Cl.getNumberOfClusters();
 				unsigned long numberOfChunks = n * (h_nc[0] + 1);  // the search space for each vertex (dest cluster) will be split into n*(nc+1) chunks
 				// A -> Transfer to device
@@ -1412,7 +1472,9 @@ using namespace std;
 					offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
 				checkCudaErrors(cudaDeviceSynchronize());
 
+				// VND loop
 				int iteration = 0;
+				bestImbalance = destPositiveImbalance + destNegativeImbalance;
 				while (true) {
 					// printf("*** Local search iteration %d, nc = %ld, best I(P) = %.2f\n", iteration, h_nc[0], bestImbalance);
 					numberOfChunks = (h_nc[0] + 1) * n;
@@ -1423,6 +1485,8 @@ using namespace std;
 					float* destImbArray = thrust::raw_pointer_cast( &d_destFunctionValue[0] );
 					float* destPosImbArray = thrust::raw_pointer_cast( &d_destPosFunctionValue[0] );
 					float* destNegImbArray = thrust::raw_pointer_cast( &d_destNegFunctionValue[0] );
+					d_functionValue[0] = destPositiveImbalance;
+					d_functionValue[1] = destNegativeImbalance;
 
 					// printf("The current number of clusters is %ld and bestImbalance = %.2f\n", h_nc[0], bestImbalance);
 					blocksPerGrid = ((n * (h_nc[0] + 1)) + threadsCount - 1) / threadsCount;
@@ -1433,8 +1497,7 @@ using namespace std;
 
 					// printf("Begin reduce / post-process...\n");
 
-					thrust::device_vector<float>::iterator iter = thrust::min_element(d_destFunctionValue.begin(), 
-							d_destFunctionValue.begin()+numberOfChunks);
+					thrust::device_vector<float>::iterator iter = thrust::min_element(d_destFunctionValue.begin(), d_destFunctionValue.end());
 					float min_val = *iter;
 					// as there may be more than one combination with the same imbalance,
 					// chooses one combination at random
@@ -1462,8 +1525,8 @@ using namespace std;
 						ulong destCluster = resultIdx / n;
 						ulong bestSrcVertex = resultIdx % n;
 						ulong sourceCluster = d_mycluster[bestSrcVertex];
-						float destPositiveImbalance = d_destPosFunctionValue[resultIdx];
-						float destNegativeImbalance = d_destNegFunctionValue[resultIdx];
+						destPositiveImbalance = d_destPosFunctionValue[resultIdx];
+						destNegativeImbalance = d_destNegFunctionValue[resultIdx];
 
 						// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, min_val);
 						if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
@@ -1505,13 +1568,21 @@ using namespace std;
 							isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 						}
 						// printf("Preparing new VND loop...\n");
-						if(bestImbalance < 0)  break;
+						if(bestImbalance <= 0)  break;
 					} else {  // no better result found in neighborhood
 						// printf("Breaking VND loop...\n");
 						break;
 					}
 					iteration++;
 				}
+				/*
+				SequentialNeighborhoodSearch neighborhoodSearchSeq;
+				VariableNeighborhoodDescent vnd(neighborhoodSearchSeq, construct.getRandomSeed(), 1, true, timeLimit);
+				Clustering Clnew = vnd.localSearch(g, Cl, i, problem, timeSpentInILS, 0);
+				float bestImbalance2 = Clnew.getImbalance().getValue();
+				if(bestImbalance != bestImbalance2)   printf("CUDA: %.2f  CPU: %.2f\n", bestImbalance, bestImbalance2);
+				*/
+
 				// 3. Select the best clustring so far
 				if(bestImbalance < CStar.getImbalance().getValue()) {
 					// printf("Imbalance improved in the current iteration.\n");
@@ -1520,6 +1591,7 @@ using namespace std;
 					} else {
 						// printf("Improved because of constructive phase.\n");
 					}
+
 					thrust::host_vector<unsigned long> h_mycluster = d_mycluster;
 					ClusterArray cArray(h_mycluster.size(), 0);
 					for(int x = 0; x < h_mycluster.size(); x++) {
@@ -1556,17 +1628,31 @@ using namespace std;
 
 				int n = g->getN();
 				int nc = Cl.getNumberOfClusters();
+				/*
 				std::vector<int> nodeList(n, 0);
 				for(int i = 0; i < n; i++) {
 					nodeList[i] = i;
 				}
 				std::random_shuffle(nodeList.begin(), nodeList.end());
+				std::vector<int> nodeList; */
+				//generateRandomNumbers(perturbationLevel, 0, n - 1, nodeList);
+				/* Allocate n floats on device */
+				d_random.resize(perturbationLevel, 0);
+				float* devData = thrust::raw_pointer_cast( &d_random[0] );
+				/* Generate n floats on device */
+				curandGenerateUniform(gen, devData, perturbationLevel);
+				h_random = d_random;
+				curandGenerateUniform(gen2, devData, perturbationLevel);
+				h_random2 = d_random;
+
 				for(int i = 0; i < perturbationLevel; i++) {
 					nc = Cl.getNumberOfClusters();
-					int k2 = randomUtil.next(0, nc - 1);
-					int idx = randomUtil.next(0, n - 1);
+					// int k2 = randomUtil.next(0, nc - 1);
+					// int idx = randomUtil.next(0, n - 1);
 					// cout << "k2 = " << k2 << endl;
-					Cl = perturbation.move1optCCProblem(g, Cl, problem, nodeList[n - i - 1], k2);
+					int rnd_integer_range = 0 + h_random[i] * (n - 1 - 0);
+					int k2 = 0 + h_random2[i] * (nc - 1 - 0);
+					Cl = perturbation.move1optCCProblem(g, Cl, problem, rnd_integer_range, k2);
 				}
 				// printf("Perturbated I(P) = %.2f\n", Cl.getImbalance().getValue());
 				// printf("After perturb: nc = %d, imbalance = %.2f\n", h_nc[0], h_functionValue[0]);
@@ -1625,6 +1711,10 @@ using namespace std;
 				start_time = timer.elapsed();
 			}
 		}
+
+		curandDestroyGenerator(gen);
+		curandDestroyGenerator(gen2);
+
 		printf("I(P) = %.2f\n", CBest.getImbalance().getValue());
 		result = CBest;
 		totalIterations = iterMax;
