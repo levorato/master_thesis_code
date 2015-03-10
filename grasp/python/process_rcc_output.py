@@ -37,6 +37,61 @@ max = _minmax(max)
 def q(cond, on_true, on_false):
     return {True: on_true, False: on_false}[cond is True]
 
+class Vertex:
+    def __init__(self,key):
+        self.id = key
+        self.connectedTo = {}
+
+    def addNeighbor(self,nbr,weight=0):
+        self.connectedTo[nbr] = weight
+
+    def __str__(self):
+        return str(self.id) + ' connectedTo: ' + str([x.id for x in self.connectedTo])
+
+    def getConnections(self):
+        return self.connectedTo.keys()
+
+    def getId(self):
+        return self.id
+
+    def getWeight(self,nbr):
+        return self.connectedTo[nbr]
+
+class Graph:
+    def __init__(self):
+        self.vertList = {}
+        self.numVertices = 0
+
+    def addVertex(self,key):
+        self.numVertices = self.numVertices + 1
+        newVertex = Vertex(key)
+        self.vertList[key] = newVertex
+        return newVertex
+
+    def getVertex(self,n):
+        if n in self.vertList:
+            return self.vertList[n]
+        else:
+            return None
+
+    def __contains__(self,n):
+        return n in self.vertList
+
+    def addEdge(self,f,t,cost=0):
+        if f not in self.vertList:
+            nv = self.addVertex(f)
+        if t not in self.vertList:
+            nv = self.addVertex(t)
+        self.vertList[f].addNeighbor(self.vertList[t], cost)
+
+    def getVertices(self):
+        return self.vertList.keys()
+
+    def __iter__(self):
+        return iter(self.vertList.values())
+
+
+
 # ---------------------------------------------------------
 # natsort.py: Natural string sorting.
 # ---------------------------------------------------------
@@ -117,13 +172,16 @@ def main(argv):
           print 'Reading graph file: {0}'.format(str(instances_path + '/' + graphfile))
           with open(instances_path + '/' + graphfile, 'rb') as csvfile:
              lines = [line.strip() for line in open(instances_path + '/' + graphfile, 'rb')]
+             g = Graph()
              if str(lines[0]).find("people") >= 0:  # xpress mrel format
                  print "Detected xpress mrel format"
                  line = str(lines[0])
                  N = int(line[line.find(':')+1:].strip())
                  print "n = {0}".format(str(N))
                  # uses scipy's dictionary of keys sparse matrix (http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.dok_matrix.html#scipy.sparse.dok_matrix)
-                 matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
+                 # original directed graph from file
+                 for i in range(N):
+                    g.addVertex(i)
                  i = 0
                  while str(lines[i]).find("Mrel") < 0:
                     i += 1
@@ -132,7 +190,7 @@ def main(argv):
                  i = int(line[line.find('(')+1:line.find(',')]) - 1
                  j = int(line[line.find(',')+1:line.find(')')]) - 1
                  w = float(line[line.find(')')+1:])
-                 matrix[i,j] = w
+                 g.addEdge(i, j, w)
                  #print "{0} {1} {2}".format(i, j, w)
                  for line in lines:
                     line = str(line)
@@ -144,7 +202,7 @@ def main(argv):
                     i = int(line[line.find('(')+1:line.find(',')]) - 1
                     j = int(line[line.find(',')+1:line.find(')')]) - 1
                     w = float(line[line.find(')')+1:])
-                    matrix[i,j] = w
+                    g.addEdge(i, j, w)
                     i += 1
              else:  # traditional graph edge tabulated format
                  dialect = csv.Sniffer().sniff(csvfile.read(1024), delimiters=" \t")
@@ -157,15 +215,16 @@ def main(argv):
                     N = int(values[0][:values[0].find(' ')])
                  else:
                     N = int(values[0])
-                 matrix = matrix = dok_matrix((N, N), dtype=np.float32)   # original directed graph from file
+                 # original directed graph from file
+                 for i in range(N):
+                    g.addVertex(i)
                  for line in r:
                     i = int(line[0])
                     j = int(line[1])
                     w = float(line[2])
-                    matrix[i,j] = w
+                    g.addEdge(i, j, w)
 
           print "Successfully read graph file."
-          smatrix = matrix
           '''
           print "Converting to symmetric...\n"
           # converts the graph from directed to undirected version
@@ -216,7 +275,7 @@ def main(argv):
           DifferentialPopularity = []
           # for each partition, try to find a partition where most of the external edges are positive
           # the search is done over the UNDIRECTED version of the graph (smatrix)
-          print "Cluster,%IntPosEdges,%IntNegEdges,%ExtPosEdges,%ExtNegEdges"
+          #print "Cluster,%IntPosEdges,%IntNegEdges,%ExtPosEdges,%ExtNegEdges"
           for c in xrange(partitionNumber):
             numberOfExtNegEdges = 0
             numberOfExtPosEdges = 0
@@ -224,19 +283,24 @@ def main(argv):
             numberOfIntPosEdges = 0
             totalNumberOfIntEdges = 0
             totalNumberOfExtEdges = 0
-            for i in xrange(N):
+            for v in g:
+              i = v.getId()
+              if i > N:
+                 print i
               if cluster[i] == c:
-                for j in xrange(N):
-                  if smatrix[i,j] != 0:
+                for w in v.getConnections():
+                  j = w.getId()
+                  weight = v.getWeight(w)
+                  if weight != 0:
                     if cluster[j] == c:  # internal edges (within the same cluster)
                       totalNumberOfIntEdges += 1
-                      if smatrix[i,j] < 0:
+                      if weight < 0:
                         numberOfIntNegEdges += 1
                       else:
                         numberOfIntPosEdges += 1
                     else:  # external edges (between clusters)
                       totalNumberOfExtEdges += 1
-                      if smatrix[i,j] > 0:
+                      if weight > 0:
                         numberOfExtPosEdges += 1
                       else:
                         numberOfExtNegEdges += 1
@@ -250,7 +314,7 @@ def main(argv):
                 PExtNegEdges = float(numberOfExtNegEdges)*100 / totalNumberOfExtEdges
             else:
                 PExtPosEdges = PExtNegEdges = 0
-            print str(c) + ",%.2f,%.2f,%.2f,%.2f" % (PIntPosEdges, PIntNegEdges, PExtPosEdges, PExtNegEdges)
+            #print str(c) + ",%.2f,%.2f,%.2f,%.2f" % (PIntPosEdges, PIntNegEdges, PExtPosEdges, PExtNegEdges)
             
             # internal pos + external pos : "plus mediators" fig 2, according to Doreian et. al
             # internal neg + external pos : "plus mutually hostile mediators" fig 3
