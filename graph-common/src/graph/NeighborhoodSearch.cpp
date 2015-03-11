@@ -426,15 +426,13 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 	for(int i = 0; i < n; i++) {  // inserts nc (aka new cluster) into the list of cluster neighbors of each vertex
 		myNeighborClusterList[i].insert(nc);
 	}
-
+/*
 	// Array that stores the sum of edge weights between vertex i and all clusters
 	std::vector<float> h_VertexClusterPosSum(n * (nc + 1));
 	std::vector<float> h_VertexClusterNegSum(n * (nc + 1));
-	std::vector<int> isNeighborClusterArray(n * (nc + 1));
 	for (int i = 0; i < n * (nc + 1); i++) {
 		h_VertexClusterPosSum[i] = 0.0;
 		h_VertexClusterNegSum[i] = 0.0;
-		isNeighborClusterArray[i] = 0;
 	}
 	// For each vertex, creates a list of in and out edges
 	for (int edge = 0, i = 0; i < n; i++) {  // For each vertex i
@@ -445,10 +443,6 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 			int j = target(*f, g->graph);
 			count++;
 			edge++;
-			if(myCluster[i] != myCluster[j]){
-				isNeighborClusterArray[myCluster[j] * n + i] = 1;
-				isNeighborClusterArray[myCluster[i] * n + j] = 1;
-			}
 			if (weight > 0) {
 				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
@@ -461,19 +455,12 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 			int j = source(*f2, g->graph);
 			count++;
 			edge++;
-			if(myCluster[i] != myCluster[j]){
-				isNeighborClusterArray[myCluster[j] * n + i] = 1;
-				isNeighborClusterArray[myCluster[i] * n + j] = 1;
-			}
 			if (weight > 0) {
 				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
 				h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
 			}
 		}
-	}
-	for(int v = 0; v < n; v++) {
-		isNeighborClusterArray[nc * n + v] = 1;
 	}
 
 	std::vector<float> d_destFunctionValue;
@@ -484,22 +471,22 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 	for (unsigned long i = randomUtil.next(initialSearchIndex, finalSearchIndex), cont2 = 0; cont2 < numberOfVerticesInInterval; cont2++) {
 		// vertex i is in cluster(k1)
 		ulong k1 = myCluster[i];
-		for (int k2 = 0; k2 <= nc; k2++) {
-		// for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
+		// for (int k2 = 0; k2 <= nc; k2++) {
+		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
 		// cluster(k2)
-		// unsigned long k2 = *itr;
+		unsigned long k2 = *itr;
 		ulong idx = k2 * n + i;
-		if(k2 != k1 and (isNeighborClusterArray[i+k2*n])) {
+		if(k2 != k1) {
 			// executes local search for vertex i, moving it to cluster k2
 			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
 			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
 			// only calculates the cost of inserting vertex i into cluster k2
 			// vertex i is in no cluster
 			//
-			// * Na inserção em cluster novo, contar apenas as relações externas entre o vértice i e os vértices
-			// * que estão sem cluster. Não incluir as relações internas quando k = nc.
-			// * Quando o vértice i for inserido em cluster existente, contar as relações internas a k2 negativas,
-			// * bem como as relações externas a k2 positivas com i.
+			// * Na inserÃ§Ã£o em cluster novo, contar apenas as relaÃ§Ãµes externas entre o vÃ©rtice i e os vÃ©rtices
+			// * que estÃ£o sem cluster. NÃ£o incluir as relaÃ§Ãµes internas quando k = nc.
+			// * Quando o vÃ©rtice i for inserido em cluster existente, contar as relaÃ§Ãµes internas a k2 negativas,
+			// * bem como as relaÃ§Ãµes externas a k2 positivas com i.
 			//
 			// updates thread idx / vertex i to cluster k2 imbalance result
 			d_destFunctionValue[idx] = clustering->getImbalance().getValue();
@@ -584,7 +571,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 			newClustering1.addCluster(*g, problem, bestSrcVertex);
 		}
 	}
-
+*/
 	// printf("CUDA I(P) = %.2f : vertex %d goes to cluster %d\n", min_val, v, clusterNumber);
 
 
@@ -671,10 +658,12 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 	}
 
 	// Compares the best clustering obtained by both methods (1 and 2)
+	/*
 	BOOST_LOG_TRIVIAL(debug) << "CUDA: " << newClustering1.getImbalance().getValue() <<
 			"CPU: " << newClustering.getImbalance().getValue() <<
 			" Equals = " << (newClustering1.getImbalance().getValue() == newClustering.getImbalance().getValue()) << endl;
-	cBest = newClustering1;
+			*/
+	// cBest = newClustering1;
 
 	// returns the best combination found in 1-opt
 	return cBest;
