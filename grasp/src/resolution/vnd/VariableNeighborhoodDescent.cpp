@@ -49,7 +49,7 @@ Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& 
 	Clustering CStar = Cc; // C* := Cc
 	timeSpentOnLocalSearch = 0.0;
 	numberOfTestedCombinations = 0;
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP local search...\n";
+	BOOST_LOG_TRIVIAL(debug)<< "VND local search...\n";
 	BOOST_LOG_TRIVIAL(debug)<< "Current neighborhood is " << r << endl;
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < timeLimit)) {
@@ -93,7 +93,7 @@ Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& 
 		// Registers the best result at time intervals
 		notifyNewValue(CStar, timeSpentOnLocalSearch, graspIteration);
 	}
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP local search done. Obj = " << CStar.getImbalance().getValue() <<
+	BOOST_LOG_TRIVIAL(debug)<< "VND local search done. Obj = " << CStar.getImbalance().getValue() <<
 			". Time spent: " << timeSpentOnLocalSearch << " s";
 	return CStar;
 }

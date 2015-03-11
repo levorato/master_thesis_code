@@ -360,8 +360,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	string jobid;
 	CommandLineInterfaceController::StategyName strategy = CommandLineInterfaceController::GRASP;
 	CommandLineInterfaceController::SearchName searchType = CommandLineInterfaceController::SEQUENTIAL_SEARCH;
-	// int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and completely Random instances
-	int iterMaxILS = 5, perturbationLevelMax = 3; // for UNGA instances
+	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and completely Random instances
+	// int iterMaxILS = 5, perturbationLevelMax = 3; // for UNGA instances
 
 	po::options_description desc("Available options:");
 	desc.add_options()

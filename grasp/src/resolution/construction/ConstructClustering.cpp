@@ -44,13 +44,20 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		return *CCclustering;
 	}
 
+	ClusterArray mycluster = Cc.getClusterArray();
+	int nc = Cc.getNumberOfClusters();
+	for(int e = 0; e < mycluster.size(); e++) {
+		if (mycluster[e] == Clustering::NO_CLUSTER) {
+			mycluster[e] = nc;
+		}
+	}
+
 	while (lc.size() > 0) { // lc != empty
 		GainCalculation gainCalculation;
 		if (_alpha == 1.0) {
 			// alpha = 1.0 (completely random): no need to calculate all gains (saves time)
 			int i = lc.chooseRandomVertex(lc.size()).vertex;
-			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc,
-					i);
+			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc, i);
 		} else {
 			// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 			// according to the value of the gain function
