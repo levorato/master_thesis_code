@@ -9,6 +9,8 @@
 #include "util/include/MPIMessage.h"
 #include "util/parallel/include/MPIUtil.h"
 #include "problem/include/RCCProblem.h"
+#include "include/CUDAILS.h"
+
 #include <cstring>
 #include <vector>
 #include <boost/mpi/communicator.hpp>
@@ -55,7 +57,8 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+	CUDAILS cudails;
+	Clustering bestClustering = cudails.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
 
 	// the leader receives the processing results
 	OutputMessage omsg;

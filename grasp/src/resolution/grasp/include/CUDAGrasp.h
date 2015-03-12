@@ -16,7 +16,7 @@ using namespace resolution::construction;
 namespace resolution {
 namespace grasp {
 
-class CUDAGrasp : resolution::grasp::Grasp {
+class CUDAGrasp : public resolution::grasp::Grasp {
 public:
 	CUDAGrasp();
 	virtual ~CUDAGrasp();

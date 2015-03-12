@@ -10,6 +10,8 @@
 #include "util/parallel/include/MPIUtil.h"
 #include "problem/include/CCProblem.h"
 #include "problem/include/RCCProblem.h"
+#include "include/CUDAGrasp.h"
+
 #include <cstring>
 #include <vector>
 #include <boost/mpi/communicator.hpp>
@@ -59,7 +61,8 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering *construct, VariableN
 		BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Clustering bestClustering = Grasp::executeGRASP(construct, vnd, g, iter, problem, info);
+	CUDAGrasp cudagrasp;
+	Clustering bestClustering = cudagrasp.executeGRASP(construct, vnd, g, iter, problem, info);
 
 	// the leader receives the processing results
 	OutputMessage omsg;

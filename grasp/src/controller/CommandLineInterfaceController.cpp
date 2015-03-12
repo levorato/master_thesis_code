@@ -666,14 +666,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								imsgpg.timeLimit);
 						// Execution additional info
 						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
-						Grasp resolution;
-						Clustering bestClustering = resolution.executeGRASP(&construct, &vnd, g.get(), imsgpg.iter,
+						// Grasp resolution;
+						CUDAGrasp CUDAgrasp;
+						Clustering bestClustering = CUDAgrasp.executeGRASP(&construct, &vnd, g.get(), imsgpg.iter,
 								problemFactory.build(imsgpg.problemType, imsgpg.k), info);
 
 						// Sends the result back to the leader process
-						OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());
+						OutputMessage omsg(bestClustering, CUDAgrasp.getNumberOfTestedCombinations());
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
-						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": GRASP Output Message sent to leader.";
+						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": GRASP Output Message sent to leader.";
 
 					} else if(stat.tag() == MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG) {
 						// Receives a message with ILS parameters and triggers local ILS execution
@@ -710,15 +711,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								imsgpils.timeLimit);
 						// Additional execution info
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
-						resolution::ils::ILS resolution;
-						Clustering bestClustering = resolution.executeILS(&construct, &vnd, g.get(), imsgpils.iter,
+						// resolution::ils::ILS resolution;
+						resolution::ils::CUDAILS CUDAILS;
+						Clustering bestClustering = CUDAILS.executeILS(&construct, &vnd, g.get(), imsgpils.iter,
 								imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 								problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 
 						// Sends the result back to the leader process
-						OutputMessage omsg(bestClustering, resolution.getNumberOfTestedCombinations());
+						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations());
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
-						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": ILS Output Message sent to leader.";
+						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader.";
 					}
 				}
 			} else {  // Parallel VND slave
