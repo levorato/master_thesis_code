@@ -21,13 +21,23 @@ using namespace std;
 namespace resolution {
 namespace construction {
 
-typedef struct {
+class GainCalculation {
+public:
+	GainCalculation() : vertex(0), gainValue(0.0), clusterNumber(0) {
+
+	}
+
+	GainCalculation(const GainCalculation &c) : vertex(c.vertex), gainValue(c.gainValue),
+			clusterNumber(c.clusterNumber) {
+
+	}
+
 	int vertex;
 	// stores the best solution value and cluster number for the vertex
 	// to be inserted
 	double gainValue;
 	int clusterNumber;
-} GainCalculation;
+};
 
 class GainFunction {
 public:

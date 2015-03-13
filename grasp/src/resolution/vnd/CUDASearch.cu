@@ -199,13 +199,13 @@ using namespace std;
 		int i = blockDim.x*blockIdx.x + threadIdx.x;
 		uint nc = ncArray[0];
 		// shared memory
+		/*
 		extern __shared__ int sc[];       // n longs
 		int *s_cluster = sc;              // n longs
-		
 		for(ulong j = 0; j < n; j++) {
 			s_cluster[j] = clusterArray[j];
 		}
-		__syncthreads();
+		__syncthreads(); */
 	    if(i < n) {
             // For each vertex i, stores the sum of edge weights between vertex i and all clusters
             for(int k = 0; k <= nc; k++) {
@@ -217,18 +217,20 @@ using namespace std;
             int offset = offsetArray[i];
 			int numedges = numArray[i];
 			ulong count = offset + numedges;
+			int ki = clusterArray[i];
 			for (ulong edgenum = offset; edgenum < count; edgenum++) {   
 				int j = destArray[edgenum];
 				float weight = weightArray[edgenum];
-				if(s_cluster[j] >= 0) {
-					if(s_cluster[i] != s_cluster[j]) {  // different cluster
-						isNeighborClusterArray[s_cluster[j] * n + i]++;  // vertex i now has external connection to cluster kj
-						isNeighborClusterArray[s_cluster[i] * n + j]++;  // vertex j now has external connection to cluster ki
+				int kj = clusterArray[j];
+				if(kj >= 0) {
+					if(ki != kj) {  // different cluster
+						isNeighborClusterArray[kj * n + i]++;  // vertex i now has external connection to cluster kj
+						isNeighborClusterArray[ki * n + j]++;  // vertex j now has external connection to cluster ki
 					}
 					if(weight > 0) {
-						vertexClusterPosSumArray[s_cluster[j] * n + i] += fabs(weight);
+						vertexClusterPosSumArray[kj * n + i] += fabs(weight);
 					} else {
-						vertexClusterNegSumArray[s_cluster[j] * n + i] += fabs(weight);
+						vertexClusterNegSumArray[kj * n + i] += fabs(weight);
 					}
 				}
 			}
@@ -244,13 +246,12 @@ using namespace std;
 		uint nc = old_ncArray[0];
 		uint new_nc = ncArray[0];
 		// shared memory
-		extern __shared__ int sc[];       // n longs
+		/* extern __shared__ int sc[];       // n longs
 		int *s_cluster = sc;              // n longs
-
 		for(ulong j = 0; j < n; j++) {
 			s_cluster[j] = clusterArray[j];
 		}
-		__syncthreads();
+		__syncthreads(); */
 
 		/*  THIS PEACE OF CODE IS NEEEDED ONLY WHEN USING THE CUDA CONSTRUCTIVE KERNEL - DISABLED */
 		if(new_nc > nc) {  // vertex i is being moved to a new cluster
@@ -282,13 +283,14 @@ using namespace std;
 		for (ulong edgenum = offset; edgenum < count; edgenum++) {
 			int j = destArray[edgenum];
 			float weight = weightArray[edgenum];
+			int kj = clusterArray[j];
 
 			isNeighborClusterArray[j + k1 * n] -= 2;
-			if(s_cluster[j] != k2) {
-				isNeighborClusterArray[i + s_cluster[j] * n]++;  // vertex i now has external connection to cluster kj
+			if(kj != k2) {
+				isNeighborClusterArray[i + kj * n]++;  // vertex i now has external connection to cluster kj
 				isNeighborClusterArray[j + k2 * n]++;  // vertex j now has external connection to cluster k2
 			} else {  // cluster[i] == cluster[j] == k2
-				isNeighborClusterArray[i + s_cluster[j] * n] = 0;  // vertex i now has NO external connections to cluster kj
+				isNeighborClusterArray[i + kj * n] = 0;  // vertex i now has NO external connections to cluster kj
 				isNeighborClusterArray[j + k2 * n] = 0;  // vertex j now has NO external connections to cluster k2
 			}
 			if(weight > 0) {
@@ -1467,8 +1469,8 @@ using namespace std;
 				vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
 				vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 				isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
-				int blocksPerGrid = (n + threadsCount - 1) / threadsCount;
-				updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount, n*sizeof(int)>>>(weightArray, destArray, numArray,
+				int blocksPerGrid = (n + threadsCount - 1) / threadsCount;  // , n*sizeof(int)
+				updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray,
 					offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
 				checkCudaErrors(cudaDeviceSynchronize());
 
@@ -1550,8 +1552,8 @@ using namespace std;
 							vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 							isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 						}
-
-						updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
+						// , n*sizeof(int)
+						updateVertexClusterSumArraysDelta<<<1, 1>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
 								vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
 						checkCudaErrors(cudaDeviceSynchronize());
 						// CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
@@ -1587,7 +1589,7 @@ using namespace std;
 				if(bestImbalance < CStar.getImbalance().getValue()) {
 					// printf("Imbalance improved in the current iteration.\n");
 					if(perturbated) {
-						printf("Improved because of perturbation: j = %d, perturb = %d\n", j, perturbationLevel);
+						// printf("Improved because of perturbation: j = %d, perturb = %d\n", j, perturbationLevel);
 					} else {
 						// printf("Improved because of constructive phase.\n");
 					}
@@ -1599,12 +1601,14 @@ using namespace std;
 					}
 					iterationValue = total;
 					// printf("Rebuilding clustering object.\n");
-					Clustering Clnew(cArray, *g, problem);
+					// TODO remontar o clustering sem recalcular a FO
+					Clustering Clnew(cArray, *g, problem, destPositiveImbalance, destNegativeImbalance);
 					// printf("I(P) = %.2f\n", Clnew.getImbalance().getValue());
 					CStar = Clnew;
-					if(bestImbalance != CStar.getImbalance().getValue()) {
+					/*
+					if(destPositiveImbalance + destNegativeImbalance != CStar.getImbalance().getValue()) {
 						printf("!!! WARNING: Imbalance of Cstar clustering does NOT match!\n");
-					}
+					} */
 					// printf("Clustering object REBUILT.\n");
 					// restarts the internal ILS loop and the perturbation
 					j = 1;
@@ -1676,7 +1680,7 @@ using namespace std;
 			Imbalance newValue = CStar.getImbalance();
 			Imbalance bestValue = CBest.getImbalance();
 			if(newValue < bestValue) {
-				printf("A better global solution was found: I(P) = %.2f\n", newValue.getValue());
+				// printf("A better global solution was found: I(P) = %.2f\n", newValue.getValue());
 				CBest = CStar;
 				bestValue = newValue;
 				iterationValue = i;

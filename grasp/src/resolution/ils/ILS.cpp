@@ -50,6 +50,7 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = "
 			<< construct->getAlpha() << " and l = " << vnd->getNeighborhoodSize();
 
+	double totalTimeSpentOnConstruction = 0.0;
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
 	timer.start();
@@ -60,6 +61,7 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
 	timeSpentInILS += timeSpentInConstruction;
+	totalTimeSpentOnConstruction += timeSpentInConstruction;
 	timer.resume();
 	start_time = timer.elapsed();
 
@@ -69,6 +71,7 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 	int iterationValue = 0;
 	double timeSpentOnBestSolution = 0.0;
 	double initialImbalanceSum = 0.0;
+	double timeSpentOnLocalSearch = 0.0;
 	stringstream iterationResults;
 	stringstream constructivePhaseResults;
 	numberOfTestedCombinations = 0;
@@ -94,6 +97,7 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 			// 2. Execute local search algorithm
 			Cl = vnd->localSearch(g, Cl, i, problem, timeSpentInILS, info.processRank);
 			numberOfTestedCombinations += vnd->getNumberOfTestedCombinations();
+			timeSpentOnLocalSearch += vnd->getTimeSpentOnLocalSearch();
 			// 3. Select the best clustring so far
 			// if Q(Cl) > Q(Cstar)
 			Imbalance newValue = Cl.getImbalance();
@@ -122,6 +126,10 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 				}
 			}
 			// 4. Generate perturbation over C*
+			if((problem.getType() == ClusteringProblem::RCC_PROBLEM) and (CStar.getNumberOfClusters() == 1)) {
+				// perturbation does not work if k = 1 and RCC Problem
+				break;
+			}
 			Perturbation perturbation(vnd->getRandomSeed());
 			Cl = perturbation.randomMove(g, CStar, problem, perturbationLevel);
 
@@ -177,6 +185,7 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 			timer.stop();
 			end_time = timer.elapsed();
 			timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+			totalTimeSpentOnConstruction += timeSpentInConstruction;
 			timeSpentInILS += timeSpentInConstruction;
 			timer.resume();
 			start_time = timer.elapsed();
@@ -197,6 +206,8 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 			<< endl;
 
 	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
+	BOOST_LOG_TRIVIAL(info) << "Time spent on construction phase: " << fixed << setprecision(2) << totalTimeSpentOnConstruction << "s, " << (100 * totalTimeSpentOnConstruction / timeSpentInILS) << "%.";
+	BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(2) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInILS) << "%.";
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults, g->getN());
 	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
