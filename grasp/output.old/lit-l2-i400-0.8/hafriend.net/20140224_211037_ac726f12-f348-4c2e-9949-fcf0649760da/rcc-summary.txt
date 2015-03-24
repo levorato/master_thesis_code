@@ -1,0 +1,2 @@
+RCC Summary for graph file: hafriend.net
+RCC-Node0-l2-k5-iterations.csv Best value3.00000.00003.0000140.00002040794

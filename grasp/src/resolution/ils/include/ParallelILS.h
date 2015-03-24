@@ -37,6 +37,7 @@ private:
 	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;
 	unsigned int numberOfSlaves;
+	Clustering *CCclustering;
 };
 
 } /* namespace ils */

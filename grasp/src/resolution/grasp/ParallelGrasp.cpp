@@ -7,11 +7,10 @@
 
 #include "include/ParallelGrasp.h"
 #include "util/include/MPIMessage.h"
+#include "./include/CUDAGrasp.h"
 #include "util/parallel/include/MPIUtil.h"
 #include "problem/include/CCProblem.h"
 #include "problem/include/RCCProblem.h"
-#include "include/CUDAGrasp.h"
-
 #include <cstring>
 #include <vector>
 #include <boost/mpi/communicator.hpp>
@@ -48,6 +47,9 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering *construct, VariableN
 	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
 		RCCProblem& rp = static_cast<RCCProblem&>(problem);
 		k = rp.getK();
+		if(k < 0) {  // reuses CC problem's best solution in the constructive phase
+			CCclustering = construct->getCCclustering();
+		}
 	}
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too

@@ -1,0 +1,2 @@
+CC Summary for graph file: hbfriend.dat
+CC-Node0-l2a0.8-iterations.csv Best value18.000017.00001.00004420.86904432388901

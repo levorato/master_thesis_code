@@ -1,0 +1,2 @@
+CC Summary for graph file: hbweekend.dat
+CC-Node0-l2a0.8-iterations.csv Best value19.000018.00001.0000410.01194022049175

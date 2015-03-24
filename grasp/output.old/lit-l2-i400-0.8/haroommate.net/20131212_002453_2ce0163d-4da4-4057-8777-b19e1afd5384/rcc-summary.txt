@@ -1,0 +1,2 @@
+RCC Summary for graph file: haroommate.net
+RCC-Node0-l2-k4-iterations.csv Best value1.00000.00001.000070.0000157222

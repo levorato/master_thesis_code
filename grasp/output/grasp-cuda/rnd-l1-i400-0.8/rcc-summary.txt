@@ -1,0 +1,1 @@
+Filename, RI(P), RI(P)+, RI(P)-, k, Local time(s), Global time(s), Params, Total Iter, Total Comb

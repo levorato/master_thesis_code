@@ -1,0 +1,2 @@
+CC Summary for graph file: Edge_weighted_Matrix_Brusco.net
+Node0-l2a0.8-iterations.csv Best value0.00000.00000.000031530.187815359421

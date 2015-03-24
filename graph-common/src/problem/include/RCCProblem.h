@@ -70,7 +70,7 @@ public:
 	}
 
 private:
-	unsigned long k;
+	long k;
 	static const int POSITIVE_EDGE = -1;
 	static const int NEGATIVE_EDGE = 1;
 

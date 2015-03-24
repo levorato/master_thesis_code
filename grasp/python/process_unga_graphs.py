@@ -66,6 +66,7 @@ def main(argv):
    folder = ''
    filter = ''
    instances_path = ''
+   threshold = float(90.0)  # percentual threshold for the quantity of relashionships
    try:
       opts, args = getopt.getopt(argv,"hi:o:",["folder=","filter=","instancespath="])
    except getopt.GetoptError:
@@ -91,7 +92,7 @@ def main(argv):
    print 'Input dir is ', folder
    print 'File filter is ', filter
    print 'Graph instances dir is ', instances_path
-
+   print 'Mediation threshold is ', threshold
 
    error_summary = []
    cc_result_summary = dict()
@@ -103,6 +104,10 @@ def main(argv):
    matrix = []
    neg_edge_sum = 0.0
    pos_edge_sum = 0.0
+   # lists of interesting clusters (with mediation properties)
+   PlusMediators = dict()
+   PlusMutuallyHostileMediators = dict()
+   InternalSubgroupHostility = dict()
 
    # lookup country full name and iso abbreviation from csv file
    country_full_name = dict()
@@ -170,6 +175,20 @@ def main(argv):
 		             pos_edge_sum += w
 		   print 'neg_edge_sum = {0}, pos_edge_sum = {1}'.format(str(neg_edge_sum), str(pos_edge_sum))
 
+		   # converts the graph from directed to undirected version
+		   smatrix = [[0 for x in xrange(N)] for x in xrange(N)]
+		   for i in xrange(N):
+		      for j in xrange(N):
+		          if (i < j):
+		              mult = matrix[i][j] * matrix[j][i]
+		              if (mult > 0):  # opposite edges with the same sign become one undirected edge
+		                  smatrix[i][j] = matrix[i][j] + matrix[j][i]
+		              elif (mult < 0):  # opposite edges with different signs remain as 2 diff. edges
+		                  smatrix[i][j] = matrix[i][j]
+		                  smatrix[j][i] = matrix[j][i]
+		              else:  # mult = 0
+		                  smatrix[i][j] = matrix[i][j] + matrix[j][i]
+
 		   try:  # process *-result.txt file
 		    content = content_file.read()
 		    reader = csv.reader(StringIO.StringIO(content), delimiter='\n')
@@ -185,6 +204,8 @@ def main(argv):
 		    started_cluster_analysis = False
 		    processed_imb_analysis = False
 		    started_imb_analysis = False
+		    partitionNumber = 0
+		    cluster = [int(0) for x in xrange(N)]
 		    for row in reader:
 		       linestring = ''.join(row)
                        if(linestring == ''):
@@ -206,9 +227,11 @@ def main(argv):
                                 else:
                                    line_out3 += str(country[int(vertex)]) + ", "
                                    error_summary.append(str(country[int(vertex)]))
+                                cluster[int(vertex)] = partitionNumber
                              clustering_names.append(line_out + '\r\n')
                              clustering_numbers.append(line_out2 + '\r\n')
                              clustering_full_names.append(line_out3 + '\r\n')
+                          partitionNumber += 1
                        else:
                           if(not processed):
                              result_file.write(str(row[0]) + '\n')
@@ -254,6 +277,55 @@ def main(argv):
 						clusterImbMatrix[line][column] = float(str(elem))
 						column += 1
 				   line += 1
+
+		    if(result_file_name.startswith('rcc')):  # process mediation info from rcc result
+			  # for each partition, tries to find a partition where most of the external edges are positive
+			  #print "Cluster,%IntPosEdges,%IntNegEdges,%ExtPosEdges,%ExtNegEdges"
+			  for c in xrange(partitionNumber):
+			    numberOfExtNegEdges = 0
+			    numberOfExtPosEdges = 0
+			    numberOfIntNegEdges = 0
+			    numberOfIntPosEdges = 0
+			    totalNumberOfIntEdges = 0
+			    totalNumberOfExtEdges = 0
+			    for i in xrange(N):
+			      if cluster[i] == c:  # i is in cluster c
+				for j in xrange(N):
+				  if smatrix[i][j] != 0:  # edge (i, j)
+				    if cluster[j] == c:  # internal edges (within the same cluster)
+				      totalNumberOfIntEdges += 1
+				      if smatrix[i][j] < 0:
+				        numberOfIntNegEdges += 1
+				      else:
+				        numberOfIntPosEdges += 1
+				    else:  # external edges (between clusters)
+				      totalNumberOfExtEdges += 1
+				      if smatrix[i][j] > 0:
+				        numberOfExtPosEdges += 1
+				      else:
+				        numberOfExtNegEdges += 1
+			    if totalNumberOfIntEdges > 0:
+				PIntPosEdges = float(numberOfIntPosEdges)*100 / totalNumberOfIntEdges
+				PIntNegEdges = float(numberOfIntNegEdges)*100 / totalNumberOfIntEdges
+			    else:
+				PIntPosEdges = PIntNegEdges = 0
+			    if totalNumberOfExtEdges > 0:
+				PExtPosEdges = float(numberOfExtPosEdges)*100 / totalNumberOfExtEdges
+				PExtNegEdges = float(numberOfExtNegEdges)*100 / totalNumberOfExtEdges
+			    else:
+				PExtPosEdges = PExtNegEdges = 0
+			    #print str(c) + ",%.2f,%.2f,%.2f,%.2f" % (PIntPosEdges, PIntNegEdges, PExtPosEdges, PExtNegEdges)
+			    
+			    # internal pos + external pos : "plus mediators" fig 2, according to Doreian et. al
+			    # internal neg + external pos : "plus mutually hostile mediators" fig 3
+			    # maybe internal neg + external neg would be "internal subgroup hostility" ???
+			    if (PIntPosEdges > threshold and PExtPosEdges > threshold):
+			      PlusMediators[graphfile] = ("Cluster " + str(c+1) + str(" (%%IntPosEdges = %.2f" % (PIntPosEdges)) + str(" and %%ExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
+			    if (PIntNegEdges > threshold and PExtPosEdges > threshold):
+			      PlusMutuallyHostileMediators[graphfile] = ("Cluster " + str(c+1) + str(" (%%IntNegEdges = %.2f" % (PIntNegEdges)) + str(" and %%ExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
+			    if (PIntNegEdges > threshold and PExtNegEdges > threshold):
+			      InternalSubgroupHostility[graphfile] = ("Cluster " + str(c+1) + str(" (%%IntNegEdges = %.2f" % (PIntNegEdges)) + str(" and %%ExtNegEdges = %.2f" % (PExtNegEdges)) + ")")
+
 		    # export cluster imb matrix to html
 		    matrixline = ['Cluster']
 		    for line in xrange(1, numberOfClusters+1):
@@ -287,22 +359,40 @@ def main(argv):
                         pos_imbalance = pos_contrib_sum
                         neg_imbalance = neg_contrib_sum
                     csv_file_list.extend(glob.glob(root + '/' + prfx + '-Node0-*-iterations.csv'))
-                    with open(csv_file_list[0], 'r') as r_csv_file:
-                       r2 = csv.reader(r_csv_file)
-		       line = r2.next()
-                       while (not line[0].startswith('Best')):
-                          line = r2.next()
-                       # extracts total, positive and negative imbalance of the best result
-                       imbalance = float(line[1])
-                       if(result_file_name.startswith('cc')):
-                          pos_imbalance = float(line[2])
-                          neg_imbalance = float(line[3])
-                          print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
-                       else:  # for RCC problem the numbers are internal and external imbalance values
-                          int_imbalance = float(line[2])
-                          ext_imbalance = float(line[3])
-                          print 'imbalances {0} (int){1} (ext){2}'.format(str(imbalance), str(int_imbalance), str(ext_imbalance))
-                          print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+                    if not csv_file_list:  # if there is no file, I(P) is probably zero
+                    	with open(root + '/' + result_file_name + '.txt', 'r') as r_csv_file:
+				r2 = csv.reader(r_csv_file)
+				line = r2.next()
+				while (line[0].find('I(P) = ') < 0):
+				  line = r2.next()
+				# extracts total, positive and negative imbalance of the best result
+				imbalance = float(line[0][line[0].find('=')+1:])
+				if(result_file_name.startswith('cc')):
+				  pos_imbalance = imbalance
+				  neg_imbalance = 0
+				  print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+				else:  # for RCC problem the numbers are internal and external imbalance values
+				  int_imbalance = imbalance
+				  ext_imbalance = 0
+				  print 'imbalances {0} (int){1} (ext){2}'.format(str(imbalance), str(int_imbalance), str(ext_imbalance))
+				  print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+                    else:
+			with open(csv_file_list[0], 'r') as r_csv_file:
+				r2 = csv.reader(r_csv_file)
+				line = r2.next()
+				while (not line[0].startswith('Best')):
+				  line = r2.next()
+				# extracts total, positive and negative imbalance of the best result
+				imbalance = float(line[1])
+				if(result_file_name.startswith('cc')):
+				  pos_imbalance = float(line[2])
+				  neg_imbalance = float(line[3])
+				  print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
+				else:  # for RCC problem the numbers are internal and external imbalance values
+				  int_imbalance = float(line[2])
+				  ext_imbalance = float(line[3])
+				  print 'imbalances {0} (int){1} (ext){2}'.format(str(imbalance), str(int_imbalance), str(ext_imbalance))
+				  print 'imbalances {0} (+){1} (-){2}'.format(str(imbalance), str(pos_imbalance), str(neg_imbalance))
 
                     for line in clustering_full_names:
                        result_file.write(line)
@@ -406,7 +496,24 @@ def main(argv):
          t.rows.append(item)
          
       html += str(t)
-      html += '</p><br/>Cluster to cluster imbalance contribution matrix'
+      html += '</p><br/><h4>Mediation analysis</h4>'
+      
+      html += "\n<br>Clusters with plus mediators (internal positive edges + external positive edges): <br>"
+      if not key in PlusMediators:
+         html += "None<br>\n"
+      else:
+         for elem in (PlusMediators[key]):
+            html += (elem)
+         html += "<br>\n"
+      html += "\n<br>Clusters with plus mutually hostile mediators (internal negative edges + external positive edges): <br>"
+      if not key in PlusMutuallyHostileMediators:
+         html += "None<br>\n"
+      else:
+         for elem in (PlusMutuallyHostileMediators[key]):
+            html += (elem)
+         html += "<br>\n"
+
+      html += '<br/>Cluster to cluster imbalance contribution matrix'
       # append imbalance matrix
       html += rcc_cluster_imb_matrix[key] + '<br/>'
       startyear += 1

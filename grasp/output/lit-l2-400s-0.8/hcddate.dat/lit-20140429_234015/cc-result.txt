@@ -1,0 +1,52 @@
+Global time spent: 1.22108
+I(P) = 13
+Clustering configuration: 
+ Partition 0 (9): [ 1 2 4 6 10 11 15 16 17 ] 
+ Partition 1 (5): [ 0 7 13 14 19 ] 
+ Partition 2 (6): [ 3 5 8 9 12 18 ] 
+
+Imbalance analysis (out edges contribution):
+Vertex,PositiveSum,NegativeSum
+0,0,0
+1,0,1
+2,0,0
+3,0,0
+4,1,0
+5,1,0
+6,0,0
+7,1,0
+8,0,1
+9,1,0
+10,0,0
+11,0,0
+12,0,0
+13,1,0
+14,2,0
+15,0,0
+16,0,0
+17,3,0
+18,0,0
+19,1,0
+Imbalance analysis (in edges contribution):
+Vertex,PositiveSum,NegativeSum
+0,0,0
+1,1,0
+2,0,0
+3,0,0
+4,1,1
+5,1,0
+6,0,0
+7,2,0
+8,1,0
+9,0,1
+10,0,0
+11,1,0
+12,1,0
+13,1,0
+14,0,0
+15,0,0
+16,0,0
+17,1,0
+18,0,0
+19,1,0
+

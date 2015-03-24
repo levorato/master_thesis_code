@@ -18,9 +18,8 @@ namespace construction {
 
 using namespace problem;
 
-ConstructClustering::ConstructClustering(GainFunction* f,
-		const unsigned long& seed, const double& alpha) :
-		gainFunction(f), randomSeed(seed), _alpha(alpha) {
+ConstructClustering::ConstructClustering(GainFunction* f, const unsigned long& seed, const double& alpha, Clustering* cl) :
+		gainFunction(f), randomSeed(seed), _alpha(alpha), CCclustering(cl) {
 
 }
 
@@ -32,19 +31,32 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		ClusteringProblem& problem, const int& myRank) {
 	Clustering Cc(*g); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
-	BOOST_LOG_TRIVIAL(debug)<< "GRASP construct clustering...\n";
+	BOOST_LOG_TRIVIAL(debug)<< "Construct clustering...\n";
 	// 0. Triggers local processing time calculation
-        boost::timer::cpu_timer timer;
-        timer.start();
-        boost::timer::cpu_times start_time = timer.elapsed();
+	boost::timer::cpu_timer timer;
+	timer.start();
+	boost::timer::cpu_times start_time = timer.elapsed();
+
+	// if CC Clustering object is not null, skips the construct clustering and returns CC Clustering
+	if(CCclustering != NULL) {
+		CCclustering->setImbalance(problem.objectiveFunction(*g, *CCclustering));
+		return *CCclustering;
+	}
+
+	ClusterArray mycluster = Cc.getClusterArray();
+	int nc = Cc.getNumberOfClusters();
+	for(int e = 0; e < mycluster.size(); e++) {
+		if (mycluster[e] == Clustering::NO_CLUSTER) {
+			mycluster[e] = nc;
+		}
+	}
 
 	while (lc.size() > 0) { // lc != empty
 		GainCalculation gainCalculation;
 		if (_alpha == 1.0) {
 			// alpha = 1.0 (completely random): no need to calculate all gains (saves time)
 			int i = lc.chooseRandomVertex(lc.size()).vertex;
-			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc,
-					i);
+			gainCalculation = gainFunction->calculateIndividualGain(problem, Cc, i);
 		} else {
 			// 1. Compute L(Cc): order the elements of the VertexSet class (lc)
 			// according to the value of the gain function
@@ -129,7 +141,7 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 				Cc.addNodeToCluster(*g, problem, v.vertex, new_c, false);
 			}
 		}
-		BOOST_LOG_TRIVIAL(debug)<< "Cc post-processing completed.";
+		BOOST_LOG_TRIVIAL(debug)<< "RCC post-processing completed.";
 		// Cc.printClustering();
 	}
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
@@ -139,7 +151,7 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
         timeSpent = (end_time.wall - start_time.wall)
                          / double(1000000000);
         if(timeSpent >= 3600) {
-                BOOST_LOG_TRIVIAL(info)<< "GRASP construct clustering done and post-processing done. Total time: " << timeSpent;
+                BOOST_LOG_TRIVIAL(info)<< "Construct clustering done and post-processing done. Total time: " << timeSpent;
         }
 
 	// Cc.printClustering();

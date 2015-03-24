@@ -51,6 +51,7 @@ def natsorted(l):
     temp.sort()
 
 def main(argv):
+   csv.field_size_limit(sys.maxsize)
 
    folder = ''
    filter = ''
@@ -181,10 +182,10 @@ def main(argv):
 		 text_file.close()
 		 all_files_summary[filename+"/"+datetime] = str(best_value)+", "+str(pos_value)+", "+str(neg_value)+", "+str(best_K)+", "+str(iteration)+", "+str(best_time)+", "+str(global_time)+", "+best_param+", "+str(total_iter)+", "+str(total_comb)
 		 # calcula a media dos valores de I(P) da fase de construcao para este set de arquivos de resultado
-                 if local_avg_count > 0:
-		    local_avg_ip_const = local_avg_ip_const / local_avg_count
-                 else:
+                 if local_avg_count == 0:
                     local_avg_ip_const = 0
+                 else:
+                    local_avg_ip_const = local_avg_ip_const / local_avg_count
 		 # armazena os valores de todas as execucoes de um mesmo grafo para calculo da media
 		 if filename == previous_filename:
 		    avg_comb = avg_comb + total_comb
@@ -300,6 +301,10 @@ def main(argv):
                  best_iteration = 0
                  best_time = 0
                  best_param = ''
+
+                 if count < 0:  # no result files for RCC found (imbalance = 0), uses the same result from CC
+                   file_list.extend(glob.glob(root + "/CC*.csv"))
+                   count = len(file_list) - 1
 
                  while count >= 0:
 

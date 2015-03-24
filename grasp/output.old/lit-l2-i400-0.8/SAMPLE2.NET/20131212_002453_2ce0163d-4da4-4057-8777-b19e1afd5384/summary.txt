@@ -1,0 +1,2 @@
+CC Summary for graph file: SAMPLE2.NET
+Node0-l2a0.8-iterations.csv Best value0.00000.00000.0000320.003221118

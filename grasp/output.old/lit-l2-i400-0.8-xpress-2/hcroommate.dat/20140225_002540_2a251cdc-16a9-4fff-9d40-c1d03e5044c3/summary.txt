@@ -1,0 +1,2 @@
+CC Summary for graph file: hcroommate.dat
+CC-Node0-l2a0.8-iterations.csv Best value17.000012.00005.00003611.46664623041923

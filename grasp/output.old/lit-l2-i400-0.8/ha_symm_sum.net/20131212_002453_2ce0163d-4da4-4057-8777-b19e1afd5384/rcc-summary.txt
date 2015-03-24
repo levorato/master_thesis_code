@@ -1,0 +1,2 @@
+RCC Summary for graph file: ha_symm_sum.net
+RCC-Node0-l2-k4-iterations.csv Best value1.00000.00001.000080.00003110775

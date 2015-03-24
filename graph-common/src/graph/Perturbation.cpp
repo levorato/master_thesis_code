@@ -115,6 +115,9 @@ Clustering Perturbation::randomMove1opt(SignedGraph* g, Clustering clustering, C
 	int startc = -1;  // cluster == -1 means new cluster
 	if(p.getType() == ClusteringProblem::RCC_PROBLEM) {  // avoid creating a new cluster if RCCProblem
 		startc = 0;
+		if(nc == 1) {  // perturbation does not work if k = 1 and RCC Problem
+			return cTemp;
+		}
 	}
 	k2 = randomUtil.next(startc, nc - 1);
 	// k2 must be different from k1

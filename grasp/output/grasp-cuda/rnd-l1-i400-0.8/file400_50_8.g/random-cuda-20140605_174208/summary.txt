@@ -1,0 +1,2 @@
+CC Summary for graph file: file400_50_8.g
+CC-Node0-l1a0.8-iterations.csv Best value122.0000113.00009.000011410.199844200.0000

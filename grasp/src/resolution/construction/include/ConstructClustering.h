@@ -18,7 +18,7 @@ namespace construction {
 
 class ConstructClustering {
 public:
-	ConstructClustering(GainFunction* f, const unsigned long& seed, const double& alpha);
+	ConstructClustering(GainFunction* f, const unsigned long& seed, const double& alpha, Clustering* cl = NULL);
 	virtual ~ConstructClustering();
 
 	/**
@@ -40,6 +40,10 @@ public:
 		return gainFunction->getType();
 	}
 
+	Clustering* getCCclustering() {
+		return CCclustering;
+	}
+
 	unsigned long getRandomSeed() {
 		return randomSeed;
 	}
@@ -53,6 +57,7 @@ protected:
 	 * in the gainFunction list, that is, the one that minimizes the objective (VOTE algorithm).
 	 */
 	double _alpha;
+	Clustering* CCclustering;
 };
 
 } /* namespace construction */

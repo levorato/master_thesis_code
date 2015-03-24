@@ -1,0 +1,2 @@
+RCC Summary for graph file: Manning_Shofner_Brusco.net
+RCC-Node0-l2-k9-iterations.csv Best value0.00000.00000.0000190.000067136682

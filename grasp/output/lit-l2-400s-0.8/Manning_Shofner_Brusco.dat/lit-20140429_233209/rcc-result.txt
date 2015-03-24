@@ -1,0 +1,60 @@
+RCC Global time spent: 24.7394
+SRI(P) = 338
+Clustering configuration: 
+ Partition 0 (1): [ 0 ] 
+ Partition 1 (2): [ 10 17 ] 
+ Partition 2 (2): [ 12 13 ] 
+ Partition 3 (4): [ 1 2 5 7 ] 
+ Partition 4 (3): [ 14 15 20 ] 
+ Partition 5 (3): [ 8 9 11 ] 
+ Partition 6 (1): [ 6 ] 
+ Partition 7 (3): [ 16 18 19 ] 
+ Partition 8 (2): [ 3 4 ] 
+
+Imbalance analysis (out edges contribution):
+Vertex,PositiveSum,NegativeSum
+0,133,27
+1,6,14
+2,4,0
+3,43,75
+4,0,89
+5,0,0
+6,0,31
+7,0,4
+8,47,0
+9,4,14
+10,51,0
+11,24,14
+12,43,0
+13,18,0
+14,0,0
+15,0,0
+16,0,0
+17,104,0
+18,25,0
+19,0,0
+20,0,0
+Imbalance analysis (in edges contribution):
+Vertex,PositiveSum,NegativeSum
+0,133,27
+1,6,14
+2,4,0
+3,43,75
+4,0,89
+5,0,0
+6,0,31
+7,0,4
+8,47,0
+9,4,14
+10,51,0
+11,24,14
+12,43,0
+13,18,0
+14,0,0
+15,0,0
+16,0,0
+17,104,0
+18,25,0
+19,0,0
+20,0,0
+

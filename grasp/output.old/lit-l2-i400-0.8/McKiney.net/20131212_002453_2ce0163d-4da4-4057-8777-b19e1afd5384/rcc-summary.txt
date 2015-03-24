@@ -1,0 +1,2 @@
+RCC Summary for graph file: McKiney.net
+RCC-Node0-l2-k2-iterations.csv Best value4.00001.00003.0000120.00006648932

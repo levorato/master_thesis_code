@@ -1,0 +1,2 @@
+CC Summary for graph file: MNEG.net
+Node0-l2a0.8-iterations.csv Best value4.00002.00002.0000210.0016402220317

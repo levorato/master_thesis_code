@@ -9,8 +9,7 @@
 #include "util/include/MPIMessage.h"
 #include "util/parallel/include/MPIUtil.h"
 #include "problem/include/RCCProblem.h"
-#include "include/CUDAILS.h"
-
+#include "./include/CUDAILS.h"
 #include <cstring>
 #include <vector>
 #include <boost/mpi/communicator.hpp>
@@ -44,6 +43,9 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
 		RCCProblem& rp = static_cast<RCCProblem&>(problem);
 		k = rp.getK();
+		if(k < 0) {  // reuses CC problem's best solution in the constructive phase
+			CCclustering = construct->getCCclustering();
+		}
 	}
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
@@ -52,7 +54,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 	for(int i = 0; i < numberOfSlaves; i++) {
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 				problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
-				numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k);
+				numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, CCclustering);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}

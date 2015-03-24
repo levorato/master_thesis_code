@@ -1,0 +1,2 @@
+RCC Summary for graph file: hbfriend.net
+RCC-Node0-l2-k4-iterations.csv Best value0.00000.00000.0000100.00001513095

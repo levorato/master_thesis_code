@@ -1,0 +1,2 @@
+RCC Summary for graph file: hcweekend.dat
+RCC-Node0-l2-k3-iterations.csv Best value1.00000.00001.000090.00002132326

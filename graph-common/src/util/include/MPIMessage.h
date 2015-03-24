@@ -74,27 +74,31 @@ public:
 	int iter;
 	int gainFunctionType;
 	int problemType;
-	unsigned long k;  // number of clusters of solution (for RCC Problem)
+	long k;  // number of clusters of solution (for RCC Problem)
 	string executionId;
 	string fileId;
 	string outputFolder;
 	long timeLimit;
 	bool firstImprovementOnOneNeig;
+	Clustering CCclustering;  // best solution found by CC problem (for use on RCC problem solve)
 
 	InputMessageParallelGrasp() : InputMessage(),
 			alpha(0.0F), iter(500), gainFunctionType(0), problemType(0), k(0),
-			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false) {
+			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
+			CCclustering() {
 
 	}
 
 	InputMessageParallelGrasp(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
-			unsigned int searchSlaves, bool fiOneNeig, unsigned long numberOfClustersInSolution = 0) :
+			unsigned int searchSlaves, bool fiOneNeig, long numberOfClustersInSolution = 0, Clustering* cl = NULL) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
-					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig) {
-
+					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig), CCclustering() {
+			if(cl != NULL) {
+				CCclustering = *cl;
+			}
 	}
 
 	string toString() {
@@ -129,6 +133,7 @@ public:
 		ar & outputFolder;
 		ar & timeLimit;
 		ar & firstImprovementOnOneNeig;
+		ar & CCclustering;
 	}
 };
 
@@ -139,7 +144,7 @@ public:
 	int iter;
 	int gainFunctionType;
 	int problemType;
-	unsigned long k;  // number of clusters of solution (for RCC Problem)
+	long k;  // number of clusters of solution (for RCC Problem)
 	string executionId;
 	string fileId;
 	string outputFolder;
@@ -147,24 +152,27 @@ public:
 	bool firstImprovementOnOneNeig;
 	int iterMaxILS;
 	int perturbationLevelMax;
+	Clustering CCclustering;  // best solution found by CC problem (for use on RCC problem solve)
 
 	InputMessageParallelILS() : InputMessage(),
 			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
-			iterMaxILS(3), perturbationLevelMax(7) {
+			iterMaxILS(3), perturbationLevelMax(7), CCclustering() {
 
 	}
 
 	InputMessageParallelILS(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
 			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel,
-			unsigned long numberOfClustersInSolution = 0) :
+			long numberOfClustersInSolution = 0, Clustering* cl = NULL) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
-					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel) {
-
+					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering() {
+			if(cl != NULL) {
+				CCclustering = *cl;
+			}
 	}
 
 	string toString() {
@@ -201,6 +209,7 @@ public:
 		ar & firstImprovementOnOneNeig;
 		ar & iterMaxILS;
 		ar & perturbationLevelMax;
+		ar & CCclustering;
 	}
 };
 
@@ -214,7 +223,7 @@ public:
 	double timeLimit;
 	unsigned long initialClusterIndex;
 	unsigned long finalClusterIndex;
-	unsigned long k; /* number of max clusters (RCC Problem only) */
+	long k; /* number of max clusters (RCC Problem only) */
 
 	InputMessageParallelVND() : InputMessage(), clustering(),
 			problemType(0), timeSpentSoFar(0.0), timeLimit(3600.0), initialClusterIndex(0),
@@ -224,7 +233,7 @@ public:
 
 	InputMessageParallelVND(unsigned int i, int neig, string graphFilePath, Clustering c,
 			int pType, double timeSoFar, double tl, unsigned long startIdx,
-			unsigned long endIdx, unsigned int masters, unsigned int searchSlaves, unsigned long _k) :
+			unsigned long endIdx, unsigned int masters, unsigned int searchSlaves, long _k) :
 			InputMessage(i, graphFilePath, neig, masters, searchSlaves),
 			clustering(c),
 			problemType(pType), timeSpentSoFar(timeSoFar), timeLimit(tl),

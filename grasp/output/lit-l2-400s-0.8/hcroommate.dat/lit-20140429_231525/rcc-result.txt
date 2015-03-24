@@ -1,0 +1,7 @@
+RCC Global time spent: 3.70556
+SRI(P) = 14
+Clustering configuration: 
+ Partition 0 (6): [ 2 7 10 11 14 15 ] 
+ Partition 1 (6): [ 3 5 8 9 12 18 ] 
+ Partition 2 (4): [ 0 1 6 19 ] 
+ Partition 3 (4): [ 4 13 16 17 ] 

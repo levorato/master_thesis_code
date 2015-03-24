@@ -1,0 +1,2 @@
+RCC Summary for graph file: Edge_weighted_Matrix_Brusco.net
+RCC-Node0-l2-k3-iterations.csv Best value0.00000.00000.000030.00003141
