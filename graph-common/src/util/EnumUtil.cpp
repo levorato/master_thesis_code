@@ -6,6 +6,9 @@
  */
 
 #include "include/EnumUtil.h"
+#include <iostream>
+
+using namespace std;
 
 namespace util {
 EnumUtil::EnumUtil() {
