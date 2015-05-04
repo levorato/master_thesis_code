@@ -11,6 +11,7 @@
 #include <string>
 #include <map>
 #include <stdexcept>
+#include <iostream>
 
 #include <boost/log/trivial.hpp>
 
