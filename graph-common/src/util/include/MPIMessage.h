@@ -175,6 +175,12 @@ public:
 			}
 	}
 
+	void setClustering(Clustering* cl) {
+		if(cl != NULL) {
+			CCclustering = *cl;
+		}
+	}
+
 	string toString() {
 		stringstream ss;
 		ss << "Alpha: " << alpha << "; l = " << l << "; iter = " << iter << "; fileId = " <<
