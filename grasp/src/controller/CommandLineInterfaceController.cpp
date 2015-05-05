@@ -140,7 +140,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		const int& numberOfIterations, const long& timeLimit, const int& machineProcessAllocationStrategy,
 		const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
-		long k, const StategyName& resolutionStrategy, const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax) {
+		long k, const StategyName& resolutionStrategy, const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax,
+		const bool& splitGraph) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -186,7 +187,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 												problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfSlaves processes and summarizes the result
-					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
+					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph);
 					c = parallelResolution.executeGRASP(&construct, &vnd, g.get(), numberOfIterations,
 												problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
@@ -199,7 +200,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
-					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
+					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph);
 					c = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
@@ -259,7 +260,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes GRASP processing among numberOfMasters processes and summarizes the result
-						ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
+						ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph);
 						RCCCluster = parallelResolution.executeGRASP(&construct, &vnd, g.get(), numberOfIterations,
 								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}
@@ -271,7 +272,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes ILS processing among numberOfMasters processes and summarizes the result
-						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
+						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph);
 						RCCCluster = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}
@@ -372,10 +373,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	CommandLineInterfaceController::SearchName searchType = CommandLineInterfaceController::SEQUENTIAL_SEARCH;
 	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and completely Random instances
 	// int iterMaxILS = 5, perturbationLevelMax = 3; // for UNGA instances
+	bool splitGraph = false;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
 		("help", "show program options")
+		("split", po::value<bool>(&splitGraph)->default_value(false), "Enable graph partitioning when solving in parallel (requires slaves > 0)")
 		("alpha,a", po::value<string>(&s_alpha),
 			  "alpha - randomness factor of constructive phase")
 		("iterations,iter", po::value<int>(&numberOfIterations)->default_value(400),
@@ -461,6 +464,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				// if (!(i >> alpha))
 				//     throw BadConversion("convertToDouble(\"" + s + "\")");
 				sscanf(s_alpha.c_str(), "%f", &alpha);				
+			}
+			if (splitGraph) {
+				if(numberOfMasters > 0) {
+					BOOST_LOG_TRIVIAL(info) << "Graph split is enabled. Partitioning graph between master and slaves.";
+				} else {
+					BOOST_LOG_TRIVIAL(error) << "WARNING: Graph split is disabled, since slaves = 0. Please set the slaves parameter accordingly.";
+					splitGraph = false;
+				}
+			} else {
+				BOOST_LOG_TRIVIAL(info) << "Graph split is disabled.";
 			}
 
 			if(strategy == GRASP) {
@@ -575,14 +588,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 							numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
+							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
+								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph);
 					}
 				}
 			}

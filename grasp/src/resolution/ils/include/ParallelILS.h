@@ -23,7 +23,7 @@ public:
 	 * @param numberOfSlaves number of slaves used for parallel ILS processing
 	 * @param numberOfSearchSlaves number of slaves used for parallel VND processing
 	 */
-	ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves);
+	ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split = false);
 	virtual ~ParallelILS();
 
 	/**
@@ -37,7 +37,8 @@ private:
 	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;
 	unsigned int numberOfSlaves;
-	Clustering *CCclustering;
+	Clustering CCclustering;
+	bool splitGraph;
 };
 
 } /* namespace ils */
