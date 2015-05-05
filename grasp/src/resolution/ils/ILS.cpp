@@ -94,6 +94,8 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 		Clustering Cl = Cc;
 		int perturbationLevel = 1;
 		for(int j = 1, total = 0; j <= iterMaxILS; total++) {  // internal ILS loop
+			// 1. Resets NeighborhoodSearch auxiliary matrices
+			vnd.reset(Cl);
 			// 2. Execute local search algorithm
 			Cl = vnd.localSearch(g, Cl, i, problem, timeSpentInILS, info.processRank);
 			numberOfTestedCombinations += vnd.getNumberOfTestedCombinations();
@@ -117,7 +119,7 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 			} else {  // did not improve solution
 				j++;
 				if(j > iterMaxILS) {
-					BOOST_LOG_TRIVIAL(debug)<< "Increasing perturbation level...";
+					BOOST_LOG_TRIVIAL(debug) << "Increasing perturbation level: j = " << j << ", perturbationLevel = " << perturbationLevel;
 					perturbationLevel++;
 					j = 1;
 					if(perturbationLevel > perturbationLevelMax) {

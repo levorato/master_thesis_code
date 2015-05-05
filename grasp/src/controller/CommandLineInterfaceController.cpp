@@ -375,6 +375,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("cc", po::value<bool>(&CCEnabled)->default_value(true), "Enable CC Problem resolution")
 		("rcc", po::value<bool>(&RCCEnabled)->default_value(true), "Enable RCC Problem resolution")
 		("k", po::value<long>(&k)->default_value(0), "RCC Problem k parameter (max number of clusters) - optional")
+		("perturbationLevelMax", po::value<int>(&perturbationLevelMax)->default_value(30), "ILS max perturbation level")
 		("time-limit", po::value<int>(&timeLimit)->default_value(1800), "maximum execution time (seconds)")
 		("input-file", po::value< std::vector<string> >(), "graph input file")
 		("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
@@ -457,6 +458,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				BOOST_LOG_TRIVIAL(info) << "Resolution strategy is GRASP.";
 			} else if(strategy == ILS) {
 				BOOST_LOG_TRIVIAL(info) << "Resolution strategy is ILS.";
+				BOOST_LOG_TRIVIAL(info) << "Maximum perturbation level is " << perturbationLevelMax;
+				BOOST_LOG_TRIVIAL(info) << "The number of ILS iterations is " << iterMaxILS;
 			}
 			if(searchType == CommandLineInterfaceController::SEQUENTIAL_SEARCH) {
                                 BOOST_LOG_TRIVIAL(info) << "Local search type is SEQUENTIAL.";
