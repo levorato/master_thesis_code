@@ -9,6 +9,7 @@
 #define NEIGHBORHOOD_H_
 
 #include <vector>
+#include <boost/unordered_set.hpp>
 #include <boost/config.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -27,7 +28,8 @@ namespace clusteringgraph {
 // Defines the neighborhood list
 class NeighborhoodSearch {
 public:
-        NeighborhoodSearch() : numberOfTestedCombinations(0) {
+        NeighborhoodSearch() : numberOfTestedCombinations(0), h_isNeighborCluster(),
+    		h_vertexClusterPosSum(), h_vertexClusterNegSum(), bestClustering() {
 
         }
 
@@ -45,9 +47,20 @@ public:
                         double timeSpentSoFar, double timeLimit, unsigned long randomSeed,
                         int myRank, bool firstImprovementOnOneNeig) = 0;
 
-	long getNumberOfTestedCombinations() {
-		return numberOfTestedCombinations;
-	}
+		long getNumberOfTestedCombinations() {
+			return numberOfTestedCombinations;
+		}
+
+		/**
+		 * Resets internal auxiliary matrices (used between Metaheuristic iterations)
+		 * and updates the best clustering based on the constructive phase result.
+		 */
+		void reset(Clustering coClustering) {
+			this->h_isNeighborCluster.clear();
+			this->h_vertexClusterNegSum.clear();
+			this->h_vertexClusterPosSum.clear();
+			bestClustering = coClustering;
+		}
 
 protected:
 
@@ -77,7 +90,7 @@ protected:
                         int myRank, unsigned long initialSearchIndex,
                 		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
                 		ClusterArray& myCluster,
-                		std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
+                		std::vector<long>& isNeighborCluster,
                 		std::vector<double>& vertexClusterPosSum,
                 		std::vector<double>& vertexClusterNegSum);
 
@@ -96,6 +109,13 @@ protected:
 						std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
 						std::vector<double>& vertexClusterPosSum,
 						std::vector<double>& vertexClusterNegSum);
+
+		virtual void updateVertexClusterSumArrays(SignedGraph* g, std::vector<double>& vertexClusterPosSumArray,
+				std::vector<double>& vertexClusterNegSumArray, std::vector<long>& isNeighborClusterArray,	Clustering* clustering);
+
+		virtual void updateVertexClusterSumArraysDelta(SignedGraph* g, std::vector<double>& vertexClusterPosSumArray,
+				std::vector<double>& vertexClusterNegSumArray, std::vector<long>& isNeighborClusterArray,
+				Clustering& clustering, uint nc, uint new_nc, int i, int k1, int k2);
 
         /**
          * Generates a new cluster by swithcing the node i from cluster k1 to k3, and
@@ -163,6 +183,13 @@ protected:
 
 	/* Number of tested combinations during neighborhood search */
 	unsigned long numberOfTestedCombinations;
+	/* Data structures reused during each metaheuristic iteration */
+	// Arrays that store the sum of edge weights between vertex i and all clusters
+	std::vector<long> h_isNeighborCluster;
+	std::vector<double> h_vertexClusterPosSum;
+	std::vector<double> h_vertexClusterNegSum;
+	// Best clustering solution so far
+	Clustering bestClustering;
 };
 
 } /* namespace clusteringgraph */

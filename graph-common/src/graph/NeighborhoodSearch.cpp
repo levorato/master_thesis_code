@@ -8,7 +8,7 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
-#include <boost/unordered_set.hpp>
+
 #include "include/NeighborhoodSearch.h"
 #include "../util/include/MPIMessage.h"
 #include "../util/include/RandomUtil.h"
@@ -57,45 +57,21 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
 	ClusterArray myCluster = clustering->getClusterArray();
-	// Array that stores the sum of edge weights between vertex i and all clusters
-	std::vector<double> h_VertexClusterPosSum(n * (nc + 1), double(0));
-	std::vector<double> h_VertexClusterNegSum(n * (nc + 1), double(0));
-	// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
-	std::vector< unordered_set<unsigned long> > myNeighborClusterList(n, unordered_set<unsigned long>());
-	for(int i = 0; i < n; i++) {  // for each vertex i
-		DirectedGraph::out_edge_iterator f, l;
-		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
-			int j = target(*f, g->graph);
-			double weight = ((Edge*)f->get_property())->weight;
-			if(myCluster[i] != myCluster[j]) {  // different cluster
-				myNeighborClusterList[i].insert(myCluster[j]);
-			}
-			if(weight > 0) {
-				h_VertexClusterPosSum[i + myCluster[j] * n] += fabs(weight);
-			} else {
-				h_VertexClusterNegSum[i + myCluster[j] * n] += fabs(weight);
-			}
-		}
-		// iterates over in-edges of vertex i
-		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
-		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			double weight = ((Edge*)f2->get_property())->weight;
-			int j = source(*f2, g->graph);
-			if(myCluster[i] != myCluster[j]) {  // different cluster
-				myNeighborClusterList[i].insert(myCluster[j]);
-			}
-			if(weight > 0) {
-					h_VertexClusterPosSum[i + myCluster[j] * n] += fabs(weight);
-			} else {
-					h_VertexClusterNegSum[i + myCluster[j] * n] += fabs(weight);
-			}
-		}
-	}
+
 	if(problem.getType() == ClusteringProblem::CC_PROBLEM) {  // runs optimized local search for CC Problem
+		// rebuilds the auxiliary matrices in case it is needed (between metaheuristic iterations)
+		if(h_vertexClusterPosSum.empty() or h_vertexClusterNegSum.empty() or h_isNeighborCluster.empty()) {
+			// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
+			h_vertexClusterPosSum.resize(n * (nc + 1), double(0));
+			h_vertexClusterNegSum.resize(n * (nc + 1), double(0));
+			h_isNeighborCluster.resize(n * (nc + 1), 0);
+			// BOOST_LOG_TRIVIAL(trace) << "Generating local search auxiliary matrices.";
+			updateVertexClusterSumArrays(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster, clustering);
+		}
+		// BOOST_LOG_TRIVIAL(trace) << "Invoking optimized 1-opt CC local search...";
 		return search1optCCProblem(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
 		                myRank, initialSearchIndex, finalSearchIndex, firstImprovement, k,
-		        		myCluster, myNeighborClusterList, h_VertexClusterPosSum, h_VertexClusterNegSum);
+		        		myCluster, h_isNeighborCluster, h_vertexClusterPosSum, h_vertexClusterNegSum);
 	}
 	numberOfTestedCombinations = 0;
 	// for each vertex i, tries to move i to another cluster in myNeighborClusterList[i]
@@ -109,40 +85,40 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 			continue;
 		}
 		// Option 1: node i is moved from k1 to another existing cluster k2 != k1
-		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
-			MPI_IPROBE_RETURN(cBest)
-			// cluster(k2)
-			unsigned long k2 = *itr;
-			// removes node i from cluster1 and inserts in cluster2
-			Clustering cTemp = *clustering;
+		for (unsigned long k2 = 0; k2 < nc; k2++) {
+			if( (k1 != k2) && (h_isNeighborCluster[i+k2*n] > 0) ) {
+				MPI_IPROBE_RETURN(cBest)
+				// removes node i from cluster1 and inserts in cluster2
+				Clustering cTemp = *clustering;
 
-			//BOOST_LOG_TRIVIAL(trace) << "Option 1: Taking node " << i << " from cluster " << k1 << " to cluster " << k2;
-			int nc = cTemp.getNumberOfClusters();
-			cTemp.removeNodeFromCluster(*g, problem, i, k1);
-			// recalculates the number of clusters, as one of them may have been removed
-			if((cTemp.getNumberOfClusters() < nc) && (k2 >= k1)) {
-				// cluster k1 has been removed
-				cTemp.addNodeToCluster(*g, problem, i, k2 - 1);
-			} else {
-				cTemp.addNodeToCluster(*g, problem, i, k2);
-			}
-			numberOfTestedCombinations++;
-			// cTemp->printClustering();
-			Imbalance newImbalance = cTemp.getImbalance();
-			Imbalance bestImbalance = cBest.getImbalance();
-			if (newImbalance < bestImbalance) {
-				//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 1-neighborhood: " << setprecision(2) << newImbalance.getValue();
-				// First improvement for 1-opt neighborhood
-				cBest = cTemp;
-				if(firstImprovement) {
-					return cBest;
+				//BOOST_LOG_TRIVIAL(trace) << "Option 1: Taking node " << i << " from cluster " << k1 << " to cluster " << k2;
+				int nc = cTemp.getNumberOfClusters();
+				cTemp.removeNodeFromCluster(*g, problem, i, k1);
+				// recalculates the number of clusters, as one of them may have been removed
+				if((cTemp.getNumberOfClusters() < nc) && (k2 >= k1)) {
+					// cluster k1 has been removed
+					cTemp.addNodeToCluster(*g, problem, i, k2 - 1);
+				} else {
+					cTemp.addNodeToCluster(*g, problem, i, k2);
 				}
+				numberOfTestedCombinations++;
+				// cTemp->printClustering();
+				Imbalance newImbalance = cTemp.getImbalance();
+				Imbalance bestImbalance = cBest.getImbalance();
+				if (newImbalance < bestImbalance) {
+					//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 1-neighborhood: " << setprecision(2) << newImbalance.getValue();
+					// First improvement for 1-opt neighborhood
+					cBest = cTemp;
+					if(firstImprovement) {
+						return cBest;
+					}
+				}
+				// return if time limit is exceeded
+				boost::timer::cpu_times end_time = timer.elapsed();
+				double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+				// std::cout << timeSpentSoFar + localTimeSpent << endl;
+				if(timeSpentSoFar + localTimeSpent >= timeLimit)  return (cBest);
 			}
-			// return if time limit is exceeded
-			boost::timer::cpu_times end_time = timer.elapsed();
-			double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-			// std::cout << timeSpentSoFar + localTimeSpent << endl;
-			if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
 		}
 		// Option 2: node i is moved to a new cluster, alone
 		// removes node i from cluster k1 and inserts in newCluster
@@ -408,7 +384,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
                 int myRank, unsigned long initialSearchIndex,
         		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
         		ClusterArray& myCluster,
-        		std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
+				std::vector<long>& isNeighborCluster,
         		std::vector<double>& vertexClusterPosSum,
         		std::vector<double>& vertexClusterNegSum) {
 	// 0. Triggers local processing time calculation
@@ -423,157 +399,6 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 	unsigned long numberOfVerticesInInterval = finalSearchIndex - initialSearchIndex + 1;
 	// random number generators used in loop randomization
 	RandomUtil randomUtil;
-	for(int i = 0; i < n; i++) {  // inserts nc (aka new cluster) into the list of cluster neighbors of each vertex
-		myNeighborClusterList[i].insert(nc);
-	}
-/*
-	// Array that stores the sum of edge weights between vertex i and all clusters
-	std::vector<float> h_VertexClusterPosSum(n * (nc + 1));
-	std::vector<float> h_VertexClusterNegSum(n * (nc + 1));
-	for (int i = 0; i < n * (nc + 1); i++) {
-		h_VertexClusterPosSum[i] = 0.0;
-		h_VertexClusterNegSum[i] = 0.0;
-	}
-	// For each vertex, creates a list of in and out edges
-	for (int edge = 0, i = 0; i < n; i++) {  // For each vertex i
-		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
-		int count = 0;
-		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) { // out edges of i
-			double weight = ((Edge*) f->get_property())->weight;
-			int j = target(*f, g->graph);
-			count++;
-			edge++;
-			if (weight > 0) {
-				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
-			} else {
-				h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
-			}
-		}
-		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
-		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) { // in edges of i
-			double weight = ((Edge*) f2->get_property())->weight;
-			int j = source(*f2, g->graph);
-			count++;
-			edge++;
-			if (weight > 0) {
-				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
-			} else {
-				h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
-			}
-		}
-	}
-
-	std::vector<float> d_destFunctionValue;
-	// result / destination vector
-	int numberOfChunks = n * (nc + 1);
-	d_destFunctionValue.resize(numberOfChunks, clustering->getImbalance().getValue());
-
-	for (unsigned long i = randomUtil.next(initialSearchIndex, finalSearchIndex), cont2 = 0; cont2 < numberOfVerticesInInterval; cont2++) {
-		// vertex i is in cluster(k1)
-		ulong k1 = myCluster[i];
-		// for (int k2 = 0; k2 <= nc; k2++) {
-		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
-		// cluster(k2)
-		unsigned long k2 = *itr;
-		ulong idx = k2 * n + i;
-		if(k2 != k1) {
-			// executes local search for vertex i, moving it to cluster k2
-			// Option 1: vertex i is moved from k1 to another existing cluster k2 != k1
-			// Option 2: vertex i is moved from k1 to a new cluster (k2 = nc)
-			// only calculates the cost of inserting vertex i into cluster k2
-			// vertex i is in no cluster
-			//
-			// * Na inserÃ§Ã£o em cluster novo, contar apenas as relaÃ§Ãµes externas entre o vÃ©rtice i e os vÃ©rtices
-			// * que estÃ£o sem cluster. NÃ£o incluir as relaÃ§Ãµes internas quando k = nc.
-			// * Quando o vÃ©rtice i for inserido em cluster existente, contar as relaÃ§Ãµes internas a k2 negativas,
-			// * bem como as relaÃ§Ãµes externas a k2 positivas com i.
-			//
-			// updates thread idx / vertex i to cluster k2 imbalance result
-			d_destFunctionValue[idx] = clustering->getImbalance().getValue();
-
-			float positiveSum = +(- h_VertexClusterPosSum[i+k2*n]) - (- h_VertexClusterPosSum[i+k1*n]);
-			float negativeSum = -h_VertexClusterNegSum[i+k1*n] + h_VertexClusterNegSum[i+k2*n];
-
-			// numberOfTestedCombinations++;
-			// updates thread idx / vertex i from k1 to k2 imbalance result
-			d_destFunctionValue[idx] += positiveSum + negativeSum;
-			// printf("destFunctionValue[%d] = %.2f\n", k2, d_destFunctionValue[k2]);
-		} else {
-			d_destFunctionValue[idx] = clustering->getImbalance().getValue();
-		}
-		}
-		// increment rule
-		i++;
-		if(i > finalSearchIndex) {
-			i = initialSearchIndex;
-		}
-	}
-
-	// cout << "Begin reduce / post-process...\n";
-	std::vector<float>::iterator iter = std::min_element(
-			d_destFunctionValue.begin(),
-			d_destFunctionValue.begin() + numberOfChunks);
-
-
-	float min_val = *iter;
-	// determines the position of the best improvement found in the result vector
-	uint position = iter - d_destFunctionValue.begin();
-	int resultIdx = position;
-	// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destcluster, destFunctionValue);
-	if (min_val < 0) {
-		printf("WARNING: I(P) < 0 !!!\n");
-	}
-
-	float bestImbalance = clustering->getImbalance().getValue();
-	Clustering newClustering1(*clustering);
-	if((min_val - bestImbalance < EPS) && (fabs(min_val - bestImbalance) > EPS)) {  // (min_val < bestImbalance) => improvement in imbalance
-		// As there may be more than one combination with a better imbalance,
-		// chooses one better combination at random.
-		// The algorithm starts the search with a random initial index.
-		uint randomInitialIndex = util::RandomUtil::next(0, numberOfChunks - 1);
-		// printf("Best imbalance is %.2f and random index is %d\n", bestImbalance, randomInitialIndex);
-
-		uint resultIndex = -1;
-		float resultValue = -1.0;
-		for(uint count = 0, i = randomInitialIndex; count < d_destFunctionValue.size(); i = (i + 1) % d_destFunctionValue.size(), count++) {
-			if((d_destFunctionValue[i] - bestImbalance < EPS) && (fabs(d_destFunctionValue[i] - bestImbalance) > EPS)){   // (destImbArray[i] < bestImbalance)
-				resultIndex = i;
-				resultValue = d_destFunctionValue[i];
-				break;
-			}
-		}
-		// printf("Result index is %d and result value is %.2f\n", h_result_index[0], h_result_value[0]);
-
-		// determines the position of the best improvement found in the result vector - DISABLED
-		//uint position = iter - d_destFunctionValue.begin();
-		//printf("Original position would be %d and original imbalance would be %.2f\n", position, min_val);
-		// int resultIdx = position;
-		bestImbalance = resultValue;
-		ulong destCluster = resultIndex / n;
-		ulong bestSrcVertex = resultIndex % n;
-		ulong sourceCluster = myCluster[bestSrcVertex];
-		// printf("Idx = %d: The best src vertex is %d to cluster %d (nc = %d) with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, h_nc[0], bestImbalance);
-		if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  }
-
-		// Reproduce the best clustering found using host data structures
-		int k1 = sourceCluster;
-		int k2 = destCluster;
-		bool newClusterK2 = (k2 == nc);
-		newClustering1.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
-		if(not newClusterK2) {  // existing cluster k2
-			if((newClustering1.getNumberOfClusters() < nc) && (k2 >= k1)) {
-				// cluster k1 has been removed
-				newClustering1.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
-			} else {
-				newClustering1.addNodeToCluster(*g, problem, bestSrcVertex, k2);
-			}
-		} else {  // new cluster k2
-			newClustering1.addCluster(*g, problem, bestSrcVertex);
-		}
-	}
-*/
-	// printf("CUDA I(P) = %.2f : vertex %d goes to cluster %d\n", min_val, v, clusterNumber);
-
 
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
@@ -593,18 +418,17 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		//   the same thing in the k2 (destination cluster) loop
 		double _negativeSumK1 = -vertexClusterNegSum[i + k1 * n];
 		bool timeLimitExceeded = false;
-		// Node i is moved from k1 to another existing cluster k2 != k1
-		for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
-			MPI_IPROBE_RETURN(cBest)
-			// cluster(k2)
-			unsigned long k2 = *itr;
-			//if(k2 != k1) {
+		// Node i is moved from k1 to another existing cluster k2 != k1, include a new cluster (k2 = nc)
+		for (unsigned long k2 = 0; k2 <= nc; k2++) {
+			if( (k1 != k2) && (h_isNeighborCluster[i+k2*n] > 0) ) {
+				MPI_IPROBE_RETURN(cBest)
 				// calculates the cost of removing vertex i from cluster1 and inserting into cluster2
 				double negativeSum = _negativeSumK1 + vertexClusterNegSum[i + k2 * n];
 				double positiveSum = -(- vertexClusterPosSum[i + k1 * n]) + (-vertexClusterPosSum[i + k2 * n]);
 				numberOfTestedCombinations++;
 				if(clustering->getImbalance().getValue() + positiveSum + negativeSum < bestImbalance2.getValue()) {  // improvement in imbalance
-					bestImbalance2 = Imbalance(positiveSum + clustering->getImbalance().getPositiveValue(), negativeSum + clustering->getImbalance().getNegativeValue());
+					bestImbalance2 = Imbalance(positiveSum + clustering->getImbalance().getPositiveValue(),
+							negativeSum + clustering->getImbalance().getNegativeValue());
 					bestDestCluster = k2;
 					bestSrcVertex = i;
 					foundBetterSolution = true;
@@ -613,15 +437,15 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 					}
 				}
 				// return if time limit is exceeded
-                        	timer.stop();
-                        	boost::timer::cpu_times end_time = timer.elapsed();
-                        	double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-                        	if(timeSpentSoFar + localTimeSpent >= timeLimit){
+				timer.stop();
+				boost::timer::cpu_times end_time = timer.elapsed();
+				double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+				if(timeSpentSoFar + localTimeSpent >= timeLimit){
 					timeLimitExceeded = true;
 					break;
 				}
-                        	timer.resume();
-			//}
+				timer.resume();
+			}
 		}
 		if((firstImprovement and foundBetterSolution) or timeLimitExceeded) {
 			break;
@@ -637,7 +461,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 	Clustering newClustering(*clustering);
 	if(bestSrcVertex >= 0) {
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Processing complete. Best result: vertex " << bestSrcVertex << " (from cluster " << myCluster[bestSrcVertex]
-		//			<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance.getValue() << " " << bestImbalance.getPositiveValue() << " " << bestImbalance.getNegativeValue();
+		//			<< ") goes to cluster " << bestDestCluster << " with I(P) = " << bestImbalance2.getValue() << " " << bestImbalance2.getPositiveValue() << " " << bestImbalance2.getNegativeValue();
 		int k1 = myCluster[bestSrcVertex];
 		int k2 = bestDestCluster;
 		bool newClusterK2 = (k2 == nc);
@@ -653,17 +477,29 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 			newClustering.addCluster(*g, problem, bestSrcVertex);
 		}
 		cBest = newClustering;
+
+		// BOOST_LOG_TRIVIAL(trace) << "Updating auxiliary matrices with delta...";
+		long nc = bestClustering.getNumberOfClusters();
+		long new_nc = cBest.getNumberOfClusters();
+		// CASO ESPECIAL 1: novo cluster
+		if(new_nc > nc) {  // acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
+			h_vertexClusterPosSum.resize(n * (new_nc + 1), double(0));
+			h_vertexClusterNegSum.resize(n * (new_nc + 1), double(0));
+			h_isNeighborCluster.resize(n * (new_nc + 1), 0);
+		}
+		this->updateVertexClusterSumArraysDelta(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster,
+				cBest, nc, new_nc, bestSrcVertex, k1, k2);
+		bestClustering = cBest;
+		// CASO ESPECIAL 2: cluster removido
+		if(new_nc < nc) {
+			h_vertexClusterPosSum.resize(n * (new_nc + 1), double(0));
+			h_vertexClusterNegSum.resize(n * (new_nc + 1), double(0));
+			h_isNeighborCluster.resize(n * (new_nc + 1), 0);
+		}
+		// BOOST_LOG_TRIVIAL(trace) << "Updated.";
 	} else {
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Validation. No improvement.";
 	}
-
-	// Compares the best clustering obtained by both methods (1 and 2)
-	/*
-	BOOST_LOG_TRIVIAL(debug) << "CUDA: " << newClustering1.getImbalance().getValue() <<
-			"CPU: " << newClustering.getImbalance().getValue() <<
-			" Equals = " << (newClustering1.getImbalance().getValue() == newClustering.getImbalance().getValue()) << endl;
-			*/
-	// cBest = newClustering1;
 
 	// returns the best combination found in 1-opt
 	return cBest;
@@ -828,6 +664,151 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 	return cBest;
 }
 
+void NeighborhoodSearch::updateVertexClusterSumArrays(SignedGraph* g, std::vector<double>& vertexClusterPosSumArray,
+		std::vector<double>& vertexClusterNegSumArray, std::vector<long>& isNeighborClusterArray,	Clustering* clustering) {
+
+	long n = g->getN();
+	ClusterArray clusterArray = clustering->getClusterArray();
+	long nc = clustering->getNumberOfClusters();
+
+    for(int i = 0; i < n; i++) {
+        // For each vertex i, stores the sum of edge weights between vertex i and all clusters
+        for(int k = 0; k <= nc; k++) {
+        	vertexClusterPosSumArray[k * n + i] = double(0);
+        	vertexClusterNegSumArray[k * n + i] = double(0);
+        	isNeighborClusterArray[k * n + i] = 0;
+        }
+        // in/out-edges of vertex i
+        int ki = clusterArray[i];
+        DirectedGraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
+			int j = target(*f, g->graph);
+			double weight = ((Edge*)f->get_property())->weight;
+			int kj = clusterArray[j];
+
+			if(kj >= 0) {
+				if(ki != kj) {  // different cluster
+					isNeighborClusterArray[kj * n + i]++;  // vertex i now has external connection to cluster kj
+					isNeighborClusterArray[ki * n + j]++;  // vertex j now has external connection to cluster ki
+				}
+				if(weight > 0) {
+					vertexClusterPosSumArray[kj * n + i] += fabs(weight);
+				} else {
+					vertexClusterNegSumArray[kj * n + i] += fabs(weight);
+				}
+			}
+		}
+		// iterates over in-edges of vertex i
+		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
+		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
+			double weight = ((Edge*)f2->get_property())->weight;
+			int j = source(*f2, g->graph);
+			int kj = clusterArray[j];
+
+			if(kj >= 0) {
+				if(ki != kj) {  // different cluster
+					isNeighborClusterArray[kj * n + i]++;  // vertex i now has external connection to cluster kj
+					isNeighborClusterArray[ki * n + j]++;  // vertex j now has external connection to cluster ki
+				}
+				if(weight > 0) {
+					vertexClusterPosSumArray[kj * n + i] += fabs(weight);
+				} else {
+					vertexClusterNegSumArray[kj * n + i] += fabs(weight);
+				}
+			}
+		}
+		// preenche a possibilidade de se mover o vertice i para um cluster novo (k = nc)
+		isNeighborClusterArray[nc * n + i] = 1;
+    }
 }
 
+void NeighborhoodSearch::updateVertexClusterSumArraysDelta(SignedGraph* g, std::vector<double>& vertexClusterPosSumArray,
+		std::vector<double>& vertexClusterNegSumArray, std::vector<long>& isNeighborClusterArray,
+		Clustering& clustering, uint nc, uint new_nc, int i, int k1, int k2) {  // vertex i is being moved from cluster k1 to k2
+
+	int n = g->getN();
+	ClusterArray clusterArray = clustering.getClusterArray();
+	if(new_nc > nc) {  // vertex i is being moved to a new cluster
+		// move a fileira correspondente ao cluster k = nc na matriz de soma, shiftando os dados para a direita (nc + 1)
+		for(int v = 0; v < n; v++) {
+			vertexClusterPosSumArray[(new_nc) * n + v] = vertexClusterPosSumArray[(nc) * n + v];
+			vertexClusterNegSumArray[(new_nc) * n + v] = vertexClusterNegSumArray[(nc) * n + v];
+		}
+		// zera a fileira movida anteriormente
+		for(int v = 0; v < n; v++) {
+			vertexClusterPosSumArray[(nc) * n + v] = 0.0;
+			vertexClusterNegSumArray[(nc) * n + v] = 0.0;
+		}
+		// preenche a possibilidade de se mover todos os vertices para um cluster novo (k = new_nc)
+		for(int v = 0; v < n; v++) {
+			isNeighborClusterArray[v + new_nc * n] = 1;
+			isNeighborClusterArray[v + nc * n] = 0;
+		}
+	}
+	// in/out-edges of vertex i
+	// isNeighborClusterArray[i+k1*n] = 1;  // vertex i now has external connection to cluster k1
+	/* for(ulong k = 0; k < nc; k++) {
+	 	isNeighborClusterArray[i + k * n] = 0;
+	} */
+	DirectedGraph::out_edge_iterator f, l;
+	// For each out edge of i
+	for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
+		int j = target(*f, g->graph);
+		double weight = ((Edge*)f->get_property())->weight;
+		int kj = clusterArray[j];
+
+		isNeighborClusterArray[j + k1 * n] -= 2;
+		if(kj != k2) {
+			isNeighborClusterArray[i + kj * n]++;  // vertex i now has external connection to cluster kj
+			isNeighborClusterArray[j + k2 * n]++;  // vertex j now has external connection to cluster k2
+		} else {  // cluster[i] == cluster[j] == k2
+			isNeighborClusterArray[i + kj * n] = 0;  // vertex i now has NO external connections to cluster kj
+			isNeighborClusterArray[j + k2 * n] = 0;  // vertex j now has NO external connections to cluster k2
+		}
+		if(weight > 0) {
+			vertexClusterPosSumArray[j + k1 * n] -= fabs(weight);
+			vertexClusterPosSumArray[j + k2 * n] += fabs(weight);
+		} else {
+			vertexClusterNegSumArray[j + k1 * n] -= fabs(weight);
+			vertexClusterNegSumArray[j + k2 * n] += fabs(weight);
+		}
+	}
+	// iterates over in-edges of vertex i
+	DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
+	for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
+		double weight = ((Edge*)f2->get_property())->weight;
+		int j = source(*f2, g->graph);
+		int kj = clusterArray[j];
+
+		isNeighborClusterArray[j + k1 * n] -= 2;
+		if(kj != k2) {
+			isNeighborClusterArray[i + kj * n]++;  // vertex i now has external connection to cluster kj
+			isNeighborClusterArray[j + k2 * n]++;  // vertex j now has external connection to cluster k2
+		} else {  // cluster[i] == cluster[j] == k2
+			isNeighborClusterArray[i + kj * n] = 0;  // vertex i now has NO external connections to cluster kj
+			isNeighborClusterArray[j + k2 * n] = 0;  // vertex j now has NO external connections to cluster k2
+		}
+		if(weight > 0) {
+			vertexClusterPosSumArray[j + k1 * n] -= fabs(weight);
+			vertexClusterPosSumArray[j + k2 * n] += fabs(weight);
+		} else {
+			vertexClusterNegSumArray[j + k1 * n] -= fabs(weight);
+			vertexClusterNegSumArray[j + k2 * n] += fabs(weight);
+		}
+	}
+
+	if(new_nc < nc) {
+		// remove a fileira correspondente ao cluster k1 na matriz de soma, shiftando os dados para a esquerda
+		for(int k = k1 + 1; k <= nc; k++) {
+			for(int v = 0; v < n; v++) {
+				vertexClusterPosSumArray[(k - 1) * n + v] = vertexClusterPosSumArray[(k) * n + v];
+				vertexClusterNegSumArray[(k - 1) * n + v] = vertexClusterNegSumArray[(k) * n + v];
+				isNeighborClusterArray[(k - 1) * n + v] = isNeighborClusterArray[(k) * n + v];
+			}
+		}
+	}
+}
+
+}
 
