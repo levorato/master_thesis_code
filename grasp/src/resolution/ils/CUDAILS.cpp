@@ -98,6 +98,7 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 	// Pass raw array and its size to kernel
 	int totalIter = 0;
 	Clustering CStar;
+	CStar.setImbalance(Imbalance(-1.0, -1.0));
 	double totalTimeSpentOnConstruction = 0, timeSpentOnLocalSearch = 0;
 	runILSKernel(problem, *construct, g, info.processRank, vnd->getTimeLimit(),
 			iterMax, iterMaxILS, perturbationLevelMax,
@@ -123,7 +124,14 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 			<< "," << iterMax
 			<< "," << numberOfTestedCombinations << endl;
 
-	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
+	if(CStar.getImbalance().getValue() < -1.0) {
+		BOOST_LOG_TRIVIAL(error) << "An error occurred during CUDA ILS procedure. Is the graph too big for ILS auxiliary matrices?";
+		BOOST_LOG_TRIVIAL(error) << "CUDA ILS requires at least 3 x (n x numberOfClusters) bytes of available GPU global memory to run.";
+		std::cerr << "An error occurred during CUDA ILS procedure. Is the graph too big for ILS auxiliary matrices?\n";
+		std:cerr << "CUDA ILS requires at least 3 x (n x numberOfClusters) bytes of available GPU global memory to run.\n";
+	} else {
+		BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
+	}
 	// CStar.printClustering();
 	CStar.printClustering(iterationResults, g->getN());
 	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);

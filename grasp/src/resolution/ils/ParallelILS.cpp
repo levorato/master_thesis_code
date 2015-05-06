@@ -54,7 +54,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 
-	if(not splitGraph) {
+	if(not splitGraph) {  // traditional parallel ILS approach, dividing the number of multistart iterations
 		for(int i = 0; i < numberOfSlaves; i++) {
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
@@ -107,8 +107,52 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 				http://liuweipingblog.cn/cpp/an-example-of-boost-betweenness-centrality/
 		 */
 
-		BOOST_LOG_TRIVIAL(error) << "[Parallel ILS] TODO: ParallelILS with split graph.";
-		cout << "[Parallel ILS] TODO: ParallelILS with split graph.\n";
+		// 1. Divide the graph into (numberOfSlaves + 1) non-overlapping parts
+
+
+		for(int i = 0; i < numberOfSlaves; i++) {
+			// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
+			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
+								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k);
+			if(k < 0) {
+				imsg.setClustering(&CCclustering);
+			}
+			world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << slaveList[i];
+		}
+		// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
+		CUDAILS cudails;
+		Clustering bestClustering = cudails.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+
+		// 3. the leader receives the processing results
+		OutputMessage omsg;
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages.";
+		for(int i = 0; i < numberOfSlaves; i++) {
+			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source() << ". Obj = " <<
+					omsg.clustering.getImbalance().getValue();
+			// process the result of the execution of process i
+			// sums the total number of tested combinations
+			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
+			// 4. Merge the partial solutions into a global solution for the whole graph
+
+			/*
+			if(omsg.clustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
+				Clustering clustering = omsg.clustering;
+				bestClustering = clustering;
+				BOOST_LOG_TRIVIAL(trace) << "*** [Parallel ILS] Better value found for objective function in node " << stat.source() << ": "  <<
+						omsg.clustering.getImbalance().getValue();
+			} */
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
+		bestClustering.printClustering(g->getN());
+
+		// 5. Run a local search over the merged global solution, trying to improve it
+
+
+		BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] TODO: ParallelILS with split graph.";
+		cout << "[Parallel ILS SplitGraph] TODO: ParallelILS with split graph.\n";
 		return Clustering();
 	}
 }

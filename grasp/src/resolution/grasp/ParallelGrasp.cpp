@@ -57,7 +57,7 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering *construct, VariableN
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 
-	if(not splitGraph) {
+	if(not splitGraph) {  // traditional parallel GRASP approach, dividing the number of multistart iterations
 		for(int i = 0; i < numberOfSlaves; i++) {
 			InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 					problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
