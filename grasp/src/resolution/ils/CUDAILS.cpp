@@ -70,7 +70,7 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
-	for(int edge = 0; i < n; i++) {  // For each vertex i
+	for(long edge = 0; i < n; i++) {  // For each vertex i
 		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		h_offset[i] = offset;
@@ -94,7 +94,7 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 	}
 	// TODO transform into class constant
 	// number of threads per block
-	unsigned short threadsCount = 256;  // limited by shared memory size
+	unsigned short threadsCount = 1024;  // limited by shared memory size
 	// Pass raw array and its size to kernel
 	int totalIter = 0;
 	Clustering CStar;
