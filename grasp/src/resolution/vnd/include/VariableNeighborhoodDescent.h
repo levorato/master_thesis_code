@@ -74,6 +74,14 @@ public:
 		return timeSpentOnLocalSearch;
 	}
 
+	/**
+	 * Resets internal auxiliary matrices (used between Metaheuristic iterations)
+	 * and updates the best clustering based on the constructive phase result.
+	 */
+	void reset(Clustering coClustering) {
+		this->_neighborhoodSearch.reset(coClustering);
+	}
+
 protected:
 	/**
 	 * Computes the best known search result at each time interval.

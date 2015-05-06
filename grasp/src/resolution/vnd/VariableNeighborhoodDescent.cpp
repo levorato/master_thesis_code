@@ -77,6 +77,10 @@ Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& 
 			// BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			// Cl->printClustering();
 			CStar = Cl;
+			if(r > 1) {
+				// resets NeighborhoodSearch auxiliary matrices
+				this->reset(CStar);
+			}
 			r = 1;
 		} else {  // no better result found in neighborhood
 			r++;

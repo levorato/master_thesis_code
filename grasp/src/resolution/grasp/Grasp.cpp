@@ -83,6 +83,8 @@ Clustering Grasp::executeGRASP(ConstructClustering *construct, VariableNeighborh
 		initialImbalanceSum += Cc.getImbalance().getValue();
 		// Registers the Cc result
 		notifyNewValue(Cc, 0.0, totalIter);
+		// resets NeighborhoodSearch auxiliary matrices
+		vnd->reset(Cc);
 
 		// 2. Execute local search algorithm: RVND
 		Clustering Cl = vnd->localSearch(g, Cc, totalIter, problem, timeSpentInGRASP, info.processRank);
