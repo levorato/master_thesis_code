@@ -1802,6 +1802,10 @@ using namespace std;
 			timer.stop();
 			end_time = timer.elapsed();
 			timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
+
+			iterationResults << (i+1) << "," << bestValue.getValue() << "," << bestValue.getPositiveValue()
+					<< "," << bestValue.getNegativeValue() << "," << CBest.getNumberOfClusters()
+					<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
 			// if elapsed time is bigger than timeLimit, break
 			if(timeSpentInILS >= timeLimit) {
 				// BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
