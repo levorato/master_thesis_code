@@ -75,8 +75,8 @@ def build(bld):
         		uselib='BSERIAL dl opa rt boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_date_time boost_log boost_log_setup cuda cudart curand',
                 lib = ['dl', 'pthread', 'rt', 'uuid', 'mpi', 'mpi_cxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_chrono', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log_setup', 'boost_log', 'open-rte', 'open-pal', 'nsl', 'util', 'm', 'cuda', 'cudart', 'curand'],
                 libpath = ['/home_nfs/mlevorato/lib', '/home/mario/lib', '/home/levorato/lib', '/usr/local/boost/lib', '/usr/lib', '/lib64', '/usr/lib64', '/usr/lib', '/usr/lib64/openmpi/lib', '/usr/lib/openmpi/lib', '/usr/lib64/mpich2/lib', '/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi', '/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock', '/opt/mpi/mpibull2-1.3.9-18.s/lib', '/home_nfs/3.2.2.006/lib64', 'build', '/usr/local/cuda/lib64'],
-				stlib=['graph-common', 'cudadevrt'],
-				stlibpath=[os.path.join(os.getcwd(), '../graph-common/build')],
+				stlib=['graph-common', 'cudadevrt', 'metis', 'multilevel'],
+				stlibpath=[os.path.join(os.getcwd(), '../graph-common/build'), os.path.join(os.getcwd(), '../multilevelLib/build'), os.path.join(os.getcwd(), '../metisLib/build')],
         		use = 'CUDA CUDART') # -lcudadevrt
 		
 		#t.env.CUDAFLAGS = ['-deviceemu']
