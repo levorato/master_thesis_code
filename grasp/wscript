@@ -57,10 +57,13 @@ def configure(conf):
 	# cuda config
 	conf.load('cuda', tooldir='.')
 	
+	# check that we have 'cp'
+	conf.find_program('cp', VAR='CP')
+	
 	pass
 
 def build(bld):
-		
+	
 	t = bld.stlib(
 				features='cxx cxxprogram',
 				cxxflags  = ['-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-m64', '-O3', '-fPIC', '-pthread'],
@@ -75,10 +78,18 @@ def build(bld):
         		uselib='BSERIAL dl opa rt boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_date_time boost_log boost_log_setup cuda cudart curand',
                 lib = ['dl', 'pthread', 'rt', 'uuid', 'mpi', 'mpi_cxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_chrono', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log_setup', 'boost_log', 'open-rte', 'open-pal', 'nsl', 'util', 'm', 'cuda', 'cudart', 'curand'],
                 libpath = ['/home_nfs/mlevorato/lib', '/home/mario/lib', '/home/levorato/lib', '/usr/local/boost/lib', '/usr/lib', '/lib64', '/usr/lib64', '/usr/lib', '/usr/lib64/openmpi/lib', '/usr/lib/openmpi/lib', '/usr/lib64/mpich2/lib', '/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi', '/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock', '/opt/mpi/mpibull2-1.3.9-18.s/lib', '/home_nfs/3.2.2.006/lib64', 'build', '/usr/local/cuda/lib64'],
-				stlib=['graph-common', 'cudadevrt', 'metis', 'multilevel'],
-				stlibpath=[os.path.join(os.getcwd(), '../graph-common/build'), os.path.join(os.getcwd(), '../multilevelLib/build'), os.path.join(os.getcwd(), '../metisLib/build')],
+				stlib=['graph-common', 'cudadevrt'],
+				stlibpath=[os.path.join(os.getcwd(), '../graph-common/build')],
         		use = 'CUDA CUDART') # -lcudadevrt
 		
 		#t.env.CUDAFLAGS = ['-deviceemu']
 	t.env.CUDAFLAGS = ['-arch=sm_20']
 		# --ptxas-options="-v -maxrregcount=10"
+		
+	bld(rule='${CP} ${SRC} ${TGT}', source='../graclus1.2/graclus', target='graclus')
+
+def install(inst):
+
+	inst.do_install(os.path.join(os.getcwd(), '../graclus1.2/graclus'), 'graclus', '755')
+	pass
+	
