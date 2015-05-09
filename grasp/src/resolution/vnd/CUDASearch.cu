@@ -1454,7 +1454,7 @@ using namespace std;
 		
 		// Multi-start ILS
 		for (int i = 0; i < iterMax || iterMax < 0 ; i++, previousCc = Cc) {
-			 printf("ILS iteration %d, best solution so far: %.2f\n", i, CBest.getImbalance().getValue());
+			//printf("ILS iteration %d, best solution so far: %.2f\n", i, CBest.getImbalance().getValue());
 			// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 			//    Store initial solution value in corresponding results file
 			constructivePhaseResults << (i+1) << "," << Cc.getImbalance().getValue() << ","
@@ -1475,7 +1475,7 @@ using namespace std;
 			bool perturbated = false;
 			
 			for(int j = 1, total = 0; j <= iterMaxILS; total++) {  // internal ILS loop
-				 printf("ILS internal loop iteration %d\n", j);
+				//printf("ILS internal loop iteration %d\n", j);
 				ClusterArray cArrayCl = Cl.getClusterArray();
 				thrust::host_vector<unsigned long> h_myclusterCl(cArrayCl);
 				thrust::host_vector<float> h_functionValue(2);
@@ -1510,7 +1510,7 @@ using namespace std;
 				int iteration = 0;
 				bestImbalance = destPositiveImbalance + destNegativeImbalance;
 				while (true) {
-					 printf("*** Local search iteration %d, nc = %ld, best I(P) = %.2f\n", iteration, h_nc[0], bestImbalance);
+					//printf("*** Local search iteration %d, nc = %ld, best I(P) = %.2f\n", iteration, h_nc[0], bestImbalance);
 					ulong numberOfChunks = (h_nc[0] + 1) * n;
 					// result / destination vector
 					d_destFunctionValue.resize(numberOfChunks, 0.0);
@@ -1588,7 +1588,7 @@ using namespace std;
                                                 destNegativeImbalance = 0.0;
 
 						// printf("Max idx is %ld\n", numberOfChunks - 1);
-						 printf("Idx = %ld: The best src vertex is %ld to cluster %ld with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, min_val);
+						//printf("Idx = %ld: The best src vertex is %ld to cluster %ld with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, min_val);
 						if(bestImbalance < 0) {  printf("WARNING: I(P) < 0 !!!\n");  break;  }
 						d_old_nc = d_nc;
 						old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
@@ -1636,7 +1636,7 @@ using namespace std;
 						
 						if(h_nc[0] > h_old_nc[0]) {
 							// acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
-							printf("New cluster. nc = %d. Growing vectors to size %2.f MB.\n", h_nc[0], (n * (h_nc[0]+1) * sizeof(float)) / (1024.0 * 1024.0));
+							//printf("New cluster. nc = %d. Growing vectors to size %2.f MB.\n", h_nc[0], (n * (h_nc[0]+1) * sizeof(float)) / (1024.0 * 1024.0));
 							d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
 							d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
 							d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
@@ -1681,9 +1681,9 @@ using namespace std;
 				if(bestImbalance < CStar.getImbalance().getValue()) {
 					// printf("Imbalance improved in the current iteration.\n");
 					if(perturbated) {
-						printf("Improved because of perturbation: j = %d, perturb = %d\n", j, perturbationLevel);
+						//printf("Improved because of perturbation: j = %d, perturb = %d\n", j, perturbationLevel);
 					} else {
-						printf("Improved because of constructive phase.\n");
+						//printf("Improved because of constructive phase.\n");
 					}
 
 					thrust::host_vector<unsigned long> h_mycluster = d_mycluster;
@@ -1792,7 +1792,7 @@ using namespace std;
 			Imbalance newValue = CStar.getImbalance();
 			Imbalance bestValue = CBest.getImbalance();
 			if(newValue < bestValue) {
-				printf("A better global solution was found: I(P) = %.2f\n", newValue.getValue());
+				//printf("A better global solution was found: I(P) = %.2f\n", newValue.getValue());
 				CBest = CStar;
 				bestValue = newValue;
 				iterationValue = i;

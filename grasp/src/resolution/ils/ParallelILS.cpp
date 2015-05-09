@@ -10,9 +10,12 @@
 #include "util/parallel/include/MPIUtil.h"
 #include "problem/include/RCCProblem.h"
 #include "./include/CUDAILS.h"
+#include "util/include/ProcessUtil.h"
+
 #include <cstring>
 #include <vector>
 #include <iostream>
+#include <stdexcept>
 #include <boost/mpi/communicator.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -108,7 +111,14 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		 */
 
 		// 1. Divide the graph into (numberOfSlaves + 1) non-overlapping parts
-
+		//string s = ProcessUtil::exec("./graclus1.2/graclus --help");
+		BOOST_LOG_TRIVIAL(info) << "Invoking Graclus partitioning for spit graph...";
+		if(ProcessUtil::exec("./graclus test.g 2")) {
+			BOOST_LOG_TRIVIAL(error) << "FATAL: Error invoking Glacus. Please check the logs. Program will now exit!";
+			throw std::invalid_argument("FATAL: Error invoking Glacus. Please check the logs.");
+		} else {
+			BOOST_LOG_TRIVIAL(info) << "Successful. Processing partition...";
+		}
 
 		for(int i = 0; i < numberOfSlaves; i++) {
 			// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
