@@ -21,7 +21,7 @@ public:
 	ProcessUtil();
 	virtual ~ProcessUtil();
 
-	static int exec(char* cmd) {
+	static int exec(const char* cmd) {
 		BOOST_LOG_TRIVIAL(info) << "Command-line call: '" << cmd << "'";
 		int errorCount = 0, successCount = 0;
 

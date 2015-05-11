@@ -95,6 +95,33 @@ public:
 
 	void setGraphFileLocation(string txt);
 
+	/**
+	 *  Creates a string to be used as input format for the Graclus clustering program,
+	 *  which clusters undirected graphs.
+	 *  If edge weights (must be integer values) are different,
+			  10
+		  1 ----- 2
+		  |	  |
+		 9|	  |6
+		  |   7   |
+		  3 ----- 5
+		   \     /
+		  11\   /28
+			 \ /
+			  4
+
+		 then the matrix representation becomes
+
+		 5 6 1		<--- # of nodes and edges and format
+		 2 10 3 9	<--- nodes adjacent to 1 and corresponding edge weight
+		 1 10 5 6	.
+		 1 9 4 11 5 7	.
+		 3 11 5 28	.
+		 2 6 3 7 4 28	<--- nodes adjacent to 5 and corresponding edge weight
+	 *
+	 */
+	string convertToGraclusInputFormat();
+
 	DirectedGraph graph;
 private:
 

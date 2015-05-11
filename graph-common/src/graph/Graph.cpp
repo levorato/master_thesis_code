@@ -12,6 +12,8 @@
 #include <boost/graph/graph_utility.hpp>
 #include <cassert>
 #include <limits>
+#include <sstream>
+#include <boost/log/trivial.hpp>
 
 /*
  * Defines the boost::graph_traits class template.
@@ -92,6 +94,44 @@ void SignedGraph::setGraphFileLocation(string txt) {
 
 string SignedGraph::getGraphFileLocation() {
 	return graphFileLocation;
+}
+
+string SignedGraph::convertToGraclusInputFormat() {
+	stringstream ss;
+	int n = this->getN();
+	// # of nodes and edges and format (format number 1 for integer-weighted edges)
+	ss << n << " " << this->getM() << " 1\n";
+	// nodes adjacent to vertex i and corresponding edge weight
+	// vertex numbers start at 1
+	// TODO: check if input graph can be directed!
+	long edgeCount = 0;
+	DirectedGraph::edge_descriptor e;
+	for(long i = 0; i < n; i++) {
+		DirectedGraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(i, this->graph); f != l; ++f) {
+			double weight = ((Edge*)f->get_property())->weight;
+			long j = target(*f, this->graph);
+			// edge weights must be integer values!
+			ss << (j+1) << " " << int(weight) << " ";
+			edgeCount++;
+		}
+		// iterates over in-edges of vertex i
+		DirectedGraph::in_edge_iterator in_i, in_end;
+		// std::cout << "in-edges of " << i << ": ";
+		for (tie(in_i, in_end) = in_edges(i, this->graph); in_i != in_end; ++in_i) {
+			e = *in_i;
+			Vertex src = source(e, this->graph), targ = target(e, this->graph);
+			double weight = ((Edge*)in_i->get_property())->weight;
+			long j = src.id;
+			// edge weights must be integer values!
+			ss << (j+1) << " " << int(weight) << " ";
+			edgeCount++;
+		}
+		ss << "\n";
+	}
+	BOOST_LOG_TRIVIAL(info) << "EdgeCount is " << edgeCount;
+	return ss.str();
 }
 
 } /* namespace graph */
