@@ -18,6 +18,10 @@
 #include <stdexcept>
 #include <boost/mpi/communicator.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace resolution {
 namespace ils {
@@ -26,7 +30,9 @@ using namespace std;
 using namespace util;
 using namespace util::parallel;
 using namespace resolution::construction;
+using namespace boost::algorithm;
 namespace mpi = boost::mpi;
+
 
 ParallelILS::ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split) : ILS(),
 		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
@@ -111,14 +117,30 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		 */
 
 		// 1. Divide the graph into (numberOfSlaves + 1) non-overlapping parts
+		// 1.1. Convert the graph to Graclus input format
+		string s = g->convertToGraclusInputFormat();
+		// obtains only the filename (without path)
+		string filename = g->getGraphFileLocation();
+		filename = filename.substr(filename.find_last_of("/") + 1);
+		generateGraclusOutputFile(filename, s);
+
+		// 1.2. Invoke Graclus to process the graph
 		//string s = ProcessUtil::exec("./graclus1.2/graclus --help");
-		BOOST_LOG_TRIVIAL(info) << "Invoking Graclus partitioning for spit graph...";
-		if(ProcessUtil::exec("./graclus test.g 2")) {
+		unsigned int numberOfProcesses = numberOfSlaves + 1;
+		string strNP = boost::lexical_cast<std::string>(numberOfProcesses);
+		BOOST_LOG_TRIVIAL(info) << "Invoking Graclus partitioning for spit graph (numberOfProcesses = " << strNP << ")...";
+		if(ProcessUtil::exec((string("./graclus ") + filename + string(" ") + strNP).c_str())) {
 			BOOST_LOG_TRIVIAL(error) << "FATAL: Error invoking Glacus. Please check the logs. Program will now exit!";
 			throw std::invalid_argument("FATAL: Error invoking Glacus. Please check the logs.");
 		} else {
 			BOOST_LOG_TRIVIAL(info) << "Successful. Processing partition...";
 		}
+
+		// 1.3. Process Graclus output
+		std::vector<long> clusterArray = readGraclusResultFile(filename + string(".part.") + strNP);
+		BOOST_LOG_TRIVIAL(info) << "Generated a cluster array of " << clusterArray.size() << " vertices.";
+		Clustering c(clusterArray, *g, problem);
+		BOOST_LOG_TRIVIAL(info) << "Initial Graclus clustering I(P) = " << c.getImbalance().getValue();
 
 		for(int i = 0; i < numberOfSlaves; i++) {
 			// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
@@ -165,6 +187,54 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		cout << "[Parallel ILS SplitGraph] TODO: ParallelILS with split graph.\n";
 		return Clustering();
 	}
+}
+
+void ParallelILS::generateGraclusOutputFile(string filename, string fileContents) {
+	namespace fs = boost::filesystem;
+	// Generates the output file in the current dir (runtime dir)
+	fs::path newFile(filename);
+	BOOST_LOG_TRIVIAL(info) << "Creating graclus output file in " << newFile.c_str();
+	ofstream os;
+	os.open(newFile.c_str(), ios::out | ios::trunc);
+	if (!os) {
+		BOOST_LOG_TRIVIAL(fatal) << "Can't open graclus output file! Path: " << newFile.c_str();
+		throw "Cannot open graclus output file.";
+	}
+	// Writes file contents to the output file
+	os << fileContents;
+	os.close();
+}
+
+std::vector<long> ParallelILS::readGraclusResultFile(string filename) {
+	namespace fs = boost::filesystem;
+	fs::path exFile(filename);
+	BOOST_LOG_TRIVIAL(info) << "Reading graclus input file in " << exFile.c_str();
+	ifstream in;
+	in.open(exFile.c_str(), std::ios::in | std::ios::binary);
+	if (!in) {
+		BOOST_LOG_TRIVIAL(fatal) << "Can't open graclus result file! Path: " << exFile.c_str();
+		throw "Cannot open graclus result file.";
+	}
+	// Reads file contents
+	std::ostringstream contents;
+	contents << in.rdbuf();
+	in.close();
+
+	// parse each line, reading vertexes clusters
+	int clusterNumber = 0;
+	std::vector<long> clusters;
+	stringstream ss(contents.str());
+	while(not ss.eof()) {
+		string sv;
+		ss >> sv;
+		trim(sv);
+		if(sv.size() == 0)  continue;
+
+		istringstream iss(sv);
+		iss >> clusterNumber;
+		clusters.push_back(clusterNumber);
+	}
+	return clusters;
 }
 
 } /* namespace grasp */

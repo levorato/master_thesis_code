@@ -39,6 +39,9 @@ private:
 	unsigned int numberOfSlaves;
 	Clustering CCclustering;
 	bool splitGraph;
+
+	void generateGraclusOutputFile(string filename, string fileContents);
+	std::vector<long> readGraclusResultFile(string filename);
 };
 
 } /* namespace ils */
