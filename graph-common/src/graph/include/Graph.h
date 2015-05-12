@@ -10,7 +10,9 @@
 
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/properties.hpp>
 #include <boost/graph/graph_utility.hpp>
+#include <boost/graph/subgraph.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/dynamic_bitset.hpp>
 
@@ -22,19 +24,44 @@
 using namespace boost;
 using namespace std;
 
-namespace clusteringgraph {
-
 struct Edge {
     double weight;
+    std::size_t vertex_index_t;
     Edge() : weight(0) { }
     Edge(double w) : weight(w) { }
 };
 struct Vertex {
     int id;
+    std::size_t edge_index_t;
     Vertex() : id(0) { }
     Vertex(int w) : id(w) { }
 };
-typedef adjacency_list<vecS, vecS, bidirectionalS, Vertex, Edge, no_property, vecS > DirectedGraph;
+
+
+enum vertex_properties_t { vertex_properties };
+enum edge_properties_t { edge_properties };
+namespace boost {
+	BOOST_INSTALL_PROPERTY(vertex, properties);
+	BOOST_INSTALL_PROPERTY(edge, properties);
+}
+
+namespace clusteringgraph {
+
+// typedef property< edge_index_t, size_t, Edge > EdgeProp;
+
+typedef property< vertex_properties_t, Vertex,
+            property< vertex_index_t, std::size_t > > VertexProperty;
+
+typedef property< edge_properties_t, Edge,
+            property< edge_index_t, std::size_t > > EdgeProperty;
+
+// typedef property<vertex_index_t, Vertex> vertex_prop;
+// typedef property<edge_index_t, Edge> edge_prop;
+
+typedef adjacency_list< vecS, vecS, bidirectionalS, VertexProperty,
+		EdgeProperty, no_property, vecS > DGraph;
+typedef subgraph< DGraph > SubGraph;
+typedef subgraph< DGraph > DirectedGraph;
 
 /**
  *  uses dynamic_bitset for bool array, a high performance and space saving structure
@@ -122,7 +149,9 @@ public:
 	 */
 	string convertToGraclusInputFormat();
 
+
 	DirectedGraph graph;
+
 private:
 
 
