@@ -1,4 +1,4 @@
-include ./Makefile.in
+include ../Makefile.in
 
 INCLUDES = -I.
 
@@ -20,7 +20,7 @@ OBJS = coarsen.o fm.o match.o ccgraph.o memory.o \
 .c.o:
 	$(CC) $(CFLAGS) -c $*.c
 
-./build/libmetis.a: $(OBJS)
+./libmetis.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 	$(RANLIB) $@
 

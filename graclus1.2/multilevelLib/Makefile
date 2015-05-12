@@ -1,4 +1,4 @@
-include ./Makefile.in
+include ../Makefile.in
 
 INCLUDES = -I../metisLib -I/p/include
 
@@ -11,7 +11,7 @@ OBJS = wkkm.o mlkkm.o
 .c.o:
 	$(CC) $(CFLAGS) -c $*.c
 
-./build/libmultilevel.a: $(OBJS)
+../libmultilevel.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 	$(RANLIB) $@
 
@@ -19,4 +19,4 @@ clean:
 	rm -f *.o
 
 realclean:
-	rm -f *.o ; rm -f ./libmetis.a
+	rm -f *.o ; rm -f ../libmetis.a
