@@ -141,8 +141,30 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		BOOST_LOG_TRIVIAL(info) << "Generated a cluster array of " << clusterArray.size() << " vertices.";
 		Clustering c(clusterArray, *g, problem);
 		BOOST_LOG_TRIVIAL(info) << "Initial Graclus clustering I(P) = " << c.getImbalance().getValue();
+		std::vector< std::vector< Vertex > > verticesInCluster(numberOfProcesses, std::vector< Vertex >());
+		int n = g->getN();
+		for(long i = 0; i < n; i++) {
+			long k = clusterArray[i];
+			BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << i << " in cluster " << k;
+			verticesInCluster[k].push_back(Vertex(i));
+		}
+
+		std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(g->graph);
+		// Creates numberOfProcesses subgraphs
+		std::vector<SubGraph> subgraphList;
+		// each subgraph will have a subset of the main graph's nodes and edges, based on the previous clustering
+		for(int k = 0; k < numberOfProcesses; k++) {
+			// SubGraph sg = (g->graph).create_subgraph(verticesInCluster[k].begin(), verticesInCluster[k].end());
+			SubGraph sg = (g->graph).create_subgraph(v_it.first, v_it.second);
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] vertices_num = " << verticesInCluster[k].size();
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 1. num_edges = " << num_edges(sg) << " , num_vertices = " << num_vertices(sg);
+			subgraphList.push_back(sg);
+		}
 
 		for(int i = 0; i < numberOfSlaves; i++) {
+			SubGraph sg = subgraphList[i];
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 2. num_edges = " << num_edges(sg) << " , num_vertices = " << num_vertices(sg);
+
 			// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
