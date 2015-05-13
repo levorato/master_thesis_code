@@ -81,11 +81,12 @@ public:
 	long timeLimit;
 	bool firstImprovementOnOneNeig;
 	Clustering CCclustering;  // best solution found by CC problem (for use on RCC problem solve)
+	std::vector<long> vertexList;  // list of vertices of the subgraph (used on split graph feature)
 
 	InputMessageParallelGrasp() : InputMessage(),
 			alpha(0.0F), iter(500), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
-			CCclustering() {
+			CCclustering(), vertexList() {
 
 	}
 
@@ -95,10 +96,14 @@ public:
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
-					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig), CCclustering() {
+					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig), CCclustering(), vertexList() {
 			if(cl != NULL) {
 				CCclustering = *cl;
 			}
+	}
+
+	void setVertexList(std::vector<long> vlist) {
+		vertexList = vlist;
 	}
 
 	string toString() {
@@ -134,6 +139,7 @@ public:
 		ar & timeLimit;
 		ar & firstImprovementOnOneNeig;
 		ar & CCclustering;
+		ar & vertexList;
 	}
 };
 
@@ -153,11 +159,12 @@ public:
 	int iterMaxILS;
 	int perturbationLevelMax;
 	Clustering CCclustering;  // best solution found by CC problem (for use on RCC problem solve)
+	std::vector<long> vertexList;  // list of vertices of the subgraph (used on split graph feature)
 
 	InputMessageParallelILS() : InputMessage(),
 			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
-			iterMaxILS(3), perturbationLevelMax(7), CCclustering() {
+			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), vertexList() {
 
 	}
 
@@ -169,7 +176,7 @@ public:
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
-					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering() {
+					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering(), vertexList() {
 			if(cl != NULL) {
 				CCclustering = *cl;
 			}
@@ -179,6 +186,10 @@ public:
 		if(cl != NULL) {
 			CCclustering = *cl;
 		}
+	}
+
+	void setVertexList(std::vector<long> vlist) {
+		vertexList = vlist;
 	}
 
 	string toString() {
@@ -216,6 +227,7 @@ public:
 		ar & iterMaxILS;
 		ar & perturbationLevelMax;
 		ar & CCclustering;
+		ar & vertexList;
 	}
 };
 
