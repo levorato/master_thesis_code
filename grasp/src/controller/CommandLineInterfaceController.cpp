@@ -700,8 +700,31 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
 						// Grasp resolution;
 						CUDAGrasp CUDAgrasp;
-						Clustering bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
-														problemFactory.build(imsgpg.problemType, imsgpg.k), info);
+						Clustering bestClustering;
+
+						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
+						if(imsgpg.vertexList.size() > 0) {
+							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
+							SubGraph subg = (g->graph).create_subgraph();
+							SignedGraph sg(num_vertices(subg));
+							for(std::vector<long>::iterator it = imsgpg.vertexList.begin(); it != imsgpg.vertexList.end(); it++) {
+								add_vertex(*it, subg);
+							}
+							sg.graph = subg;
+
+							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(subg);
+							stringstream ss("Vertices in subgraph: ");
+							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+								ss << *it << " (" << subg.local_to_global(*it) << "), ";
+							}
+							BOOST_LOG_TRIVIAL(info) << ss.str();
+
+							bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, &sg, imsgpg.iter,
+													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
+						} else {
+							bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
+													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
+						}
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, CUDAgrasp.getNumberOfTestedCombinations());
@@ -750,9 +773,33 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
 						// resolution::ils::ILS resolution;
 						resolution::ils::CUDAILS CUDAILS;
-						Clustering bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
+						Clustering bestClustering;
+
+						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
+						if(imsgpils.vertexList.size() > 0) {
+							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
+							SubGraph subg = (g->graph).create_subgraph();
+							SignedGraph sg(num_vertices(subg));
+							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
+								add_vertex(*it, subg);
+							}
+							sg.graph = subg;
+
+							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(subg);
+							stringstream ss("Vertices in subgraph: ");
+							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+								ss << *it << " (" << subg.local_to_global(*it) << "), ";
+							}
+							BOOST_LOG_TRIVIAL(info) << ss.str();
+
+							bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
+									imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+									problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+						} else {
+							bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
 														imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 														problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+						}
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations());

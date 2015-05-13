@@ -22,6 +22,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/graph/graph_traits.hpp>
 
 namespace resolution {
 namespace ils {
@@ -141,12 +142,11 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		BOOST_LOG_TRIVIAL(info) << "Generated a cluster array of " << clusterArray.size() << " vertices.";
 		Clustering c(clusterArray, *g, problem);
 		BOOST_LOG_TRIVIAL(info) << "Initial Graclus clustering I(P) = " << c.getImbalance().getValue();
-		std::vector< std::vector< Vertex > > verticesInCluster(numberOfProcesses, std::vector< Vertex >());
+		std::vector< std::vector< long > > verticesInCluster(numberOfProcesses, std::vector< long >());
 		int n = g->getN();
 		for(long i = 0; i < n; i++) {
 			long k = clusterArray[i];
-			BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << i << " in cluster " << k;
-			verticesInCluster[k].push_back(Vertex(i));
+			verticesInCluster[k].push_back(i);
 		}
 
 		std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(g->graph);
@@ -155,15 +155,45 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		// each subgraph will have a subset of the main graph's nodes and edges, based on the previous clustering
 		for(int k = 0; k < numberOfProcesses; k++) {
 			// SubGraph sg = (g->graph).create_subgraph(verticesInCluster[k].begin(), verticesInCluster[k].end());
-			SubGraph sg = (g->graph).create_subgraph(v_it.first, v_it.second);
+			// SubGraph sg = (g->graph).create_subgraph(v_it.first, v_it.second);
+			SubGraph sg = (g->graph).create_subgraph();
+			for(std::vector<long>::iterator it = verticesInCluster[k].begin(); it != verticesInCluster[k].end(); it++) {
+				add_vertex(*it, sg);
+				// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << k;
+			}
+
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] vertices_num = " << verticesInCluster[k].size();
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 1. num_edges = " << num_edges(sg) << " , num_vertices = " << num_vertices(sg);
 			subgraphList.push_back(sg);
+
+			std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg);
+			stringstream ss("Vertices in subgraph: ");
+			for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+				ss << *it << " (" << sg.local_to_global(*it) << "), ";
+			}
+			BOOST_LOG_TRIVIAL(info) << ss.str();
+			stringstream ss2("Edges in subgraph: ");
+			boost::property_map<SubGraph, edge_properties_t>::type ew = boost::get(edge_properties, sg);
+			for(int i = 0; i < num_vertices(sg); i++) {
+				// iterates over out-edges of vertex i
+				//typedef graph_traits<Graph> GraphTraits;
+				DirectedGraph::out_edge_iterator out_i, out_end;
+				DirectedGraph::edge_descriptor e;
+
+				// std::cout << "out-edges of " << i << ": ";
+				for (tie(out_i, out_end) = out_edges(i, sg); out_i != out_end; ++out_i) {
+					e = *out_i;
+					Vertex src = source(e, sg), targ = target(e, sg);
+					double weight = ew[e].weight;
+					ss2 << "*(" << src.id << "," << targ.id << ") = " << weight  << ", ";
+				}
+			}
+			BOOST_LOG_TRIVIAL(info) << "Edges: " << ss2.str();
 		}
 
 		for(int i = 0; i < numberOfSlaves; i++) {
-			SubGraph sg = subgraphList[i];
-			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 2. num_edges = " << num_edges(sg) << " , num_vertices = " << num_vertices(sg);
+			// SubGraph sg = subgraphList[i];
+			// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 2. num_edges = " << num_edges(sg) << " , num_vertices = " << num_vertices(sg);
 
 			// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
@@ -172,12 +202,21 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			if(k < 0) {
 				imsg.setClustering(&CCclustering);
 			}
+			imsg.setVertexList(verticesInCluster[i+1]);
 			world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << slaveList[i];
 		}
 		// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
 		CUDAILS cudails;
-		Clustering bestClustering = cudails.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+		SubGraph subg = (g->graph).create_subgraph();
+		for(std::vector<long>::iterator it = verticesInCluster[0].begin(); it != verticesInCluster[0].end(); it++) {
+			add_vertex(*it, subg);
+			// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << k;
+		}
+		BOOST_LOG_TRIVIAL(info) << "n =  " << num_vertices(subg);
+		SignedGraph sg(num_vertices(subg));
+		sg.graph = subg;
+		Clustering bestClustering = cudails.executeILS(construct, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
 
 		// 3. the leader receives the processing results
 		OutputMessage omsg;
