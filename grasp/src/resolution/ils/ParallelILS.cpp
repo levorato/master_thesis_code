@@ -151,7 +151,6 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			verticesInCluster[k].push_back(i);
 		}
 
-		std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(g->graph);
 		// Creates numberOfProcesses subgraphs
 		std::vector<SubGraph> subgraphList;
 		// each subgraph will have a subset of the main graph's nodes and edges, based on the previous clustering
