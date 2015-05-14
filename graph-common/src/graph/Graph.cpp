@@ -66,10 +66,13 @@ unsigned long SignedGraph::getDegree(const unsigned long &a) {
 
 unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
 	unsigned long sum = 0;
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	DirectedGraph::edge_descriptor e;
 	// O(n)
 	DirectedGraph::out_edge_iterator f, l;
 	for (boost::tie(f, l) = out_edges(a, graph); f != l; ++f) {
-		if(((Edge*)f->get_property())->weight < 0) {
+		e = *f;
+		if(ew[e].weight < 0) {
 			++sum;
 		}
 	}
@@ -78,10 +81,13 @@ unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
 
 unsigned long SignedGraph::getPositiveDegree(const unsigned long &a) {
 	unsigned long sum = 0;
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	DirectedGraph::edge_descriptor e;
 	// O(n)
 	DirectedGraph::out_edge_iterator f, l;
 	for (boost::tie(f, l) = out_edges(a, graph); f != l; ++f) {
-		if(((Edge*)f->get_property())->weight > 0) {
+		e = *f;
+		if(ew[e].weight > 0) {
 			++sum;
 		}
 	}
@@ -106,11 +112,13 @@ string SignedGraph::convertToGraclusInputFormat() {
 	// TODO: check if input graph can be directed!
 	long edgeCount = 0;
 	DirectedGraph::edge_descriptor e;
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
 	for(long i = 0; i < n; i++) {
 		DirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, this->graph); f != l; ++f) {
-			double weight = ((Edge*)f->get_property())->weight;
+			e = *f;
+			double weight = ew[e].weight;
 			long j = target(*f, this->graph);
 			// edge weights must be integer values!
 			ss << (j+1) << " " << int(weight) << " ";
@@ -122,7 +130,7 @@ string SignedGraph::convertToGraclusInputFormat() {
 		for (tie(in_i, in_end) = in_edges(i, this->graph); in_i != in_end; ++in_i) {
 			e = *in_i;
 			Vertex src = source(e, this->graph), targ = target(e, this->graph);
-			double weight = ((Edge*)in_i->get_property())->weight;
+			double weight = ew[e].weight;
 			long j = src.id;
 			// edge weights must be integer values!
 			ss << (j+1) << " " << int(weight) << " ";
