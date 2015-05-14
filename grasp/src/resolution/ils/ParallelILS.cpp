@@ -11,6 +11,8 @@
 #include "problem/include/RCCProblem.h"
 #include "./include/CUDAILS.h"
 #include "util/include/ProcessUtil.h"
+#include "../construction/include/GainFunctionFactory.h"
+#include "../construction/include/GainFunction.h"
 
 #include <cstring>
 #include <vector>
@@ -208,15 +210,32 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		}
 		// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
 		CUDAILS cudails;
-		SubGraph subg = (g->graph).create_subgraph();
+		SignedGraph sg(verticesInCluster[0].size());
+		sg.graph = (g->graph).create_subgraph();
+
 		for(std::vector<long>::iterator it = verticesInCluster[0].begin(); it != verticesInCluster[0].end(); it++) {
-			add_vertex(*it, subg);
+			add_vertex(*it, sg.graph);
 			// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << k;
 		}
-		BOOST_LOG_TRIVIAL(info) << "n =  " << num_vertices(subg);
-		SignedGraph sg(num_vertices(subg));
-		sg.graph = subg;
-		Clustering bestClustering = cudails.executeILS(construct, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+		BOOST_LOG_TRIVIAL(info) << "n =  " << num_vertices(sg.graph);
+		BOOST_LOG_TRIVIAL(info) << "e =  " << num_edges(sg.graph);
+
+		// rebuilds construct clustering objects based on partial graph 'sg'
+		GainFunctionFactory functionFactory(&sg);
+		ConstructClustering defaultConstruct(functionFactory.build(construct->getGainFunctionType()),
+				construct->getRandomSeed(), construct->getAlpha());
+		ConstructClustering noConstruct(functionFactory.build(construct->getGainFunctionType()),
+				construct->getRandomSeed(), construct->getAlpha(), construct->getCCclustering());
+		ConstructClustering* construct2 = &defaultConstruct;
+		if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+			RCCProblem& rp = static_cast<RCCProblem&>(problem);
+			int RCCk = rp.getK();
+			if(RCCk < 0) {
+				construct2 = &noConstruct;
+			}
+		}
+
+		Clustering bestClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
 
 		// 3. the leader receives the processing results
 		OutputMessage omsg;

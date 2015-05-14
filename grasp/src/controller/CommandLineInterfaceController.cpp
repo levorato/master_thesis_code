@@ -719,6 +719,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							}
 							BOOST_LOG_TRIVIAL(info) << ss.str();
 
+							GainFunctionFactory functionFactory(&sg);
+							ConstructClustering defaultConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
+							ConstructClustering noConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha, &imsgpg.CCclustering);
+							ConstructClustering* construct = &defaultConstruct;
+							if((imsgpg.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpg.k < 0)) {
+									construct = &noConstruct;
+							}
+
 							bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, &sg, imsgpg.iter,
 													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
 						} else {
@@ -778,19 +786,26 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpils.vertexList.size() > 0) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
-							SubGraph subg = (g->graph).create_subgraph();
-							SignedGraph sg(num_vertices(subg));
+							SignedGraph sg(imsgpils.vertexList.size());
+							sg.graph = (g->graph).create_subgraph();
 							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
-								add_vertex(*it, subg);
+								add_vertex(*it, sg.graph);
 							}
-							sg.graph = subg;
 
-							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(subg);
+							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
 							stringstream ss("Vertices in subgraph: ");
 							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-								ss << *it << " (" << subg.local_to_global(*it) << "), ";
+								ss << *it << " (" << sg.graph.local_to_global(*it) << "), ";
 							}
 							BOOST_LOG_TRIVIAL(info) << ss.str();
+
+							GainFunctionFactory functionFactory(&sg);
+							ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
+							ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering);
+							ConstructClustering* construct = &defaultConstruct;
+							if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
+									construct = &noConstruct;
+							}
 
 							bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
 									imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
