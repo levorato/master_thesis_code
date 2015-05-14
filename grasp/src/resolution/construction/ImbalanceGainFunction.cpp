@@ -30,7 +30,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGain(
 	GainCalculation newCalc;
 	int n = graph->getN();
 	int nc = c.getNumberOfClusters();
-	// BOOST_LOG_TRIVIAL(trace)<< "New gain function for vertex " << v << "...";
+	 BOOST_LOG_TRIVIAL(trace)<< "New gain function for vertex " << v << "...";
 
 	if(p.getType() == ClusteringProblem::CC_PROBLEM) {
 		return this->calculateIndividualGainCCProblem(p, c, v);
@@ -96,15 +96,19 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 	// Array that stores the sum of edge weights between vertex i and all clusters
 	if( (h_VertexClusterPosSum.size1() == 0) or (nc == 0) ) {
 		BOOST_LOG_TRIVIAL(info)<< "Initializing sum arrays for the first time in construction phase...";
+		BOOST_LOG_TRIVIAL(debug)<< "n = " << n << ", nc = " << nc;
 		h_VertexClusterPosSum = zero_matrix<double>(n, (nc + 1));
 		h_VertexClusterNegSum = zero_matrix<double>(n, (nc + 1));
+		boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph->graph);
+		DirectedGraph::edge_descriptor e;
 
 		for(int i = 0; i < n; i++) {  // for each vertex i
 			DirectedGraph::out_edge_iterator f, l;
 			// For each out edge of i
 			for (boost::tie(f, l) = out_edges(i, graph->graph); f != l; ++f) {
 				int j = target(*f, graph->graph);
-				double weight = ((Edge*)f->get_property())->weight;
+				e = *f;
+				double weight = ew[e].weight;
 				if(weight > 0) {
 					h_VertexClusterPosSum(i, myCluster[j]) += fabs(weight);
 				} else {
@@ -114,7 +118,8 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 			// iterates over in-edges of vertex i
 			DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 			for (boost::tie(f2, l2) = in_edges(i, graph->graph); f2 != l2; ++f2) {  // in edges of i
-				double weight = ((Edge*)f2->get_property())->weight;
+				e = *f2;
+				double weight = ew[e].weight;
 				int j = source(*f2, graph->graph);
 				if(weight > 0) {
 					h_VertexClusterPosSum(i, myCluster[j]) += fabs(weight);
@@ -125,7 +130,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		}
 	}
 
-	// BOOST_LOG_TRIVIAL(trace)<< "Sum arrays calculated. Calculating destImbArrays...";
+	 BOOST_LOG_TRIVIAL(trace)<< "Sum arrays calculated. Calculating destImbArrays...";
 	/*
 	 * Na inserção em cluster novo, contar apenas as relações externas entre o vértice i e os vértices
 	 * que estão sem cluster. Não incluir as relações internas quando k = nc.
@@ -146,11 +151,11 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		destImbArray[k2] += h_VertexClusterPosSum(v, nc);
 		// BOOST_LOG_TRIVIAL(trace)<< "destImbArray[" << k2 << "] = " << destImbArray[k2];
 	}
-	// BOOST_LOG_TRIVIAL(trace)<< "Calculating min element...";
+	 BOOST_LOG_TRIVIAL(trace)<< "Calculating min element...";
 	std::vector<double>::iterator iter = std::min_element(destImbArray.begin(), destImbArray.end());
 	double min_val = *iter;
 	int position = iter - destImbArray.begin();
-	// BOOST_LOG_TRIVIAL(trace)<< "Min element is " << min_val << " and destCluster is " << position;
+	 BOOST_LOG_TRIVIAL(trace)<< "Min element is " << min_val << " and destCluster is " << position;
 	GainCalculation newCalc;
 	newCalc.vertex = v;
 	newCalc.clusterNumber = position;
@@ -181,10 +186,13 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		k1 = new_nc;
 	}
 	DirectedGraph::out_edge_iterator f, l;
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph->graph);
+	DirectedGraph::edge_descriptor e;
 	// For each out edge of v
 	for (boost::tie(f, l) = out_edges(v, graph->graph); f != l; ++f) {
 		int j = target(*f, graph->graph);
-		double weight = ((Edge*)f->get_property())->weight;
+		e = *f;
+		double weight = ew[e].weight;
 		if(weight > 0) {
 			h_VertexClusterPosSum(j, k1) -= fabs(weight);
 			h_VertexClusterPosSum(j, k2) += fabs(weight);
@@ -196,7 +204,8 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 	// iterates over in-edges of vertex v
 	DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of v
 	for (boost::tie(f2, l2) = in_edges(v, graph->graph); f2 != l2; ++f2) {  // in edges of v
-		double weight = ((Edge*)f2->get_property())->weight;
+		e = *f2;
+		double weight = ew[e].weight;
 		int j = source(*f2, graph->graph);
 		if(weight > 0) {
 			h_VertexClusterPosSum(j, k1) -= fabs(weight);

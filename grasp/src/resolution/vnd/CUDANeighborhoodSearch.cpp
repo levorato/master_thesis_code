@@ -160,12 +160,15 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	thrust::host_vector<uint> h_neighbor_cluster(n * (nc+1), 0);
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	DirectedGraph::edge_descriptor e;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
 		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		h_offset[i] = offset;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
-			double weight = ((Edge*)f->get_property())->weight;
+			e = *f;
+			double weight = ew[e].weight;
 			int j = target(*f, g->graph);
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
@@ -181,7 +184,8 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		}
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			double weight = ((Edge*)f2->get_property())->weight;
+			e = *f2;
+			double weight = ew[e].weight;
 			int j = source(*f2, g->graph);
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
@@ -241,11 +245,14 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		h_VertexClusterNegSum2[i] = 0.0;
 	}
 	i = 0, offset = 0;
+	// DirectedGraph::edge_descriptor e;
+	//boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
 	for(int edge = 0; i < n; i++) {  // For each vertex i
 		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
-			double weight = ((Edge*)f->get_property())->weight;
+			e = *f;
+			double weight = ew[e].weight;
 			int j = target(*f, g->graph);
 			count++; edge++;
 			if(weight > 0) {
@@ -256,7 +263,8 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 		}
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			double weight = ((Edge*)f2->get_property())->weight;
+			e = *f2;
+			double weight = ew[e].weight;
 			int j = source(*f2, g->graph);
 			count++; edge++;
 			if(weight > 0) {
@@ -375,11 +383,14 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 	}
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
+	DirectedGraph::edge_descriptor e;
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
 	for(int edge = 0; i < n; i++) {  // For each vertex i
 		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
-			double weight = ((Edge*)f->get_property())->weight;
+			e = *f;
+			double weight = ew[e].weight;
 			int j = target(*f, g->graph);
 			count++; edge++;
 			if(weight > 0) {
@@ -390,7 +401,8 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 		}
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			double weight = ((Edge*)f2->get_property())->weight;
+			e = *f2;
+			double weight = ew[e].weight;
 			int j = source(*f2, g->graph);
 			count++; edge++;
 			if(weight > 0) {
