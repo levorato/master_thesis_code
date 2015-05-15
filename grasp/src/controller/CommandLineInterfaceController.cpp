@@ -701,6 +701,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// Grasp resolution;
 						CUDAGrasp CUDAgrasp;
 						Clustering bestClustering;
+						// global vertex id array used in split graph
+						std::vector<long> globalVertexId;
 
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpg.vertexList.size() > 0) {
@@ -730,7 +732,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						}
 
 						// Sends the result back to the leader process
-						OutputMessage omsg(bestClustering, CUDAgrasp.getNumberOfTestedCombinations());
+						OutputMessage omsg(bestClustering, CUDAgrasp.getNumberOfTestedCombinations(), globalVertexId);
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": GRASP Output Message sent to leader.";
 
@@ -777,6 +779,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// resolution::ils::ILS resolution;
 						resolution::ils::CUDAILS CUDAILS;
 						Clustering bestClustering;
+						// global vertex id array used in split graph
+						std::vector<long> globalVertexId;
 
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpils.vertexList.size() > 0) {
@@ -800,6 +804,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
 									imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 									problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
+							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
+							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+								globalVertexId.push_back(sg.graph.local_to_global(*it));
+							}
 						} else {
 							bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
 														imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
@@ -807,7 +816,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						}
 
 						// Sends the result back to the leader process
-						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations());
+						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations(), globalVertexId);
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
 						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader.";
 					}
@@ -840,6 +849,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							g = reader.readGraphFromFile(imsgvns.graphInputFilePath);
 							previousId = imsgvns.id;
 						}
+						// global vertex id array used in split graph
+						std::vector<long> globalVertexId;
 
 						// triggers the local partial VND search to be done between initial and final cluster indices
 						// TODO: include firstImprovementOnOneNeig as a parameter inside the MPI message
@@ -851,7 +862,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 						// Sends the result back to the master process
 						int leader = stat.source();
-						OutputMessage omsg(bestClustering, pnSearch.getNumberOfTestedCombinations());
+						OutputMessage omsg(bestClustering, pnSearch.getNumberOfTestedCombinations(), globalVertexId);
 						world.send(leader, MPIMessage::OUTPUT_MSG_PARALLEL_VND_TAG, omsg);
 						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VND Output Message sent to master number "
 								<< leader << ". I(P) = " << bestClustering.getImbalance().getValue();

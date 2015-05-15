@@ -233,11 +233,14 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			}
 		}
 
-		Clustering bestClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+		Clustering leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
 
 		// 3. the leader receives the processing results
 		OutputMessage omsg;
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages.";
+		// Global cluster array
+		ClusterArray globalClusterArray(g->getN(), 0);
+		long clusterOffset = 0;
 		for(int i = 0; i < numberOfSlaves; i++) {
 			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source() << ". Obj = " <<
@@ -246,6 +249,14 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			// sums the total number of tested combinations
 			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
 			// 4. Merge the partial solutions into a global solution for the whole graph
+			ClusterArray localClusterArray = omsg.clustering.getClusterArray();
+			for(long v = 0; v < localClusterArray.size(); v++) {
+				// Obtains vertex v's number in the global graph
+				long vglobal = omsg.globalVertexId[v];
+				globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+			}
+			long nc = omsg.clustering.getNumberOfClusters();
+			clusterOffset += nc;
 
 			/*
 			if(omsg.clustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
@@ -255,10 +266,30 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 						omsg.clustering.getImbalance().getValue();
 			} */
 		}
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best solution found: I(P) = " << bestClustering.getImbalance().getValue();
-		bestClustering.printClustering(g->getN());
+		// includes the leader's processing result as well
+		// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
+		std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
+		std::vector<long> globalVertexId;
+		for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+			globalVertexId.push_back(sg.graph.local_to_global(*it));
+		}
+		// 4. Merges the leader's partial solution into a global solution for the whole graph
+		ClusterArray localClusterArray = leaderClustering.getClusterArray();
+		for(long v = 0; v < localClusterArray.size(); v++) {
+			// Obtains vertex v's number in the global graph
+			long vglobal = globalVertexId[v];
+			globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+		}
+		long nc = leaderClustering.getNumberOfClusters();
+		clusterOffset += nc;
 
-		// 5. Run a local search over the merged global solution, trying to improve it
+		// 5. Builds the clustering with the merge of each process results
+		Clustering globalClustering(globalClusterArray, *g, problem);
+
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Initial solution found: I(P) = " << globalClustering.getImbalance().getValue();
+		globalClustering.printClustering(g->getN());
+
+		// 6. Run a local search over the merged global solution, trying to improve it
 
 
 		BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] TODO: ParallelILS with split graph.";
