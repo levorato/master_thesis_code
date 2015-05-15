@@ -208,16 +208,15 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		}
 		// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
 		CUDAILS cudails;
-		SignedGraph sg(verticesInCluster[0].size());
-		sg.graph = (g->graph).create_subgraph(verticesInCluster[0].begin(), verticesInCluster[0].end());
+		SignedGraph sg(g->graph, verticesInCluster[0]);
+		// sg.graph = (g->graph).create_subgraph(verticesInCluster[0].begin(), verticesInCluster[0].end());
 
 		/*
 		for(std::vector<long>::iterator it = verticesInCluster[0].begin(); it != verticesInCluster[0].end(); it++) {
 			add_vertex(*it, sg.graph);
 			// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << k;
 		} */
-		BOOST_LOG_TRIVIAL(info) << "n =  " << num_vertices(sg.graph);
-		BOOST_LOG_TRIVIAL(info) << "e =  " << num_edges(sg.graph);
+		BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
 
 		// rebuilds construct clustering objects based on partial graph 'sg'
 		GainFunctionFactory functionFactory(&sg);

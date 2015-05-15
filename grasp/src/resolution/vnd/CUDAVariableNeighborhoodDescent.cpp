@@ -188,7 +188,8 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
-			double weight = ((Edge*)f->get_property())->weight;
+			e = *f;
+			double weight = ew[e].weight;
 			int j = target(*f, g->graph);
 			count++; edge++;
 			if(weight > 0) {
@@ -199,7 +200,8 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 		}
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			double weight = ((Edge*)f2->get_property())->weight;
+			e = *f2;
+			double weight = ew[e].weight;
 			int j = source(*f2, g->graph);
 			count++; edge++;
 			if(weight > 0) {

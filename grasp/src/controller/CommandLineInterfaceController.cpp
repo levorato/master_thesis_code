@@ -705,12 +705,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpg.vertexList.size() > 0) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
-							SubGraph subg = (g->graph).create_subgraph();
-							SignedGraph sg(num_vertices(subg));
+							// SubGraph subg = (g->graph).create_subgraph();
+							SignedGraph sg(g->graph, imsgpg.vertexList);
+							/*
 							for(std::vector<long>::iterator it = imsgpg.vertexList.begin(); it != imsgpg.vertexList.end(); it++) {
 								add_vertex(*it, subg);
 							}
-							sg.graph = subg;
+							sg.graph = subg; */
+							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
 
 							GainFunctionFactory functionFactory(&sg);
 							ConstructClustering defaultConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
@@ -779,11 +781,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpils.vertexList.size() > 0) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
-							SignedGraph sg(imsgpils.vertexList.size());
+							SignedGraph sg(g->graph, imsgpils.vertexList);
+							/*
 							sg.graph = (g->graph).create_subgraph(); // imsgpils.vertexList.begin(), imsgpils.vertexList.end());
 							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
 								add_vertex(*it, sg.graph);
-							}
+							} */
+							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
 
 							GainFunctionFactory functionFactory(&sg);
 							ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
