@@ -35,6 +35,13 @@ SignedGraph::SignedGraph(const unsigned long &numberOfNodes) :
 
 }
 
+SignedGraph::SignedGraph(DirectedGraph &g, std::vector<long> subGraphNodeList) :
+		graph(),
+		n(subGraphNodeList.size()) {
+
+	graph = g.create_subgraph(subGraphNodeList.begin(), subGraphNodeList.end());
+}
+
 SignedGraph::~SignedGraph() {
 	// TODO Auto-generated destructor stub
 }

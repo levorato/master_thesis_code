@@ -80,6 +80,12 @@ typedef std::vector<long> ClusterArray;
 class SignedGraph {
 public:
 	SignedGraph(const unsigned long &numberOfNodes);
+
+	/**
+	 * Builds a subgraph based on the graph g provided as parameter, induced by the
+	 * vertex node list subGraphNodeList.
+	 */
+	SignedGraph(DirectedGraph &g, std::vector<long> subGraphNodeList);
 	virtual ~SignedGraph();
 
 	/**

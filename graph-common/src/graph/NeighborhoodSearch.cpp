@@ -175,6 +175,8 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 	Imbalance bestImbalance = cBest.getImbalance();
 
 	ClusterArray myCluster = clustering->getClusterArray();
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	DirectedGraph::edge_descriptor e;
 	std::vector<double> h_VertexClusterPosSum(n * (nc + 1), double(0));
 	std::vector<double> h_VertexClusterNegSum(n * (nc + 1), double(0));
 	// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
@@ -184,7 +186,8 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
 			int j = target(*f, g->graph);
-			double weight = ((Edge*)f->get_property())->weight;
+			e = *f;
+			double weight = ew[e].weight;
 			if(myCluster[i] != myCluster[j]) {  // different cluster
 				myNeighborClusterList[i].insert(myCluster[j]);
 			}
@@ -197,7 +200,8 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 		// iterates over in-edges of vertex i
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			double weight = ((Edge*)f2->get_property())->weight;
+			e = *f2;
+			double weight = ew[e].weight;
 			int j = source(*f2, g->graph);
 			if(myCluster[i] != myCluster[j]) {  // different cluster
 				myNeighborClusterList[i].insert(myCluster[j]);
@@ -670,6 +674,8 @@ void NeighborhoodSearch::updateVertexClusterSumArrays(SignedGraph* g, std::vecto
 	long n = g->getN();
 	ClusterArray clusterArray = clustering->getClusterArray();
 	long nc = clustering->getNumberOfClusters();
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	DirectedGraph::edge_descriptor e;
 
     for(int i = 0; i < n; i++) {
         // For each vertex i, stores the sum of edge weights between vertex i and all clusters
@@ -684,7 +690,8 @@ void NeighborhoodSearch::updateVertexClusterSumArrays(SignedGraph* g, std::vecto
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
 			int j = target(*f, g->graph);
-			double weight = ((Edge*)f->get_property())->weight;
+			e = *f;
+			double weight = ew[e].weight;
 			int kj = clusterArray[j];
 
 			if(kj >= 0) {
@@ -702,7 +709,8 @@ void NeighborhoodSearch::updateVertexClusterSumArrays(SignedGraph* g, std::vecto
 		// iterates over in-edges of vertex i
 		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			double weight = ((Edge*)f2->get_property())->weight;
+			e= *f2;
+			double weight = ew[e].weight;
 			int j = source(*f2, g->graph);
 			int kj = clusterArray[j];
 
@@ -751,11 +759,14 @@ void NeighborhoodSearch::updateVertexClusterSumArraysDelta(SignedGraph* g, std::
 	/* for(ulong k = 0; k < nc; k++) {
 	 	isNeighborClusterArray[i + k * n] = 0;
 	} */
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	DirectedGraph::edge_descriptor e;
 	DirectedGraph::out_edge_iterator f, l;
 	// For each out edge of i
 	for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
 		int j = target(*f, g->graph);
-		double weight = ((Edge*)f->get_property())->weight;
+		e = *f;
+		double weight = ew[e].weight;
 		int kj = clusterArray[j];
 
 		isNeighborClusterArray[j + k1 * n] -= 2;
@@ -777,7 +788,8 @@ void NeighborhoodSearch::updateVertexClusterSumArraysDelta(SignedGraph* g, std::
 	// iterates over in-edges of vertex i
 	DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
 	for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-		double weight = ((Edge*)f2->get_property())->weight;
+		e = *f2;
+		double weight = ew[e].weight;
 		int j = source(*f2, g->graph);
 		int kj = clusterArray[j];
 
