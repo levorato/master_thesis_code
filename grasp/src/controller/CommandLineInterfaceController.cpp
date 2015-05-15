@@ -712,13 +712,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							}
 							sg.graph = subg;
 
-							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(subg);
-							stringstream ss("Vertices in subgraph: ");
-							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-								ss << *it << " (" << subg.local_to_global(*it) << "), ";
-							}
-							BOOST_LOG_TRIVIAL(info) << ss.str();
-
 							GainFunctionFactory functionFactory(&sg);
 							ConstructClustering defaultConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
 							ConstructClustering noConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha, &imsgpg.CCclustering);
@@ -787,17 +780,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						if(imsgpils.vertexList.size() > 0) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
 							SignedGraph sg(imsgpils.vertexList.size());
-							sg.graph = (g->graph).create_subgraph();
+							sg.graph = (g->graph).create_subgraph(); // imsgpils.vertexList.begin(), imsgpils.vertexList.end());
 							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
 								add_vertex(*it, sg.graph);
 							}
-
-							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
-							stringstream ss("Vertices in subgraph: ");
-							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-								ss << *it << " (" << sg.graph.local_to_global(*it) << "), ";
-							}
-							BOOST_LOG_TRIVIAL(info) << ss.str();
 
 							GainFunctionFactory functionFactory(&sg);
 							ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);

@@ -155,24 +155,22 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		std::vector<SubGraph> subgraphList;
 		// each subgraph will have a subset of the main graph's nodes and edges, based on the previous clustering
 		for(int k = 0; k < numberOfProcesses; k++) {
-			// SubGraph sg = (g->graph).create_subgraph(verticesInCluster[k].begin(), verticesInCluster[k].end());
-			// SubGraph sg = (g->graph).create_subgraph(v_it.first, v_it.second);
-			SubGraph sg = (g->graph).create_subgraph();
+			SubGraph sg = (g->graph).create_subgraph(); //verticesInCluster[k].begin(), verticesInCluster[k].end());
+			subgraphList.push_back(sg);  // --> SUBGRAPH COPY CTOR NOT WORKING!!!
 			for(std::vector<long>::iterator it = verticesInCluster[k].begin(); it != verticesInCluster[k].end(); it++) {
-				add_vertex(*it, sg);
+				add_vertex(*it, subgraphList.back());
 				// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << k;
 			}
 
-			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] vertices_num = " << verticesInCluster[k].size();
-			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 1. num_edges = " << num_edges(sg) << " , num_vertices = " << num_vertices(sg);
-			subgraphList.push_back(sg);
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << k << ": num_edges = " << num_edges(subgraphList.back()) << " , num_vertices = " << num_vertices(subgraphList.back());
 
+			/*  DEBUGGING CODE
 			std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg);
 			stringstream ss("Vertices in subgraph: ");
 			for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
 				ss << *it << " (" << sg.local_to_global(*it) << "), ";
 			}
-			BOOST_LOG_TRIVIAL(info) << ss.str();
+			// BOOST_LOG_TRIVIAL(info) << ss.str();
 			stringstream ss2("Edges in subgraph: ");
 			boost::property_map<SubGraph, edge_properties_t>::type ew = boost::get(edge_properties, sg);
 			for(int i = 0; i < num_vertices(sg); i++) {
@@ -189,7 +187,8 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 					ss2 << "*(" << src.id << "," << targ.id << ") = " << weight  << ", ";
 				}
 			}
-			BOOST_LOG_TRIVIAL(info) << "Edges: " << ss2.str();
+			// BOOST_LOG_TRIVIAL(info) << "Edges: " << ss2.str();
+			 */
 		}
 
 		for(int i = 0; i < numberOfSlaves; i++) {
@@ -210,12 +209,13 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
 		CUDAILS cudails;
 		SignedGraph sg(verticesInCluster[0].size());
-		sg.graph = (g->graph).create_subgraph();
+		sg.graph = (g->graph).create_subgraph(verticesInCluster[0].begin(), verticesInCluster[0].end());
 
+		/*
 		for(std::vector<long>::iterator it = verticesInCluster[0].begin(); it != verticesInCluster[0].end(); it++) {
 			add_vertex(*it, sg.graph);
 			// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << k;
-		}
+		} */
 		BOOST_LOG_TRIVIAL(info) << "n =  " << num_vertices(sg.graph);
 		BOOST_LOG_TRIVIAL(info) << "e =  " << num_edges(sg.graph);
 
