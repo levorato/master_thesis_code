@@ -13,8 +13,12 @@
 #include "util/include/ProcessUtil.h"
 #include "../construction/include/GainFunctionFactory.h"
 #include "../construction/include/GainFunction.h"
+#include "graph/include/NeighborhoodSearchFactory.h"
+#include "graph/include/ParallelNeighborhoodSearch.h"
+#include "graph/include/SequentialNeighborhoodSearch.h"
 
 #include <cstring>
+#include <cassert>
 #include <vector>
 #include <iostream>
 #include <stdexcept>
@@ -250,10 +254,14 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
 			// 4. Merge the partial solutions into a global solution for the whole graph
 			ClusterArray localClusterArray = omsg.clustering.getClusterArray();
+			assert(localClusterArray.size() == omsg.globalVertexId.size());
 			for(long v = 0; v < localClusterArray.size(); v++) {
 				// Obtains vertex v's number in the global graph
 				long vglobal = omsg.globalVertexId[v];
 				globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+				BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution becomes vertex " << vglobal <<
+						" in global solution and belongs to cluster " << localClusterArray[v] <<
+						", that is, global cluster " << globalClusterArray[vglobal];
 			}
 			long nc = omsg.clustering.getNumberOfClusters();
 			clusterOffset += nc;
@@ -279,6 +287,9 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			// Obtains vertex v's number in the global graph
 			long vglobal = globalVertexId[v];
 			globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+			BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution becomes vertex " << vglobal <<
+									" in global solution and belongs to cluster " << localClusterArray[v] <<
+									", that is, global cluster " << globalClusterArray[vglobal];
 		}
 		long nc = leaderClustering.getNumberOfClusters();
 		clusterOffset += nc;
@@ -290,9 +301,15 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		globalClustering.printClustering(g->getN());
 
 		// 6. Run a local search over the merged global solution, trying to improve it
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Applying local search over the initial solution.";
+		NeighborhoodSearch* neigborhoodSearch;
+		NeighborhoodSearchFactory nsFactory(machineProcessAllocationStrategy, this->numberOfSlaves, this->numberOfSearchSlaves);
+		neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
+		VariableNeighborhoodDescent vnd(*neigborhoodSearch, vnd.getRandomSeed(), vnd.getNeighborhoodSize(),
+				vnd.isFirstImprovementOnOneNeig(), vnd.getTimeLimit());
+		globalClustering = vnd.localSearch(g, globalClustering, 0, problem, timeSpentInILS, info.processRank);
 
-
-		BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] TODO: ParallelILS with split graph.";
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Solution found after VND: I(P) = " << globalClustering.getImbalance().getValue();
 		cout << "[Parallel ILS SplitGraph] TODO: ParallelILS with split graph.\n";
 		return Clustering();
 	}

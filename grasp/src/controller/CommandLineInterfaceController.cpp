@@ -804,11 +804,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
 									imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 									problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+
 							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
 							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
 							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
 								globalVertexId.push_back(sg.graph.local_to_global(*it));
 							}
+
 						} else {
 							bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
 														imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
