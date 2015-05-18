@@ -129,7 +129,7 @@ protected:
 	/**
 	 * Neighborhood size of local search.
 	 */
-	int l;
+	unsigned int l;
 
 	/**
 	 * Time limit of local search execution in seconds.

@@ -17,6 +17,7 @@
 #include "graph/include/ParallelNeighborhoodSearch.h"
 #include "graph/include/SequentialNeighborhoodSearch.h"
 
+#include <iomanip>
 #include <cstring>
 #include <cassert>
 #include <vector>
@@ -29,6 +30,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/timer/timer.hpp>
+
 
 namespace resolution {
 namespace ils {
@@ -123,6 +126,9 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 				http://liuweipingblog.cn/cpp/an-example-of-boost-betweenness-centrality/
 		 */
 
+		stringstream constructivePhaseResults;
+		stringstream iterationResults;
+
 		// 1. Divide the graph into (numberOfSlaves + 1) non-overlapping parts
 		// 1.1. Convert the graph to Graclus input format
 		string s = g->convertToGraclusInputFormat();
@@ -132,7 +138,11 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		generateGraclusOutputFile(filename, s);
 
 		// 1.2. Invoke Graclus to process the graph
-		//string s = ProcessUtil::exec("./graclus1.2/graclus --help");
+		// Triggers local processing time calculation
+		boost::timer::cpu_timer timer;
+		timer.start();
+		boost::timer::cpu_times start_time = timer.elapsed();
+
 		unsigned int numberOfProcesses = numberOfSlaves + 1;
 		string strNP = boost::lexical_cast<std::string>(numberOfProcesses);
 		BOOST_LOG_TRIVIAL(info) << "Invoking Graclus partitioning for spit graph (numberOfProcesses = " << strNP << ")...";
@@ -143,11 +153,23 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			BOOST_LOG_TRIVIAL(info) << "Successful. Processing partition...";
 		}
 
+		timer.stop();
+		boost::timer::cpu_times end_time = timer.elapsed();
+		double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
+		timer.resume();
+		start_time = timer.elapsed();
+
 		// 1.3. Process Graclus output
 		std::vector<long> clusterArray = readGraclusResultFile(filename + string(".part.") + strNP);
 		BOOST_LOG_TRIVIAL(info) << "Generated a cluster array of " << clusterArray.size() << " vertices.";
-		Clustering c(clusterArray, *g, problem);
-		BOOST_LOG_TRIVIAL(info) << "Initial Graclus clustering I(P) = " << c.getImbalance().getValue();
+		Clustering Cc(clusterArray, *g, problem);
+		BOOST_LOG_TRIVIAL(info) << "Initial Graclus clustering I(P) = " << Cc.getImbalance().getValue();
+		constructivePhaseResults << 1 << "," << Cc.getImbalance().getValue() << ","
+						<< Cc.getImbalance().getPositiveValue()
+						<< "," << Cc.getImbalance().getNegativeValue() << "," << Cc.getNumberOfClusters()
+						<< "," << fixed << setprecision(4) << timeSpentInConstruction << "\n";
+		constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << Cc.getImbalance().getValue()
+							<< "\n";
 		std::vector< std::vector< long > > verticesInCluster(numberOfProcesses, std::vector< long >());
 		int n = g->getN();
 		for(long i = 0; i < n; i++) {
@@ -167,38 +189,9 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			}
 
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << k << ": num_edges = " << num_edges(subgraphList.back()) << " , num_vertices = " << num_vertices(subgraphList.back());
-
-			/*  DEBUGGING CODE
-			std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg);
-			stringstream ss("Vertices in subgraph: ");
-			for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-				ss << *it << " (" << sg.local_to_global(*it) << "), ";
-			}
-			// BOOST_LOG_TRIVIAL(info) << ss.str();
-			stringstream ss2("Edges in subgraph: ");
-			boost::property_map<SubGraph, edge_properties_t>::type ew = boost::get(edge_properties, sg);
-			for(int i = 0; i < num_vertices(sg); i++) {
-				// iterates over out-edges of vertex i
-				//typedef graph_traits<Graph> GraphTraits;
-				DirectedGraph::out_edge_iterator out_i, out_end;
-				DirectedGraph::edge_descriptor e;
-
-				// std::cout << "out-edges of " << i << ": ";
-				for (tie(out_i, out_end) = out_edges(i, sg); out_i != out_end; ++out_i) {
-					e = *out_i;
-					Vertex src = source(e, sg), targ = target(e, sg);
-					double weight = ew[e].weight;
-					ss2 << "*(" << src.id << "," << targ.id << ") = " << weight  << ", ";
-				}
-			}
-			// BOOST_LOG_TRIVIAL(info) << "Edges: " << ss2.str();
-			 */
 		}
 
 		for(int i = 0; i < numberOfSlaves; i++) {
-			// SubGraph sg = subgraphList[i];
-			// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 2. num_edges = " << num_edges(sg) << " , num_vertices = " << num_vertices(sg);
-
 			// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
@@ -236,7 +229,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 				construct2 = &noConstruct;
 			}
 		}
-
+		// Leader processing his own partition
 		Clustering leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
 
 		// 3. the leader receives the processing results
@@ -259,20 +252,13 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 				// Obtains vertex v's number in the global graph
 				long vglobal = omsg.globalVertexId[v];
 				globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+				/*
 				BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution becomes vertex " << vglobal <<
 						" in global solution and belongs to cluster " << localClusterArray[v] <<
-						", that is, global cluster " << globalClusterArray[vglobal];
+						", that is, global cluster " << globalClusterArray[vglobal]; */
 			}
 			long nc = omsg.clustering.getNumberOfClusters();
 			clusterOffset += nc;
-
-			/*
-			if(omsg.clustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
-				Clustering clustering = omsg.clustering;
-				bestClustering = clustering;
-				BOOST_LOG_TRIVIAL(trace) << "*** [Parallel ILS] Better value found for objective function in node " << stat.source() << ": "  <<
-						omsg.clustering.getImbalance().getValue();
-			} */
 		}
 		// includes the leader's processing result as well
 		// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
@@ -287,9 +273,10 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			// Obtains vertex v's number in the global graph
 			long vglobal = globalVertexId[v];
 			globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+			/*
 			BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution becomes vertex " << vglobal <<
 									" in global solution and belongs to cluster " << localClusterArray[v] <<
-									", that is, global cluster " << globalClusterArray[vglobal];
+									", that is, global cluster " << globalClusterArray[vglobal]; */
 		}
 		long nc = leaderClustering.getNumberOfClusters();
 		clusterOffset += nc;
@@ -300,18 +287,45 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Initial solution found: I(P) = " << globalClustering.getImbalance().getValue();
 		globalClustering.printClustering(g->getN());
 
-		// 6. Run a local search over the merged global solution, trying to improve it
+		// 6. Runs a local search over the merged global solution, trying to improve it
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Applying local search over the initial solution.";
 		NeighborhoodSearch* neigborhoodSearch;
 		NeighborhoodSearchFactory nsFactory(machineProcessAllocationStrategy, this->numberOfSlaves, this->numberOfSearchSlaves);
 		neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 		VariableNeighborhoodDescent vnd(*neigborhoodSearch, vnd.getRandomSeed(), vnd.getNeighborhoodSize(),
-				vnd.isFirstImprovementOnOneNeig(), vnd.getTimeLimit());
+				false, vnd.getTimeLimit());
 		globalClustering = vnd.localSearch(g, globalClustering, 0, problem, timeSpentInILS, info.processRank);
 
+		// 7. Stops the timer and stores the elapsed time
+		timer.stop();
+		end_time = timer.elapsed();
+
+		// 8. Write the results into ostream os, using csv format
+		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
+		timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
+		iterationResults << (1) << "," << globalClustering.getImbalance().getValue() << "," << globalClustering.getImbalance().getPositiveValue()
+				<< "," << globalClustering.getImbalance().getNegativeValue() << "," << globalClustering.getNumberOfClusters()
+				<< "," << fixed << setprecision(4) << (timeSpentInILS + timeSpentInConstruction) << "\n";
+		Imbalance bestValue = globalClustering.getImbalance();
+		int iterationValue = 1;
+		iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
+					<< "," << bestValue.getPositiveValue()
+					<< "," << bestValue.getNegativeValue()
+					<< setprecision(0)
+					<< "," << CBest.getNumberOfClusters()
+					<< "," << (iterationValue+1)
+					<< "," << fixed << setprecision(4) << (timeSpentInILS + timeSpentInConstruction) // timeSpentOnBestSolution
+					<< "," << iter
+					<< "," << numberOfTestedCombinations << "\n";
+
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Solution found after VND: I(P) = " << globalClustering.getImbalance().getValue();
-		cout << "[Parallel ILS SplitGraph] TODO: ParallelILS with split graph.\n";
-		return Clustering();
+
+		// Saves the iteration results to csv file
+		generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations-splitgraph"), construct->getAlpha(), vnd.getNeighborhoodSize(), iter);
+		// Saves the initial solutions data to file
+		generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions-splitgraph"), construct->getAlpha(), vnd.getNeighborhoodSize(), iter);
+
+		return globalClustering;
 	}
 }
 
