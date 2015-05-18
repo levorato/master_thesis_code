@@ -54,7 +54,7 @@ def main(argv):
    csv.field_size_limit(sys.maxsize)
 
    folder = ''
-   filter = ''
+   filter = '*.csv'
    try:
       opts, args = getopt.getopt(argv,"hi:o:",["folder=","filter="])
    except getopt.GetoptError:
@@ -99,8 +99,8 @@ def main(argv):
       print "Processing folder " + ''.join(root)
       if(len(files) and ''.join(root) != folder):
          file_list = []
-         file_list.extend(glob.glob(root + "/CC*.csv"))
-         file_list.extend(glob.glob(root + "/Node*.csv"))
+         file_list.extend(glob.glob(root + "/CC" + filter))
+         file_list.extend(glob.glob(root + "/Node" + filter))
          count = len(file_list) - 1
          
 	 # Process CC results 
