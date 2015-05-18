@@ -441,6 +441,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		 return 1;
 	 }
 
+	unsigned int numberOfSearchSlavesPerMaster = 0;
+	int machineProcessAllocationStrategy = 0;
 	// Leader process code (rank 0)
 	if(myRank == 0) {
 		//cout << "Correlation clustering problem solver" << endl;
@@ -566,7 +568,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				return 1;
 			}
 
-			unsigned int numberOfSearchSlavesPerMaster = 0;
 			MPIInitParams mpiparams(numberOfMasters, numberOfSearchSlavesPerMaster, MPIUtil::ALL_MASTERS_FIRST, searchType);
 			if(totalNumberOfVNDSlaves > 0) {
 				numberOfSearchSlavesPerMaster = MPIUtil::calculateNumberOfSearchSlaves(np, numberOfMasters);
@@ -575,6 +576,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			} else if(np / (numberOfMasters+1) == 4) {
 				mpiparams.machineProcessAllocationStrategy = MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER;
 			}
+			machineProcessAllocationStrategy = mpiparams.machineProcessAllocationStrategy;
 			if(np > 1) {
 				// broadcasts the mpi params to all processes
 				// mpi::broadcast(world, numberOfSlaves, 0);
@@ -605,19 +607,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			}
 
 			// ------------------ M P I    T E R M I N A T I O N ---------------------
-			BOOST_LOG_TRIVIAL(info) << "Terminating MPI slave processes...";
-			if(np > 1) {
-				InputMessageParallelGrasp imsgpgrasp;
-                                InputMessageParallelVND imsgpvns;
-				for(int i = 1; i < np; i++) {
-					if(MPIUtil::isMaster(mpiparams.machineProcessAllocationStrategy, i, numberOfMasters, numberOfSearchSlavesPerMaster)) {  // GRASP slave
-						world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpgrasp);
-					} else {  // VND slave
-						world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpvns);
-					}
-					BOOST_LOG_TRIVIAL(debug) << "Terminate message sent to process " << i << endl;
-				}
-			}
+			terminateMPIProcessesIfAny(np, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster);
 			BOOST_LOG_TRIVIAL(info) << "Done.";
 		}
 		catch(std::exception& e)
@@ -629,6 +619,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				BOOST_LOG_TRIVIAL(fatal) << stack << endl;
 			}
 			BOOST_LOG_TRIVIAL(fatal) << diagnostic_information(e);
+			terminateMPIProcessesIfAny(np, machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster);
+			BOOST_LOG_TRIVIAL(info) << "Done.";
 			return 1;
 		}
 	} else { // slave processes
@@ -955,6 +947,25 @@ void CommandLineInterfaceController::initLogging(string executionId, int myRank)
     (
         logging::trivial::severity >= mySeverity
     );
+}
+
+void CommandLineInterfaceController::terminateMPIProcessesIfAny(int np, int machineProcessAllocationStrategy,
+		int numberOfMasters, int numberOfSearchSlavesPerMaster) {
+	BOOST_LOG_TRIVIAL(info) << "Terminating MPI slave processes...";
+	mpi::communicator world;
+	if(np > 1) {
+		InputMessageParallelGrasp imsgpgrasp;
+		InputMessageParallelVND imsgpvns;
+		for(int i = 1; i < np; i++) {
+			if(MPIUtil::isMaster(machineProcessAllocationStrategy, i, numberOfMasters, numberOfSearchSlavesPerMaster)) {
+				// GRASP or ILS slave
+				world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpgrasp);
+			} else {  // VND slave
+				world.send(i, MPIMessage::TERMINATE_MSG_TAG, imsgpvns);
+			}
+			BOOST_LOG_TRIVIAL(info) << "Terminate message sent to process " << i << "\n";
+		}
+	}
 }
 
 void CommandLineInterfaceController::handler()

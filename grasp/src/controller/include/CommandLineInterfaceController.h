@@ -32,6 +32,9 @@ public:
 	int processArgumentsAndExecute(int argc, char *argv[],
 			const unsigned int &myRank, const int &np);
 
+	static void terminateMPIProcessesIfAny(int np, int machineProcessAllocationStrategy,
+				int numberOfMasters, int numberOfSearchSlavesPerMaster);
+
 private:
 	void processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
 			const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
