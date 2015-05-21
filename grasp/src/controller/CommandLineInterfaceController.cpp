@@ -141,7 +141,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
 		long k, const StategyName& resolutionStrategy, const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax,
-		const bool& splitGraph) {
+		const bool& splitGraph, const bool& cuda) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -183,11 +183,16 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				if(numberOfMasters == 0) {	// sequential version of GRASP
 					Grasp resolution;
 					CUDAGrasp CUDAgrasp;
-					c = CUDAgrasp.executeGRASP(&construct, &cudavnd, g.get(), numberOfIterations,
+					if(cuda) {
+						c = CUDAgrasp.executeGRASP(&construct, &cudavnd, g.get(), numberOfIterations,
 												problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
+					} else {
+						c = resolution.executeGRASP(&construct, &vnd, g.get(), numberOfIterations,
+												problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
+					}
 				} else {  // parallel version
 					// distributes GRASP processing among numberOfSlaves processes and summarizes the result
-					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph);
+					ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph, cuda);
 					c = parallelResolution.executeGRASP(&construct, &vnd, g.get(), numberOfIterations,
 												problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
@@ -196,11 +201,16 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
 					resolution::ils::CUDAILS CUDAils;
-					c = CUDAils.executeILS(&construct, &cudavnd, g.get(), numberOfIterations, iterMaxILS,
+					if(cuda) {
+						c = CUDAils.executeILS(&construct, &cudavnd, g.get(), numberOfIterations, iterMaxILS,
 												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
+					} else {
+						c = resolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
+												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
+					}
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
-					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph);
+					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph, cuda);
 					c = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
@@ -251,6 +261,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			Imbalance CCimb = c.getImbalance();
 
 			// if the CC result is already zero, no need to execute RCC at all
+			// RCC problem solving does not have a CUDA-enabled version yet
 			if(CCimb.getValue() > 0.0) {
 				if(resolutionStrategy == GRASP) {
 					//   G R A S P
@@ -260,7 +271,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes GRASP processing among numberOfMasters processes and summarizes the result
-						ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph);
+						ParallelGrasp parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph, cuda);
 						RCCCluster = parallelResolution.executeGRASP(&construct, &vnd, g.get(), numberOfIterations,
 								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}
@@ -272,7 +283,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes ILS processing among numberOfMasters processes and summarizes the result
-						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph);
+						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph, cuda);
 						RCCCluster = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}
@@ -374,11 +385,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and completely Random instances
 	// int iterMaxILS = 5, perturbationLevelMax = 3; // for UNGA instances
 	bool splitGraph = false;
+	bool cuda = true;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
 		("help", "show program options")
 		("split", po::value<bool>(&splitGraph)->default_value(false), "Enable graph partitioning when solving in parallel (requires slaves > 0)")
+		("cuda", po::value<bool>(&cuda)->default_value(true), "Enable CUDA local search (requires NVIDIA GPU)")
 		("alpha,a", po::value<string>(&s_alpha),
 			  "alpha - randomness factor of constructive phase")
 		("iterations,iter", po::value<int>(&numberOfIterations)->default_value(400),
@@ -478,6 +491,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				}
 			} else {
 				BOOST_LOG_TRIVIAL(info) << "Graph split is disabled.";
+			}
+
+			if(cuda) {
+				BOOST_LOG_TRIVIAL(info) << "CUDA local search is enabled.";
+			} else {
+				BOOST_LOG_TRIVIAL(info) << "CUDA local search is disabled.";
 			}
 
 			if(strategy == GRASP) {
@@ -594,14 +613,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 							numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph);
+							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
 						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph);
+								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda);
 					}
 				}
 			}
@@ -690,7 +709,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								imsgpg.timeLimit);
 						// Execution additional info
 						ExecutionInfo info(imsgpg.executionId, imsgpg.fileId, imsgpg.outputFolder, myRank);
-						// Grasp resolution;
+						Grasp resolution;
 						CUDAGrasp CUDAgrasp;
 						Clustering bestClustering;
 						// global vertex id array used in split graph
@@ -716,11 +735,21 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 									construct = &noConstruct;
 							}
 
-							bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, &sg, imsgpg.iter,
+							if(imsgpg.cudaEnabled) {
+								bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, &sg, imsgpg.iter,
 													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
+							} else {
+								bestClustering = resolution.executeGRASP(construct, &vnd, &sg, imsgpg.iter,
+													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
+							}
 						} else {
-							bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
+							if(imsgpg.cudaEnabled) {
+								bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
 													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
+							} else {
+								bestClustering = resolution.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
+													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
+							}
 						}
 
 						// Sends the result back to the leader process
@@ -768,7 +797,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								imsgpils.timeLimit);
 						// Additional execution info
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
-						// resolution::ils::ILS resolution;
+						resolution::ils::ILS resolution;
 						resolution::ils::CUDAILS CUDAILS;
 						Clustering bestClustering;
 						// global vertex id array used in split graph
@@ -793,9 +822,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 									construct = &noConstruct;
 							}
 
-							bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
-									imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-									problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+							if(imsgpils.cudaEnabled) {
+								bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
+										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+							} else {
+								bestClustering = resolution.executeILS(construct, &vnd, &sg, imsgpils.iter,
+										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+							}
 
 							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
 							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
@@ -804,9 +839,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							}
 
 						} else {
-							bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
+							if(imsgpils.cudaEnabled) {
+								bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
 														imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 														problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+							} else {
+								bestClustering = resolution.executeILS(construct, &vnd, g.get(), imsgpils.iter,
+														imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+														problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+							}
 						}
 
 						// Sends the result back to the leader process

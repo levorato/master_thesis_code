@@ -44,9 +44,9 @@ using namespace boost::algorithm;
 namespace mpi = boost::mpi;
 
 
-ParallelILS::ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split) : ILS(),
+ParallelILS::ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split, const bool& cuda) : ILS(),
 		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
-		splitGraph(split) {
+		splitGraph(split), cudaEnabled(cuda) {
 
 }
 
@@ -77,7 +77,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		for(int i = 0; i < numberOfSlaves; i++) {
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
-								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k);
+								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, cudaEnabled);
 			if(k < 0) {
 				imsg.setClustering(&CCclustering);
 			}
@@ -295,6 +295,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		VariableNeighborhoodDescent vnd(*neigborhoodSearch, vnd.getRandomSeed(), vnd.getNeighborhoodSize(),
 				false, vnd.getTimeLimit());
 		globalClustering = vnd.localSearch(g, globalClustering, 0, problem, timeSpentInILS, info.processRank);
+		CBest = globalClustering;
 
 		// 7. Stops the timer and stores the elapsed time
 		timer.stop();
@@ -312,7 +313,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 					<< "," << bestValue.getPositiveValue()
 					<< "," << bestValue.getNegativeValue()
 					<< setprecision(0)
-					<< "," << CBest.getNumberOfClusters()
+					<< "," << globalClustering.getNumberOfClusters()
 					<< "," << (iterationValue+1)
 					<< "," << fixed << setprecision(4) << (timeSpentInILS + timeSpentInConstruction) // timeSpentOnBestSolution
 					<< "," << iter

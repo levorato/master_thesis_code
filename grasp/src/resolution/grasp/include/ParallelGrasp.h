@@ -19,7 +19,7 @@ namespace grasp {
 
 class ParallelGrasp : resolution::grasp::Grasp {
 public:
-	ParallelGrasp(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split = false);
+	ParallelGrasp(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split = false, const bool& cuda = true);
 	virtual ~ParallelGrasp();
 
 	/**
@@ -34,6 +34,7 @@ private:
 	unsigned int numberOfSlaves;
 	Clustering *CCclustering;
 	bool splitGraph;
+	bool cudaEnabled;
 };
 
 } /* namespace grasp */

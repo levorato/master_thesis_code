@@ -29,9 +29,9 @@ namespace mpi = boost::mpi;
  * @param numberOfSlaves number of slaves used for parallel ILS processing
  * @param numberOfSearchSlaves number of slaves used for parallel VND processing
  */
-ParallelGrasp::ParallelGrasp(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split) :
-		Grasp(), machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
-		splitGraph(split) {
+ParallelGrasp::ParallelGrasp(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split, const bool& cuda) :
+		Grasp(), machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves), CCclustering(NULL),
+		splitGraph(split), cudaEnabled(cuda) {
 
 }
 
@@ -61,7 +61,7 @@ Clustering ParallelGrasp::executeGRASP(ConstructClustering *construct, VariableN
 		for(int i = 0; i < numberOfSlaves; i++) {
 			InputMessageParallelGrasp imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 					problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
-					numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), k);
+					numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), k, cudaEnabled);
 			world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_GRASP_TAG, imsg);
 			BOOST_LOG_TRIVIAL(info) << "[Parallel GRASP] Message sent to process " << slaveList[i];
 		}
