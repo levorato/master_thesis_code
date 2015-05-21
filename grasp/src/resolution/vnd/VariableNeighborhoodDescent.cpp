@@ -49,8 +49,7 @@ Clustering VariableNeighborhoodDescent::localSearch(SignedGraph *g, Clustering& 
 	Clustering CStar = Cc; // C* := Cc
 	timeSpentOnLocalSearch = 0.0;
 	numberOfTestedCombinations = 0;
-	BOOST_LOG_TRIVIAL(debug)<< "VND local search...\n";
-	BOOST_LOG_TRIVIAL(debug)<< "Current neighborhood is " << r << endl;
+	BOOST_LOG_TRIVIAL(debug)<< "VND local search (neighborhood " << r << ") ...\n";
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < timeLimit)) {
 		// cout << "Local search iteration " << iteration << endl;
