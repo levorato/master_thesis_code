@@ -1,0 +1,45 @@
+Slashdot signed social network, November 2008
+
+Dataset information
+
+Slashdot is a technology-related news website know for its specific user community. The website features user-submitted and editor-evaluated current primarily technology oriented news. In 2002 Slashdot introduced the Slashdot Zoo feature which allows users to tag each other as friends or foes. The network cotains friend/foe links between the users of Slashdot. The network was obtained in November 2008.
+
+Dataset statistics
+Nodes	77350
+Edges	516575
+Nodes in largest WCC	77350 (1.000)
+Edges in largest WCC	516575 (1.000)
+Nodes in largest SCC	26996 (0.349)
+Edges in largest SCC	337351 (0.653)
+Average clustering coefficient	0.0549
+Number of triangles	548054
+Fraction of closed triangles	0.008153
+Diameter (longest shortest path)	11
+90-percentile effective diameter	4.7
+
+Source (citation)
+
+J. Leskovec, D. Huttenlocher, J. Kleinberg: Signed Networks in Social Media. 28th ACM Conference on Human Factors in Computing Systems (CHI), 2010.
+
+Files
+
+File	Description
+soc-sign-Slashdot081106.txt.gz	Slashdot Zoo signed social network from November 6 2008
+
+
+
+Slashdot network: Slashdot is a famous website for users to
+submit current primarily technology oriented news and for edi-
+tors to evaluate these news. In Slashdot website, each user can
+be tagged by the other users as friends or foes. The dataset ‘‘s
+oc-sign-Slashdot081106’’ in http://snap.stanford.edu/data/
+#signnets is composed of 77,357 users and 516,575 tags. This
+dataset can be modeled as a Slashdot network with 77,357
+nodes and 516,575 directed and signed links. Notes represent
+users and positive (negative) edges indicate friendly (hostile)
+tags among users [6]. The largest strongly connected compo-
+nent (SCC) of Slashdot network consists of 26,996 nodes and
+337,351 signed directed edges. Here, its signed undirected ver-
+sion, which has 22,946 nodes and 217,563 positive and 71,070
+negative undirected edges, is chosen in our experiments.
+

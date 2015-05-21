@@ -1,0 +1,9 @@
+War network: The War network derived from the Correlates of
+War project [45] illustrates the international relations in the
+period from 2000 to 2010. The War network is extracted from
+the datasets ‘‘Militarized Interstate Disputes (v4.01)’’ and
+‘‘Formal Alliances (v4.1)’’ in http://www.correlatesofwar.org/-
+datasets.htm, and it consists of 217 nodes and 1295 positive
+and 138 negative edges. Nodes represent countries, and positive
+(negative) links indicate conflict (alliance) relations.
+

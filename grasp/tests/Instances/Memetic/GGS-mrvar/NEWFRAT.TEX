@@ -1,0 +1,77 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[dvips]{epsfig}
+\usepackage[dvips]{graphics}
+\usepackage{sloven2e}
+\usepackage{times}
+\usepackage{drawnet}
+\usepackage{csz}
+
+\newcommand{\htp}[1]{\footnotesize\sf{#1}\normalsize\rm}
+\newcommand{\ttx}[1]{\small\sf{#1}\normalsize\rm}
+\parindent 0pt
+\parskip 6 pt
+% *** floats control
+
+\begin{document}
+
+\pagestyle{empty}
+{\bf Newcomb fraternity} (bratstvo, zdru"zenje) (UCINET)
+
+Podatki iz leta 1956, 17 "studentov, ki se od prej ne poznajo.
+"Studenti postanejo sostanovalci v "studentskem naselju Univerze v 
+Michiganu.
+
+Vsak od 17 "studentov je razdelil ocene $1 \ldots 16$ 
+ostalim "studentom. Ocene so rangi glede na relacijo 'imeti rad'.
+Izbrani "student je dal drugemu "studentu rang 1, 
+"ce ima tega "studenta najraj"si, rang 16,
+"ce ima tega "studenta  najmanj rad\ldots
+
+Ocenjevanje se je ponovilo v 15 tednih (datoteke newc0 do newc15),
+manjkajo pa podatki za teden 9.
+Omre"zje v prvem tednu:
+\begin{small}
+\begin{verbatim}
+   A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q
+A  0  7 12 11 10  4 13 14 15 16  3  9  1  5  8  6  2
+B  8  0 16  1 11 12  2 14 10 13 15  6  7  9  5  3  4
+C 13 10  0  7  8 11  9 15  6  5  2  1 16 12  4 14  3
+D 13  1 15  0 14  4  3 16 12  7  6  9  8 11 10  5  2
+E 14 10 11  7  0 16 12  4  5  6  2  3 13 15  8  9  1
+F  7 13 11  3 15  0 10  2  4 16 14  5  1 12  9  8  6
+G 15  4 11  3 16  8  0  6  9 10  5  2 14 12 13  7  1
+H  9  8 16  7 10  1 14  0 11  3  2  5  4 15 12 13  6
+I  6 16  8 14 13 11  4 15  0  7  1  2  9  5 12 10  3
+J  2 16  9 14 11  4  3 10  7  0 15  8 12 13  1  6  5
+K 12  7  4  8  6 14  9 16  3 13  0  2 10 15 11  5  1
+L 15 11  2  6  5 14  7 13 10  4  3  0 16  8  9 12  1
+M  1 15 16  7  4  2 12 14 13  8  6 11  0 10  3  9  5
+N 14  5  8  6 13  9  2 16  1  3 12  7 15  0  4 11 10
+O 16  9  4  8  1 13 11 12  6  2  3  5 10 15  0 14  7
+P  8 11 15  3 13 16 14 12  1  9  2  6 10  7  5  0  4
+Q  9 15 10  2  4 11  5 12  3  7  8  1  6 16 14 13  0
+\end{verbatim}
+\end{small}
+Z rekodiranji lahko iz teh omre"zij zgradimo ve"c ozna"cenih grafov:
+
+\begin{enumerate}
+\item rekodiranje (datoteke New1*.net):\\
+ $1, 2, 3 \to 1$ (ima rad)\\
+ $14, 15, 16 \to -1$ (ne mara)\\
+ $4, 5, 6, 7, 8, 9, 10, 11, 12, 13 \to 0$.
+\item rekodiranje (datoteke New2*.net):\\
+ $1, 2, 3 \to 1$ (ima rad)\\
+ $15, 16 \to -1$ (ne mara)\\ 
+ $4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 \to 0$. 
+\item rekodiranje (datoteke New3*.net):\\
+ $1, 2, 3, 4 \to 1$ (ima rad)\\
+ $14, 15, 16 \to -1$ (ne mara)\\
+ $5, 6, 7, 8, 9, 10, 11, 12, 13 \to 0$.
+ 
+ 
+\end{enumerate}   
+
+Newcomb, T. (1962): \\
+{\em The acquaintance process.} New York: Holt. Reinhart \& Winston.
+
+\end{document}

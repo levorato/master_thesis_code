@@ -1,0 +1,71 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[dvips]{epsfig}
+\usepackage[dvips]{graphics}
+\usepackage{sloven2e}
+\usepackage{times}
+\usepackage{drawnet}
+\usepackage{csz}
+
+\newcommand{\htp}[1]{\footnotesize\sf{#1}\normalsize\rm}
+\newcommand{\ttx}[1]{\small\sf{#1}\normalsize\rm}
+\parindent 0pt
+\parskip 6 pt
+% *** floats control
+
+\begin{document}
+\pagestyle{empty}
+{\bf Sampson Monastery}
+
+Sampson je preu"ceval odnose med 18 menihi v samostanu 
+New England. Izmeril je ve"c relacij med njimi
+
+\begin{itemize}
+\item prijateljstvo (affect)
+\item spo"stovanje (esteem)
+\item vplivnost (influence)
+\item odobravanje (sanction)
+\end{itemize}
+
+Za relacijo prijateljstva imamo podatke za tri "casovne to"cke 
+$T_2$, $T_3$ in $T_4$, za ostale tri relacije pa samo v "casovni to"cki $T_4$.
+
+Sampson je relacije med menihi podal v obliki
+vrednostnih ozna"cenih grafov. Vsak menih je izbral $3$ druge, s katerimi
+se najbolje razume, in jih ocenil z vrednostmi $1$, $2$ ali $3$, 
+kjer $3$ pomeni najmo"cnej"se, $1$ pa naj"sibkej"se prijateljstvo.
+Prav tako je vsak izbral $3$ menihe, s katerimi se najslab"se razume 
+in jih ocenil z vrednostmi $-1$, $-2$ in $-3$, kjer spet $-3$ 
+pomeni najmo"cnej"se, $-1$ pa naj"sibkej"se sovra"stvo. 
+
+Relacija prijateljstva med menihi v "casu $T_2$:
+{\small
+\begin{center}
+\begin{tabular}{|r|l|@{\ }*{18}{@{  }r @{  }}|}
+\hline
+"St.& Menih     &~1& ~2& ~3& ~4& ~5& ~6& ~7& ~8& ~9&10&11&12&13&14&15&16&17&18 \\ \hline
+1 &JohnBosco & 0& 0& 2&0& 3&-2&-1& 0& 0&-3& 0& 0& 0& 1& 0& 0& 0& 0 \\
+2 &Gregory    & 3& 0& 0& 0& 0& 0& 2&0& 0&-1& 0& 0&-3& 1& 0& 0&-2&0 \\
+3 &Basil      & 2&3& 0&-1& 0& 0& 0&-3&-2&0& 0& 0& 0& 0& 0& 0& 1& 0 \\
+4 &Peter      & 0& 0&-2&0& 3& 1&-3& 0& 0& 2&0& 0& 0& 0& 0& 0& 0&-1 \\
+5 &Bonavent. & 0& 0& 0& 3& 0& 0& 0& 0& 0& 0& 2&0& 1& 0& 0& 0& 0& 0 \\
+6 &Berthold   & 1& 0& 0& 3& 0& 0&-3&-1& 2&0& 0&-2&0& 0& 0& 0& 0& 0 \\
+7 &Mark       & 0& 2&0&-3&-1&-2&0& 1& 0& 0& 0& 0& 0& 0& 0& 3& 0& 0 \\
+8 &Victor     & 3& 2&-3& 0& 0& 0& 0& 0& 1& 0& 0& 0& 0&-2&0& 0&-1& 0 \\
+9 &Ambrose    & 0& 0&-3& 0& 2&0& 0& 3& 0& 0& 0& 0& 0& 0& 0& 1&-2&-1 \\
+10 &Romuald   & 0& 0& 0& 3& 0& 0& 0& 1& 0& 0& 0& 0& 0& 2&0& 0& 0& 0 \\
+11 &Louis     & 0& 0&-1& 0& 3& 0& 0& 1& 0& 0& 0& 0&-3& 2&0& 0&-2&0 \\
+12 &Winfrid   & 3& 2&-1&-3& 0& 0& 0& 0& 0& 0&-2&0& 0& 1& 0& 0& 0& 0 \\
+13 &Amand     & 0&-3& 0& 0& 2&-2&1& 0& 0& 0& 0&-1& 0& 0& 0& 0& 0& 3 \\
+14 &Hugh      & 3& 0& 0& 0& 0& 0& 0&-2&0& 0& 1& 2&-3& 0& 2&0&-1& 0 \\
+15 &Boniface  & 3& 2&-2&0& 0& 0& 0& 0& 0& 0& 0& 0&-3& 1& 0& 0&-1&-1 \\
+16 &Albert    & 1& 2&0& 0& 0& 0& 3& 0& 0& 0& 0& 0&-1& 0& 0& 0&-3&-2 \\
+17 &Elias     & 0& 0& 3&-3&-2&0& 0& 0& 0& 0&-1& 0& 2&0& 0& 0& 0& 1 \\
+18 &Simplic.& 2&3& 0&-3& 0&-2&1& 0& 0& 0& 0& 0& 0& 0& 0&-1& 0& 0 \\ \hline
+\end{tabular} 
+\end{center}
+}
+
+Sampson, S (1969): \\
+{\em Crysis in a cloister.} Unpublished doctoral dissertation. Cornell University.
+\end{document}
+
