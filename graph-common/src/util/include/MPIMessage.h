@@ -39,15 +39,17 @@ public:
 	unsigned int numberOfMasters;
 	// the number of VND slave processes
 	unsigned int numberOfSearchSlaves;
+	// if the local search is CUDA-enabled
+	bool cudaEnabled;
 
 	InputMessage() : id(0), graphInputFilePath(), l(0), numberOfMasters(0),
-			numberOfSearchSlaves(0) {
+			numberOfSearchSlaves(0), cudaEnabled(false) {
 
 	}
 
-	InputMessage(unsigned int i, string graphFilePath, int nl, unsigned int masters, unsigned int searchSlaves) :
+	InputMessage(unsigned int i, string graphFilePath, int nl, unsigned int masters, unsigned int searchSlaves, bool cuda) :
 		id(i), graphInputFilePath(graphFilePath), l(nl), numberOfMasters(masters),
-		numberOfSearchSlaves(searchSlaves) {
+		numberOfSearchSlaves(searchSlaves), cudaEnabled(cuda) {
 
 	}
 
@@ -63,6 +65,7 @@ public:
 		ar & l;
 		ar & numberOfMasters;
 		ar & numberOfSearchSlaves;
+		ar & cudaEnabled;
 	}
 };
 
@@ -92,8 +95,8 @@ public:
 
 	InputMessageParallelGrasp(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
-			unsigned int searchSlaves, bool fiOneNeig, long numberOfClustersInSolution = 0, Clustering* cl = NULL) :
-				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
+			unsigned int searchSlaves, bool fiOneNeig, long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL) :
+				InputMessage(i, graphFilePath, neigh, masters, searchSlaves, cuda),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig), CCclustering(), vertexList() {
@@ -171,8 +174,8 @@ public:
 	InputMessageParallelILS(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
 			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel,
-			long numberOfClustersInSolution = 0, Clustering* cl = NULL) :
-				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
+			long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL) :
+				InputMessage(i, graphFilePath, neigh, masters, searchSlaves, cuda),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
@@ -251,8 +254,8 @@ public:
 
 	InputMessageParallelVND(unsigned int i, int neig, string graphFilePath, Clustering c,
 			int pType, double timeSoFar, double tl, unsigned long startIdx,
-			unsigned long endIdx, unsigned int masters, unsigned int searchSlaves, long _k) :
-			InputMessage(i, graphFilePath, neig, masters, searchSlaves),
+			unsigned long endIdx, unsigned int masters, unsigned int searchSlaves, long _k, bool cuda) :
+			InputMessage(i, graphFilePath, neig, masters, searchSlaves, cuda),
 			clustering(c),
 			problemType(pType), timeSpentSoFar(timeSoFar), timeLimit(tl),
 			initialClusterIndex(startIdx) , finalClusterIndex(endIdx), k(_k) {

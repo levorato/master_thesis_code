@@ -63,7 +63,7 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		for(i = 0; i < numberOfSearchSlaves; i++) {
 			InputMessageParallelVND imsgpvns(g->getId(), l, g->getGraphFileLocation(), *clustering, problem.getType(),
 					timeSpentSoFar, timeLimit, i * sizeOfChunk, (i + 1) * sizeOfChunk - 1, numberOfSlaves,
-					numberOfSearchSlaves, k);
+					numberOfSearchSlaves, k, false);
 			world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_VND_TAG, imsgpvns);
 			BOOST_LOG_TRIVIAL(trace) << "VND Message sent to process " << slaveList[i] << "; [" << i * sizeOfChunk
 					<< ", " << (i + 1) * sizeOfChunk - 1 << "]" << endl;
