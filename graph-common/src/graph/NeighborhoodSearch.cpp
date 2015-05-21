@@ -72,6 +72,13 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 		return search1optCCProblem(g, clustering, problem, timeSpentSoFar, timeLimit, randomSeed,
 		                myRank, initialSearchIndex, finalSearchIndex, firstImprovement, k,
 		        		myCluster, h_isNeighborCluster, h_vertexClusterPosSum, h_vertexClusterNegSum);
+	} else {
+		// for RCC problem, always recalculates the sum arrays
+		h_vertexClusterPosSum.resize(n * (nc + 1), double(0));
+		h_vertexClusterNegSum.resize(n * (nc + 1), double(0));
+		h_isNeighborCluster.resize(n * (nc + 1), 0);
+		// BOOST_LOG_TRIVIAL(trace) << "Generating local search auxiliary matrices.";
+		updateVertexClusterSumArrays(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster, clustering);
 	}
 	numberOfTestedCombinations = 0;
 	// for each vertex i, tries to move i to another cluster in myNeighborClusterList[i]
