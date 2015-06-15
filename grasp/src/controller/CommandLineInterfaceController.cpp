@@ -267,7 +267,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 					//   G R A S P
 					if(numberOfMasters == 0) {	// sequential version of GRASP
 						Grasp resolution;
-						RCCCluster = resolution.executeGRASP(&construct, &vnd, g.get(), numberOfIterations,
+						RCCCluster = resolution.executeGRASP(RCCConstruct, &vnd, g.get(), numberOfIterations,
 								problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes GRASP processing among numberOfMasters processes and summarizes the result
@@ -279,7 +279,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 					//   I L S
 					if(numberOfMasters == 0) {	// sequential version of ILS
 						resolution::ils::ILS resolution;
-						RCCCluster = resolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
+						RCCCluster = resolution.executeILS(RCCConstruct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes ILS processing among numberOfMasters processes and summarizes the result

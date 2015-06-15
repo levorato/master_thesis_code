@@ -128,9 +128,11 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 				}
 			}
 		}
+		BOOST_LOG_TRIVIAL(trace)<< "Sum arrays calculated. Calculating destImbArrays...";
+	} else {
+		BOOST_LOG_TRIVIAL(trace)<< "Reusing sum arrays. Calculating destImbArrays...";
 	}
 
-	 BOOST_LOG_TRIVIAL(trace)<< "Sum arrays calculated. Calculating destImbArrays...";
 	/*
 	 * Na inserção em cluster novo, contar apenas as relações externas entre o vértice i e os vértices
 	 * que estão sem cluster. Não incluir as relações internas quando k = nc.
@@ -151,7 +153,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		destImbArray[k2] += h_VertexClusterPosSum(v, nc);
 		// BOOST_LOG_TRIVIAL(trace)<< "destImbArray[" << k2 << "] = " << destImbArray[k2];
 	}
-	 BOOST_LOG_TRIVIAL(trace)<< "Calculating min element...";
+	BOOST_LOG_TRIVIAL(trace)<< "Calculating min element...";
 	std::vector<double>::iterator iter = std::min_element(destImbArray.begin(), destImbArray.end());
 	double min_val = *iter;
 	int position = iter - destImbArray.begin();
