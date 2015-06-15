@@ -124,9 +124,18 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				if(vec.at(2) != "*") {
 					sscanf(vec.at(2).c_str(), "%lf", &value);
 					if(formatType == 2) {
+						// vertex number must be in the interval 0 <= i < n
+						if(a >= n or b >= n) {
+							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+							cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+						}
 						g->addEdge(a, b, value);
 						// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
 					} else {
+						if(a > n or b > n) {
+							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+							cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+						}
 						g->addEdge(a - 1, b - 1, value);
 						// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 					}
@@ -163,6 +172,11 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				double value = 0.0;
 				sscanf(vec2.at(i + 2).c_str(), "%lf", &value);
 				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+
+				if(a > n or b > n) {
+					BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+					cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+				}
 				g->addEdge(a - 1, b - 1, value);
 				// g->addEdge(b - 1, a - 1, value);
 			} catch( boost::bad_lexical_cast const& ) {
@@ -187,6 +201,10 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	                sscanf(vec.at(b).c_str(), "%lf", &value);
 					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 					// the following is to avoid duplicate couting of arcs in the objective function
+	                if(a >= n or b >= n) {
+						BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+						cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+					}
 					g->addEdge(a, b, value);
 				} catch( boost::bad_lexical_cast const& ) {
 					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
