@@ -88,10 +88,13 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 	int nc = c.getNumberOfClusters();
 	double currentImbalance = c.getImbalance().getValue();
 	ClusterArray myCluster = c.getClusterArray();
-	for(int e = 0; e < myCluster.size(); e++) {
+	assert(myCluster.size() == n);
+	for(int e = 0; e < n; e++) {
 		if (myCluster[e] == Clustering::NO_CLUSTER) {
 			myCluster[e] = nc;
 		}
+		assert(myCluster[e] >= 0);
+		assert(myCluster[e] <= nc);
 	}
 	// Array that stores the sum of edge weights between vertex i and all clusters
 	if( (h_VertexClusterPosSum.size1() == 0) or (nc == 0) ) {
