@@ -24,16 +24,17 @@ public:
 	 * @param numberOfSearchSlaves number of slaves used for parallel VND processing
 	 */
 	ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split = false, const bool& cuda = true);
+	ParallelILS(ParallelILS &parILS);
 	virtual ~ParallelILS();
 
 	/**
 	 * Triggers the parallel execution of the ILS algorithm using MPI.
 	 */
-	Clustering executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+	virtual Clustering executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
-private:
+protected:
 	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;
 	unsigned int numberOfSlaves;
@@ -41,8 +42,6 @@ private:
 	bool splitGraph;
 	bool cudaEnabled;
 
-	void generateGraclusOutputFile(string filename, string fileContents);
-	std::vector<long> readGraclusResultFile(string filename);
 };
 
 } /* namespace ils */
