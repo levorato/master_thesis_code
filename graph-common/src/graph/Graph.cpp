@@ -101,6 +101,58 @@ unsigned long SignedGraph::getPositiveDegree(const unsigned long &a) {
 	return sum;
 }
 
+double SignedGraph::getNegativeEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray &cluster) {
+	double sum = double(0.0);
+
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	DirectedGraph::edge_descriptor e;
+	// O(n)
+	DirectedGraph::in_edge_iterator f, l;
+	for (boost::tie(f, l) = in_edges(ni, graph); f != l; ++f) {
+		e = *f;
+		Vertex src = source(e, this->graph), targ = target(e, this->graph);
+		long j = src.id;
+		if((ew[e].weight < 0) and (cluster[j] >= 0)) {
+			sum += ew[e].weight;
+		}
+	}
+	DirectedGraph::out_edge_iterator f2, l2;
+	for (boost::tie(f2, l2) = out_edges(ni, graph); f2 != l2; ++f2) {
+		e = *f2;
+		long j = target(*f2, this->graph);
+		if((ew[e].weight < 0) and (cluster[j] >= 0)) {
+			sum += ew[e].weight;
+		}
+	}
+	return sum;
+}
+
+double SignedGraph::getPositiveEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray &cluster) {
+	double sum = double(0.0);
+
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	DirectedGraph::edge_descriptor e;
+	// O(n)
+	DirectedGraph::in_edge_iterator f, l;
+	for (boost::tie(f, l) = in_edges(ni, graph); f != l; ++f) {
+		e = *f;
+		Vertex src = source(e, this->graph), targ = target(e, this->graph);
+		long j = src.id;
+		if((ew[e].weight > 0) and (cluster[j] >= 0)) {
+			sum += ew[e].weight;
+		}
+	}
+	DirectedGraph::out_edge_iterator f2, l2;
+	for (boost::tie(f2, l2) = out_edges(ni, graph); f2 != l2; ++f2) {
+		e = *f2;
+		long j = target(*f2, this->graph);
+		if((ew[e].weight > 0) and (cluster[j] >= 0)) {
+			sum += ew[e].weight;
+		}
+	}
+	return sum;
+}
+
 void SignedGraph::setGraphFileLocation(string txt) {
 	graphFileLocation = txt;
 }

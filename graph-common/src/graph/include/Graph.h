@@ -124,6 +124,18 @@ public:
 
 	unsigned long getPositiveDegree(const unsigned long &a);
 
+	/**
+	 * Returns the negative edge cardinality between a vertex ni and a vertex set Si.
+	 * Counts incoming and outcoming edges.
+	 */
+	double getNegativeEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray& cluster);
+
+	/**
+	 * Returns the positive edge cardinality between a vertex ni and a vertex set Si.
+	 * Counts incoming and outcoming edges.
+	 */
+	double getPositiveEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray& cluster);
+
 	string getGraphFileLocation();
 
 	void setGraphFileLocation(string txt);
