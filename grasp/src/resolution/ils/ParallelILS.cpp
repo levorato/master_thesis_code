@@ -17,6 +17,7 @@
 #include "graph/include/ParallelNeighborhoodSearch.h"
 #include "graph/include/SequentialNeighborhoodSearch.h"
 #include "./splitgraph/include/GraclusParallelILS.h"
+#include "splitgraph/include/ImbalanceSubgraphParallelILS.h"
 
 #include <iomanip>
 #include <cstring>
@@ -118,7 +119,8 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		bestClustering.printClustering(g->getN());
 		return bestClustering;
 	} else {
-		GraclusParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled);
+		// GraclusParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled);
+		ImbalanceSubgraphParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled);
 		Clustering Gc = gpils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		return Gc;
 	}

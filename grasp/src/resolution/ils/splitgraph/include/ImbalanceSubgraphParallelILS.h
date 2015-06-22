@@ -13,6 +13,30 @@
 namespace resolution {
 namespace ils {
 
+struct VertexDegree {
+    long id;
+    double positiveDegree;
+    double negativeDegree;
+    VertexDegree() : id(0), positiveDegree(0.0), negativeDegree(0.0) { }
+    VertexDegree(long vid, double posdeg, double negdeg) : id(vid), positiveDegree(posdeg), negativeDegree(negdeg) { }
+};
+
+struct neg_degree_ordering_asc
+{
+    inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
+    {
+        return (struct1.negativeDegree < struct2.negativeDegree);
+    }
+};
+
+struct pos_degree_ordering_asc
+{
+    inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
+    {
+        return (struct1.positiveDegree < struct2.positiveDegree);
+    }
+};
+
 class ImbalanceSubgraphParallelILS: public ILS {
 public:
 	ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
