@@ -10,8 +10,18 @@
 
 #include "../../include/ParallelILS.h"
 
+#include <boost/numeric/ublas/matrix.hpp>
+
+using namespace boost::numeric::ublas;
+
 namespace resolution {
 namespace ils {
+
+struct Coordinate {
+	int x, y;
+	Coordinate() : x(0), y(0) { }
+	Coordinate(int a, int b) : x(a), y(b) { }
+};
 
 struct VertexDegree {
     long id;
@@ -50,6 +60,20 @@ public:
 			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
+	Clustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem);
+
+	Clustering distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
+			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
+			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
+			ClusterArray& splitgraphClusterArray);
+
+	void calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
+
+	Coordinate findMaximumElementInMatrix(matrix<double> &mat);
+
+	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& myCluster, Coordinate processPair);
+
+
 protected:
 	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;
@@ -57,6 +81,10 @@ protected:
 	Clustering CCclustering;
 	bool splitGraph;
 	bool cudaEnabled;
+
+	// data structures containing the imbalance contribution of each vertex and between processes
+	std::vector< pair<long, double> > vertexImbalance;
+	matrix<double> clusterImbMatrix;
 
 };
 
