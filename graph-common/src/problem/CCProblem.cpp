@@ -9,14 +9,13 @@
 #include <cmath>
 #include <boost/log/trivial.hpp>
 #include "../graph/include/Clustering.h"
-#include <boost/numeric/ublas/matrix.hpp>
 
 namespace problem {
 
 using namespace std;
 using namespace clusteringgraph;
 using namespace boost;
-using namespace boost::numeric::ublas;
+
 
 CCProblem::CCProblem() {
 	// TODO Auto-generated constructor stub
@@ -210,4 +209,38 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Graph analysis done." << endl;
 	return ss1.str() + ss2.str() + ss3.str();
 }
+
+matrix<double> CCProblem::calculateClusterToClusterImbalanceMatrix(SignedGraph& g, Clustering& c) {
+
+	int nc = c.getNumberOfClusters();
+	int n = g.getN();
+	ClusterArray myCluster = c.getClusterArray();
+	DirectedGraph::edge_descriptor e;
+	// Cluster to cluster matrix containing positive / negative contribution to imbalance
+	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+
+	// For each vertex i
+	for(long i = 0; i < n; i++) {
+		long ki = myCluster[i];
+		DirectedGraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+			e = *f;
+			Vertex src = source(e, g.graph), targ = target(e, g.graph);
+			double weight = ew[e].weight;
+			bool sameCluster = (myCluster[targ.id] == ki);
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are in the same cluster
+				clusterImbMatrix(ki, myCluster[targ.id]) += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				clusterImbMatrix(ki, myCluster[targ.id]) += fabs(weight);
+			}
+		}
+	}
+	return clusterImbMatrix;
+ }
+
+
 } /* namespace problem */

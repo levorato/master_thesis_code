@@ -12,7 +12,10 @@
 #include "../../graph/include/Imbalance.h"
 #include "../../graph/include/Graph.h"
 
+#include <boost/numeric/ublas/matrix.hpp>
+
 using namespace clusteringgraph;
+using namespace boost::numeric::ublas;
 
 namespace problem {
 
@@ -45,6 +48,8 @@ public:
 	virtual string getName();
 	
 	string analyzeImbalance(SignedGraph& g, Clustering& c);
+
+	matrix<double> calculateClusterToClusterImbalanceMatrix(SignedGraph& g, Clustering& c);
 };
 
 } /* namespace problem */
