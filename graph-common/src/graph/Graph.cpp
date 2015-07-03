@@ -68,6 +68,10 @@ void SignedGraph::addEdge(unsigned long a, unsigned long b, Edge edge) {
 }
 
 unsigned long SignedGraph::getDegree(const unsigned long &a) {
+	return degree(a, graph);
+}
+
+unsigned long SignedGraph::getOutDegree(const unsigned long &a) {
 	return out_degree(a, graph);
 }
 
@@ -148,6 +152,24 @@ double SignedGraph::getPositiveEdgeSumBetweenVertexAndClustering(const unsigned 
 		long j = target(*f2, this->graph);
 		if((ew[e].weight > 0) and (cluster[j] >= 0)) {
 			sum += ew[e].weight;
+		}
+	}
+	return sum;
+}
+
+long SignedGraph::getNumberOfEdgesInClustering(const ClusterArray& cluster, const long& clusterNumber) {
+	long sum = 0;
+	for(long ni = 0; ni < n; ni++) {  // O(n)
+		boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+		DirectedGraph::edge_descriptor e;
+		// O(m)
+		DirectedGraph::out_edge_iterator f2, l2;
+		for (boost::tie(f2, l2) = out_edges(ni, graph); f2 != l2; ++f2) {
+			e = *f2;
+			long j = target(*f2, this->graph);
+			if((cluster[ni] >= 0) or (cluster[j] >= 0)) {
+				sum++;
+			}
 		}
 	}
 	return sum;

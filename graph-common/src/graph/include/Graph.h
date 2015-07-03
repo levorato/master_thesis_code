@@ -117,6 +117,11 @@ public:
 	unsigned long getDegree(const unsigned long &a);
 
 	/**
+	 * Returns the out-degree of vertex a.
+	 */
+	unsigned long getOutDegree(const unsigned long &a);
+
+	/**
 	 * Returns the negative degree of vertex a, that is, the sum of
 	 * negative incoming edges.
 	 */
@@ -135,6 +140,11 @@ public:
 	 * Counts incoming and outcoming edges.
 	 */
 	double getPositiveEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray& cluster);
+
+	/**
+	 * Returns the number of edges crossing a specific cluster and also internal to the same cluster.
+	 */
+	long getNumberOfEdgesInClustering(const ClusterArray& cluster, const long& clusterNumber);
 
 	string getGraphFileLocation();
 
