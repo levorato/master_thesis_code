@@ -19,8 +19,17 @@ namespace ils {
 
 struct Coordinate {
 	int x, y;
-	Coordinate() : x(0), y(0) { }
-	Coordinate(int a, int b) : x(a), y(b) { }
+	double value;
+	Coordinate() : x(0), y(0), value(0.0) { }
+	Coordinate(int a, int b, double vl = 0.0) : x(a), y(b), value(vl) { }
+};
+
+struct coordinate_ordering_asc
+{
+    inline bool operator() (const Coordinate& struct1, const Coordinate& struct2)
+    {
+        return (struct1.value < struct2.value);
+    }
 };
 
 struct VertexDegree {
@@ -70,6 +79,8 @@ public:
 	void calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
 
 	Coordinate findMaximumElementInMatrix(matrix<double> &mat);
+
+	std::vector< Coordinate > getMatrixElementsAsList(matrix<double> &mat);
 
 	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& myCluster, Coordinate processPair);
 
