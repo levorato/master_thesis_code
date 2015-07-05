@@ -293,15 +293,17 @@ public:
 	static const int TAG = 60;
 	Clustering clustering;
 	long numberOfTestedCombinations;
+	// local processing time of each process
+	double timeSpent;
 	// cluster array used in split graph solutions, contains the vertices ids in the full / global graph
 	std::vector<long> globalVertexId;
 
-	OutputMessage() : clustering(), numberOfTestedCombinations(0), globalVertexId() {
+	OutputMessage() : clustering(), numberOfTestedCombinations(0), timeSpent(0.0), globalVertexId() {
 
 	}
 
-	OutputMessage(Clustering &c, long nc, std::vector<long> gVertexId) : clustering(c),
-			numberOfTestedCombinations(nc), globalVertexId(gVertexId) {
+	OutputMessage(Clustering &c, long nc, double time, std::vector<long> gVertexId) : clustering(c),
+			numberOfTestedCombinations(nc), timeSpent(time), globalVertexId(gVertexId) {
 
 	}
 
@@ -311,6 +313,7 @@ public:
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & clustering;
 		ar & numberOfTestedCombinations;
+		ar & timeSpent;
 		ar & globalVertexId;
 	}
 };
