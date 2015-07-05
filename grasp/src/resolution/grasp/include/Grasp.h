@@ -53,6 +53,10 @@ public:
 
 	unsigned long getNumberOfTestedCombinations();
 
+	double getTotalTimeSpent() {
+		return timeSpentInGRASP;
+	}
+
 protected:
 
 	/**

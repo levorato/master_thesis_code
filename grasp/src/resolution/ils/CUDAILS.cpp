@@ -115,7 +115,7 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 	Imbalance bestValue = CStar.getImbalance();
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
-	double timeSpentOnBestSolution = (end_time.wall - start_time.wall) / double(1000000000);
+	timeSpentInILS = (end_time.wall - start_time.wall) / double(1000000000);
 
 	int iterationValue = 0;
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
@@ -124,7 +124,7 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 			<< setprecision(0)
 			<< "," << CStar.getNumberOfClusters()
 			<< "," << (iterationValue+1)
-			<< "," << fixed << setprecision(4) << timeSpentOnBestSolution
+			<< "," << fixed << setprecision(4) << timeSpentInILS
 			<< "," << iterMax
 			<< "," << numberOfTestedCombinations << endl;
 

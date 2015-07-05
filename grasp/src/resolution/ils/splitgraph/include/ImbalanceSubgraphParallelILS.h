@@ -97,6 +97,9 @@ protected:
 	std::vector< pair<long, double> > vertexImbalance;
 	matrix<double> clusterImbMatrix;
 
+	// time spent by each process in each iteration
+	std::vector< std::vector<double> > timeSpentAtIteration;
+
 };
 
 } /* namespace ils */

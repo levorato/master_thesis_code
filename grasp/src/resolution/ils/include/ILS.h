@@ -52,6 +52,10 @@ public:
 
 	unsigned long getNumberOfTestedCombinations();
 
+	double getTotalTimeSpent() {
+		return timeSpentInILS;
+	}
+
 protected:
 
 	/**

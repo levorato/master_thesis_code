@@ -52,7 +52,7 @@ using namespace util::parallel;
 ImbalanceSubgraphParallelILS::ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
 		const bool& split, const bool& cuda) : ILS(),
 		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
-		splitGraph(split), cudaEnabled(cuda) {
+		splitGraph(split), cudaEnabled(cuda), vertexImbalance(), clusterImbMatrix(), timeSpentAtIteration() {
 
 }
 
@@ -66,6 +66,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 
 	stringstream constructivePhaseResults;
 	stringstream iterationResults;
+	stringstream iterationTimeSpent;
 	unsigned int numberOfProcesses = numberOfSlaves + 1;
 
 	// *** STEP A => PREPROCESSING PHASE OF DISTRIBUTED METAHEURISTIC: New split graph partitioning here
@@ -192,6 +193,10 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 		iterationResults << (iterCount+1) << "," << bestClustering.getImbalance().getValue() << "," << bestClustering.getImbalance().getPositiveValue()
 				<< "," << bestClustering.getImbalance().getNegativeValue() << "," << bestClustering.getNumberOfClusters()
 				<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
+		for(int px = 0; px < numberOfProcesses; px++) {
+			iterationTimeSpent << timeSpentAtIteration[iterCount][px] << ", ";
+		}
+		iterationTimeSpent << "\n";
 		timer.resume();
 		start_time = timer.elapsed();
 		// if elapsed time is bigger than timeLimit, break
@@ -250,6 +255,8 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	generateOutputFile(problem, iterationResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("iterations-splitgraph"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
 	// Saves the initial solutions data to file
 	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions-splitgraph"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
+	// Save the time spent at each iteration by each process to csv file
+	generateOutputFile(problem, iterationTimeSpent, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timespent-splitgraph"), construct->getAlpha(), vnd->getNeighborhoodSize(), iter);
 
 	return bestClustering;
 }
@@ -449,6 +456,9 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	}
 	// Leader processing his own partition
 	Clustering leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+	// Structure containing processing time of each MH slave
+	std::vector<double> timeSpent(numberOfProcesses, double(0.0));
+	timeSpent[0] = cudails.getTotalTimeSpent();
 
 	// 3. the leader receives the processing results
 	OutputMessage omsg;
@@ -463,6 +473,8 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		// process the result of the execution of process i
 		// sums the total number of tested combinations
 		numberOfTestedCombinations += omsg.numberOfTestedCombinations;
+		// stores the time spent by each process
+		timeSpent[i+1] = omsg.timeSpent;
 		// 4. Merge the partial solutions into a global solution for the whole graph
 		ClusterArray localClusterArray = omsg.clustering.getClusterArray();
 		assert(localClusterArray.size() == omsg.globalVertexId.size());
@@ -501,6 +513,9 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 
 	// 5. Builds the clustering with the merge of each process result
 	Clustering globalClustering(globalClusterArray, *g, problem);
+
+	// 6. Stores the time spent in this iteration of distributed MH
+	timeSpentAtIteration.push_back(timeSpent);
 
 	return globalClustering;
 }
