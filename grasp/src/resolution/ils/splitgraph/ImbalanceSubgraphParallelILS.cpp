@@ -191,13 +191,10 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 		// Write the results into ostream os, using csv format
 		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
 		timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
+		// iteration results are only being shown when the solution improved
 		iterationResults << (iterCount+1) << "," << bestClustering.getImbalance().getValue() << "," << bestClustering.getImbalance().getPositiveValue()
 				<< "," << bestClustering.getImbalance().getNegativeValue() << "," << bestClustering.getNumberOfClusters()
 				<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
-		for(int px = 0; px < numberOfProcesses; px++) {
-			iterationTimeSpent << timeSpentAtIteration[iterCount][px] << ", ";
-		}
-		iterationTimeSpent << "\n";
 		timer.resume();
 		start_time = timer.elapsed();
 		// if elapsed time is bigger than timeLimit, break
@@ -207,6 +204,14 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 		}
 		iterCount++;
 	} while(foundBetterSolution);
+
+	// prints all the info about time spent in each distributed MH invocation
+	for(int it = 0; it < timeSpentAtIteration.size(); it++) {
+		for(int px = 0; px < numberOfProcesses; px++) {
+			iterationTimeSpent << timeSpentAtIteration[it][px] << ", ";
+		}
+		iterationTimeSpent << "\n";
+	}
 
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Number of improvements to initial solution: " << iterCount;
 	// *** ONLY IN THE END OF THE DISTRIBUTED METAHEURISTIC: runs a ILS iteration (or a local search?) over the merged global solution
