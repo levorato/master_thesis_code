@@ -482,7 +482,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				sscanf(s_alpha.c_str(), "%f", &alpha);				
 			}
 			if (splitGraph) {
-				BOOST_LOG_TRIVIAL(info) << "Graph split is enabled. Partitioning graph between master and slaves.";
 				if(numberOfMasters > 0) {
 					BOOST_LOG_TRIVIAL(info) << "Graph split is enabled. Partitioning graph between master and slaves.";
 				} else {

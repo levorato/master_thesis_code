@@ -69,7 +69,7 @@ public:
 			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
-	Clustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem);
+	Clustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem, bool partitionByVertex);
 
 	Clustering distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,

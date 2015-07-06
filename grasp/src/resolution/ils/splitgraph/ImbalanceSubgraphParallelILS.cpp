@@ -75,7 +75,8 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
 
-	Clustering splitgraphClustering = preProcessSplitgraphPartitioning(g, problem);
+	// TODO PARAMETRIZAR DIVISAR POR VERTICE OU POR SOMA DE ARESTAS
+	Clustering splitgraphClustering = preProcessSplitgraphPartitioning(g, problem, true);
 	BOOST_LOG_TRIVIAL(info) << "Initial split graph processor partitioning I(P) = " << splitgraphClustering.getImbalance().getValue();
 
 	// *** STEP B => Calls the individual ILS processing for each subgraph, invoking Parallel ILS with MPI
@@ -221,6 +222,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 			false, vnd->getTimeLimit());
 	bestClustering = vnd2.localSearch(g, bestClustering, 0, problem, timeSpentInILS, info.processRank);
 	CBest = bestClustering;
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Solution found after applying local search: I(P) = " << bestClustering.getImbalance().getValue();
 
 	ConstructClustering NoConstruct(functionFactory.build(construct->getGainFunctionType()), vnd->getRandomSeed(),
 			construct->getAlpha(), &bestClustering);
@@ -261,7 +263,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	return bestClustering;
 }
 
-Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem) {
+Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem, bool partitionByVertex) {
 	// 1. Divide the graph into (numberOfSlaves + 1) non-overlapping parts
 
 	unsigned int numberOfProcesses = numberOfSlaves + 1;
@@ -298,12 +300,16 @@ Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(Signed
 	for(long i = 0; i < n; i++) {
 		Gr.push_back(VertexDegree(i, 0.0, 0.0));
 	}
-	//long desiredCardinality = long(floor(n / (double)numberOfProcesses));
-	long desiredCardinality = long(floor(m / (double)numberOfProcesses));
+	long desiredCardinality = 0;
 	// a list containing the partition number each vertex belongs to
 	ClusterArray splitgraphClusterArray(n);
-	//BOOST_LOG_TRIVIAL(info) << "Desired cardinality of each partition is " << desiredCardinality << " vertices.";
-	BOOST_LOG_TRIVIAL(info) << "Desired cardinality of each partition is " << desiredCardinality << " edges.";
+	if(partitionByVertex) {
+		desiredCardinality = long(floor(n / (double)numberOfProcesses));
+		BOOST_LOG_TRIVIAL(info) << "Desired cardinality of each partition is " << desiredCardinality << " vertices.";
+	} else {
+		desiredCardinality = long(floor(m / (double)numberOfProcesses));
+		BOOST_LOG_TRIVIAL(info) << "Desired cardinality of each partition is " << desiredCardinality << " edges.";
+	}
 
 	// For each process pi
 	for(int pi = 0; pi < numberOfProcesses; pi++) {
@@ -332,10 +338,9 @@ Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(Signed
 		Si.addCluster(*g, problem, vertex_y, false);
 		Gr.erase(it_min);
 
-		//while(Si.getClusterSize(0) < desiredCardinality) {  // TODO PARAMETRIZAR DIVISAR POR VERTICE OU POR SOMA DE ARESTAS
 		ClusterArray cTemp = Si.getClusterArray();
 		long numberOfEdges = 0;
-		while(numberOfEdges < desiredCardinality and Gr.size() > 0) {
+		while(Gr.size() > 0) {
 			// updates the positive edge sum of each vertex ni in Gr (pos edge sum between ni and Si)
 			for(int i = 0; i < Gr.size(); i++) {
 				long ni = Gr[i].id;
@@ -351,6 +356,12 @@ Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(Signed
 			// Gr = Gr - ni
 			Gr.erase(it_max);
 			numberOfEdges += g->getOutDegree(ni);
+
+			if(partitionByVertex) {
+				if(Si.getClusterSize(0) >= desiredCardinality)  break;
+			} else {
+				if(numberOfEdges >= desiredCardinality)  break;
+			}
 		}
 		BOOST_LOG_TRIVIAL(debug) << "Partition ready.";
 		// Gr = Gr – Si  TODO: subtrair a lista partialGraph da lista residualGraph -> ja feito acima
@@ -376,7 +387,6 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		ClusterArray& splitgraphClusterArray) {
 
 	// Creates the subgraphs for each processor, based on the splitgraphClusterArray structure
-
 	mpi::communicator world;
 	// the leader distributes the work across the processors
 	// the leader itself (i = 0) does part of the work too
