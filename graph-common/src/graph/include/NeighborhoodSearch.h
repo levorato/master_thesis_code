@@ -106,7 +106,7 @@ protected:
 		                int myRank, unsigned long initialSearchIndex,
 		        		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
 		        		ClusterArray& myCluster,
-						std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
+						std::vector<long>& isNeighborCluster,
 						std::vector<double>& vertexClusterPosSum,
 						std::vector<double>& vertexClusterNegSum);
 

@@ -182,44 +182,19 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 	Imbalance bestImbalance = cBest.getImbalance();
 
 	ClusterArray myCluster = clustering->getClusterArray();
-	std::vector<double> h_VertexClusterPosSum(n * (nc + 1), double(0));
-	std::vector<double> h_VertexClusterNegSum(n * (nc + 1), double(0));
-	// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
-	std::vector< unordered_set<unsigned long> > myNeighborClusterList(n, unordered_set<unsigned long>());
-	for(int i = 0; i < n; i++) {  // for each vertex i
-		DirectedGraph::out_edge_iterator f, l;
-		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
-			int j = target(*f, g->graph);
-			double weight = ((Edge*)f->get_property())->weight;
-			if(myCluster[i] != myCluster[j]) {  // different cluster
-				myNeighborClusterList[i].insert(myCluster[j]);
-			}
-			if(weight > 0) {
-				h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
-			} else {
-				h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
-			}
-		}
-		// iterates over in-edges of vertex i
-		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
-		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			double weight = ((Edge*)f2->get_property())->weight;
-			int j = source(*f2, g->graph);
-			if(myCluster[i] != myCluster[j]) {  // different cluster
-				myNeighborClusterList[i].insert(myCluster[j]);
-			}
-			if(weight > 0) {
-					h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);
-			} else {
-					h_VertexClusterNegSum[i * (nc+1) + myCluster[j]] += fabs(weight);
-			}
-		}
-	}
 	if(problem->getType() == ClusteringProblem::CC_PROBLEM) {  // runs optimized local search for CC Problem
+		// rebuilds the auxiliary matrices in case it is needed (between metaheuristic iterations)
+		if(h_vertexClusterPosSum.empty() or h_vertexClusterNegSum.empty() or h_isNeighborCluster.empty()) {
+			// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
+			h_vertexClusterPosSum.resize(n * (nc + 1), double(0));
+			h_vertexClusterNegSum.resize(n * (nc + 1), double(0));
+			h_isNeighborCluster.resize(n * (nc + 1), 0);
+			// BOOST_LOG_TRIVIAL(trace) << "Generating local search auxiliary matrices.";
+			updateVertexClusterSumArrays(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster, clustering);
+		}
 		return search2optCCProblem(g, clustering, *problem, timeSpentSoFar, timeLimit, randomSeed,
 						myRank, initialSearchIndex, finalSearchIndex, firstImprovement, k,
-						myCluster, myNeighborClusterList, h_VertexClusterPosSum, h_VertexClusterNegSum);
+						myCluster, h_isNeighborCluster, h_vertexClusterPosSum, h_vertexClusterNegSum);
 	}
 	// for each vertex i, tries to move i to another cluster in myNeighborClusterList[i]
 	// For each node i in cluster(k1)
@@ -251,61 +226,63 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 				}
 			}
 			// Option 1: node i is moved to another existing cluster k3 != k1
-			for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
-				MPI_IPROBE_RETURN(cBest)
-				// cluster(k3)
-				unsigned long k3 = *itr;
-				// Option 1: node i is moved to another existing cluster k3 and
-				//           node j is moved to another existing cluster k4
-				for (unordered_set<unsigned long>::iterator itr2 = myNeighborClusterList[j].begin(); itr2 != myNeighborClusterList[j].end(); ++itr2) {
-					// cluster(k4)
-					unsigned long k4 = *itr2;
-					// BOOST_LOG_TRIVIAL(trace) << "Option 1: node " << i << " into cluster " << k3 << " and node " << j << " into cluster " << k4;
-					cTemp = *clustering;
-					bool success = NeighborhoodSearch::process2optCombination(*g,
-									cTemp, problem, k1,
-									k2, k3, k4, n,
-									i, j);
-					// cTemp->printClustering();
-					if(not success) {
-						continue;
-					}
-					if((problem->getType() == ClusteringProblem::RCC_PROBLEM) && (cTemp.getNumberOfClusters() > clustering->getNumberOfClusters())) {
-						BOOST_LOG_TRIVIAL(error) << "Cluster with more than k clusters generated!";
-					}
+			for (unsigned long k3 = 0; k3 < nc; k3++) {
+				if( (k1 != k3) && (h_isNeighborCluster[i+k3*n] > 0) ) {
+					MPI_IPROBE_RETURN(cBest)
+					// cluster(k3)
+					// Option 1: node i is moved to another existing cluster k3 and
+					//           node j is moved to another existing cluster k4
+					for (unsigned long k4 = 0; k4 < nc; k4++) {
+						if( (k2 != k4) && (h_isNeighborCluster[j+k4*n] > 0) ) {
+							// cluster(k4)
+							// BOOST_LOG_TRIVIAL(trace) << "Option 1: node " << i << " into cluster " << k3 << " and node " << j << " into cluster " << k4;
+							cTemp = *clustering;
+							bool success = NeighborhoodSearch::process2optCombination(*g,
+											cTemp, problem, k1,
+											k2, k3, k4, n,
+											i, j);
+							// cTemp->printClustering();
+							if(not success) {
+								continue;
+							}
+							if((problem->getType() == ClusteringProblem::RCC_PROBLEM) && (cTemp.getNumberOfClusters() > clustering->getNumberOfClusters())) {
+								BOOST_LOG_TRIVIAL(error) << "Cluster with more than k clusters generated!";
+							}
 
-					Imbalance newImbalance = cTemp.getImbalance();
-					if (newImbalance < bestImbalance) {
-						//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
-						cBest = cTemp;
-						bestImbalance = cBest.getImbalance();
-						if(firstImprovement) {
-							return cBest;
+							Imbalance newImbalance = cTemp.getImbalance();
+							if (newImbalance < bestImbalance) {
+								//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
+								cBest = cTemp;
+								bestImbalance = cBest.getImbalance();
+								if(firstImprovement) {
+									return cBest;
+								}
+							}
+							// return if time limit is exceeded
+							boost::timer::cpu_times end_time = timer.elapsed();
+							double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+							if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
 						}
 					}
-					// return if time limit is exceeded
-					boost::timer::cpu_times end_time = timer.elapsed();
-					double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-					if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
-				}
-				// Option 2: node j is moved to a new cluster, alone
-				if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s2 > 1)) {
-					// this code is not executed in RCC Problem, as it must have exactly k clusters
-					// this code is not executed if node j is to be moved from a standalone cluster to another standalone cluster
-					//BOOST_LOG_TRIVIAL(trace) << "Option 2: node " << i << " into cluster " << k3 << " and node " << j << " into new cluster.";
-					cTemp = *clustering;
-					NeighborhoodSearch::process2optCombination(*g,
-									cTemp, problem, k1, k2, k3,
-									Clustering::NEW_CLUSTER,
-									n, i, j);
-					// cTemp->printClustering();
-					Imbalance newImbalance = cTemp.getImbalance();
-					if (newImbalance < bestImbalance) {
-						//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
-						cBest = cTemp;
-						bestImbalance = cBest.getImbalance();
-						if(firstImprovement) {
-							return cBest;
+					// Option 2: node j is moved to a new cluster, alone
+					if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s2 > 1)) {
+						// this code is not executed in RCC Problem, as it must have exactly k clusters
+						// this code is not executed if node j is to be moved from a standalone cluster to another standalone cluster
+						//BOOST_LOG_TRIVIAL(trace) << "Option 2: node " << i << " into cluster " << k3 << " and node " << j << " into new cluster.";
+						cTemp = *clustering;
+						NeighborhoodSearch::process2optCombination(*g,
+										cTemp, problem, k1, k2, k3,
+										Clustering::NEW_CLUSTER,
+										n, i, j);
+						// cTemp->printClustering();
+						Imbalance newImbalance = cTemp.getImbalance();
+						if (newImbalance < bestImbalance) {
+							//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
+							cBest = cTemp;
+							bestImbalance = cBest.getImbalance();
+							if(firstImprovement) {
+								return cBest;
+							}
 						}
 					}
 				}
@@ -321,31 +298,32 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 			if((problem->getType() == ClusteringProblem::CC_PROBLEM) && (s1 > 1)) {
 				// this code is not executed in RCC Problem, as it must have exactly k clusters
 				// this code is not executed if node i is to be moved from a standalone cluster to another standalone cluster
-				for (unordered_set<unsigned long>::iterator itr2 = myNeighborClusterList[j].begin(); itr2 != myNeighborClusterList[j].end(); ++itr2) {
-					// cluster(k4)
-					unsigned long k4 = *itr2;
-					//BOOST_LOG_TRIVIAL(trace) << "Option 3: " << i << " into new cluster and " << j << " into cluster " << k4;
-					cTemp = *clustering;
-					NeighborhoodSearch::process2optCombination(*g,
-									cTemp, problem, k1, k2,
-									Clustering::NEW_CLUSTER,
-									k4, n, i, j);
-					//cTemp->printClustering();
-					Imbalance newImbalance = cTemp.getImbalance();
-					if (newImbalance < bestImbalance) {
-						//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
-						cBest = cTemp;
-						bestImbalance = cBest.getImbalance();
-						if(firstImprovement) {
-							return cBest;
+				for (unsigned long k4 = 0; k4 < nc; k4++) {
+					if( (k2 != k4) && (h_isNeighborCluster[j+k4*n] > 0) ) {
+						// cluster(k4)
+						//BOOST_LOG_TRIVIAL(trace) << "Option 3: " << i << " into new cluster and " << j << " into cluster " << k4;
+						cTemp = *clustering;
+						NeighborhoodSearch::process2optCombination(*g,
+										cTemp, problem, k1, k2,
+										Clustering::NEW_CLUSTER,
+										k4, n, i, j);
+						//cTemp->printClustering();
+						Imbalance newImbalance = cTemp.getImbalance();
+						if (newImbalance < bestImbalance) {
+							//BOOST_LOG_TRIVIAL(trace) << "Better solution found in 2-neighborhood.";
+							cBest = cTemp;
+							bestImbalance = cBest.getImbalance();
+							if(firstImprovement) {
+								return cBest;
+							}
 						}
+						// return if time limit is exceeded
+						timer.stop();
+						boost::timer::cpu_times end_time = timer.elapsed();
+						double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+						if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
+						timer.resume();
 					}
-					// return if time limit is exceeded
-					timer.stop();
-					boost::timer::cpu_times end_time = timer.elapsed();
-					double localTimeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-					if(timeSpentSoFar + localTimeSpent >= timeLimit)  return cBest;
-					timer.resume();
 				}
 			}
 			// Option 4: nodes i and j are moved to 2 new clusters, and left alone
@@ -518,7 +496,7 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
                 int myRank, unsigned long initialSearchIndex,
         		unsigned long finalSearchIndex, bool firstImprovement, unsigned long k,
         		ClusterArray& myCluster,
-				std::vector< unordered_set<unsigned long> >& myNeighborClusterList,
+				std::vector<long>& isNeighborCluster,
 				std::vector<double>& vertexClusterPosSum,
 				std::vector<double>& vertexClusterNegSum) {
 	// 0. Triggers local processing time calculation
@@ -531,9 +509,6 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 	unsigned long m = g->getM();
 	unsigned long numberOfVerticesInInterval = finalSearchIndex - initialSearchIndex + 1;
 	unsigned long nc = clustering->getNumberOfClusters();
-	for(int i = 0; i < n; i++) {  // inserts nc (aka new cluster) into the list of cluster neighbors of each vertex
-		myNeighborClusterList[i].insert(nc);
-	}
 	// stores the best clustering combination generated (minimum imbalance) - used by 1-opt neighborhood
 	Clustering cBest = *clustering;
 	numberOfTestedCombinations = 0;
@@ -566,19 +541,17 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 			// REMOVAL of vertex i from cluster k1 -> avoids recalculating
 			//   the same thing in the k2 (destination cluster) loop
 			double negativeSumK1 = -vertexClusterNegSum[i*(nc+1) + k1];
-			// Option 1: node i is moved to another existing cluster k3 != k1
-			for (unordered_set<unsigned long>::iterator itr = myNeighborClusterList[i].begin(); itr != myNeighborClusterList[i].end(); ++itr) {
-				MPI_IPROBE_RETURN(cBest)
-				// cluster(k3)
-				unsigned long k3 = *itr;
-				if(k3 != k1) {
+			// Option 1: node i is moved to another existing cluster k3 != k1 (including a new cluster: k3 = nc)
+			for (unsigned long k3 = 0; k3 <= nc; k3++) {
+				if( (k1 != k3) && (h_isNeighborCluster[i+k3*n] > 0) ) {
+					MPI_IPROBE_RETURN(cBest)
+					// cluster(k3)
 					// calculates the cost of removing vertex i from cluster k1 and inserting into cluster k3
 					double negativeSum = negativeSumK1 + vertexClusterNegSum[i*(nc+1) + k3];
 					double positiveSum = -(- vertexClusterPosSum[i*(nc+1) + k1]) + (-vertexClusterPosSum[i*(nc+1) + k3]);
-					for (unordered_set<unsigned long>::iterator itr2 = myNeighborClusterList[j].begin(); itr2 != myNeighborClusterList[j].end(); ++itr2) {
-						// cluster(k4)
-						unsigned long k4 = *itr2;
-						if(k4 != k2) {
+					for (unsigned long k4 = 0; k4 <= nc; k4++) {
+						if( (k2 != k4) && (h_isNeighborCluster[i+k4*n] > 0) ) {
+							// cluster(k4)
 							// calculates the cost of removing vertex j from cluster k2 and inserting into cluster k4
 							double negativeSum2 = negativeSum - vertexClusterNegSum[j*(nc+1) + k2] + vertexClusterNegSum[j*(nc+1) + k4];
 							double positiveSum2 = positiveSum + -(- vertexClusterPosSum[j*(nc+1) + k2]) + (-vertexClusterPosSum[j*(nc+1) + k4]);
