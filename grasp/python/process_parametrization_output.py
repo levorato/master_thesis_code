@@ -92,7 +92,7 @@ def main(argv):
     print "Instance, Avg I(P) const, Avg I(P), Avg K, Avg Time(s), Avg Iter, Avg combinations, Num executions, Parameter set"
 
     for root1, subFolders1, files1 in walklevel(folder):
-        parameter_set = root1[root1.rfind('\\')+1:]
+        parameter_set = root1[root1.rfind('/')+1:]
         #print parameter_set
 
         # CC results
@@ -121,16 +121,17 @@ def main(argv):
             files.sort()
 
             #print "Processing folder " + ''.join(root)
+            #print "."
             if (len(files) and ''.join(root) != folder):
                 file_list = []
-                file_list.extend(glob.glob(root + "\CC*.csv"))
-                file_list.extend(glob.glob(root + "\Node*.csv"))
+                file_list.extend(glob.glob(root + "/CC*.csv"))
+                file_list.extend(glob.glob(root + "/Node*.csv"))
                 count = len(file_list) - 1
 
 
                 # Process CC results
-                if os.path.isfile(root + "\cc-result.txt"):
-                    input_file = open(root + "\cc-result.txt", "r")
+                if os.path.isfile(root + "/cc-result.txt"):
+                    input_file = open(root + "/cc-result.txt", "r")
 
                     content = input_file.read()
                     reader = csv.reader(StringIO.StringIO(content), delimiter='\n')
@@ -141,10 +142,10 @@ def main(argv):
                             break
                     input_file.close
 
-                    text_file = open(root + "\summary.txt", "w")
-                    filename = (root[:root.rfind("\\")])
-                    datetime = root[root.rfind("\\") + 1:]
-                    filename = filename[filename.rfind("\\") + 1:]
+                    text_file = open(root + "/summary.txt", "w")
+                    filename = (root[:root.rfind("/")])
+                    datetime = root[root.rfind("/") + 1:]
+                    filename = filename[filename.rfind("/") + 1:]
                     text_file.write("CC Summary for graph file: %s\n" % filename)
                     local_avg_ip_const = 0
                     local_avg_count = 0
@@ -161,7 +162,18 @@ def main(argv):
                         #print "Processing file " + file_list[count] + "\n"
                         content_file = open(file_list[count], 'r')
                         try:
-                            content = content_file.read()
+                            useful = []
+                            for line in content_file:
+                                if "Best value" in line:
+                                    useful.append(line)
+                                    break
+                                if "Average initial" in line:
+                                    useful.append(line)
+                                    break
+                            for line in content_file:
+                                useful.append(line)
+                            content = "".join(useful)
+                            #print content
 
                             reader = csv.reader(StringIO.StringIO(content), delimiter=',')
                             for row in reader:
@@ -171,7 +183,7 @@ def main(argv):
                                     column.append(col)
                                 if linestring.startswith('Best value'):
                                     filepath = ''.join(file_list[count])
-                                    text_file.write(filepath[filepath.rfind("\\") + 1:] + ' ' + linestring + '\n')
+                                    text_file.write(filepath[filepath.rfind("/") + 1:] + ' ' + linestring + '\n')
                                     #print column[7] + '\n'
                                     value = float(column[1])
                                     pos_value = float(column[2])
@@ -188,7 +200,7 @@ def main(argv):
                                         best_K = K
                                         best_iteration = iteration
                                         best_time = time
-                                        best_param = filepath[filepath.rfind("\\") + 1:]
+                                        best_param = filepath[filepath.rfind("/") + 1:]
                                     elif value == best_value and iteration < best_iteration:
                                         best_K = K
                                         best_iteration = iteration
@@ -230,10 +242,10 @@ def main(argv):
                                 avg_time / avg_count) + ", " + str(avg_iter / avg_count) + ", " + str(
                                 avg_comb / avg_count) + ", " + str(avg_count) + ", " + str(parameter_set)
                             #print "average execution times for file " + previous_filename
-                            tdir = ".\\times"
+                            tdir = "./times"
                             if not os.path.exists(tdir):
                                 os.makedirs(tdir)
-                            times_file = open(tdir + "\\" + previous_filename + "-executionTimes.txt", "w")
+                            times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
                             for key, value in sorted(timeInterval.items()):
                                 times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
                             times_file.close()
@@ -269,7 +281,7 @@ def main(argv):
                     tdir = "./times"
                     if not os.path.exists(tdir):
                         os.makedirs(tdir)
-                        times_file = open(tdir + "\\" + previous_filename + "-executionTimes.txt", "w")
+                        times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
                         for key, value in sorted(timeInterval.items()):
                             times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
                         times_file.close()
@@ -303,10 +315,10 @@ def main(argv):
             avg_value / avg_count) + ", " + str(avg_k / avg_count) + ", " + str(avg_time / avg_count) + ", " + str(
             avg_iter / avg_count) + ", " + str(avg_comb / avg_count) + ", " + str(avg_count)
         #print "average execution times for file " + previous_filename
-        tdir = ".\\times"
+        tdir = "./times"
         if not os.path.exists(tdir):
             os.makedirs(tdir)
-        times_file = open(tdir + "\\" + previous_filename + "-executionTimes.txt", "w")
+        times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
         for key, value in sorted(timeInterval.items()):
             times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
         times_file.close()
