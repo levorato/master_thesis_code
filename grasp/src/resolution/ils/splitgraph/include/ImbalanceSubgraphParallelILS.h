@@ -74,9 +74,9 @@ public:
 	Clustering distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
-			ClusterArray& splitgraphClusterArray);
+			ClusterArray& splitgraphClusterArray, matrix<double>& processClusterImbMatrix);
 
-	void calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
+	matrix<double> calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
 
 	Coordinate findMaximumElementInMatrix(matrix<double> &mat);
 
@@ -95,7 +95,6 @@ protected:
 
 	// data structures containing the imbalance contribution of each vertex and between processes
 	std::vector< pair<long, double> > vertexImbalance;
-	matrix<double> clusterImbMatrix;
 
 	// time spent by each process in each iteration
 	std::vector< std::vector<double> > timeSpentAtIteration;

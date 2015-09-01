@@ -52,7 +52,7 @@ using namespace util::parallel;
 ImbalanceSubgraphParallelILS::ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
 		const bool& split, const bool& cuda) : ILS(),
 		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
-		splitGraph(split), cudaEnabled(cuda), vertexImbalance(), clusterImbMatrix(), timeSpentAtIteration() {
+		splitGraph(split), cudaEnabled(cuda), vertexImbalance(), timeSpentAtIteration() {
 
 }
 
@@ -83,8 +83,9 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	// WARNING: THE SPLITGRAPHCLUSTERARRAY IS A SEPARATE DATA STRUCTURE, DIFFERENT THAN THE CURRENT CLUSTERING
 	// IT CONTROLS THE PARTITIONING BETWEEN PROCESSORS (SPLIT GRAPH)
 	ClusterArray initialSplitgraphClusterArray = splitgraphClustering.getClusterArray();
+	matrix<double> processClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, initialSplitgraphClusterArray);
 	Clustering Cc = distributeSubgraphsBetweenProcessesAndRunILS(construct,
-			vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info, initialSplitgraphClusterArray);
+			vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info, initialSplitgraphClusterArray, processClusterImbMatrix);
 
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
@@ -115,16 +116,16 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 		//		Uma matriz com a soma do imbalance entre processos
 		// => Calculates the imbalance info between process partitions and of each vertex individually
 		ClusterArray bestSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
-		calculateProcessToProcessImbalanceMatrix(*g, bestSplitgraphClusterArray);
+		processClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, bestSplitgraphClusterArray);
 		foundBetterSolution = false;
 
 		// 2. O processo mestre elege dois processos condidatos a participar de uma movimentação de vértices
 		// a) O processo mestre escolhe os dois processos com maior valor de imbalance entre si (usando a matriz 1b)
-		// TODO choose the top 25% biggest elements in the matrix
-		// Coordinate processPair = findMaximumElementInMatrix(this->clusterImbMatrix);
-		std::vector< Coordinate > imbMatrixElementList = getMatrixElementsAsList(this->clusterImbMatrix);
-		int numberOfProcessCombinations = (int)floor((numberOfProcesses * numberOfProcesses) / double(2.0));  // symmetric matrix
-		int desiredNumberOfProcessPairs = (int)floor(numberOfProcessCombinations * PERCENTAGE_OF_PROCESS_PAIRS);
+		// Chooses the top 20% biggest elements in the matrix
+		// Coordinate processPair = findMaximumElementInMatrix(processClusterImbMatrix);
+		std::vector< Coordinate > imbMatrixElementList = getMatrixElementsAsList(processClusterImbMatrix);
+		int numberOfProcessCombinations = (int)floor((numberOfProcesses * (numberOfProcesses - 1)) / double(2.0));  // symmetric matrix
+		int desiredNumberOfProcessPairs = (int)ceil(numberOfProcessCombinations * PERCENTAGE_OF_PROCESS_PAIRS);
 		// obtain and remove the next biggest element from the list
 		for(int processPairCount = 0; processPairCount < desiredNumberOfProcessPairs; processPairCount++) {
 			std::vector< Coordinate >::iterator pos = std::max_element(imbMatrixElementList.begin(),
@@ -133,15 +134,15 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 			imbMatrixElementList.erase(pos);
 
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] The next process pair with biggest imbalance is (" << processPair.x
-					<< ", " << processPair.y << ") with imbalance = " << this->clusterImbMatrix(processPair.x, processPair.y);
+					<< ", " << processPair.y << ") with imbalance = " << processClusterImbMatrix(processPair.x, processPair.y);
 			// b) O processo mestre escolhe um vértice a ser movimentado (move) de um processo para o outro (usando o vetor 1 A)
 			// select a vertex v to move - v is the vertex that causes the biggest imbalance
 			// TODO the biggest imbalance in the whole graph or only between the pair of processes x and y?
 			// for now it is the vertex v that belongs to the processPair and causes the biggest imbalance in the whole graph
-			// TODO try to move the top 20% of most imbalanced vertices
+			// Tries to move the top 25% of most imbalanced vertices
 			long numberOfVerticesInProcessPair = bestSplitgraphClustering.getClusterSize(processPair.x)
 					+ bestSplitgraphClustering.getClusterSize(processPair.y);
-			long numberOfImbalancedVerticesToBeMoved = numberOfVerticesInProcessPair * PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED;
+			long numberOfImbalancedVerticesToBeMoved = (int)ceil(numberOfVerticesInProcessPair * PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED);
 			ClusterArray splitgraphClusterList = bestSplitgraphClustering.getClusterArray();
 			for(long niv = 0; niv < numberOfImbalancedVerticesToBeMoved; niv++) {
 				long v = findMostImbalancedVertexInProcessPair(*g, splitgraphClusterList, processPair);
@@ -156,14 +157,20 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 				for(int px = 0; px < numberOfProcesses; px++) {
 					if(px != currentProcess) {
 						tempSplitgraphClusterArray[v] = px;
+						// TODO RECALCULAR A MATRIZ ABAIXO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
+						matrix<double> tempProcessClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
+
 						// c) O processo mestre solicita que cada processo participante execute um novo ILS tendo como base a configuracao de cluster modificada
-						Clustering newGlobalClustering = distributeSubgraphsBetweenProcessesAndRunILS(construct,
-									vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info, tempSplitgraphClusterArray);
+						Clustering newGlobalClustering = distributeSubgraphsBetweenProcessesAndRunILS(construct, vnd, g,
+									iter, iterMaxILS, perturbationLevelMax, problem, info, tempSplitgraphClusterArray, tempProcessClusterImbMatrix);
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] New solution found: I(P) = " << newGlobalClustering.getImbalance().getValue();
 						if(newGlobalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
 							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Improved solution found! I(P) = " << newGlobalClustering.getImbalance().getValue();
 							bestClustering = newGlobalClustering;
+
 							// TODO EVITAR O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
+							// calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
+
 							bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 							foundBetterSolution = true;
 							break;
@@ -389,7 +396,7 @@ Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(Signed
 Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
 		VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 		const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
-		ClusterArray& splitgraphClusterArray) {
+		ClusterArray& splitgraphClusterArray, matrix<double>& processClusterImbMatrix) {
 
 	// Creates the subgraphs for each processor, based on the splitgraphClusterArray structure
 	mpi::communicator world;
@@ -481,6 +488,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	// Global cluster array
 	ClusterArray globalClusterArray(g->getN(), 0);
 	long clusterOffset = 0;
+	double internalImbalanceSum = 0.0;
 	for(int i = 0; i < numberOfSlaves; i++) {
 		mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message received from process " << stat.source() << ". Obj = " <<
@@ -492,6 +500,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		timeSpent[i+1] = omsg.timeSpent;
 		// 4. Merge the partial solutions into a global solution for the whole graph
 		ClusterArray localClusterArray = omsg.clustering.getClusterArray();
+		internalImbalanceSum += omsg.clustering.getImbalance().getValue();
 		assert(localClusterArray.size() == omsg.globalVertexId.size());
 		for(long v = 0; v < localClusterArray.size(); v++) {
 			// Obtains vertex v's number in the global graph
@@ -525,9 +534,26 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	}
 	long nc = leaderClustering.getNumberOfClusters();
 	clusterOffset += nc;
+	internalImbalanceSum += leaderClustering.getImbalance().getValue();
+
+	// Calculates the external imbalance sum (between processes)
+	// calculateProcessToProcessImbalanceMatrix(*g, splitgraphClusterArray);
+	double externalImbalanceSum = 0.0;
+	for (unsigned i = 0; i < processClusterImbMatrix.size1(); ++i) {
+		for (unsigned j = 0; j < processClusterImbMatrix.size2(); ++j) {
+			if(i != j) {
+				externalImbalanceSum += processClusterImbMatrix(i, j);
+			}
+		}
+	}
 
 	// 5. Builds the clustering with the merge of each process result
+	// // TODO EVITAR O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
 	Clustering globalClustering(globalClusterArray, *g, problem);
+
+	BOOST_LOG_TRIVIAL(info) << "Separate internal imbalance I(P) = " << (internalImbalanceSum) << " and external I(P) = " << (externalImbalanceSum);
+	BOOST_LOG_TRIVIAL(info) << "Separate clustering imbalance I(P) = " << (internalImbalanceSum + externalImbalanceSum)
+			<< " versus full calculated I(P) = " << globalClustering.getImbalance().getValue();
 
 	// 6. Stores the time spent in this iteration of distributed MH
 	timeSpentAtIteration.push_back(timeSpent);
@@ -535,13 +561,13 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	return globalClustering;
 }
 
-void ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster) {
+matrix<double> ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster) {
 
 	long nc = numberOfSlaves + 1;
 	long n = g.getN();
 	DirectedGraph::edge_descriptor e;
 	// Process to process matrix containing positive / negative contribution to imbalance
-	clusterImbMatrix = zero_matrix<double>(nc, nc);
+	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
 	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 	// Vector containing each vertex contribution to imbalance: vertexImbalance
 
@@ -568,6 +594,7 @@ void ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalanceMatrix(Sign
 		}
 		vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
 	}
+	return clusterImbMatrix;
 }
 
 Coordinate ImbalanceSubgraphParallelILS::findMaximumElementInMatrix(matrix<double> &mat) {
