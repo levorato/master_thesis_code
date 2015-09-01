@@ -116,7 +116,6 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 		//		Uma matriz com a soma do imbalance entre processos
 		// => Calculates the imbalance info between process partitions and of each vertex individually
 		ClusterArray bestSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
-		processClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, bestSplitgraphClusterArray);
 		foundBetterSolution = false;
 
 		// 2. O processo mestre elege dois processos condidatos a participar de uma movimentação de vértices
@@ -169,7 +168,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 							bestClustering = newGlobalClustering;
 
 							// TODO EVITAR O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
-							// calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
+							processClusterImbMatrix = tempProcessClusterImbMatrix;
 
 							bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 							foundBetterSolution = true;
@@ -537,7 +536,6 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	internalImbalanceSum += leaderClustering.getImbalance().getValue();
 
 	// Calculates the external imbalance sum (between processes)
-	// calculateProcessToProcessImbalanceMatrix(*g, splitgraphClusterArray);
 	double externalImbalanceSum = 0.0;
 	for (unsigned i = 0; i < processClusterImbMatrix.size1(); ++i) {
 		for (unsigned j = 0; j < processClusterImbMatrix.size2(); ++j) {
