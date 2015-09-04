@@ -56,6 +56,12 @@ struct pos_degree_ordering_asc
     }
 };
 
+struct ImbalanceMatrix {
+	matrix<double> pos, neg;
+	ImbalanceMatrix() : pos(), neg() { }
+	ImbalanceMatrix(int nc) : pos(zero_matrix<double>(nc, nc)), neg(zero_matrix<double>(nc, nc)) { }
+};
+
 class ImbalanceSubgraphParallelILS: public ILS {
 public:
 	ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
@@ -74,17 +80,17 @@ public:
 	Clustering distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
-			ClusterArray& splitgraphClusterArray, matrix<double>& processClusterImbMatrix);
+			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix);
 
-	matrix<double> calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
+	ImbalanceMatrix calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
 
 	void updateProcessToProcessImbalanceMatrix(SignedGraph& g, const ClusterArray& previousSplitgraphClusterArray,
 			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
-			matrix<double>& processClusterImbMatrix);
+			ImbalanceMatrix& processClusterImbMatrix);
 
-	Coordinate findMaximumElementInMatrix(matrix<double> &mat);
+	Coordinate findMaximumElementInMatrix(ImbalanceMatrix &mat);
 
-	std::vector< Coordinate > getMatrixElementsAsList(matrix<double> &mat);
+	std::vector< Coordinate > getMatrixElementsAsList(ImbalanceMatrix &mat);
 
 	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& myCluster, Coordinate processPair);
 

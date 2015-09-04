@@ -86,7 +86,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	// WARNING: THE SPLITGRAPHCLUSTERARRAY IS A SEPARATE DATA STRUCTURE, DIFFERENT THAN THE CURRENT CLUSTERING
 	// IT CONTROLS THE PARTITIONING BETWEEN PROCESSORS (SPLIT GRAPH)
 	ClusterArray initialSplitgraphClusterArray = splitgraphClustering.getClusterArray();
-	matrix<double> processClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, initialSplitgraphClusterArray);
+	ImbalanceMatrix processClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, initialSplitgraphClusterArray);
 	Clustering Cc = distributeSubgraphsBetweenProcessesAndRunILS(construct,
 			vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info, initialSplitgraphClusterArray, processClusterImbMatrix);
 
@@ -136,7 +136,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 			imbMatrixElementList.erase(pos);
 
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] The next process pair with biggest imbalance is (" << processPair.x
-					<< ", " << processPair.y << ") with imbalance = " << processClusterImbMatrix(processPair.x, processPair.y);
+					<< ", " << processPair.y << ") with imbalance = " << processPair.value;
 			// TODO Implementar aqui o VND com 2 ou mais estruturas de vizinhanca
 			// TODO Alem do move 1-opt, implementar o move de um cluster inteiro
 
@@ -167,15 +167,16 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 						tempSplitgraphClusterArray[v] = px;
 						std::vector<long> listOfModifiedVertices;
 						listOfModifiedVertices.push_back(v);
-						// TODO RECALCULAR A MATRIZ ABAIXO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
-						ublas::matrix<double> tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
-						ublas::matrix<double> tempProcessClusterImbMatrix = processClusterImbMatrix;
+						// O RECALCULO DA MATRIZ ABAIXO EH FEITO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
+						//ImbalanceMatrix tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
+						ImbalanceMatrix tempProcessClusterImbMatrix = processClusterImbMatrix;
 						// Realiza o calculo do delta da matriz de imbalance entre processos
 						updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
 								listOfModifiedVertices, tempProcessClusterImbMatrix);
 						// Valida se a matriz incremental e a full sao iguais
-						bool igual = ublas::equals(tempProcessClusterImbMatrix, tempProcessClusterImbMatrix2, 0.001, 0.1);
-						BOOST_LOG_TRIVIAL(info) << "*** As matrizes de delta sao iguais: " << igual;
+						//bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix2.pos, 0.001, 0.1);
+						//bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix2.neg, 0.001, 0.1);
+						//BOOST_LOG_TRIVIAL(info) << "*** As matrizes de delta sao iguais: " << igual << " e " << igual2;
 
 						// c) O processo mestre solicita que cada processo participante execute um novo ILS tendo como base a configuracao de cluster modificada
 						Clustering newGlobalClustering = distributeSubgraphsBetweenProcessesAndRunILS(construct, vnd, g,
@@ -188,6 +189,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 							// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
 							processClusterImbMatrix = tempProcessClusterImbMatrix;
 
+							// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
 							bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 							foundBetterSolution = true;
 							break;
@@ -413,7 +415,7 @@ Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(Signed
 Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
 		VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 		const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
-		ClusterArray& splitgraphClusterArray, matrix<double>& processClusterImbMatrix) {
+		ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix) {
 
 	// Creates the subgraphs for each processor, based on the splitgraphClusterArray structure
 	mpi::communicator world;
@@ -505,7 +507,8 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	// Global cluster array
 	ClusterArray globalClusterArray(g->getN(), 0);
 	long clusterOffset = 0;
-	double internalImbalanceSum = 0.0;
+	double internalImbalancePosSum = 0.0;
+	double internalImbalanceNegSum = 0.0;
 	for(int i = 0; i < numberOfSlaves; i++) {
 		mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message received from process " << stat.source() << ". Obj = " <<
@@ -517,7 +520,9 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		timeSpent[i+1] = omsg.timeSpent;
 		// 4. Merge the partial solutions into a global solution for the whole graph
 		ClusterArray localClusterArray = omsg.clustering.getClusterArray();
-		internalImbalanceSum += omsg.clustering.getImbalance().getValue();
+		internalImbalancePosSum += omsg.clustering.getImbalance().getPositiveValue();
+		internalImbalanceNegSum += omsg.clustering.getImbalance().getNegativeValue();
+
 		assert(localClusterArray.size() == omsg.globalVertexId.size());
 		for(long v = 0; v < localClusterArray.size(); v++) {
 			// Obtains vertex v's number in the global graph
@@ -551,25 +556,30 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	}
 	long nc = leaderClustering.getNumberOfClusters();
 	clusterOffset += nc;
-	internalImbalanceSum += leaderClustering.getImbalance().getValue();
+	internalImbalancePosSum += leaderClustering.getImbalance().getPositiveValue();
+	internalImbalanceNegSum += leaderClustering.getImbalance().getNegativeValue();
 
 	// Calculates the external imbalance sum (between processes)
-	double externalImbalanceSum = 0.0;
-	for (unsigned i = 0; i < processClusterImbMatrix.size1(); ++i) {
-		for (unsigned j = 0; j < processClusterImbMatrix.size2(); ++j) {
+	double externalImbalancePosSum = 0.0;
+	double externalImbalanceNegSum = 0.0;
+	for (unsigned i = 0; i < processClusterImbMatrix.pos.size1(); ++i) {
+		for (unsigned j = 0; j < processClusterImbMatrix.pos.size2(); ++j) {
 			if(i != j) {
-				externalImbalanceSum += processClusterImbMatrix(i, j);
+				externalImbalancePosSum += processClusterImbMatrix.pos(i, j);
+				externalImbalanceNegSum += processClusterImbMatrix.neg(i, j);
 			}
 		}
 	}
 
 	// 5. Builds the clustering with the merge of each process result
-	// // TODO EVITAR O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
-	Clustering globalClustering(globalClusterArray, *g, problem);
+	// EVITA O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
+	Clustering globalClustering(globalClusterArray, *g, problem, internalImbalancePosSum + externalImbalancePosSum,
+			internalImbalanceNegSum + externalImbalanceNegSum);
 
-	BOOST_LOG_TRIVIAL(info) << "Separate internal imbalance I(P) = " << (internalImbalanceSum) << " and external I(P) = " << (externalImbalanceSum);
-	BOOST_LOG_TRIVIAL(info) << "Separate clustering imbalance I(P) = " << (internalImbalanceSum + externalImbalanceSum)
-			<< " versus full calculated I(P) = " << globalClustering.getImbalance().getValue();
+	// BOOST_LOG_TRIVIAL(info) << "Separate internal imbalance I(P) = " << (internalImbalanceSum) << " and external I(P) = " << (externalImbalanceSum);
+	//BOOST_LOG_TRIVIAL(info) << "Separate clustering imbalance I(P) = " << (internalImbalancePosSum + externalImbalancePosSum +
+	//		internalImbalanceNegSum + externalImbalanceNegSum)
+	//		<< " versus full calculated I(P) = " << globalClustering.getImbalance().getValue();
 
 	// 6. Stores the time spent in this iteration of distributed MH
 	timeSpentAtIteration.push_back(timeSpent);
@@ -577,13 +587,14 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	return globalClustering;
 }
 
-matrix<double> ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster) {
+ImbalanceMatrix ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalanceMatrix(
+		SignedGraph& g, ClusterArray& myCluster) {
 
 	long nc = numberOfSlaves + 1;
 	long n = g.getN();
 	DirectedGraph::edge_descriptor e;
 	// Process to process matrix containing positive / negative contribution to imbalance
-	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
+	ImbalanceMatrix clusterImbMatrix(nc);
 	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 	// Vector containing each vertex contribution to imbalance: vertexImbalance
 
@@ -601,11 +612,11 @@ matrix<double> ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalanceM
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
 				negativeSum += fabs(weight);
-				clusterImbMatrix(ki, myCluster[targ.id]) += fabs(weight);
+				clusterImbMatrix.neg(ki, myCluster[targ.id]) += fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
 				positiveSum += weight;
-				clusterImbMatrix(ki, myCluster[targ.id]) += fabs(weight);
+				clusterImbMatrix.pos(ki, myCluster[targ.id]) += fabs(weight);
 			}
 		}
 		vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
@@ -616,7 +627,7 @@ matrix<double> ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalanceM
 void ImbalanceSubgraphParallelILS::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
 			const ClusterArray& previousSplitgraphClusterArray,
 			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
-			matrix<double>& processClusterImbMatrix) {
+			ImbalanceMatrix& processClusterImbMatrix) {
 
 	long nc = numberOfSlaves + 1;
 	long n = g.getN();
@@ -640,20 +651,20 @@ void ImbalanceSubgraphParallelILS::updateProcessToProcessImbalanceMatrix(SignedG
 			// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j were in the same cluster
-				processClusterImbMatrix(old_ki, old_kj) -= fabs(weight);
+				processClusterImbMatrix.neg(old_ki, old_kj) -= fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j were NOT in the same cluster
-				processClusterImbMatrix(old_ki, old_kj) -= fabs(weight);
+				processClusterImbMatrix.pos(old_ki, old_kj) -= fabs(weight);
 			}
 			// Etapa 2: acrescimo dos novos imbalances
 			long new_kj = newSplitgraphClusterArray[targ.id];
 			sameCluster = (new_kj == new_ki);
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are now in the same cluster
-				processClusterImbMatrix(new_ki, new_kj) += fabs(weight);
+				processClusterImbMatrix.neg(new_ki, new_kj) += fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
-				processClusterImbMatrix(new_ki, new_kj) += fabs(weight);
+				processClusterImbMatrix.pos(new_ki, new_kj) += fabs(weight);
 			}
 		}
 		// For each in edge of i
@@ -668,20 +679,20 @@ void ImbalanceSubgraphParallelILS::updateProcessToProcessImbalanceMatrix(SignedG
 			// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j were in the same cluster
-				processClusterImbMatrix(old_kj, old_ki) -= fabs(weight);
+				processClusterImbMatrix.neg(old_kj, old_ki) -= fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j were NOT in the same cluster
-				processClusterImbMatrix(old_kj, old_ki) -= fabs(weight);
+				processClusterImbMatrix.pos(old_kj, old_ki) -= fabs(weight);
 			}
 			// Etapa 2: acrescimo dos novos imbalances
 			long new_kj = newSplitgraphClusterArray[j];
 			sameCluster = (new_kj == new_ki);
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are now in the same cluster
-				processClusterImbMatrix(new_kj, new_ki) += fabs(weight);
+				processClusterImbMatrix.neg(new_kj, new_ki) += fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
-				processClusterImbMatrix(new_kj, new_ki) += fabs(weight);
+				processClusterImbMatrix.pos(new_kj, new_ki) += fabs(weight);
 			}
 		}
 		// NAO EH NECESSARIO ATUALIZAR O VERTEX IMBALANCE ABAIXO, POIS A BUSCA LOCAL (VND) EH FIRST IMPROVEMENT
@@ -689,29 +700,29 @@ void ImbalanceSubgraphParallelILS::updateProcessToProcessImbalanceMatrix(SignedG
 	}
 }
 
-Coordinate ImbalanceSubgraphParallelILS::findMaximumElementInMatrix(matrix<double> &mat) {
+Coordinate ImbalanceSubgraphParallelILS::findMaximumElementInMatrix(ImbalanceMatrix &mat) {
 	int x = 0, y = 0;
 	double maxValue = -DBL_MAX;
 
 	// TODO INCLUDE HANDLING FOR MATH PRECISION DOUBLE (EPSILON)
-	for(int i = 0; i < mat.size1(); i++) {
-		for(int j = 0; j < mat.size2(); j++) {
-			if(mat(i, j) > maxValue) {
-				maxValue = mat(i, j);
+	for(int i = 0; i < mat.pos.size1(); i++) {
+		for(int j = 0; j < mat.pos.size2(); j++) {
+			if((mat.pos(i, j) + mat.neg(i, j)) > maxValue) {
+				maxValue = mat.pos(i, j) + mat.neg(i, j);
 				x = i;
 				y = j;
 			}
 		}
 	}
-	return Coordinate(x, y);
+	return Coordinate(x, y, maxValue);
 }
 
-std::vector< Coordinate > ImbalanceSubgraphParallelILS::getMatrixElementsAsList(matrix<double> &mat) {
+std::vector< Coordinate > ImbalanceSubgraphParallelILS::getMatrixElementsAsList(ImbalanceMatrix &mat) {
 	std::vector< Coordinate > returnList;
 
-	for(int i = 0; i < mat.size1(); i++) {
-		for(int j = 0; j < mat.size2(); j++) {
-			returnList.push_back(Coordinate(i, j, mat(i, j)));
+	for(int i = 0; i < mat.pos.size1(); i++) {
+		for(int j = 0; j < mat.pos.size2(); j++) {
+			returnList.push_back(Coordinate(i, j, (mat.pos(i, j) + mat.neg(i, j))));
 		}
 	}
 	return returnList;
