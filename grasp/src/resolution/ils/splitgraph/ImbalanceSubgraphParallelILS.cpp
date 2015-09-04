@@ -33,12 +33,15 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/timer/timer.hpp>
+#include <boost/numeric/ublas/detail/matrix_assign.hpp>
 #include <cfloat>
 #include <algorithm>
 
 // TODO CHANGE TO APPLICATION CLI PARAMETER
 #define PERCENTAGE_OF_PROCESS_PAIRS 0.2
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
+
+namespace ublas = boost::numeric::ublas::detail;
 
 namespace resolution {
 namespace ils {
@@ -134,6 +137,10 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] The next process pair with biggest imbalance is (" << processPair.x
 					<< ", " << processPair.y << ") with imbalance = " << processClusterImbMatrix(processPair.x, processPair.y);
+			// TODO Implementar aqui o VND com 2 ou mais estruturas de vizinhanca
+			// TODO Alem do move 1-opt, implementar o move de um cluster inteiro
+
+			// ************************   Move   1 - opt  ***********************************
 			// b) O processo mestre escolhe um vértice a ser movimentado (move) de um processo para o outro (usando o vetor 1 A)
 			// select a vertex v to move - v is the vertex that causes the biggest imbalance
 			// TODO the biggest imbalance in the whole graph or only between the pair of processes x and y?
@@ -152,12 +159,23 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 
 				// TODO PENSAR EM UMA HEURISTICA PARA ESCOLHER O PROCESSO DE DESTINO DO VERTICE V COM MAIOR IMBALANCE
 				// OU ENTAO TENTAR MOVER O VERTICE V PARA QUALQUER OUTRO PROCESSO (ITERAR)
-				ClusterArray tempSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
+				ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
+				ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
 				for(int px = 0; px < numberOfProcesses; px++) {
 					if(px != currentProcess) {
+						// Realiza a movimentacao de um vertice (1-opt move)
 						tempSplitgraphClusterArray[v] = px;
+						std::vector<long> listOfModifiedVertices;
+						listOfModifiedVertices.push_back(v);
 						// TODO RECALCULAR A MATRIZ ABAIXO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
-						matrix<double> tempProcessClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
+						ublas::matrix<double> tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
+						ublas::matrix<double> tempProcessClusterImbMatrix = processClusterImbMatrix;
+						// Realiza o calculo do delta da matriz de imbalance entre processos
+						updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
+								listOfModifiedVertices, tempProcessClusterImbMatrix);
+						// Valida se a matriz incremental e a full sao iguais
+						bool igual = ublas::equals(tempProcessClusterImbMatrix, tempProcessClusterImbMatrix2, 0.001, 0.1);
+						BOOST_LOG_TRIVIAL(info) << "*** As matrizes de delta sao iguais: " << igual;
 
 						// c) O processo mestre solicita que cada processo participante execute um novo ILS tendo como base a configuracao de cluster modificada
 						Clustering newGlobalClustering = distributeSubgraphsBetweenProcessesAndRunILS(construct, vnd, g,
@@ -167,7 +185,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Improved solution found! I(P) = " << newGlobalClustering.getImbalance().getValue();
 							bestClustering = newGlobalClustering;
 
-							// TODO EVITAR O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
+							// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
 							processClusterImbMatrix = tempProcessClusterImbMatrix;
 
 							bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
@@ -593,6 +611,82 @@ matrix<double> ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalanceM
 		vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
 	}
 	return clusterImbMatrix;
+}
+
+void ImbalanceSubgraphParallelILS::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
+			const ClusterArray& previousSplitgraphClusterArray,
+			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
+			matrix<double>& processClusterImbMatrix) {
+
+	long nc = numberOfSlaves + 1;
+	long n = g.getN();
+	DirectedGraph::edge_descriptor e;
+	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+
+	// For each vertex i in listOfModifiedVertices
+	for(long item = 0; item < listOfModifiedVertices.size(); item++) {
+		long i = listOfModifiedVertices[item];
+		long old_ki = previousSplitgraphClusterArray[i];
+		long new_ki = newSplitgraphClusterArray[i];
+		DirectedGraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+			e = *f;
+			Vertex src = source(e, g.graph), targ = target(e, g.graph);
+			double weight = ew[e].weight;
+			// Etapa 1: subtracao dos imbalances antigos
+			long old_kj = previousSplitgraphClusterArray[targ.id];
+			bool sameCluster = (old_kj == old_ki);
+			// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j were in the same cluster
+				processClusterImbMatrix(old_ki, old_kj) -= fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j were NOT in the same cluster
+				processClusterImbMatrix(old_ki, old_kj) -= fabs(weight);
+			}
+			// Etapa 2: acrescimo dos novos imbalances
+			long new_kj = newSplitgraphClusterArray[targ.id];
+			sameCluster = (new_kj == new_ki);
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are now in the same cluster
+				processClusterImbMatrix(new_ki, new_kj) += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				processClusterImbMatrix(new_ki, new_kj) += fabs(weight);
+			}
+		}
+		// For each in edge of i
+		DirectedGraph::in_edge_iterator f2, l2;
+		for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {  // in edges of i
+			e= *f2;
+			double weight = ew[e].weight;
+			int j = source(*f2, g.graph);
+			// Etapa 1: subtracao dos imbalances antigos
+			long old_kj = previousSplitgraphClusterArray[j];
+			bool sameCluster = (old_kj == old_ki);
+			// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j were in the same cluster
+				processClusterImbMatrix(old_kj, old_ki) -= fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j were NOT in the same cluster
+				processClusterImbMatrix(old_kj, old_ki) -= fabs(weight);
+			}
+			// Etapa 2: acrescimo dos novos imbalances
+			long new_kj = newSplitgraphClusterArray[j];
+			sameCluster = (new_kj == new_ki);
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are now in the same cluster
+				processClusterImbMatrix(new_kj, new_ki) += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				processClusterImbMatrix(new_kj, new_ki) += fabs(weight);
+			}
+		}
+		// NAO EH NECESSARIO ATUALIZAR O VERTEX IMBALANCE ABAIXO, POIS A BUSCA LOCAL (VND) EH FIRST IMPROVEMENT
+		// vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
+	}
 }
 
 Coordinate ImbalanceSubgraphParallelILS::findMaximumElementInMatrix(matrix<double> &mat) {

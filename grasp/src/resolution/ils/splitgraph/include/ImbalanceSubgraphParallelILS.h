@@ -78,6 +78,10 @@ public:
 
 	matrix<double> calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
 
+	void updateProcessToProcessImbalanceMatrix(SignedGraph& g, const ClusterArray& previousSplitgraphClusterArray,
+			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
+			matrix<double>& processClusterImbMatrix);
+
 	Coordinate findMaximumElementInMatrix(matrix<double> &mat);
 
 	std::vector< Coordinate > getMatrixElementsAsList(matrix<double> &mat);
