@@ -40,7 +40,7 @@
 // TODO CHANGE TO APPLICATION CLI PARAMETER
 #define PERCENTAGE_OF_PROCESS_PAIRS 0.2
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
-#define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.25
+#define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
 
 namespace ublas = boost::numeric::ublas::detail;
 
@@ -376,7 +376,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
-							numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k);
+							numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, true);
 		if(k < 0) {
 			imsg.setClustering(&CCclustering);
 		}
@@ -741,9 +741,14 @@ std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfImbalancedClus
 				sumOfPositiveExternalEdges += clusterImbMatrix(ki, kj);
 			}
 		}
-		percentageOfInternalNegativeEdges = (100 * sumOfInternalNegativeEdges) / sumOfInternalEdges;  // item A
-		percentageOfExternalPositiveEdges = (100 * sumOfPositiveExternalEdges) / sumOfExternalEdges;  // item B
+		if(sumOfInternalEdges > 0) {
+			percentageOfInternalNegativeEdges = (100 * sumOfInternalNegativeEdges) / sumOfInternalEdges;  // item A
+		}
+		if(sumOfExternalEdges > 0) {
+			percentageOfExternalPositiveEdges = (100 * sumOfPositiveExternalEdges) / sumOfExternalEdges;  // item B
+		}
 		double imbalancePercentage = max(percentageOfInternalNegativeEdges, percentageOfExternalPositiveEdges);
+		//double imbalancePercentage = percentageOfExternalPositiveEdges;
 		imbalancedClusterList.push_back(Coordinate(ki, ki, imbalancePercentage));
 	}
 	return imbalancedClusterList;
@@ -863,34 +868,36 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 	// TODO fazer os calculos corretos aqui, para clusters
 	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
 	ClusterArray globalClusterArray = bestClustering.getClusterArray();
-	std::vector<Coordinate> clusterImbalanceList = obtainListOfImbalancedClusters(g, splitgraphClusterArray, bestClustering);
+	std::vector<Coordinate> clusterImbalanceList = obtainListOfImbalancedClusters(*g, splitgraphClusterArray, bestClustering);
 	// sorts the list of imbalanced clusters according to the percentage of imbalance (value)
 	std::sort(clusterImbalanceList.begin(), clusterImbalanceList.end(), coordinate_ordering_asc());
 	long numberOfImbalancedClustersToBeMoved = (int)ceil(clusterImbalanceList.size() * PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED);
+	if(numberOfImbalancedClustersToBeMoved == 0) {
+		numberOfImbalancedClustersToBeMoved = 1;
+	}
 	bool foundBetterSolution = false;
 	long n = g->getN();
+	long nc = bestClustering.getNumberOfClusters();
 	for(long nic = 0; nic < numberOfImbalancedClustersToBeMoved; nic++) {
-		// TODO encontrar os x clusters mais desequilibrados
-		long k = clusterImbalanceList[nc - nic - 1];
-		int currentProcess = splitgraphClusterArray[v];
-		// Will try to move the cluster vertex v belongs to (in the local solution)
-		ClusterArray globalSolutionClustering = bestClustering.getClusterArray();
-		int clusterToMove = globalSolutionClustering[v];
+		long clusterToMove = clusterImbalanceList[nc - nic - 1].x;
 		std::vector<long> listOfModifiedVertices;
 		for(long vx = 0; vx < n; vx++) {
-			if(globalSolutionClustering[vx] == clusterToMove) {
+			if(globalClusterArray[vx] == clusterToMove) {
 				//BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Choosing vertex " << vx << " to be moved, it belongs to cluster" << clusterToMove << ".";
 				listOfModifiedVertices.push_back(vx);
 			}
 		}
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Moving global cluster " << clusterToMove << " of size " <<
-				bestClustering.getClusterSize(clusterToMove) << ".";
+		// finds out to which process the cluster belongs to
+		int currentProcess = splitgraphClusterArray[listOfModifiedVertices[0]];
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Move " << nic << ": Moving global cluster " << clusterToMove << " of size " <<
+				bestClustering.getClusterSize(clusterToMove) << " and percImbalance = " << clusterImbalanceList[nc - nic - 1].value << "%.";
 
 		// TODO PENSAR EM UMA HEURISTICA PARA ESCOLHER O PROCESSO DE DESTINO DO CLUSTER C COM MAIOR IMBALANCE
 		// OU ENTAO TENTAR MOVER O CLUSTER C PARA QUALQUER OUTRO PROCESSO (ITERAR)
 		ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
 		for(int px = 0; px < numberOfProcesses; px++) {
 			if(px != currentProcess) {
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to move global cluster " << clusterToMove << " to process " << px;
 				ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
 				// Realiza a movimentacao dos vertices de um cluster especifico (cluster move)
 				for(long elem = 0; elem < listOfModifiedVertices.size(); elem++) {
