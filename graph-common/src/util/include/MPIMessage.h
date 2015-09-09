@@ -297,13 +297,16 @@ public:
 	double timeSpent;
 	// cluster array used in split graph solutions, contains the vertices ids in the full / global graph
 	std::vector<long> globalVertexId;
+	// number of vertices and edges in the processor subgraph
+	long num_vertices, num_edges;
 
-	OutputMessage() : clustering(), numberOfTestedCombinations(0), timeSpent(0.0), globalVertexId() {
+	OutputMessage() : clustering(), numberOfTestedCombinations(0), timeSpent(0.0), globalVertexId(),
+			num_vertices(0), num_edges(0) {
 
 	}
 
 	OutputMessage(Clustering &c, long nc, double time, std::vector<long> gVertexId) : clustering(c),
-			numberOfTestedCombinations(nc), timeSpent(time), globalVertexId(gVertexId) {
+			numberOfTestedCombinations(nc), timeSpent(time), globalVertexId(gVertexId), num_vertices(0), num_edges(0) {
 
 	}
 
@@ -315,6 +318,8 @@ public:
 		ar & numberOfTestedCombinations;
 		ar & timeSpent;
 		ar & globalVertexId;
+		ar & num_vertices;
+		ar & num_edges;
 	}
 };
 
