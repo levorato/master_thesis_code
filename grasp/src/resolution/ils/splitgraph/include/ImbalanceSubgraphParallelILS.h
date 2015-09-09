@@ -92,24 +92,28 @@ public:
 
 	std::vector< Coordinate > getMatrixElementsAsList(ImbalanceMatrix &mat);
 
-	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& myCluster, Coordinate processPair);
+	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& splitGraphCluster,
+			ClusterArray& globalCluster, Coordinate processPair);
+
+	std::vector<Coordinate> obtainListOfImbalancedClusters(SignedGraph& g,
+			ClusterArray& splitGraphCluster, Clustering& globalClustering);
 
 	bool moveVertex1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
-			Clustering& bestClustering, const Coordinate& processPair,
+			Clustering& bestClustering,
 			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
 			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
 	bool moveCluster1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
-			Clustering& bestClustering, const Coordinate& processPair,
+			Clustering& bestClustering,
 			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
 			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
 	long variableNeighborhoodDescent(SignedGraph* g, Clustering& bestSplitgraphClustering,
-			Clustering& bestClustering, const Coordinate& processPair, const int& numberOfProcesses,
+			Clustering& bestClustering, const int& numberOfProcesses,
 			ImbalanceMatrix& processClusterImbMatrix, ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar);

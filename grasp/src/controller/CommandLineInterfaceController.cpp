@@ -870,7 +870,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						omsg.num_vertices = n;
 						omsg.num_edges = e;
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
-						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader.";
+						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader (size = " <<
+								(sizeof(omsg)/1024.0) << " KB).";
 					}
 				}
 			} else {  // Parallel VND slave
