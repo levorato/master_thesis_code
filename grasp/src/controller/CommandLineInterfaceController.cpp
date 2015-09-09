@@ -809,6 +809,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						std::vector<long> globalVertexId;
 						// time spent on processing
 						double timeSpent = 0.0;
+						// info about the processed graph
+						long n = num_vertices(g->graph), e = num_edges(g->graph);
 
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpils.vertexList.size() > 0) {
@@ -819,7 +821,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
 								add_vertex(*it, sg.graph);
 							} */
-							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
+							n = num_vertices(sg.graph);
+							e = num_edges(sg.graph);
+							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;
 
 							GainFunctionFactory functionFactory(&sg);
 							ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
@@ -863,6 +867,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 						// Sends the result back to the leader process
 						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations(), timeSpent, globalVertexId);
+						omsg.num_vertices = n;
+						omsg.num_edges = e;
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
 						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader.";
 					}

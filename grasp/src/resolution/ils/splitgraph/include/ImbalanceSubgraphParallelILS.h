@@ -94,6 +94,25 @@ public:
 
 	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& myCluster, Coordinate processPair);
 
+	bool moveVertex1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
+			Clustering& bestClustering, const Coordinate& processPair,
+			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+			ClusteringProblem& problem, ExecutionInfo& info);
+
+	bool moveCluster1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
+			Clustering& bestClustering, const Coordinate& processPair,
+			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+			ClusteringProblem& problem, ExecutionInfo& info);
+
+	long variableNeighborhoodDescent(SignedGraph* g, Clustering& bestSplitgraphClustering,
+			Clustering& bestClustering, const Coordinate& processPair, const int& numberOfProcesses,
+			ImbalanceMatrix& processClusterImbMatrix, ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+			ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar);
 
 protected:
 	int machineProcessAllocationStrategy;
