@@ -28,7 +28,10 @@ struct coordinate_ordering_asc
 {
     inline bool operator() (const Coordinate& struct1, const Coordinate& struct2)
     {
-        return (struct1.value < struct2.value);
+        if(struct1.value == struct2.value) {
+        	return struct1.y < struct2.y;
+        }
+    	return (struct1.value < struct2.value);
     }
 };
 

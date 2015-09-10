@@ -737,8 +737,8 @@ std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfImbalancedClus
 		double sumOfPositiveExternalEdges = 0.0;
 		for(long kj = 0; kj < nc; kj++) {
 			if(ki != kj) {
-				sumOfExternalEdges += clusterEdgeSumMatrix(ki, kj);
-				sumOfPositiveExternalEdges += clusterImbMatrix(ki, kj);
+				sumOfExternalEdges += clusterEdgeSumMatrix(ki, kj) + clusterEdgeSumMatrix(kj, ki);
+				sumOfPositiveExternalEdges += clusterImbMatrix(ki, kj) + clusterImbMatrix(kj, ki);
 			}
 		}
 		if(sumOfInternalEdges > 0) {
@@ -748,8 +748,12 @@ std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfImbalancedClus
 			percentageOfExternalPositiveEdges = (100 * sumOfPositiveExternalEdges) / sumOfExternalEdges;  // item B
 		}
 		double imbalancePercentage = max(percentageOfInternalNegativeEdges, percentageOfExternalPositiveEdges);
+		double imbalance = sumOfInternalNegativeEdges + sumOfPositiveExternalEdges;
 		//double imbalancePercentage = percentageOfExternalPositiveEdges;
-		imbalancedClusterList.push_back(Coordinate(ki, ki, imbalancePercentage));
+		//imbalancedClusterList.push_back(Coordinate(ki, globalClustering.getClusterSize(ki), imbalancePercentage));
+		// WHEN MOVING CLUSTERS BETWEEN PROCESSES, ORDERING BY CLUSTER IMBALANCE,
+		// THE USE OF ABSOLUTE IMBALANCE VALUES (BELOW) YIELDS BETTER RESULTS THAN PERCENTUAL IMBALANCE (ABOVE)
+		imbalancedClusterList.push_back(Coordinate(ki, globalClustering.getClusterSize(ki), imbalance));
 	}
 	return imbalancedClusterList;
 }
@@ -890,7 +894,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 		// finds out to which process the cluster belongs to
 		int currentProcess = splitgraphClusterArray[listOfModifiedVertices[0]];
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Move " << nic << ": Moving global cluster " << clusterToMove << " of size " <<
-				bestClustering.getClusterSize(clusterToMove) << " and percImbalance = " << clusterImbalanceList[nc - nic - 1].value << "%.";
+				bestClustering.getClusterSize(clusterToMove) << " and imbalance = " << clusterImbalanceList[nc - nic - 1].value << ".";
 
 		// TODO PENSAR EM UMA HEURISTICA PARA ESCOLHER O PROCESSO DE DESTINO DO CLUSTER C COM MAIOR IMBALANCE
 		// OU ENTAO TENTAR MOVER O CLUSTER C PARA QUALQUER OUTRO PROCESSO (ITERAR)
@@ -958,7 +962,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	int r = 1, iteration = 0, l = 2;
 	double timeSpentOnLocalSearch = 0.0;
 	long improvedOnVND = 0;
-	BOOST_LOG_TRIVIAL(debug)<< "[Splitgraph] Global VND local search (neighborhood " << r << ") ...";
+	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search (neighborhood " << r << ") ...";
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
@@ -998,7 +1002,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		timeSpentOnLocalSearch += (end_time.wall - start_time.wall)
 				/ double(1000000000);
 	}
-	BOOST_LOG_TRIVIAL(debug)<< "[Splitgraph] Global VND local search done. Obj = " << bestClustering.getImbalance().getValue() <<
+	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search done. Obj = " << bestClustering.getImbalance().getValue() <<
 			". Time spent: " << timeSpentOnLocalSearch << " s.";
 	return improvedOnVND;
 }
