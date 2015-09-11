@@ -386,6 +386,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 	}
 	// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
+	BOOST_LOG_TRIVIAL(info) << "[Master process] Creating subgraph";
 	CUDAILS cudails;
 	SignedGraph sg(g->graph, verticesInCluster[0]);
 	// sg.graph = (g->graph).create_subgraph(verticesInCluster[0].begin(), verticesInCluster[0].end());
@@ -395,7 +396,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		add_vertex(*it, sg.graph);
 		// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << k;
 	} */
-	BOOST_LOG_TRIVIAL(debug) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
+	BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
 
 	// rebuilds construct clustering objects based on partial graph 'sg'
 	GainFunctionFactory functionFactory(&sg);
@@ -809,6 +810,7 @@ bool ImbalanceSubgraphParallelILS::moveVertex1opt(SignedGraph* g, Clustering& be
 			ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
 			for(int px = 0; px < numberOfProcesses; px++) {
 				if(px != currentProcess) {
+					BOOST_LOG_TRIVIAL(info) << "Trying to move vertex " << v << " to process " << px;
 					// Realiza a movimentacao de um vertice (vertex 1-opt move)
 					tempSplitgraphClusterArray[v] = px;
 					std::vector<long> listOfModifiedVertices;
@@ -819,6 +821,7 @@ bool ImbalanceSubgraphParallelILS::moveVertex1opt(SignedGraph* g, Clustering& be
 					// Realiza o calculo do delta da matriz de imbalance entre processos
 					updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
 							listOfModifiedVertices, tempProcessClusterImbMatrix);
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
 					// Valida se a matriz incremental e a full sao iguais
 					//bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix2.pos, 0.001, 0.1);
 					//bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix2.neg, 0.001, 0.1);
@@ -913,6 +916,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 				// Realiza o calculo do delta da matriz de imbalance entre processos
 				updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
 						listOfModifiedVertices, tempProcessClusterImbMatrix);
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
 				// Valida se a matriz incremental e a full sao iguais
 				//bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix2.pos, 0.001, 0.1);
 				//bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix2.neg, 0.001, 0.1);
