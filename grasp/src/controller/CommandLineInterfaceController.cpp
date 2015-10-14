@@ -34,6 +34,7 @@
 #include "../resolution/construction/include/CUDAConstructClustering.h"
 #include "../resolution/construction/include/CUDAImbalanceGainFunction.h"
 #include "../resolution/ils/include/CUDAILS.h"
+#include "../test/controller/include/TestController.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -386,12 +387,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	// int iterMaxILS = 5, perturbationLevelMax = 3; // for UNGA instances
 	bool splitGraph = false;
 	bool cuda = true;
+	bool test = false;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
 		("help", "show program options")
 		("split", po::value<bool>(&splitGraph)->default_value(false), "Enable graph partitioning when solving in parallel (requires slaves > 0)")
 		("cuda", po::value<bool>(&cuda)->default_value(true), "Enable CUDA local search (requires NVIDIA GPU)")
+		("test", po::value<bool>(&test)->default_value(false), "Enable test suite execution (for development purpose only)")
 		("alpha,a", po::value<string>(&s_alpha),
 			  "alpha - randomness factor of constructive phase")
 		("iterations,iter", po::value<int>(&numberOfIterations)->default_value(400),
@@ -603,23 +606,33 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				}
 			}
 
-			// -------------------  G R A P H     F I L E S     P R O C E S S I N G -------------------------
-			for(unsigned int i = 0; i < fileList.size(); i++) {
-				fs::path filePath = fileList.at(i);
-
-				if(not profile) { // default mode: use specified parameters
-					BOOST_LOG_TRIVIAL(info) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
-					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
-							numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda);
+			if(test) {
+				BOOST_LOG_TRIVIAL(info) << "TEST SUITE EXECUTION IS ENABLED.";
+				TestController testCtl;
+				if(testCtl.runTestSuite()) {
+					BOOST_LOG_TRIVIAL(info) << "TEST SUITE EXECUTION SUCCESSFUL.";
 				} else {
-					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
-					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
-						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
+					BOOST_LOG_TRIVIAL(info) << "TEST SUITE EXECUTION FAILED!";
+				}
+			} else {
+				// -------------------  G R A P H     F I L E S     P R O C E S S I N G -------------------------
+				for(unsigned int i = 0; i < fileList.size(); i++) {
+					fs::path filePath = fileList.at(i);
+
+					if(not profile) { // default mode: use specified parameters
+						BOOST_LOG_TRIVIAL(info) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
+						BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
+						processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
 								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda);
+					} else {
+						BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
+						for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
+							BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
+							processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
+									numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
+									myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda);
+						}
 					}
 				}
 			}
