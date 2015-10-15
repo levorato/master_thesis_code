@@ -136,6 +136,88 @@ TestController::~TestController() {
 	// TODO Auto-generated destructor stub
 }
 
+void TestController::testSubgraphCreationUndirectedGraph(string executionId, unsigned long seed) {
+
+	// Application Parameters:
+	// -l 1 --iter=1 --alpha=1.0
+	// --input-file "/home/mlevorato/mestrado-cuda/mestrado/grasp/tests/Instances/Social Media/slashdot-undirected/part0/bigger/slashdot-undirected-size10000-part0.g"
+	// --output-folder "../output/cuda-ils/sdot-split-8p-l1-i1-vpartition" --gain-function-type=0 --time-limit=1800
+	// --rcc=false --strategy ILS --split=true
+	mpi::communicator world;
+	int np = world.size();
+	int myRank = 0;
+	int numberOfIterations = 1, l = 1;
+	double alpha = 1.0;
+	long k = 0;
+	bool debug = false, profile = false, firstImprovementOnOneNeig = true, CCEnabled = true, RCCEnabled = false;
+	string inputFileDir;
+	string outputFolder("../output/test-suite/testSubgraphCreationUndirectedGraph");
+	int timeLimit = 1800;
+	int functionType = GainFunction::IMBALANCE;
+	int numberOfMasters = np - 1;
+	int totalNumberOfVNDSlaves = 0;
+	string jobid;
+	TestController::StategyName strategy = TestController::ILS;
+	TestController::SearchName searchType = TestController::SEQUENTIAL_SEARCH;
+	int iterMaxILS = 5, perturbationLevelMax = 30;  // for Slashdot and completely Random instances
+	bool splitGraph = true;
+	bool cuda = true;
+	// fs::path filePath("/home/mlevorato/mestrado-cuda/mestrado/grasp/tests/Instances/Social Media/slashdot-undirected/part0/bigger/slashdot-undirected-size10000-part0.g");
+	fs::path filePath("/home/mlevorato/mestrado-cuda/mestrado/grasp/tests/Instances/Social Media/directed/slashdot.g");
+
+	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
+		// Reads the graph from the specified text file
+		UndirectedGraph g = readGraphFromFile(filePath.string());
+		string fileId = filePath.filename().string();
+		boost::timer::cpu_timer timer;
+		boost::timer::cpu_times start_time, end_time;
+		double timeSpent = 0.0;
+		string filename;
+
+		// Divides the set of vertices V (size = n) into 'np' random subsets of the same size
+		BOOST_LOG_TRIVIAL(info) << "Partitioning vertices...";
+		std::vector<long> vertexList;
+		long n = num_vertices(g);
+		for(long i = 0; i < n; i++) {
+			vertexList.push_back(i);
+		}
+		// using built-in random generator
+		std::random_shuffle(vertexList.begin(), vertexList.end());
+		long desiredCardinality = long(floor(n / (double)np));
+		BOOST_LOG_TRIVIAL(info) << "Desired cardinality of each partition is " << desiredCardinality << " vertices.";
+		std::vector< std::vector< long > > verticesInCluster(np, std::vector< long >());
+		for(long i = 0, k = 0; i < n; i++) {
+			verticesInCluster[k].push_back(vertexList[i]);
+			if((((i + 1) % desiredCardinality) == 0) and (k < np - 1)) {  k++;  }
+		}
+		BOOST_LOG_TRIVIAL(info) << "Cardinality of last partition is " << verticesInCluster[np - 1].size() << " vertices.";
+		BOOST_LOG_TRIVIAL(info) << "Full graph data: n =  " << num_vertices(g) << ", " << "e =  " << num_edges(g);
+		BOOST_LOG_TRIVIAL(info) << "[Master process] Creating undirected subgraphs...";
+
+		for(long k = 0; k < np; k++) {
+			// time measure of subgraph creation
+			timer.start();
+			start_time = timer.elapsed();
+
+			// SignedGraph sg(g->graph, verticesInCluster[k]);
+			UndirectedGraph& sg = g.create_subgraph(verticesInCluster[k].begin(), verticesInCluster[k].end());
+			BOOST_LOG_TRIVIAL(info) << "Created subgraph " << k << " with n =  " << num_vertices(sg) << ", " << "e =  " << num_edges(sg);
+
+			// Stops the timer and stores the elapsed time
+			timer.stop();
+			end_time = timer.elapsed();
+			timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+			BOOST_LOG_TRIVIAL(info) << "Time spent: " << std::fixed << std::setprecision(2) << timeSpent << " s";
+		}
+
+
+	} else {
+		BOOST_LOG_TRIVIAL(fatal) << "Invalid file: '" << filePath.string() << "'. Try again." << endl;
+	}
+
+
+}
+
 void TestController::testSubgraphCreationPerformance(string executionId, unsigned long seed) {
 
 	// Application Parameters:
@@ -214,7 +296,7 @@ void TestController::testSubgraphCreationPerformance(string executionId, unsigne
 			if((((i + 1) % desiredCardinality) == 0) and (k < np - 1)) {  k++;  }
 		}
 		BOOST_LOG_TRIVIAL(info) << "Cardinality of last partition is " << verticesInCluster[np - 1].size() << " vertices.";
-
+		BOOST_LOG_TRIVIAL(info) << "Full graph data: n =  " << num_vertices(g->graph) << ", " << "e =  " << num_edges(g->graph);
 		BOOST_LOG_TRIVIAL(info) << "[Master process] Creating subgraphs...";
 
 		for(long k = 0; k < np; k++) {
@@ -396,6 +478,7 @@ int TestController::runTestSuite() {
 
 	try {
 		// TEST INVOCATIONS GO HERE
+		this->testSubgraphCreationUndirectedGraph(executionId, seed);
 		this->testSubgraphCreationPerformance(executionId, seed);
 
 		BOOST_LOG_TRIVIAL(info) << "Test suite execution done.";
@@ -424,6 +507,203 @@ void TestController::handler()
     	BOOST_LOG_TRIVIAL(fatal) << stack_syms[i] << "\n";
     }
     free( stack_syms );
+}
+
+UndirectedGraph TestController::readGraphFromString(const string& graphContents) {
+	typedef tokenizer< escaped_list_separator<char> > Tokenizer;
+	int n = 0, e = 0;
+	// defines the format of the input file
+	int formatType = 0;
+	std::vector< string > lines;
+
+	// captura a primeira linha do arquivo contendo as informacoes
+	// de numero de vertices e arestas do grafo
+	char_separator<char> sep("\r\n");
+	char_separator<char> sep2(" \t");
+	tokenizer< char_separator<char> > tokens(graphContents, sep);
+	lines.assign(tokens.begin(),tokens.end());
+
+	try {
+		string line = lines.at(0);
+		lines.erase(lines.begin());
+		trim(line);
+		BOOST_LOG_TRIVIAL(trace) << "Line: " << line << endl;
+
+		if(line.find("people") != string::npos) {  // xpress files
+			BOOST_LOG_TRIVIAL(trace) << "Format type is 0" << endl;
+			string firstLine = lines.at(0);
+			string number = line.substr(line.find("people:") + 7);
+			trim(number);
+			n = boost::lexical_cast<int>(number);
+			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
+			formatType = 0;
+		} else if(line.find("Vertices") != string::npos) {
+			BOOST_LOG_TRIVIAL(trace) << "Format type is 1" << endl;
+			string number = line.substr(line.find("Vertices") + 8);
+			trim(number);
+			n = boost::lexical_cast<int>(number);
+			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
+			while(lines.at(0).find("Arcs") == string::npos && lines.at(0).find("Edges") == string::npos) {
+				lines.erase(lines.begin());
+			}
+			lines.erase(lines.begin());
+			formatType = 1;
+		} else {
+			tokenizer< char_separator<char> > tokens2(line, sep2);
+			std::vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
+			n = boost::lexical_cast<int>(vec.at(0));
+			if(vec.size() == 1) { // .dat files
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 3" << endl;
+				formatType = 3;
+			} else {
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 2" << endl;
+				e = boost::lexical_cast<int>(vec.at(1));
+				formatType = 2;
+			}
+		}
+	} catch( boost::bad_lexical_cast const& e ) {
+	    std::cerr << "Error: input string was not valid" << std::endl;
+	    cerr << e.what() << "\n";
+	    BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+	}
+
+	UndirectedGraph g(n);
+	BOOST_LOG_TRIVIAL(debug) << "Successfully created undirected signed graph with " << n << " vertices." << std::endl;
+
+	// captura as arestas do grafo com seus valores
+	if(formatType == 2 || formatType == 1) {
+		long imbalance = 0;
+		while (not lines.empty()) {
+			string line = lines.back();
+			trim(line);
+			lines.pop_back();
+			tokenizer< char_separator<char> > tokens2(line, sep2);
+			std::vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
+
+			if (vec.size() < 3) continue;
+			//if(vec.at(2).rfind('\n') != string::npos)
+			// BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+
+			try {
+				int a = boost::lexical_cast<int>(vec.at(0));
+				int b = boost::lexical_cast<int>(vec.at(1));
+				double value = 0.0;
+				if(vec.at(2) != "*") {
+					sscanf(vec.at(2).c_str(), "%lf", &value);
+					if(formatType == 2) {
+						// vertex number must be in the interval 0 <= i < n
+						if(a >= n or b >= n) {
+							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+							cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+						}
+						add_edge(a, b, value, g);
+						// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
+					} else {
+						if(a > n or b > n) {
+							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+							cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+						}
+						add_edge(a - 1, b - 1, value, g);
+						// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+					}
+				} else {  // special notation for directed edges (add 1 to imbalance)
+					imbalance++;
+				}
+			} catch( boost::bad_lexical_cast const& ) {
+				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+			}
+
+		}
+	} else if(formatType == 0) {  // xpress files
+		char_separator<char> sep3(" (),\t\r\n[]");
+		string temp = graphContents.substr(graphContents.find("Mrel:") + 5);
+		tokenizer< char_separator<char> > tokens2(temp, sep3);
+		std::vector<string> vec2;
+		vec2.assign(tokens2.begin(),tokens2.end());
+		while(vec2.at(0).length() == 0) {
+			vec2.erase(vec2.begin());
+		}
+		while(vec2.back().length() == 0) {
+			vec2.pop_back();
+		}
+
+		int size = vec2.size();
+		if (size % 3 != 0) {
+			BOOST_LOG_TRIVIAL(fatal) << "Error: invalid XPRESS file format!" << std::endl;
+		}
+		for(int i = 0; i + 2 < size; i = i + 3) {
+			try {
+				// std::cout << "Processing line " << vec2.at(i) << " " << vec2.at(i+1) << " " << vec2.at(i+2) << std::endl;
+				int a = boost::lexical_cast<int>(vec2.at(i));
+				int b = boost::lexical_cast<int>(vec2.at(i + 1));
+				double value = 0.0;
+				sscanf(vec2.at(i + 2).c_str(), "%lf", &value);
+				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+
+				if(a > n or b > n) {
+					BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+					cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+				}
+				add_edge(a - 1, b - 1, value, g);
+				// g->addEdge(b - 1, a - 1, value);
+			} catch( boost::bad_lexical_cast const& ) {
+				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+			}
+		}
+	} else {  // formatType == 3, .dat files
+		char_separator<char> sep3(" \t");
+		unsigned int a = 0;
+		while (not lines.empty()) {
+			string line = lines.back();
+			trim(line);
+			lines.pop_back();
+			tokenizer< char_separator<char> > tokens2(line, sep3);
+			std::vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
+			// cout << "Line is: " << line << " vec.size = " << vec.size() << endl;
+
+			for(unsigned int b = 0; b < vec.size(); b++) {
+				try {
+					double value = 0.0;
+	                sscanf(vec.at(b).c_str(), "%lf", &value);
+					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+					// the following is to avoid duplicate couting of arcs in the objective function
+	                if(a >= n or b >= n) {
+						BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+						cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+					}
+	                add_edge(a, b, value, g);
+				} catch( boost::bad_lexical_cast const& ) {
+					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+				}
+			}
+			a++;
+		}
+	}
+	// g->printGraph();
+	BOOST_LOG_TRIVIAL(info) << "Successfully read graph file.";
+
+	return g;
+}
+
+UndirectedGraph TestController::readGraphFromFile(const string& filepath) {
+	BOOST_LOG_TRIVIAL(info) << "Reading input file: '" << filepath << "' ...";
+	return readGraphFromString(get_file_contents(filepath.c_str()));
+}
+
+std::string TestController::get_file_contents(const char *filename)
+{
+  std::ifstream in(filename, std::ios::in | std::ios::binary);
+  if (in)
+  {
+    std::ostringstream contents;
+    contents << in.rdbuf();
+    in.close();
+    return(contents.str());
+  }
+  throw(errno);
 }
 
 } // namespace controller
