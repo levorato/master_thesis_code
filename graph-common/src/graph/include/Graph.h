@@ -58,10 +58,10 @@ typedef property< edge_properties_t, Edge, property< edge_index_t, std::size_t >
 // typedef property<vertex_index_t, Vertex> vertex_prop;
 // typedef property<edge_index_t, Edge> edge_prop;
 
-typedef adjacency_list< vecS, vecS, bidirectionalS, VertexProperty,
-		EdgeProperty, no_property, vecS > DGraph;
-typedef subgraph< DGraph > SubGraph;
-typedef subgraph< DGraph > DirectedGraph;
+typedef adjacency_list< setS, vecS, undirectedS, VertexProperty,
+		EdgeProperty, no_property, vecS > UDGraph;
+typedef subgraph< UDGraph > SubGraph;
+typedef subgraph< UDGraph > UndirectedGraph;
 
 /**
  *  uses dynamic_bitset for bool array, a high performance and space saving structure
@@ -85,7 +85,7 @@ public:
 	 * Builds a subgraph based on the graph g provided as parameter, induced by the
 	 * vertex node list subGraphNodeList.
 	 */
-	SignedGraph(DirectedGraph &g, std::vector<long> subGraphNodeList);
+	SignedGraph(UndirectedGraph &g, std::vector<long> subGraphNodeList);
 	virtual ~SignedGraph();
 
 	/**
@@ -178,7 +178,7 @@ public:
 	string convertToGraclusInputFormat();
 
 
-	DirectedGraph graph;
+	UndirectedGraph graph;
 
 private:
 

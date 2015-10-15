@@ -63,14 +63,14 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 
 	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation.";
 	// c.printClustering();
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 
 	// For each vertex i
 	for (int i = 0; i < n; i++) {
 		long ki = myCluster[i];
 		assert(ki < nc);
-		DirectedGraph::out_edge_iterator f, l;
-		DirectedGraph::edge_descriptor e;
+		UndirectedGraph::out_edge_iterator f, l;
+		UndirectedGraph::edge_descriptor e;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			e = *f;
@@ -161,9 +161,9 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g,
 	assert(ki < nc);
 	// gets vertex i's new cluster is k
 
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
-	DirectedGraph::out_edge_iterator f, l;
-	DirectedGraph::edge_descriptor e;
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	UndirectedGraph::out_edge_iterator f, l;
+	UndirectedGraph::edge_descriptor e;
 	// For each out edge of i => edge (i, j)
 	for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 		e = *f;
@@ -196,42 +196,6 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g,
 			}
 		}
 	}
-	DirectedGraph::in_edge_iterator f2, l2;
-	// For each in edge of i => edge (j, i)
-
-	for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {
-		e = *f2;
-		double weight = ew[e].weight;
-		Vertex src = source(*f2, g.graph), targ = target(*f2, g.graph);
-		int j = src.id;
-		long kj = myCluster[j];
-		// ignores edge loops
-		if (i == j)
-			continue;
-		assert(i == targ.id);
-
-		// vertex i is being moved to cluster k
-		// if applicable, adds the values corresponding to vertex i in its new currentCluster (k)
-		bool sameCluster = (kj == k);
-		// INTERNAL AND EXTERNAL SUM RECALCULATION - STEP 2 (ADDITION) -----------------
-		if (sameCluster) {
-			if (weight > 0) { // positive edge
-				c.positiveSum(ki, ki) += weight;
-			} else { // negative edge
-				c.negativeSum(ki, ki) += fabs(weight);
-			}
-		} else {
-			// treats the cases where not all vertices are in the clusters (e.g. construct clustering)
-			if (kj < nc and kj != Clustering::NO_CLUSTER) {
-				if (weight > 0) { // positive edge
-					c.positiveSum(kj, ki) += weight;
-				} else { // negative edge
-					c.negativeSum(kj, ki) += fabs(weight);
-				}
-			}
-		}
-	}
-
 	// recalculates the imbalance based on the matrices
 	double internalSum = 0.0, externalSum = 0.0;
 	for (unsigned long k1 = 0; k1 < nc; k1++) {
@@ -266,9 +230,9 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g,
 	unsigned long ki = myCluster[i];
 	assert(ki < nc);
 
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
-	DirectedGraph::out_edge_iterator f, l;
-	DirectedGraph::edge_descriptor e;
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	UndirectedGraph::out_edge_iterator f, l;
+	UndirectedGraph::edge_descriptor e;
 	// For each out edge of i => edge (i, j)
 	for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 		e = *f;
@@ -296,39 +260,6 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g,
 				c.positiveSum(ki, kj) -= weight;
 			} else { // negative edge
 				c.negativeSum(ki, kj) -= fabs(weight);
-			}
-		}
-	}
-	// For each in edge of i => edge (j, i)
-
-	DirectedGraph::in_edge_iterator f2, l2;
-	for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {
-		e = *f2;
-		double weight = ew[e].weight;
-		Vertex src = source(*f2, g.graph), targ = target(*f2, g.graph);
-		int j = src.id;
-		long kj = myCluster[j];
-		// ignores edge loops
-		if (i == j)
-			continue;
-		assert(i == targ.id);
-		// INTERNAL AND EXTERNAL SUM RECALCULATION - STEP 1 (SUBTRACTION) -----------------
-		// if applicable, subtracts the values corresponding to vertex i in its current currentCluster (ki)
-		bool sameCluster = (kj == k);
-		if (sameCluster) {
-			if (weight > 0) { // positive edge
-				c.positiveSum(ki, ki) -= weight;
-			} else { // negative edge
-				c.negativeSum(ki, ki) -= fabs(weight);
-			}
-		} else {
-			// Find out to which cluster vertex j belongs
-			unsigned long kj = myCluster[j];
-			assert(kj < nc and kj != Clustering::NO_CLUSTER);
-			if (weight > 0) { // positive edge
-				c.positiveSum(kj, ki) -= weight;
-			} else { // negative edge
-				c.negativeSum(kj, ki) -= fabs(weight);
 			}
 		}
 	}
@@ -408,7 +339,7 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	c.negativeSum.assign(zero_matrix<double>(nc, nc));
 	// Cluster to cluster matrix containing positive / negative contribution to imbalance
 	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 
 	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] Starting imbalance analysis.";
 	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
@@ -420,8 +351,8 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	for (int i = 0; i < n; i++) {
 		long ki = myCluster[i];
 		assert(ki < nc);
-		DirectedGraph::out_edge_iterator f, l;
-		DirectedGraph::edge_descriptor e;
+		UndirectedGraph::out_edge_iterator f, l;
+		UndirectedGraph::edge_descriptor e;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			e = *f;
@@ -551,13 +482,13 @@ list<EdgeContribution> RCCProblem::computeEdges(SignedGraph& g, Clustering& c, i
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
 	list<EdgeContribution> edgeList;
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 
 	// For each vertex i in cluster c1
 	for (int i = 0; i < n; i++) {
 		if(myCluster[i] == c1) {
-			DirectedGraph::out_edge_iterator f, l;
-			DirectedGraph::edge_descriptor e;
+			UndirectedGraph::out_edge_iterator f, l;
+			UndirectedGraph::edge_descriptor e;
 			// For each out edge of i
 			for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 				e = *f;
