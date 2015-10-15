@@ -102,10 +102,10 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	thrust::host_vector<uint> h_neighbor_cluster(n * (nc+1), 0);
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
-	DirectedGraph::edge_descriptor e;
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	UndirectedGraph::edge_descriptor e;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
-		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
+		UndirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		h_offset[i] = offset;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
@@ -122,23 +122,6 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 				h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
 			} else {
 				h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
-			}
-		}
-		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
-		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			e = *f2;
-			double weight = ew[e].weight;
-			int j = source(*f2, g->graph);
-			h_dest[edge] = j;
-			h_weights[edge] = weight;
-			count++; edge++;
-			if(myCluster[i] != myCluster[j]) {  // different cluster
-				h_neighbor_cluster[i+myCluster[j]*n] = 1;
-			}
-			if(weight > 0) {
-					h_VertexClusterPosSum[myCluster[j] * n + i] += fabs(weight);
-			} else {
-					h_VertexClusterNegSum[myCluster[j] * n + i] += fabs(weight);
 			}
 		}
 		h_numedges[i] = count;
@@ -185,7 +168,7 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 	}
 	i = 0, offset = 0;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
-		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
+		UndirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
 			e = *f;
@@ -196,18 +179,6 @@ Clustering CUDAVariableNeighborhoodDescent::localSearch(SignedGraph *g, Clusteri
 				h_VertexClusterPosSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
 			} else {
 				h_VertexClusterNegSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
-			}
-		}
-		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
-		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			e = *f2;
-			double weight = ew[e].weight;
-			int j = source(*f2, g->graph);
-			count++; edge++;
-			if(weight > 0) {
-					h_VertexClusterPosSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
-			} else {
-					h_VertexClusterNegSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
 			}
 		}
 		offset += count;

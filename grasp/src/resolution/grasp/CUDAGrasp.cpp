@@ -75,27 +75,18 @@ Clustering CUDAGrasp::executeGRASP(ConstructClustering *construct, VariableNeigh
 	thrust::host_vector<int> h_dest(2 * m);  // edge destination (vertex j)
 	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
 	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
-	DirectedGraph::edge_descriptor e;
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	UndirectedGraph::edge_descriptor e;
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
-		DirectedGraph::out_edge_iterator f, l;  // For each out edge of i
+		UndirectedGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		h_offset[i] = offset;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
 			e = *f;
 			double weight = ew[e].weight;
 			int j = target(*f, g->graph);
-			h_dest[edge] = j;
-			h_weights[edge] = weight;
-			count++; edge++;
-		}
-		DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
-		for (boost::tie(f2, l2) = in_edges(i, g->graph); f2 != l2; ++f2) {  // in edges of i
-			e = *f2;
-			double weight = ew[e].weight;
-			int j = source(*f2, g->graph);
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;

@@ -99,28 +99,16 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		BOOST_LOG_TRIVIAL(debug)<< "n = " << n << ", nc = " << nc;
 		h_VertexClusterPosSum = zero_matrix<double>(n, (nc + 1));
 		h_VertexClusterNegSum = zero_matrix<double>(n, (nc + 1));
-		boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph->graph);
-		DirectedGraph::edge_descriptor e;
+		boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph->graph);
+		UndirectedGraph::edge_descriptor e;
 
 		for(int i = 0; i < n; i++) {  // for each vertex i
-			DirectedGraph::out_edge_iterator f, l;
+			UndirectedGraph::out_edge_iterator f, l;
 			// For each out edge of i
 			for (boost::tie(f, l) = out_edges(i, graph->graph); f != l; ++f) {
 				int j = target(*f, graph->graph);
 				e = *f;
 				double weight = ew[e].weight;
-				if(weight > 0) {
-					h_VertexClusterPosSum(i, myCluster[j]) += fabs(weight);
-				} else {
-					h_VertexClusterNegSum(i, myCluster[j]) += fabs(weight);
-				}
-			}
-			// iterates over in-edges of vertex i
-			DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of i
-			for (boost::tie(f2, l2) = in_edges(i, graph->graph); f2 != l2; ++f2) {  // in edges of i
-				e = *f2;
-				double weight = ew[e].weight;
-				int j = source(*f2, graph->graph);
 				if(weight > 0) {
 					h_VertexClusterPosSum(i, myCluster[j]) += fabs(weight);
 				} else {
@@ -187,28 +175,14 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		}
 		k1 = new_nc;
 	}
-	DirectedGraph::out_edge_iterator f, l;
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph->graph);
-	DirectedGraph::edge_descriptor e;
+	UndirectedGraph::out_edge_iterator f, l;
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph->graph);
+	UndirectedGraph::edge_descriptor e;
 	// For each out edge of v
 	for (boost::tie(f, l) = out_edges(v, graph->graph); f != l; ++f) {
 		int j = target(*f, graph->graph);
 		e = *f;
 		double weight = ew[e].weight;
-		if(weight > 0) {
-			h_VertexClusterPosSum(j, k1) -= fabs(weight);
-			h_VertexClusterPosSum(j, k2) += fabs(weight);
-		} else {
-			h_VertexClusterNegSum(j, k1) -= fabs(weight);
-			h_VertexClusterNegSum(j, k2) += fabs(weight);
-		}
-	}
-	// iterates over in-edges of vertex v
-	DirectedGraph::in_edge_iterator f2, l2;  // For each in edge of v
-	for (boost::tie(f2, l2) = in_edges(v, graph->graph); f2 != l2; ++f2) {  // in edges of v
-		e = *f2;
-		double weight = ew[e].weight;
-		int j = source(*f2, graph->graph);
 		if(weight > 0) {
 			h_VertexClusterPosSum(j, k1) -= fabs(weight);
 			h_VertexClusterPosSum(j, k2) += fabs(weight);

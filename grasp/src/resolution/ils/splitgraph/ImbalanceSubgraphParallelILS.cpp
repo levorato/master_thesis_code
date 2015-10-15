@@ -513,16 +513,16 @@ ImbalanceMatrix ImbalanceSubgraphParallelILS::calculateProcessToProcessImbalance
 
 	long nc = numberOfSlaves + 1;
 	long n = g.getN();
-	DirectedGraph::edge_descriptor e;
+	UndirectedGraph::edge_descriptor e;
 	// Process to process matrix containing positive / negative contribution to imbalance
 	ImbalanceMatrix clusterImbMatrix(nc);
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 	// Vector containing each vertex contribution to imbalance: vertexImbalance
 
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = myCluster[i];
-		DirectedGraph::out_edge_iterator f, l;
+		UndirectedGraph::out_edge_iterator f, l;
 		double positiveSum = double(0.0), negativeSum = double(0.0);
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
@@ -552,15 +552,15 @@ void ImbalanceSubgraphParallelILS::updateProcessToProcessImbalanceMatrix(SignedG
 
 	long nc = numberOfSlaves + 1;
 	long n = g.getN();
-	DirectedGraph::edge_descriptor e;
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	UndirectedGraph::edge_descriptor e;
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 
 	// For each vertex i in listOfModifiedVertices
 	for(long item = 0; item < listOfModifiedVertices.size(); item++) {
 		long i = listOfModifiedVertices[item];
 		long old_ki = previousSplitgraphClusterArray[i];
 		long new_ki = newSplitgraphClusterArray[i];
-		DirectedGraph::out_edge_iterator f, l;
+		UndirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			e = *f;
@@ -586,34 +586,6 @@ void ImbalanceSubgraphParallelILS::updateProcessToProcessImbalanceMatrix(SignedG
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
 				processClusterImbMatrix.pos(new_ki, new_kj) += fabs(weight);
-			}
-		}
-		// For each in edge of i
-		DirectedGraph::in_edge_iterator f2, l2;
-		for (boost::tie(f2, l2) = in_edges(i, g.graph); f2 != l2; ++f2) {  // in edges of i
-			e= *f2;
-			double weight = ew[e].weight;
-			int j = source(*f2, g.graph);
-			// Etapa 1: subtracao dos imbalances antigos
-			long old_kj = previousSplitgraphClusterArray[j];
-			bool sameCluster = (old_kj == old_ki);
-			// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
-			if(weight < 0 and sameCluster) {  // negative edge
-				// i and j were in the same cluster
-				processClusterImbMatrix.neg(old_kj, old_ki) -= fabs(weight);
-			} else if(weight > 0 and (not sameCluster)) {  // positive edge
-				// i and j were NOT in the same cluster
-				processClusterImbMatrix.pos(old_kj, old_ki) -= fabs(weight);
-			}
-			// Etapa 2: acrescimo dos novos imbalances
-			long new_kj = newSplitgraphClusterArray[j];
-			sameCluster = (new_kj == new_ki);
-			if(weight < 0 and sameCluster) {  // negative edge
-				// i and j are now in the same cluster
-				processClusterImbMatrix.neg(new_kj, new_ki) += fabs(weight);
-			} else if(weight > 0 and (not sameCluster)) {  // positive edge
-				// i and j are NOT in the same cluster
-				processClusterImbMatrix.pos(new_kj, new_ki) += fabs(weight);
 			}
 		}
 		// NAO EH NECESSARIO ATUALIZAR O VERTEX IMBALANCE ABAIXO, POIS A BUSCA LOCAL (VND) EH FIRST IMPROVEMENT
@@ -653,15 +625,15 @@ long ImbalanceSubgraphParallelILS::findMostImbalancedVertexInProcessPair(SignedG
 		ClusterArray& splitGraphCluster, ClusterArray& globalCluster, Coordinate processPair) {
 
 	long n = g.getN();
-	DirectedGraph::edge_descriptor e;
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	UndirectedGraph::edge_descriptor e;
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 	double maxImbalance = -DBL_MAX;
 	long maxVertex = 0;
 
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = globalCluster[i];
-		DirectedGraph::out_edge_iterator f, l;
+		UndirectedGraph::out_edge_iterator f, l;
 		double positiveSum = double(0.0), negativeSum = double(0.0);
 		// only processes vertexes belonging to the process pair
 		if((splitGraphCluster[i] == processPair.x) or (splitGraphCluster[i] == processPair.y)) {
@@ -697,18 +669,18 @@ std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfImbalancedClus
 		ClusterArray& splitGraphCluster, Clustering& globalClustering) {
 
 	long n = g.getN();
-	DirectedGraph::edge_descriptor e;
+	UndirectedGraph::edge_descriptor e;
 	// Cluster to cluster matrix containing positive / negative contribution to imbalance
 	long nc = globalClustering.getNumberOfClusters();
 	ClusterArray globalCluster = globalClustering.getClusterArray();
 	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
 	matrix<double> clusterEdgeSumMatrix = zero_matrix<double>(nc, nc);
-	boost::property_map<DirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = globalCluster[i];
-		DirectedGraph::out_edge_iterator f, l;
+		UndirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			e = *f;
