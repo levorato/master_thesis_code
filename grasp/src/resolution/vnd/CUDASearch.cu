@@ -304,7 +304,7 @@ using namespace std;
 				vertexClusterNegSumArray[j + k2 * n] += fabs(weight);
 			}
 		}
-
+		/*
 		if(new_nc < nc) {
 			// remove a fileira correspondente ao cluster k1 na matriz de soma, shiftando os dados para a esquerda
 			for(int k = k1 + 1; k <= nc; k++) {
@@ -314,7 +314,7 @@ using namespace std;
 					isNeighborClusterArray[(k - 1) * n + v] = isNeighborClusterArray[(k) * n + v];
 				}
 			}
-		}
+		} */
 	}
 
 	/// CUDA Kernel to update the vertex-cluster edge-weight sum arrays after a change in the clustering.
@@ -393,21 +393,19 @@ using namespace std;
 	/// CUDA Kernel to update the vertex-cluster edge-weight sum arrays after a change in the clustering.
 	__global__ void updateVertexClusterSumArraysDeltaC(const float* weightArray, const long* destArray, const long* numArray,
 			const long* offsetArray, const ulong* clusterArray, float* vertexClusterPosSumArray, float* vertexClusterNegSumArray,
-			int* isNeighborClusterArray, long n, ulong* old_ncArray, ulong* ncArray, int i, int kc) {
+			int* isNeighborClusterArray, long n, ulong* old_ncArray, ulong* ncArray, int i, int k) {
 		uint nc = old_ncArray[0];
 		uint new_nc = ncArray[0];
-		ulong idx = blockIdx.x * blockDim.x + threadIdx.x;
-		int v = idx;
 
-		if(new_nc < nc && v < n) {  // PARALELIZACAO NESTE KERNEL NAO FUNCIONA BEM, CAUSA ERRO NO DELTA DO IMBALANCE!
+		if(new_nc < nc) {  
 			// remove a fileira correspondente ao cluster k1 na matriz de soma, shiftando os dados para a esquerda
-			for(int k = kc + 1; k <= nc; k++) {
+			// for(int k = kc + 1; k <= nc; k++) {
 				for(int v = 0; v < n; v++) {
 					vertexClusterPosSumArray[(k - 1) * n + v] = vertexClusterPosSumArray[(k) * n + v];
 					vertexClusterNegSumArray[(k - 1) * n + v] = vertexClusterNegSumArray[(k) * n + v];
 					isNeighborClusterArray[(k - 1) * n + v] = isNeighborClusterArray[(k) * n + v];
 				}
-			}
+			// }
 		}
 	}
 
@@ -1644,22 +1642,52 @@ using namespace std;
 							vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 							isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 						}
+						if(h_nc[0] < h_old_nc[0]) {
+							printf("Will shrink vectors.\n");
+							printf("Idx = %ld: The best src vertex is %ld from cluster %ld to cluster %ld with I(P) = %.2f\n", resultIdx, bestSrcVertex, sourceCluster, destCluster, min_val);
+							
+						}
 						// , n*sizeof(int)
 						updateVertexClusterSumArraysDelta<<<1, 1>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
 								vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
 						checkCudaErrors(cudaDeviceSynchronize());
+
+						/*  DESATIVADO PELA QUANTIDADE DE TEMPO GASTO - SUBSTITUIDO PELO CALCULO COMPLETO DA MATRIZ, ABAIXO
+						if(h_nc[0] < h_old_nc[0]) {  // new_nc < nc	
+							// 0. Triggers local processing time calculation
+	                                                start_time = timer.elapsed();
+							for(int kx = sourceCluster + 1; kx <= h_nc[0]; kx++) {
+								updateVertexClusterSumArraysDeltaC<<<1, 1>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
+                	                                                vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster);
+                        	                        	checkCudaErrors(cudaDeviceSynchronize());
+							}
+							timer.stop();
+                                			end_time = timer.elapsed();
+			                                double timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+							printf("Time spent on matrix shrinking: %.2f\n", timeSpent);
+                                			timer.resume();
+						} */
 						// CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
 						// h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
 						// CASO ESPECIAL 2: cluster removido
 						if(h_nc[0] < h_old_nc[0]) {
-							// remove uma fileira correpondente a um cluster removido na matriz de soma
-							// BOOST_LOG_TRIVIAL(debug) << "Deleted cluster. Shrinking vectors." << endl;
-							d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
-							d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
-							d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
-							vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
-							vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
-							isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+							// recalculates sum matrices
+			                                d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
+                        			        d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
+                                			d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
+			                                vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
+			                                vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
+			                                isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+			                                long blocksPerGrid = (n + threadsCount - 1) / threadsCount;  // , n*sizeof(int)
+							start_time = timer.elapsed();
+			                                updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray,
+			                                        offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
+			                                checkCudaErrors(cudaDeviceSynchronize());
+							timer.stop();
+                                                        end_time = timer.elapsed();
+                                                        double timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+                                                        printf("Time spent on matrix full recalculation: %.2f\n", timeSpent);
+                                                        timer.resume();
 						}
 						// printf("Preparing new VND loop...\n");
 						if(bestImbalance <= 0)   {  printf("WARNING: I(P) <= 0 !!!\n");  break;  }
