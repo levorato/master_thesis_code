@@ -897,7 +897,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 	ClusterArray globalClusterArray = bestClustering.getClusterArray();
 	std::vector<Coordinate> clusterImbalanceList = obtainListOfImbalancedClusters(*g, splitgraphClusterArray, bestClustering);
 	// sorts the list of imbalanced clusters according to the percentage of imbalance (value)
-	std::sort(clusterImbalanceList.begin(), clusterImbalanceList.end(), coordinate_ordering_asc());
+	std::sort(clusterImbalanceList.begin(), clusterImbalanceList.end(), coordinate_ordering_desc());
 	long numberOfImbalancedClustersToBeMoved = (int)ceil(clusterImbalanceList.size() * PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED);
 	if(numberOfImbalancedClustersToBeMoved == 0) {
 		numberOfImbalancedClustersToBeMoved = 1;
@@ -905,8 +905,9 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 	bool foundBetterSolution = false;
 	long n = g->getN();
 	long nc = bestClustering.getNumberOfClusters();
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] moveCluster1opt";
 	for(long nic = 0; nic < numberOfImbalancedClustersToBeMoved; nic++) {
-		long clusterToMove = clusterImbalanceList[nc - nic - 1].x;
+		long clusterToMove = clusterImbalanceList[nic].x;
 		std::vector<long> listOfModifiedVertices = getListOfVeticesInCluster(*g, bestClustering, clusterToMove);
 		// finds out to which process the cluster belongs to
 		int currentProcess = splitgraphClusterArray[listOfModifiedVertices[0]];
@@ -1034,7 +1035,8 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 					// only makes the swap if the max vertex threshold is respected
 					if (bestSplitgraphClustering.getClusterSize(procDestNum) + listOfMovedVerticesFromProcessA.size()
 							- listOfMovedVerticesFromProcessB.size() < maxVerticesAllowedInProcess) {
-						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to swap global cluster " << clusterToSwapA << " to process " << procDestNum;
+						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to swap global cluster " << clusterToSwapA
+								<< " to process " << procDestNum;
 						ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
 
 						// SWAP Step 1: Move the vertices from a specific cluster from source process (cluster move from A to B)
@@ -1212,13 +1214,14 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	int r = 1, iteration = 0, l = 2;
 	double timeSpentOnLocalSearch = 0.0;
 	long improvedOnVND = 0;
-	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search (neighborhood " << r << ") ...";
+	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search...";
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
+		BOOST_LOG_TRIVIAL(debug)<< "[Splitgraph] Global VND neighborhood " << r << ") ...";
 
 		bool improved = false;
 		if(r == 1) {
