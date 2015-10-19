@@ -183,9 +183,6 @@ private:
 	/** To which process a cluster belongs to (used in splitgraph clustering only) */
 	std::vector<unsigned int> processOrigin;
 
-	void buildClusteringObject(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
-			double positiveImbalance, double negativeImbalance);
-
 	void print(std::ostream& os, ClusterArray& a, unsigned long n);
 
 	// serialization-specific code

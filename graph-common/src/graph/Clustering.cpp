@@ -74,26 +74,9 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 }
 
 Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
-		double positiveImbalance, double negativeImbalance) : clusterArray(cArray),
-		clusterSize(), imbalance(positiveImbalance, negativeImbalance), problemType(p.getType()),
-		positiveSum(), negativeSum(), processOrigin() {
-	buildClusteringObject(cArray, g, p, positiveImbalance, negativeImbalance);
-}
-
-Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
-		double positiveImbalance, double negativeImbalance, std::vector<unsigned int>& clusterProcessOrigin) :
-				clusterArray(g.getN(), NO_CLUSTER), clusterSize(),
-				imbalance(0.0, 0.0), problemType(0), positiveSum(), negativeSum(),
-				processOrigin(clusterProcessOrigin.begin(), clusterProcessOrigin.end()) {
-	buildClusteringObject(cArray, g, p, positiveImbalance, negativeImbalance);
-}
-
-Clustering::~Clustering() {
-	// cout << "Freeing memory of Clustering object..." << endl;
-}
-
-void Clustering::buildClusteringObject(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
-		double positiveImbalance, double negativeImbalance) {
+		double positiveImbalance, double negativeImbalance) : clusterArray(cArray), clusterSize(),
+				imbalance(positiveImbalance, negativeImbalance), problemType(p.getType()),
+				positiveSum(), negativeSum(), processOrigin() {
 	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
 	long numberOfClusters = (*pos) + 1;
 	// cout << "number of clusters = " << numberOfClusters << endl;
@@ -110,6 +93,31 @@ void Clustering::buildClusteringObject(ClusterArray &cArray, SignedGraph& g, Clu
 		processOrigin.push_back(0);
 		// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
 	}
+}
+
+Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
+		double positiveImbalance, double negativeImbalance, std::vector<unsigned int>& clusterProcessOrigin) :
+		clusterArray(cArray), clusterSize(), imbalance(positiveImbalance, negativeImbalance), problemType(p.getType()),
+		positiveSum(), negativeSum(), processOrigin(clusterProcessOrigin.begin(), clusterProcessOrigin.end()) {
+	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
+	long numberOfClusters = (*pos) + 1;
+	// cout << "number of clusters = " << numberOfClusters << endl;
+	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
+
+	long n = g.getN();
+	for(unsigned long i = 0; i < n; i++) {
+		assert(clusterArray[i] < numberOfClusters);
+		clusters[clusterArray[i]].push_back(i);
+	}
+	// compute clusters' size
+	for(long k = 0; k < numberOfClusters; k++) {
+		clusterSize.push_back(clusters[k].size());
+		// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
+	}
+}
+
+Clustering::~Clustering() {
+	// cout << "Freeing memory of Clustering object..." << endl;
 }
 
 unsigned long Clustering::getNumberOfClusters() const {
