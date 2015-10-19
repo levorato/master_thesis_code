@@ -35,6 +35,17 @@ struct coordinate_ordering_asc
     }
 };
 
+struct coordinate_ordering_desc
+{
+    inline bool operator() (const Coordinate& struct1, const Coordinate& struct2)
+    {
+        if(struct1.value == struct2.value) {
+        	return struct1.y > struct2.y;
+        }
+    	return (struct1.value > struct2.value);
+    }
+};
+
 struct VertexDegree {
     long id;
     double positiveDegree;
@@ -91,16 +102,6 @@ public:
 			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
 			ImbalanceMatrix& processClusterImbMatrix);
 
-	Coordinate findMaximumElementInMatrix(ImbalanceMatrix &mat);
-
-	std::vector< Coordinate > getMatrixElementsAsList(ImbalanceMatrix &mat);
-
-	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& splitGraphCluster,
-			ClusterArray& globalCluster, Coordinate processPair);
-
-	std::vector<Coordinate> obtainListOfImbalancedClusters(SignedGraph& g,
-			ClusterArray& splitGraphCluster, Clustering& globalClustering);
-
 	bool moveVertex1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
 			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
@@ -114,6 +115,27 @@ public:
 			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
+
+	/**
+	 * 	swap-cluster: in this neighborhood the priority is swapping a bigger cluster in an overloaded process
+	 * 	with a smaller cluster from a less-loaded process.
+	 */
+	bool swapCluster1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
+				Clustering& bestClustering,
+				const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+				ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+				const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+				ClusteringProblem& problem, ExecutionInfo& info);
+
+	/**
+	 * 2-move-cluster: try to move 2 clusters from an overloaded process to 2 less-loaded processes.
+	 */
+	bool twoMoveCluster(SignedGraph* g, Clustering& bestSplitgraphClustering,
+				Clustering& bestClustering,
+				const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+				ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+				const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+				ClusteringProblem& problem, ExecutionInfo& info);
 
 	long variableNeighborhoodDescent(SignedGraph* g, Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering, const int& numberOfProcesses,
@@ -134,6 +156,28 @@ protected:
 
 	// time spent by each process in each iteration
 	std::vector< std::vector<double> > timeSpentAtIteration;
+
+	Coordinate findMaximumElementInMatrix(ImbalanceMatrix &mat);
+
+	std::vector< Coordinate > getMatrixElementsAsList(ImbalanceMatrix &mat);
+
+	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& splitGraphCluster,
+			ClusterArray& globalCluster, Coordinate processPair);
+
+	std::vector<Coordinate> obtainListOfImbalancedClusters(SignedGraph& g,
+			ClusterArray& splitGraphCluster, Clustering& globalClustering);
+
+	/**
+	 * A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.
+	 */
+	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
+				Clustering& splitGraphClustering);
+
+	std::vector<Coordinate> obtainListOfClustersFromProcess(SignedGraph& g,
+				Clustering& globalClustering, int processNumber);
+
+	std::vector<long> getListOfVeticesInCluster(SignedGraph& g, Clustering& globalClustering,
+			long clusterNumber);
 
 };
 
