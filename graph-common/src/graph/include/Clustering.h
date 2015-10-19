@@ -69,6 +69,14 @@ public:
 	Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
 			double positiveImbalance, double negativeImbalance);
 
+	/**
+	 * Creates a Clustering object based on the clusterArray, cluster process origin and
+	 * objective function supplied.
+	 */
+	Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
+			double positiveImbalance, double negativeImbalance,
+			std::vector<unsigned int>& clusterProcessOrigin);
+
 	virtual ~Clustering();
 
 	/**
@@ -156,6 +164,13 @@ public:
 		return clusterArray;
 	}
 
+	/**
+	 * Return to which process a cluster belongs to (used in splitgraph clustering only).
+	 */
+	const std::vector<unsigned int>& getClusterProcessOrigin() {
+		return processOrigin;
+	}
+
 private:
 	/** the cluster array, with dimension n */
 	ClusterArray clusterArray;
@@ -165,6 +180,11 @@ private:
 	Imbalance imbalance;
 	/** The problem type this clustering refers to (CC, RCC) */
 	int problemType;
+	/** To which process a cluster belongs to (used in splitgraph clustering only) */
+	std::vector<unsigned int> processOrigin;
+
+	void buildClusteringObject(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
+			double positiveImbalance, double negativeImbalance);
 
 	void print(std::ostream& os, ClusterArray& a, unsigned long n);
 
