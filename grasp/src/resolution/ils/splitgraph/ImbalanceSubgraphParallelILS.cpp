@@ -933,8 +933,8 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 		// TODO possible parametrization here!
 		long maxVerticesAllowedInProcess = (2 * n) / bestSplitgraphClustering.getNumberOfClusters();
 		for(int px = 0; px < numberOfProcesses; px++) {
-			if((px != currentProcess) and
-					(bestSplitgraphClustering.getClusterSize(px) + listOfModifiedVertices.size() < maxVerticesAllowedInProcess)) {
+			if((px != currentProcess)) {  // TODO the line below was disabled for narrowing the search space too much...
+					// (bestSplitgraphClustering.getClusterSize(px) + listOfModifiedVertices.size() < maxVerticesAllowedInProcess)) {
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to move global cluster " << clusterToMove << " to process " << px;
 				ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
 				// Realiza a movimentacao dos vertices de um cluster especifico (cluster move)
@@ -1189,7 +1189,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 					if((procDestNum2 != procSourceNum) and (procDestNum2 != procDestNum)
 							and (bestSplitgraphClustering.getClusterSize(procDestNum2) +
 							listOfMovedVerticesFromClusterB.size() < maxVerticesAllowedInProcess)) {
-						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to move global cluster " << clusterToMoveB
+						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] And trying to move global cluster " << clusterToMoveB
 									<< " to process " << procDestNum2;
 						ClusterArray previousSplitgraphClusterArray = currentSplitgraphClusterArray;
 						ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
@@ -1286,13 +1286,13 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		} else if(r == 2) {
-			// ************************   Swap   1 - opt   cluster ***********************************
-			improved = swapCluster1opt(g, bestSplitgraphClustering, bestClustering,
+			// ************************   2-Move   cluster ***********************************
+			improved = twoMoveCluster(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		} else if(r == 3) {
-			// ************************   2-Move   cluster ***********************************
-			improved = twoMoveCluster(g, bestSplitgraphClustering, bestClustering,
+			// ************************   Swap   1 - opt   cluster ***********************************
+			improved = swapCluster1opt(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		} else if(r == 4) {
