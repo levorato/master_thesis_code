@@ -942,27 +942,30 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 					tempSplitgraphClusterArray[listOfModifiedVertices[elem]] = px;
 				}
 				// O RECALCULO DA MATRIZ ABAIXO EH FEITO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
-				ImbalanceMatrix tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
+				// ImbalanceMatrix tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
 				ImbalanceMatrix tempProcessClusterImbMatrix = processClusterImbMatrix;
 				// Realiza o calculo do delta da matriz de imbalance entre processos
 				updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
 						listOfModifiedVertices, tempProcessClusterImbMatrix);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
 				// Valida se a matriz incremental e a full sao iguais
+				/*
 				bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix2.pos, 0.001, 0.1);
 				bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix2.neg, 0.001, 0.1);
 				BOOST_LOG_TRIVIAL(info) << "*** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+				*/
 
 				// c) O processo mestre solicita que cada processo participante execute um novo ILS tendo como base a configuracao de cluster modificada
 				Clustering newGlobalClustering = distributeSubgraphsBetweenProcessesAndRunILS(construct, vnd, g,
 							iter, iterMaxILS, perturbationLevelMax, problem, info, tempSplitgraphClusterArray, tempProcessClusterImbMatrix);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] New solution found: I(P) = " << newGlobalClustering.getImbalance().getValue();
+				/*
 				ClusterArray cTemp = newGlobalClustering.getClusterArray();
 				Clustering validation(cTemp, *g, problem);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Full Obj Calc: I(P) = " << validation.getImbalance().getValue();
 				if(validation.getImbalance().getValue() != newGlobalClustering.getImbalance().getValue()) {
 					BOOST_LOG_TRIVIAL(error) << "[MoveCluster1opt] Obj functions do not match.";
-				}
+				} */
 
 				if(newGlobalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
 					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Improved solution found! I(P) = " << newGlobalClustering.getImbalance().getValue();
@@ -1069,11 +1072,12 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 						// INCREMENTAL UPDATE OF THE CLUSTER IMBALANCE MATRIX, reusing the matrix processClusterImbMatrix
 						updateProcessToProcessImbalanceMatrix(*g, previousSplitgraphClusterArray, tempSplitgraphClusterArray,
 								listOfMovedVerticesFromProcessA, tempProcessClusterImbMatrix);
+						/*
 						ImbalanceMatrix tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
 						// Valida se a matriz incremental e a full sao iguais
 						bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix2.pos, 0.001, 0.1);
 						bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix2.neg, 0.001, 0.1);
-						BOOST_LOG_TRIVIAL(info) << "Op1 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+						BOOST_LOG_TRIVIAL(info) << "Op1 *** As matrizes de delta sao iguais: " << igual << " e " << igual2; */
 						previousSplitgraphClusterArray = tempSplitgraphClusterArray;
 
 						// SWAP Step 2: Move the vertices from the smallest cluster in / from process B (dest), to process A (source)
@@ -1083,11 +1087,12 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 						// INCREMENTAL UPDATE OF THE CLUSTER IMBALANCE MATRIX, reusing the matrix processClusterImbMatrix
 						updateProcessToProcessImbalanceMatrix(*g, previousSplitgraphClusterArray, tempSplitgraphClusterArray,
 								listOfMovedVerticesFromProcessB, tempProcessClusterImbMatrix);
+						/*
 						ImbalanceMatrix tempProcessClusterImbMatrix3 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
 						// Valida se a matriz incremental e a full sao iguais
 						igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix3.pos, 0.001, 0.1);
 						igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix3.neg, 0.001, 0.1);
-						BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+						BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2; */
 
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix from swap done.";
 
@@ -1095,12 +1100,13 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 						Clustering newGlobalClustering = distributeSubgraphsBetweenProcessesAndRunILS(construct, vnd, g,
 									iter, iterMaxILS, perturbationLevelMax, problem, info, tempSplitgraphClusterArray, tempProcessClusterImbMatrix);
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] New solution found: I(P) = " << newGlobalClustering.getImbalance().getValue();
+						/*
 						ClusterArray cTemp = newGlobalClustering.getClusterArray();
 						Clustering validation(cTemp, *g, problem);
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Full Obj Calc: I(P) = " << validation.getImbalance().getValue();
 						if(validation.getImbalance().getValue() != newGlobalClustering.getImbalance().getValue()) {
 							BOOST_LOG_TRIVIAL(error) << "[SwapCluster1opt] Obj functions do not match.";
-						}
+						} */
 
 						if(newGlobalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
 							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Improved solution found! I(P) = " << newGlobalClustering.getImbalance().getValue();
@@ -1204,10 +1210,11 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 								listOfMovedVerticesFromClusterA, tempProcessClusterImbMatrix);
 						previousSplitgraphClusterArray = tempSplitgraphClusterArray;
 						// Valida se a matriz incremental e a full sao iguais
+						/*
 						ImbalanceMatrix tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
 						bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix2.pos, 0.001, 0.1);
 						bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix2.neg, 0.001, 0.1);
-						BOOST_LOG_TRIVIAL(info) << "Op1 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+						BOOST_LOG_TRIVIAL(info) << "Op1 *** As matrizes de delta sao iguais: " << igual << " e " << igual2; */
 
 						// MOVE Step 2: Move the vertices from a specific cluster B from source process to dest process 2
 						for(long elem = 0; elem < listOfMovedVerticesFromClusterB.size(); elem++) {
@@ -1217,10 +1224,11 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 						updateProcessToProcessImbalanceMatrix(*g, previousSplitgraphClusterArray, tempSplitgraphClusterArray,
 								listOfMovedVerticesFromClusterB, tempProcessClusterImbMatrix);
 						// Valida se a matriz incremental e a full sao iguais
+						/*
 						ImbalanceMatrix tempProcessClusterImbMatrix3 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
 						igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix3.pos, 0.001, 0.1);
 						igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix3.neg, 0.001, 0.1);
-						BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+						BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2; */
 
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix from 2-move done.";
 
@@ -1228,12 +1236,13 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 						Clustering newGlobalClustering = distributeSubgraphsBetweenProcessesAndRunILS(construct, vnd, g,
 									iter, iterMaxILS, perturbationLevelMax, problem, info, tempSplitgraphClusterArray, tempProcessClusterImbMatrix);
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] New solution found: I(P) = " << newGlobalClustering.getImbalance().getValue();
+						/*
 						ClusterArray cTemp = newGlobalClustering.getClusterArray();
 						Clustering validation(cTemp, *g, problem);
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Full Obj Calc: I(P) = " << validation.getImbalance().getValue();
 						if(validation.getImbalance().getValue() != newGlobalClustering.getImbalance().getValue()) {
 							BOOST_LOG_TRIVIAL(error) << "[2-move-cluster] Obj functions do not match.";
-						}
+						} */
 
 						if(newGlobalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
 							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Improved solution found! I(P) = " << newGlobalClustering.getImbalance().getValue();
