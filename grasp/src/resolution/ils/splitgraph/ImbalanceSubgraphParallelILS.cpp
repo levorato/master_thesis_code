@@ -1569,9 +1569,9 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 				}
 			}
 			if(improvement){
-				break;  // restarts the vertex v in cliqueC loop since cliqueC was modified
+				// break;  // restarts the vertex v in cliqueC loop since cliqueC was modified
 				// TODO replace this line with a time limit verification (10s?)
-				// return cliqueC;
+				return cliqueC;
 			} else {  // undo the movement
 				cliqueCClusterArray[v] = 1;
 			}
