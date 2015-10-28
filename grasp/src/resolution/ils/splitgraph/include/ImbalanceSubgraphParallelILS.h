@@ -70,6 +70,14 @@ struct pos_degree_ordering_asc
     }
 };
 
+struct pos_degree_ordering_desc
+{
+    inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
+    {
+        return (struct1.positiveDegree > struct2.positiveDegree);
+    }
+};
+
 struct ImbalanceMatrix {
 	matrix<double> pos, neg;
 	ImbalanceMatrix() : pos(), neg() { }
@@ -121,21 +129,31 @@ public:
 	 * 	with a smaller cluster from a less-loaded process.
 	 */
 	bool swapCluster1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
-				Clustering& bestClustering,
-				const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
-				ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
-				const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-				ClusteringProblem& problem, ExecutionInfo& info);
+			Clustering& bestClustering,
+			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+			ClusteringProblem& problem, ExecutionInfo& info);
 
 	/**
 	 * 2-move-cluster: try to move 2 clusters from an overloaded process to 2 less-loaded processes.
 	 */
 	bool twoMoveCluster(SignedGraph* g, Clustering& bestSplitgraphClustering,
-				Clustering& bestClustering,
-				const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
-				ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
-				const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-				ClusteringProblem& problem, ExecutionInfo& info);
+			Clustering& bestClustering,
+			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+			ClusteringProblem& problem, ExecutionInfo& info);
+
+	/**
+	 *
+	 */
+	bool positiveCliqueMove(SignedGraph* g, Clustering& bestSplitgraphClustering,
+			Clustering& bestClustering,
+			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+			ClusteringProblem& problem, ExecutionInfo& info);
 
 	long variableNeighborhoodDescent(SignedGraph* g, Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering, const int& numberOfProcesses,
@@ -178,6 +196,33 @@ protected:
 
 	std::vector<long> getListOfVeticesInCluster(SignedGraph& g, Clustering& globalClustering,
 			long clusterNumber);
+
+	/**
+	  *  Returns a list containing the vertices that belong to the positive clique C+,
+	  *  found inside global cluster X. This is a greedy heuristic.
+	*/
+	std::vector<long> findPositiveCliqueC(SignedGraph *g, Clustering& globalClustering,
+			long clusterX);
+
+	/**
+	  *  Determines if the set cliqueC \union {u} is a positive clique in the graph g.
+	  *  By definition, cliqueC is already a positive clique.
+	*/
+	bool isPositiveClique(SignedGraph *g, std::vector<long>& cliqueC,
+			ClusterArray& cliqueCClusterArray, long u);
+
+	/**
+	  *  Determines if the set cliqueC \union {u, v} is a positive clique in the graph g.
+	  *  By definition, cliqueC is already a positive clique.
+	*/
+	bool isPositiveClique(SignedGraph *g, ClusterArray& cliqueCClusterArray, long u, long v);
+
+	/**
+	  *  Calculates the positive and negative degrees of each vertex v in clusterX
+	  *  *relative to clusterX only*.
+	*/
+	std::vector<VertexDegree> calculateDegreesInsideCluster(SignedGraph *g,
+			Clustering& globalClustering, long clusterX);
 
 };
 
