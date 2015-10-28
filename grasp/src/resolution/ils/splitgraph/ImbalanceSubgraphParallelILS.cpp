@@ -431,7 +431,8 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	std::vector<unsigned int> clusterProcessOrigin;
 	for(int i = 0; i < numberOfSlaves; i++) {
 		mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
-		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message received from process " << stat.source() << ". Obj = " <<
+		int procNum = stat.source();
+		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ". Obj = " <<
 				omsg.clustering.getImbalance().getValue();
 		// process the result of the execution of process i
 		// sums the total number of tested combinations
@@ -457,10 +458,10 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		clusterOffset += nc;
 		// all the clusters in this interval belong to process 'stat.source()'
 		for(int clusterCount = 0; clusterCount < nc; clusterCount++) {
-			clusterProcessOrigin.push_back(stat.source());
+			clusterProcessOrigin.push_back(procNum);
 		}
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << (i+1) << ": num_edges = " <<
-						omsg.num_edges << " , num_vertices = " << omsg.num_vertices;
+						omsg.num_edges << " , num_vertices = " << omsg.num_vertices << ", I(P) = " << omsg.clustering.getImbalance().getValue();
 	}
 	// includes the leader's processing result as well
 	// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
@@ -1538,7 +1539,7 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 		for(std::vector<long>::iterator it = cliqueC.begin(); it != cliqueC.end(); it++) {
 			long v = *it;
 			// try to remove vertex v from tempCliqueC
-			BOOST_LOG_TRIVIAL(info) << "Trying to remove vertex " << v << " from the clique.";
+			// BOOST_LOG_TRIVIAL(info) << "Trying to remove vertex " << v << " from the clique.";
 			cliqueCClusterArray[v] = Clustering::NO_CLUSTER;
 
 			// 1-2-swap neighbourhood:
@@ -1553,7 +1554,9 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 							// check if cliqueC + {a, b} is still a positive clique
 							if(isPositiveClique(g, cliqueCClusterArray, a, b)) {
 								// finally insert vertices a and b in cliqueC
+								BOOST_LOG_TRIVIAL(info) << "Removed vertex " << v << " from the clique.";
 								BOOST_LOG_TRIVIAL(info) << "Added vertices " << a << " and " << b  << " to the clique.";
+
 								cliqueCClusterArray[a] = 1;
 								cliqueCClusterArray[b] = 1;
 								cliqueC.push_back(a);
