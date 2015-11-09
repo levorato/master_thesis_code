@@ -44,7 +44,7 @@
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
 #define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
 #define CLIQUE_ALPHA 0.4
-#define POS_CLIQUE_PERC_RELAX 1.0
+#define POS_CLIQUE_PERC_RELAX 0.8
 
 namespace ublas = boost::numeric::ublas::detail;
 
@@ -1272,6 +1272,9 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 				}
 			}
 		}
+		if(foundBetterSolution) {
+			break;
+		}
 	}
 	return foundBetterSolution;
 }
@@ -1482,8 +1485,11 @@ bool ImbalanceSubgraphParallelILS::positiveCliqueMove(SignedGraph* g, Clustering
 				break;
 			}
 		}
+		if(foundBetterSolution) {
+			break;
+		}
 	}
-
+	return foundBetterSolution;
 }
 
 /**
@@ -1542,6 +1548,7 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 	// 1. For every vertex v in clique C+, test a 1-2-swap neighbourhood, that is, try to
 	//    remove 1 vertex from C+ and insert other 2 vertices that belong to clusterX (but still not to C+),
 	//    preserving the property of maximal positive clique.
+	/*
 	BOOST_LOG_TRIVIAL(info) << "CliqueC local search...";
 	bool improvement = false;
 	int iter = 0;
@@ -1595,7 +1602,7 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 	} while(improvement);
 	// 2. Repeat this process until C+ has reached a local optimum related to the 1-2-swap neighbourhood.
 	BOOST_LOG_TRIVIAL(info) << "Found a PositiveCliqueC of size " << cliqueC.size() << ".";
-
+*/
 	// converts the list to a vector of long
 	std::vector<long> cliqueCvec(cliqueC.size());
 	copy(cliqueC.begin(), cliqueC.end(), cliqueCvec.begin());
