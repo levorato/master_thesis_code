@@ -11,6 +11,7 @@
 #include "../../include/ParallelILS.h"
 
 #include <boost/numeric/ublas/matrix.hpp>
+#include <list>
 
 using namespace boost::numeric::ublas;
 
@@ -202,27 +203,30 @@ protected:
 	  *  found inside global cluster X. This is a greedy heuristic.
 	*/
 	std::vector<long> findPositiveCliqueC(SignedGraph *g, Clustering& globalClustering,
-			long clusterX);
+			long clusterX, double alpha);
 
 	/**
 	  *  Determines if the set cliqueC \union {u} is a positive clique in the graph g.
 	  *  By definition, cliqueC is already a positive clique.
 	*/
-	bool isPositiveClique(SignedGraph *g, std::vector<long>& cliqueC,
+	bool isPositiveClique(SignedGraph *g, std::list<long>& cliqueC,
 			ClusterArray& cliqueCClusterArray, long u);
 
 	/**
 	  *  Determines if the set cliqueC \union {u, v} is a positive clique in the graph g.
 	  *  By definition, cliqueC is already a positive clique.
 	*/
-	bool isPositiveClique(SignedGraph *g, ClusterArray& cliqueCClusterArray, long u, long v);
+	bool isPositiveClique(SignedGraph *g, ClusterArray& cliqueCClusterArray, long cliqueSize,
+			long u, long v);
 
 	/**
 	  *  Calculates the positive and negative degrees of each vertex v in clusterX
 	  *  *relative to clusterX only*.
 	*/
-	std::vector<VertexDegree> calculateDegreesInsideCluster(SignedGraph *g,
+	std::list<VertexDegree> calculateDegreesInsideCluster(SignedGraph *g,
 			Clustering& globalClustering, long clusterX);
+
+	long chooseRandomVertex(std::list<VertexDegree>& vertexList, int x);
 
 };
 
