@@ -44,6 +44,7 @@
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
 #define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
 #define CLIQUE_ALPHA 0.4
+#define POS_CLIQUE_PERC_RELAX 0.8
 
 namespace ublas = boost::numeric::ublas::detail;
 
@@ -1295,7 +1296,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		BOOST_LOG_TRIVIAL(debug)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
 
 		bool improved = false;
-		if(r == 4) {
+		if(r == 2) {
 			// ************************   Move   1 - opt   cluster ***********************************
 			improved = moveCluster1opt(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
@@ -1305,7 +1306,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 			improved = positiveCliqueMove(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
-		} else if(r == 2) {
+		} else if(r == 4) {
 			// ************************   2-Move   cluster ***********************************
 			improved = twoMoveCluster(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
@@ -1513,7 +1514,7 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 	//  Two data structures are used to control the vertices inside cliqueC: a vector and a binary cluster array
 	std::list<long> cliqueC;
 	ClusterArray cliqueCClusterArray(g->getN(), Clustering::NO_CLUSTER);
-	long u = this->chooseRandomVertex(degreesInsideClusterX, boost::math::iround(alpha * degreesInsideClusterX.size()));
+	long u = this->chooseRandomVertex(degreesInsideClusterX, boost::math::lround(alpha * degreesInsideClusterX.size()));
 	cliqueC.push_back(u);
 	cliqueCClusterArray[u] = 1;
 	BOOST_LOG_TRIVIAL(info) << "Global cluster number " << strCluster << " currently has size " << degreesInsideClusterX.size();
@@ -1525,7 +1526,7 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 	while (degreesInsideClusterX.size() > 0) { // list != empty
 		// Choose vertex u randomly among the first (alpha x |lc|) elements of lc
 		// (alpha x |lc|) is a rounded number
-		u = this->chooseRandomVertex(degreesInsideClusterX, boost::math::iround(alpha * degreesInsideClusterX.size()));
+		u = this->chooseRandomVertex(degreesInsideClusterX, boost::math::lround(alpha * degreesInsideClusterX.size()));
 		// only adds u to the cliqueC if C+ \union {u} is also a positive clique
 		if(isPositiveClique(g, cliqueC, cliqueCClusterArray, u)) {
 			cliqueC.push_back(u);
@@ -1541,14 +1542,14 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 	// 1. For every vertex v in clique C+, test a 1-2-swap neighbourhood, that is, try to
 	//    remove 1 vertex from C+ and insert other 2 vertices that belong to clusterX (but still not to C+),
 	//    preserving the property of maximal positive clique.
-	BOOST_LOG_TRIVIAL(info) << "Starting cliqueC local search...";
+	BOOST_LOG_TRIVIAL(info) << "CliqueC local search...";
 	bool improvement = false;
 	int iter = 0;
 	std::vector<long> verticesInClusterX = getListOfVeticesInCluster(*g, globalClustering, clusterX);
 	do {
 		improvement = false;
 		iter++;
-		BOOST_LOG_TRIVIAL(info) << "Clique local search iteration " << iter << "...";
+		// BOOST_LOG_TRIVIAL(info) << "Clique local search iteration " << iter << "...";
 		for(std::list<long>::iterator it = cliqueC.begin(); it != cliqueC.end(); it++) {
 			long v = *it;
 			// try to remove vertex v from tempCliqueC
@@ -1567,15 +1568,15 @@ std::vector<long> ImbalanceSubgraphParallelILS::findPositiveCliqueC(SignedGraph 
 							// check if cliqueC + {a, b} is still a positive clique
 							if(isPositiveClique(g, cliqueCClusterArray, cliqueC.size() - 1, a, b)) {
 								// finally insert vertices a and b in cliqueC
-								BOOST_LOG_TRIVIAL(info) << "Removed vertex " << v << " from the clique.";
-								BOOST_LOG_TRIVIAL(info) << "Added vertices " << a << " and " << b  << " to the clique.";
+								// BOOST_LOG_TRIVIAL(info) << "Removed vertex " << v << " from the clique.";
+								// BOOST_LOG_TRIVIAL(info) << "Added vertices " << a << " and " << b  << " to the clique.";
 
 								cliqueCClusterArray[a] = 1;
 								cliqueCClusterArray[b] = 1;
 								cliqueC.push_back(a);
 								cliqueC.push_back(b);
 								cliqueC.erase(std::remove(cliqueC.begin(), cliqueC.end(), v), cliqueC.end());
-								BOOST_LOG_TRIVIAL(info) << "CliqueC is now of size " << cliqueC.size() << ".";
+								// BOOST_LOG_TRIVIAL(info) << "CliqueC is now of size " << cliqueC.size() << ".";
 								improvement = true;
 								break;
 							}
@@ -1630,8 +1631,10 @@ bool ImbalanceSubgraphParallelILS::isPositiveClique(SignedGraph *g, std::list<lo
 	}
 	if(isPositiveClique) {
 		// every vertex in cliqueC must be connected to vertex u
-		// the number of clique vertices connected to u must be equal to clique size
-		isPositiveClique = (cliqueCount == cliqueC.size());
+		// the number of clique vertices connected to u should be equal to clique size
+		// if POS_CLIQUE_PERC_RELAX = 1.0 => perfect clique
+		// else if POS_CLIQUE_PERC_RELAX < 1.0 => relaxed clique
+		isPositiveClique = ( cliqueCount >= ( boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueC.size()) ) );
 	}
 
 	return isPositiveClique;
@@ -1663,7 +1666,7 @@ bool ImbalanceSubgraphParallelILS::isPositiveClique(SignedGraph *g, ClusterArray
 			}
 		}
 	}
-	if(cliqueCount != cliqueSize) {
+	if( cliqueCount < ( boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueSize) ) ) {
 		isPositiveClique = false;
 	}
 	if(isPositiveClique) {
@@ -1681,7 +1684,7 @@ bool ImbalanceSubgraphParallelILS::isPositiveClique(SignedGraph *g, ClusterArray
 				}
 			}
 		}
-		if(cliqueCount != cliqueSize) {
+		if( cliqueCount < ( boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueSize) ) ) {
 			isPositiveClique = false;
 		}
 	}
@@ -1711,7 +1714,7 @@ std::list<VertexDegree> ImbalanceSubgraphParallelILS::calculateDegreesInsideClus
 	return degreesInsideClusterX;
 }
 
-long ImbalanceSubgraphParallelILS::chooseRandomVertex(std::list<VertexDegree>& vertexList, int x) {
+long ImbalanceSubgraphParallelILS::chooseRandomVertex(std::list<VertexDegree>& vertexList, long x) {
 	// Generates a random number between 1 and x
 	// distribution that maps to 1..x
 	if(x - 1 < 0) {

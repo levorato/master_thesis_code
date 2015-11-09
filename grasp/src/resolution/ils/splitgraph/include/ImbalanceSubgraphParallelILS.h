@@ -226,7 +226,7 @@ protected:
 	std::list<VertexDegree> calculateDegreesInsideCluster(SignedGraph *g,
 			Clustering& globalClustering, long clusterX);
 
-	long chooseRandomVertex(std::list<VertexDegree>& vertexList, int x);
+	long chooseRandomVertex(std::list<VertexDegree>& vertexList, long x);
 
 };
 
