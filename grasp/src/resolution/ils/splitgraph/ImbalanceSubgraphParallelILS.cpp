@@ -175,7 +175,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	ConstructClustering NoConstruct(functionFactory.build(construct->getGainFunctionType()), vnd->getRandomSeed(),
 			construct->getAlpha(), &bestClustering);
 	CUDAILS cudails;
-	bestClustering = cudails.executeILS(&NoConstruct, vnd, g, iter, 1, perturbationLevelMax, problem, info);
+	//bestClustering = cudails.executeILS(&NoConstruct, vnd, g, iter, 1, perturbationLevelMax, problem, info);
 
 	// 7. Stops the timer and stores the elapsed time
 	timer.stop();
@@ -1281,10 +1281,11 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 		ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar) {
 
-	int r = 1, iteration = 0, l = 4;
+	int r = 1, iteration = 0, l = 5;
 	double timeSpentOnLocalSearch = 0.0;
 	long improvedOnVND = 0;
 	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search...";
+	std::vector<long> improvementStats(l + 1, 0);
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
@@ -1294,7 +1295,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		BOOST_LOG_TRIVIAL(debug)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
 
 		bool improved = false;
-		if(r == 2) {
+		if(r == 4) {
 			// ************************   Move   1 - opt   cluster ***********************************
 			improved = moveCluster1opt(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
@@ -1304,13 +1305,12 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 			improved = positiveCliqueMove(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
-
-		} else if(r == 3) {
+		} else if(r == 2) {
 			// ************************   2-Move   cluster ***********************************
 			improved = twoMoveCluster(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
-		} else if(r == 4) {
+		} else if(r == 3) {
 			// ************************   Swap   1 - opt   cluster ***********************************
 			improved = swapCluster1opt(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
@@ -1321,6 +1321,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 								numberOfProcesses, processClusterImbMatrix,
 								construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		}
+		if(improved)  improvementStats[r]++;
 		if(bestClustering.getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error)<< "[Splitgraph] Objective function below zero. Obj = " << bestClustering.getImbalance().getValue();
 			break;
@@ -1343,6 +1344,10 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	}
 	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search done. Obj = " << bestClustering.getImbalance().getValue() <<
 			". Time spent: " << timeSpentOnLocalSearch << " s.";
+	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Improvement statistics for each neighborhood: ";
+	for(int i = 1; i <= l; i++) {
+		BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] r = " << i << ": " << improvementStats[i];
+	}
 	return improvedOnVND;
 }
 
