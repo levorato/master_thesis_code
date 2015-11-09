@@ -44,7 +44,7 @@
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
 #define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
 #define CLIQUE_ALPHA 0.4
-#define POS_CLIQUE_PERC_RELAX 0.8
+#define POS_CLIQUE_PERC_RELAX 1.0
 
 namespace ublas = boost::numeric::ublas::detail;
 
@@ -1614,7 +1614,7 @@ bool ImbalanceSubgraphParallelILS::isPositiveClique(SignedGraph *g, std::list<lo
 	bool isPositiveClique = true;
 	// every vertex in cliqueC must be connected to vertex u
 	// counts the number of clique elements connected to u
-	long cliqueCount = 0;
+	long cliqueCount = 0, positiveCliqueCount = 0;
 
 	// validates the edges from vertex u to cliqueC
 	UndirectedGraph::out_edge_iterator f2, l2;
@@ -1623,18 +1623,20 @@ bool ImbalanceSubgraphParallelILS::isPositiveClique(SignedGraph *g, std::list<lo
 		long j = target(*f2, g->graph);
 		if(cliqueCClusterArray[j] >= 0) {
 			cliqueCount++;
-			if(ew[e].weight < 0) {
+			if(ew[e].weight > 0) {
+				positiveCliqueCount++;
+			} else {
 				isPositiveClique = false;
-				break;
 			}
 		}
 	}
-	if(isPositiveClique) {
+	if(isPositiveClique) {  // only allows a clique in which every edge is positive
 		// every vertex in cliqueC must be connected to vertex u
 		// the number of clique vertices connected to u should be equal to clique size
 		// if POS_CLIQUE_PERC_RELAX = 1.0 => perfect clique
 		// else if POS_CLIQUE_PERC_RELAX < 1.0 => relaxed clique
-		isPositiveClique = ( cliqueCount >= ( boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueC.size()) ) );
+		isPositiveClique = ( ( cliqueCount >= boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueC.size()) )
+				and (positiveCliqueCount >= boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueC.size())) );
 	}
 
 	return isPositiveClique;
@@ -1666,7 +1668,8 @@ bool ImbalanceSubgraphParallelILS::isPositiveClique(SignedGraph *g, ClusterArray
 			}
 		}
 	}
-	if( cliqueCount < ( boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueSize) ) ) {
+	// if( cliqueCount < ( boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueSize) ) ) {
+	if( cliqueCount < (cliqueSize) ) {
 		isPositiveClique = false;
 	}
 	if(isPositiveClique) {
@@ -1684,7 +1687,8 @@ bool ImbalanceSubgraphParallelILS::isPositiveClique(SignedGraph *g, ClusterArray
 				}
 			}
 		}
-		if( cliqueCount < ( boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueSize) ) ) {
+		// if( cliqueCount < ( boost::math::lround(POS_CLIQUE_PERC_RELAX * cliqueSize) ) ) {
+		if( cliqueCount < ( (cliqueSize) ) ) {
 			isPositiveClique = false;
 		}
 	}
