@@ -44,7 +44,7 @@
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
 #define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
 #define CLIQUE_ALPHA 0.4
-#define POS_CLIQUE_PERC_RELAX 0.8
+#define POS_CLIQUE_PERC_RELAX 1.0
 
 namespace ublas = boost::numeric::ublas::detail;
 
@@ -984,6 +984,10 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 					bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 					foundBetterSolution = true;
 					break;
+				} else if (newGlobalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost move.";
+				} else {
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found.";
 				}
 			} else {
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Rejected movement.";
@@ -1125,6 +1129,10 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 							bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 							foundBetterSolution = true;
 							break;
+						} else if (newGlobalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
+							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost move.";
+						} else {
+							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found.";
 						}
 					} else {
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Movement rejected.";
@@ -1261,6 +1269,10 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 							bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 							foundBetterSolution = true;
 							break;
+						} else if (newGlobalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
+							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost move.";
+						} else {
+							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found.";
 						}
 					}
 					if(foundBetterSolution) {
@@ -1285,11 +1297,12 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 		ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar) {
 
-	int r = 1, iteration = 0, l = 5;
+	int r = 1, iteration = 0, l = 4;
 	double timeSpentOnLocalSearch = 0.0;
 	long improvedOnVND = 0;
 	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search...";
 	std::vector<long> improvementStats(l + 1, 0);
+	std::vector<long> neigExecStats(l + 1, 0);
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
@@ -1299,17 +1312,17 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		BOOST_LOG_TRIVIAL(debug)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
 
 		bool improved = false;
-		if(r == 2) {
+		if(r == 1) {
 			// ************************   Move   1 - opt   cluster ***********************************
 			improved = moveCluster1opt(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
-		} else if(r == 1) {
+		} else if(r == 4) {
 			// ************************   Positive  Clique  Move ***********************************
 			improved = positiveCliqueMove(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
-		} else if(r == 4) {
+		} else if(r == 2) {
 			// ************************   2-Move   cluster ***********************************
 			improved = twoMoveCluster(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
@@ -1319,13 +1332,16 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 			improved = swapCluster1opt(g, bestSplitgraphClustering, bestClustering,
 									numberOfProcesses, processClusterImbMatrix,
 									construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
-		} else if(r == 5) {
+		} /* else if(r == 5) {  DISABLED NEIGHBORHOOD
 			// ************************   Move   1 - opt   vertex  ***********************************
 			improved = moveVertex1opt(g, bestSplitgraphClustering, bestClustering,
 								numberOfProcesses, processClusterImbMatrix,
 								construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
-		}
+		} */
+		// records statistics for neighborhood structures execution
+		neigExecStats[r]++;
 		if(improved)  improvementStats[r]++;
+
 		if(bestClustering.getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error)<< "[Splitgraph] Objective function below zero. Obj = " << bestClustering.getImbalance().getValue();
 			break;
@@ -1348,9 +1364,10 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	}
 	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search done. Obj = " << bestClustering.getImbalance().getValue() <<
 			". Time spent: " << timeSpentOnLocalSearch << " s.";
-	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Improvement statistics for each neighborhood: ";
+	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Execution and Improvement statistics for each neighborhood: ";
+	BOOST_LOG_TRIVIAL(info)<< "Neighborhood size, Num exec, Num improv";
 	for(int i = 1; i <= l; i++) {
-		BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] r = " << i << ": " << improvementStats[i];
+		BOOST_LOG_TRIVIAL(info)<< "r = " << i << ", " << neigExecStats[i] << ", " << improvementStats[i];
 	}
 	return improvedOnVND;
 }
@@ -1476,6 +1493,10 @@ bool ImbalanceSubgraphParallelILS::positiveCliqueMove(SignedGraph* g, Clustering
 						bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 						foundBetterSolution = true;
 						break;
+					} else if (newGlobalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
+						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost move.";
+					} else {
+						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found.";
 					}
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Clique movement rejected.";
