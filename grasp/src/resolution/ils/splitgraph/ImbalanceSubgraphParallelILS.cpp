@@ -490,7 +490,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	clusterOffset += nc;
 	// all clusters in this interval belong to process zero
 	for(int clusterCount = 0; clusterCount < nc; clusterCount++) {
-		clusterProcessOrigin.push_back(0);
+		clusterProcessOrigin.push_back(info.processRank);
 	}
 	internalImbalancePosSum += leaderClustering.getImbalance().getPositiveValue();
 	internalImbalanceNegSum += leaderClustering.getImbalance().getNegativeValue();
@@ -1499,6 +1499,8 @@ bool ImbalanceSubgraphParallelILS::positiveCliqueMove(SignedGraph* g, Clustering
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Move positive clique of size " << cliqueC.size()
 					<<  " from process " << procSourceNum <<
 					": Moving from global cluster " << clusterX << " of size " << bestClustering.getClusterSize(clusterX);
+			assert(bigClustersList[clusterCount].y == procSourceNum);
+			assert(currentProcess == procSourceNum);
 
 			// LOAD BALANCING: Try to move the clique to a process with less vertices than a given threshold (less loaded process)
 			ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
