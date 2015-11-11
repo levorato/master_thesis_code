@@ -171,6 +171,13 @@ public:
 		return processOrigin;
 	}
 
+	/**
+	 * Sets the process number to which a cluster belongs to.
+	 */
+	void setProcessOrigin(unsigned long clusterNumber, unsigned int processNumber) {
+		processOrigin[clusterNumber] = processNumber;
+	}
+
 private:
 	/** the cluster array, with dimension n */
 	ClusterArray clusterArray;
