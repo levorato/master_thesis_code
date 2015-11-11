@@ -15,6 +15,14 @@
 
 using namespace boost::numeric::ublas;
 
+// TODO CHANGE TO APPLICATION CLI PARAMETER
+#define PERCENTAGE_OF_PROCESS_PAIRS 0.2
+#define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
+#define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
+#define CLUSTERING_ALPHA 0.2
+#define POS_EDGE_PERC_RELAX 0.7
+#define NEG_EDGE_PERC_RELAX 0.3
+
 namespace resolution {
 namespace ils {
 
@@ -76,6 +84,17 @@ struct pos_degree_ordering_desc
     inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
     {
         return (struct1.positiveDegree > struct2.positiveDegree);
+    }
+};
+
+struct weighted_pos_neg_degree_ordering_desc
+{
+    inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
+    {
+    	// Sorts the vertex list according to a weighted formula of positive and negative degrees (descending order)
+    	double p1 = (POS_EDGE_PERC_RELAX * struct1.positiveDegree) - (NEG_EDGE_PERC_RELAX * struct1.negativeDegree);
+    	double p2 = (POS_EDGE_PERC_RELAX * struct2.positiveDegree) - (NEG_EDGE_PERC_RELAX * struct2.negativeDegree);
+    	return (p1 > p2);
     }
 };
 
@@ -149,7 +168,7 @@ public:
 	/**
 	 *
 	 */
-	bool positiveCliqueMove(SignedGraph* g, Clustering& bestSplitgraphClustering,
+	bool splitClusterMove(SignedGraph* g, Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
 			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
 			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
@@ -199,24 +218,24 @@ protected:
 			long clusterNumber);
 
 	/**
-	  *  Returns a list containing the vertices that belong to the positive clique C+,
+	  *  Returns a list containing the vertices that belong to the pseudo clique C+,
 	  *  found inside global cluster X. This is a greedy heuristic.
 	*/
-	std::vector<long> findPositiveCliqueC(SignedGraph *g, Clustering& globalClustering,
-			long clusterX, double alpha);
+	std::vector<long> findPseudoCliqueC(SignedGraph *g, Clustering& globalClustering,
+			long clusterX);
 
 	/**
-	  *  Determines if the set cliqueC \union {u} is a positive clique in the graph g.
-	  *  By definition, cliqueC is already a positive clique.
+	  *  Determines if the set cliqueC \union {u} is a pseudo clique in the graph g.
+	  *  By definition, cliqueC is already a pseudo clique.
 	*/
-	bool isPositiveClique(SignedGraph *g, std::list<long>& cliqueC,
+	bool isPseudoClique(SignedGraph *g, std::list<long>& cliqueC,
 			ClusterArray& cliqueCClusterArray, long u);
 
 	/**
-	  *  Determines if the set cliqueC \union {u, v} is a positive clique in the graph g.
-	  *  By definition, cliqueC is already a positive clique.
+	  *  Determines if the set cliqueC \union {u, v} is a pseudo clique in the graph g.
+	  *  By definition, cliqueC is already a pseudo clique.
 	*/
-	bool isPositiveClique(SignedGraph *g, ClusterArray& cliqueCClusterArray, long cliqueSize,
+	bool isPseudoClique(SignedGraph *g, ClusterArray& cliqueCClusterArray, long cliqueSize,
 			long u, long v);
 
 	/**
