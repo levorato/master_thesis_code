@@ -1004,10 +1004,8 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 						// Realiza a movimentacao de um cluster especifico (cluster move) para outro processo
 						// O valor da FO continua o mesmo
 						bestClustering.setProcessOrigin(clusterToMove, px);
-						ClusterArray cTemp = bestClustering.getClusterArray();
-						Clustering tempCl(cTemp, *g, problem);
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost moveCluster1opt improving solution found! I(P) = "
-														<< tempCl.getImbalance().getValue();
+														<< bestClustering.getImbalance().getValue();
 
 						// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
 						processClusterImbMatrix = tempProcessClusterImbMatrix;
@@ -1470,17 +1468,48 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 
 	stringstream splitgraphVNDResults;
 	BOOST_LOG_TRIVIAL(info) << "[Splitgraph] Execution and Improvement statistics for each neighborhood: ";
+	splitgraphVNDResults << "[Splitgraph] Execution and Improvement statistics for each neighborhood: \n";
 	BOOST_LOG_TRIVIAL(info) << "Neighborhood size, Num exec, Num improv";
 	splitgraphVNDResults << "Neighborhood size, Num exec, Num improv\n";
 	for(int i = 1; i <= l; i++) {
 		BOOST_LOG_TRIVIAL(info) << "r = " << i << ", " << neigExecStats[i] << ", " << improvementStats[i];
 		splitgraphVNDResults << "r = " << i << ", " << neigExecStats[i] << ", " << improvementStats[i] << "\n";
 	}
+	splitgraphVNDResults << "[Splitgraph] Best solution found: ";
+
+	std::vector< std::vector< long > > verticesInCluster(numberOfProcesses, std::vector< long >());
+	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
+	std::vector<SubGraph> subgraphList;
+	long n = g->getN();
+	for(long i = 0; i < n; i++) {
+		long k = splitgraphClusterArray[i];
+		verticesInCluster[k].push_back(i);
+	}
+	for(int p = 0; p < numberOfProcesses; p++) {
+		SubGraph sg = (g->graph).create_subgraph(); //verticesInCluster[k].begin(), verticesInCluster[k].end());
+		subgraphList.push_back(sg);  // --> SUBGRAPH COPY CTOR NOT WORKING!!!
+		for(std::vector<long>::iterator it = verticesInCluster[p].begin(); it != verticesInCluster[p].end(); it++) {
+			add_vertex(*it, subgraphList.back());
+			// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << p;
+		}
+		std::vector<Coordinate> clusterList = obtainListOfClustersFromProcess(*g, bestClustering, p);
+
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_edges = " <<
+				num_edges(subgraphList.back()) << " , num_vertices = " << num_vertices(subgraphList.back())
+				<< ", k = " << clusterList.size();
+		splitgraphVNDResults << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_edges = " <<
+				num_edges(subgraphList.back()) << " , num_vertices = " << num_vertices(subgraphList.back())
+				<< ", k = " << clusterList.size() << "\n";
+	}
+	splitgraphVNDResults << "[Parallel ILS SplitGraph] I(P) = " << bestClustering.getImbalance().getValue() << "\n";
+	splitgraphVNDResults << "[Parallel ILS SplitGraph] Time spent = " << timeSpentOnLocalSearch << " s.\n";
+
 	// Saves the splitgraph statistics to csv file
 	generateOutputFile(problem, splitgraphVNDResults, info.outputFolder, info.fileId, info.executionId,
 			info.processRank, string("statistics-splitgraph"), construct->getAlpha(), l, iter);
 
-	return improvedOnVND;
+	// return improvedOnVND;
+	return 0;  // TODO for now, we only run global VND once
 }
 
 std::vector<long> ImbalanceSubgraphParallelILS::getListOfVeticesInCluster(SignedGraph& g, Clustering& globalClustering,
