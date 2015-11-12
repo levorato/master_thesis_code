@@ -1404,6 +1404,14 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search...";
 	std::vector<long> improvementStats(l + 1, 0);
 	std::vector<long> neigExecStats(l + 1, 0);
+	// stores the list of improved solutions found at each VND iteration (global clustering and splitgraph clustering)
+	std::vector< std::pair<Clustering, Clustering> > solutionHistory;
+	solutionHistory.push_back( std::make_pair(bestClustering, bestSplitgraphClustering) );
+	// stores the process balancing (number of clusters, vertices) info and solution values throughout the time
+	std::vector<string> splitgraphVNDProcessBalancingHistory;
+	stringstream ss;
+	ss << iteration++ << ", " << timeSpentOnLocalSearch << ", " << bestClustering.getImbalance().getValue();
+	splitgraphVNDProcessBalancingHistory.push_back(ss.str());
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
@@ -1443,6 +1451,11 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		neigExecStats[r]++;
 		if(improved)  improvementStats[r]++;
 
+		// => Finally: Stops the timer and stores the elapsed time
+		timer.stop();
+		boost::timer::cpu_times end_time = timer.elapsed();
+		timeSpentOnLocalSearch += (end_time.wall - start_time.wall)	/ double(1000000000);
+
 		if(bestClustering.getImbalance().getValue() < 0.0) {
 			BOOST_LOG_TRIVIAL(error)<< "[Splitgraph] Objective function below zero. Obj = " << bestClustering.getImbalance().getValue();
 			break;
@@ -1451,17 +1464,15 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 			// BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			r = 1;
 			improvedOnVND++;
+			solutionHistory.push_back( std::make_pair(bestClustering, bestSplitgraphClustering) );
+			stringstream ss;
+			ss << iteration << ", " << timeSpentOnLocalSearch << ", " << bestClustering.getImbalance().getValue();
+			splitgraphVNDProcessBalancingHistory.push_back(ss.str());
 		} else {  // no better result found in neighborhood
 			r++;
 			// BOOST_LOG_TRIVIAL(debug) << "Changed to neighborhood size l = " << k;
 		}
 		iteration++;
-
-		// => Finally: Stops the timer and stores the elapsed time
-		timer.stop();
-		boost::timer::cpu_times end_time = timer.elapsed();
-		timeSpentOnLocalSearch += (end_time.wall - start_time.wall)
-				/ double(1000000000);
 	}
 	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search done. Obj = " << bestClustering.getImbalance().getValue() <<
 			". Time spent: " << timeSpentOnLocalSearch << " s.";
@@ -1479,26 +1490,20 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 
 	std::vector< std::vector< long > > verticesInCluster(numberOfProcesses, std::vector< long >());
 	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
-	std::vector<SubGraph> subgraphList;
 	long n = g->getN();
 	for(long i = 0; i < n; i++) {
 		long k = splitgraphClusterArray[i];
 		verticesInCluster[k].push_back(i);
 	}
 	for(int p = 0; p < numberOfProcesses; p++) {
-		SubGraph sg = (g->graph).create_subgraph(); //verticesInCluster[k].begin(), verticesInCluster[k].end());
-		subgraphList.push_back(sg);  // --> SUBGRAPH COPY CTOR NOT WORKING!!!
-		for(std::vector<long>::iterator it = verticesInCluster[p].begin(); it != verticesInCluster[p].end(); it++) {
-			add_vertex(*it, subgraphList.back());
-			// BOOST_LOG_TRIVIAL(info) << "Inserting vertex " << *it << " in cluster " << p;
-		}
+		SignedGraph sg(g->graph, verticesInCluster[p]);
 		std::vector<Coordinate> clusterList = obtainListOfClustersFromProcess(*g, bestClustering, p);
 
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_edges = " <<
-				num_edges(subgraphList.back()) << " , num_vertices = " << num_vertices(subgraphList.back())
+				sg.getM() << " , num_vertices = " << sg.getN()
 				<< ", k = " << clusterList.size();
 		splitgraphVNDResults << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_edges = " <<
-				num_edges(subgraphList.back()) << " , num_vertices = " << num_vertices(subgraphList.back())
+				sg.getM() << " , num_vertices = " << sg.getN()
 				<< ", k = " << clusterList.size() << "\n";
 	}
 	splitgraphVNDResults << "[Parallel ILS SplitGraph] I(P) = " << bestClustering.getImbalance().getValue() << "\n";
@@ -1507,6 +1512,50 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	// Saves the splitgraph statistics to csv file
 	generateOutputFile(problem, splitgraphVNDResults, info.outputFolder, info.fileId, info.executionId,
 			info.processRank, string("statistics-splitgraph"), construct->getAlpha(), l, iter);
+
+	// Exports the splitgraph solutions to csv file
+	stringstream sshistory;
+	sshistory << "Iteration, Time, I(P)";
+	for(int i = 1; i <= numberOfProcesses; i++) {
+		sshistory << ", e" << i << ", n" << i << ", k" << i;
+	}
+	sshistory << "\n";
+	for(int iter = 0; iter < solutionHistory.size(); iter++) {
+		sshistory << splitgraphVNDProcessBalancingHistory[iter];
+
+		Clustering globalClustering = solutionHistory[iter].first;
+		Clustering splitgraphClustering = solutionHistory[iter].second;
+		std::vector< std::vector< long > > verticesInCluster(numberOfProcesses, std::vector< long >());
+		ClusterArray splitgraphClusterArray = splitgraphClustering.getClusterArray();
+		for(long i = 0; i < n; i++) {
+			long k = splitgraphClusterArray[i];
+			verticesInCluster[k].push_back(i);
+		}
+		for(int p = 0; p < numberOfProcesses; p++) {
+			SignedGraph sg(g->graph, verticesInCluster[p]);
+			std::vector<Coordinate> clusterList = obtainListOfClustersFromProcess(*g, globalClustering, p);
+			sshistory << ", " << sg.getM() << ", " << sg.getN() << ", " << clusterList.size();
+		}
+		sshistory << "\n";
+	}
+	// includes the biggest cluster size of each process in the best solution
+	Clustering globalClustering = solutionHistory.back().first;
+	Clustering splitgraphClustering = solutionHistory.back().second;
+	for(int i = 1; i <= numberOfProcesses; i++) {
+		sshistory << "verticesIn(P" << i << "), " << "biggestClusterSize(P" << i << "), ";
+	}
+	sshistory << "\n";
+	for(int p = 0; p < numberOfProcesses; p++) {
+		SignedGraph sg(g->graph, verticesInCluster[p]);
+		std::vector<Coordinate> bigClustersList = obtainListOfClustersFromProcess(*g, globalClustering, p);
+		std::vector<Coordinate>::iterator biggestCluster = std::max_element(bigClustersList.begin(), bigClustersList.end(), coordinate_ordering_asc());
+		sshistory << sg.getN() << ", " << boost::math::lround(biggestCluster->value) << ", ";
+	}
+	sshistory << "\n";
+
+	// Saves the splitgraph solution history to csv file
+	generateOutputFile(problem, sshistory, info.outputFolder, info.fileId, info.executionId,
+			info.processRank, string("solutionHistory-splitgraph"), construct->getAlpha(), l, iter);
 
 	// return improvedOnVND;
 	return 0;  // TODO for now, we only run global VND once
