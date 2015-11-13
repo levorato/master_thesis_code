@@ -1250,7 +1250,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 
 		// obtains the list of big clusters from the overloaded process 'procNum'
 		std::vector<Coordinate> bigClustersList = obtainListOfClustersFromProcess(*g, bestClustering, procSourceNum);
-		if(bigClustersList.size() < 2)  continue;
+		if(bigClustersList.size() <= 2)  continue;  // the origin process must remain with at least 1 cluster
 		// sorts the list of big clusters according to the number of vertices, descending order
 		std::sort(bigClustersList.begin(), bigClustersList.end(), coordinate_ordering_desc());
 		// TODO possible parametrization here! Parametrize the quantity of big clusters to be moved, two at a time
