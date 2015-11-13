@@ -188,6 +188,8 @@ protected:
 	Clustering CCclustering;
 	bool splitGraph;
 	bool cudaEnabled;
+	// counts the number of times the local ILS found solutions worse than the current solution (worse than zero-cost move)
+	long numberOfFrustratedSolutions;
 
 	// data structures containing the imbalance contribution of each vertex and between processes
 	std::vector< pair<long, double> > vertexImbalance;

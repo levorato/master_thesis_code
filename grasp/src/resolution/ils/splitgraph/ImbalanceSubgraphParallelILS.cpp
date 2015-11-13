@@ -873,6 +873,8 @@ bool ImbalanceSubgraphParallelILS::moveVertex1opt(SignedGraph* g, Clustering& be
 						bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 						foundBetterSolution = true;
 						break;
+					} else {
+						numberOfFrustratedSolutions++;
 					}
 				}
 			}
@@ -989,6 +991,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 					} else {
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found. Fixing to zero-cost move.";
 					}
+					numberOfFrustratedSolutions++;
 
 					// WARNING: It is possible that the new solution has worse imbalance than it should, since
 					//    the local ILS of one of the processes may not find the most efficient local solution.
@@ -1169,6 +1172,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 							} else {
 								BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found. Fixing to zero-cost move.";
 							}
+							numberOfFrustratedSolutions++;
 
 							// WARNING: It is possible that the new solution has worse imbalance than it should, since
 							//    the local ILS of one of the processes may not find the most efficient local solution.
@@ -1349,6 +1353,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 										} else {
 											BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found. Fixing to zero-cost move.";
 										}
+										numberOfFrustratedSolutions++;
 
 										// WARNING: It is possible that the new solution has worse imbalance than it should, since
 										//    the local ILS of one of the processes may not find the most efficient local solution.
@@ -1422,6 +1427,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	stringstream ss;
 	ss << iteration++ << ", " << timeSpentOnLocalSearch << ", " << bestClustering.getImbalance().getValue();
 	splitgraphVNDProcessBalancingHistory.push_back(ss.str());
+	numberOfFrustratedSolutions = 0;
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
@@ -1488,6 +1494,8 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 			". Time spent: " << timeSpentOnLocalSearch << " s.";
 
 	stringstream splitgraphVNDResults;
+	BOOST_LOG_TRIVIAL(info) << "[Splitgraph] Number of frustrated ILS solutions: " << numberOfFrustratedSolutions;
+	splitgraphVNDResults << "[Splitgraph] Number of frustrated ILS solutions: " << numberOfFrustratedSolutions << "\n";
 	BOOST_LOG_TRIVIAL(info) << "[Splitgraph] Execution and Improvement statistics for each neighborhood: ";
 	splitgraphVNDResults << "[Splitgraph] Execution and Improvement statistics for each neighborhood: \n";
 	BOOST_LOG_TRIVIAL(info) << "Neighborhood size, Num exec, Num improv";
@@ -1562,6 +1570,8 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		sshistory << sg.getN() << ", " << boost::math::lround(biggestCluster->value) << ", ";
 	}
 	sshistory << "\n";
+	// includes the number of frustrated solutions
+	sshistory << "Frustrated ILS solutions, " << numberOfFrustratedSolutions << "\n";
 
 	// Saves the splitgraph solution history to csv file
 	generateOutputFile(problem, sshistory, info.outputFolder, info.fileId, info.executionId,
@@ -1700,6 +1710,8 @@ bool ImbalanceSubgraphParallelILS::splitClusterMove(SignedGraph* g, Clustering& 
 						long sizeOfDestProcess = bestSplitgraphClustering.getClusterSize(procDestNum);
 						long newSizeOfSourceProcess = sizeOfSourceProcess - cliqueC.size();
 						long newSizeOfDestProcess = sizeOfDestProcess + cliqueC.size();
+						// cannot count the number of frustrated ILS solutions here, since split-cluster move is not a zero-cost move
+						// it can really make global imbalance value worse
 
 						if (newGlobalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
 							BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost move.";
