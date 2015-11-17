@@ -24,6 +24,9 @@ public:
 
 	SignedGraphPtr readGraphFromString(const std::string &graphContents);
 
+	bool exportGraphToGraphVizFile(SignedGraph &g, const std::string outputFolder,
+			const std::string &filename);
+
 private:
 	std::string get_file_contents(const char *filename);
 };

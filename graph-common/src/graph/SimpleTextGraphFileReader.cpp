@@ -24,6 +24,10 @@
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/graph/graphviz.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/graph/iteration_macros.hpp>
 
 using namespace std;
 using namespace boost;
@@ -240,6 +244,36 @@ std::string SimpleTextGraphFileReader::get_file_contents(const char *filename)
     return(contents.str());
   }
   throw(errno);
+}
+
+bool SimpleTextGraphFileReader::exportGraphToGraphVizFile(SignedGraph &g, const std::string outputFolder,
+		const std::string &filename) {
+	namespace fs = boost::filesystem;
+	if (!fs::exists(fs::path(outputFolder))) {
+		fs::create_directories(fs::path(outputFolder));
+	}
+	stringstream sfilename;
+	sfilename << outputFolder << "/" << filename << ".viz";
+	fs::path newFile(sfilename.str());
+	ofstream os;
+	os.open(newFile.c_str(), ios::out | ios::trunc);
+	if (!os) {
+		BOOST_LOG_TRIVIAL(fatal) << "Can't open output file!" << endl;
+		throw "Cannot open output file.";
+	}
+
+	dynamic_properties dp;
+	dp.property("id", get(VertexProperty, g.graph));
+	dp.property("weight", get(EdgePropery, g.graph));
+	std::map<std::string, Vertex> name_to_vertex;
+	BGL_FORALL_VERTICES(v, g.graph, UndirectedGraph)
+	    name_to_vertex[get(Vertex, g.graph, v)] = v;
+
+
+
+	write_graphviz(os, g.graph, dp, std::string("id"));
+	os.close();
+	return true;
 }
 
 } /* namespace controller */
