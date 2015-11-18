@@ -291,32 +291,50 @@ Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(Signed
 
 		ClusterArray cTemp = Si.getClusterArray();
 		long numberOfEdges = 0;
+		for(int i = 0; i < Gr.size(); i++) {
+			long ni = Gr[i].id;
+			Gr[i].positiveDegree = g->getPositiveEdgeSumBetweenVertexAndClustering(ni, Si.getClusterArray());
+		}
+
 		while(Gr.size() > 0) {
+			std::vector<VertexDegree>::iterator it_max = std::max_element(Gr.begin(), Gr.end(), pos_degree_ordering_asc());  // O(n)
+			BOOST_LOG_TRIVIAL(debug) << "ClusterSize = " << Si.getClusterSize(0) << ": The vertex in (Gr - Si) with the biggest pos edge sum is " << it_max->id << " with sum = " << it_max->positiveDegree;
+
+			// Chooses a node max_ni belonging to (Gr \ Si) with the biggest cardinality of positive edges between ni and Si;
+			long max_ni = it_max->id;
+			// Si = Si + ni
+			Si.addNodeToCluster(*g, problem, max_ni, 0, false);
+			// Gr = Gr - ni
+			Gr.erase(it_max);
+			numberOfEdges += g->getOutDegree(max_ni);
+
+			// incremental update of Gr
 			// updates the positive edge sum of each vertex ni in Gr (pos edge sum between ni and Si)
 			boost::timer::cpu_timer timer;
 			timer.start();
 			boost::timer::cpu_times start_time = timer.elapsed();
-			// TODO trocar esse calculo sequencial por uma versao paralela em CUDA, baseada na funcao updateVertexClusterSumArrays()
-			// TODO ou entao tentar fazer um calculo incremental do grau positivo de cada vertice, com base na ultima modificacao de Si
+
+			boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+			UndirectedGraph::edge_descriptor e;
+			UndirectedGraph::out_edge_iterator f2, l2;
+			std::vector<double> deltaPosDegree(n, (double)0);
+			// keeps an array containing every positive edge between ni_max and every other vertex -> O(n)
+			for (boost::tie(f2, l2) = out_edges(max_ni, g->graph); f2 != l2; ++f2) {
+				e = *f2;
+				long j = target(*f2, g->graph);
+				if(ew[e].weight > 0) {
+					deltaPosDegree[j] = ew[e].weight;
+				}
+			}
+			// updates the positiveDegree of between the vertices in Gr and the cluster Si
 			for(int i = 0; i < Gr.size(); i++) {
 				long ni = Gr[i].id;
-				Gr[i].positiveDegree = g->getPositiveEdgeSumBetweenVertexAndClustering(ni, Si.getClusterArray());
+				Gr[i].positiveDegree += deltaPosDegree[ni];
 			}
 			// Last step. Stops the timer and stores the elapsed time
 			timer.stop();
 			boost::timer::cpu_times end_time = timer.elapsed();
 			timeSpent += (end_time.wall - start_time.wall) / double(1000000000);
-
-			std::vector<VertexDegree>::iterator it_max = std::max_element(Gr.begin(), Gr.end(), pos_degree_ordering_asc());  // O(n)
-			BOOST_LOG_TRIVIAL(debug) << "ClusterSize = " << Si.getClusterSize(0) << ": The vertex in (Gr - Si) with the biggest pos edge sum is " << it_max->id << " with sum = " << it_max->positiveDegree;
-
-			// Chooses a node ni belonging to (Gr \ Si) with the biggest cardinality of positive edges between ni and Si;
-			long ni = it_max->id;
-			// Si = Si + ni
-			Si.addNodeToCluster(*g, problem, ni, 0, false);
-			// Gr = Gr - ni
-			Gr.erase(it_max);
-			numberOfEdges += g->getOutDegree(ni);
 
 			if(partitionByVertex) {
 				if(Si.getClusterSize(0) >= desiredCardinality)  break;
