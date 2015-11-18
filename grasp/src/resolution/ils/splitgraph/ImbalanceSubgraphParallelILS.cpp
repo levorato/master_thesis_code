@@ -297,6 +297,7 @@ Clustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(Signed
 			timer.start();
 			boost::timer::cpu_times start_time = timer.elapsed();
 			// TODO trocar esse calculo sequencial por uma versao paralela em CUDA, baseada na funcao updateVertexClusterSumArrays()
+			// TODO ou entao tentar fazer um calculo incremental do grau positivo de cada vertice, com base na ultima modificacao de Si
 			for(int i = 0; i < Gr.size(); i++) {
 				long ni = Gr[i].id;
 				Gr[i].positiveDegree = g->getPositiveEdgeSumBetweenVertexAndClustering(ni, Si.getClusterArray());
