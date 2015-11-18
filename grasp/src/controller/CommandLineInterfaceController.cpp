@@ -388,6 +388,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	bool splitGraph = false;
 	bool cuda = true;
 	bool test = false;
+	bool exportDOT = false;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
@@ -423,6 +424,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
 		("search", po::value<CommandLineInterfaceController::SearchName>(&searchType),
                                          "Local search to be used. Accepted values: SEQUENTIAL (default), PARALLEL.")
+		("exportDOT", po::value<bool>(&exportDOT)->default_value(false), "Export graph file to GraphViz DOT format.")
 		//("ils,i", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
 		//("perturb,p", po::value<int>(&perturbationLevelMax)->default_value(30), "maximum perturbation level in ILS")
 	;
@@ -464,6 +466,18 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		//cout << "Correlation clustering problem solver" << endl;
 		// id used for output folders
 		string executionId = jobid;
+
+		if(exportDOT) {
+			cout << "Exporting the graph to DOT format." << endl;
+			SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
+			fs::path filePath (vm["input-file"].as< std::vector<string> >().at(0));
+			SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
+			string loc = g->getGraphFileLocation();
+			string filename(loc.substr(loc.find_last_of("/\\")));
+			reader.exportGraphToGraphVizFile(*g, outputFolder, filename);
+
+			return 0;
+		}
 
 		try {
 			if (vm.count("help")) {
