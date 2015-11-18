@@ -253,7 +253,7 @@ bool SimpleTextGraphFileReader::exportGraphToGraphVizFile(SignedGraph &g, const 
 		fs::create_directories(fs::path(outputFolder));
 	}
 	stringstream sfilename;
-	sfilename << outputFolder << "/" << filename << ".viz";
+	sfilename << outputFolder << "/" << filename << ".dot";
 	fs::path newFile(sfilename.str());
 	ofstream os;
 	os.open(newFile.c_str(), ios::out | ios::trunc);
@@ -262,16 +262,26 @@ bool SimpleTextGraphFileReader::exportGraphToGraphVizFile(SignedGraph &g, const 
 		throw "Cannot open output file.";
 	}
 
-	dynamic_properties dp;
-	dp.property("id", get(VertexProperty, g.graph));
-	dp.property("weight", get(EdgePropery, g.graph));
-	std::map<std::string, Vertex> name_to_vertex;
-	BGL_FORALL_VERTICES(v, g.graph, UndirectedGraph)
-	    name_to_vertex[get(Vertex, g.graph, v)] = v;
+	long n = g.getN();
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	UndirectedGraph::edge_descriptor e;
 
+	os << "graph graphname {\n";
+	// For each vertex i
+	for(long i = 0; i < n; i++) {
+		UndirectedGraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+			e = *f;
+			double weight = ew[e].weight;
+			long j = target(*f, g.graph);
+			if(i < j) {
+				os << i << " -- " << j << "[ weight = " << weight << " ];\n";
+			}
+		}
+	}
+	os << "}\n";
 
-
-	write_graphviz(os, g.graph, dp, std::string("id"));
 	os.close();
 	return true;
 }
