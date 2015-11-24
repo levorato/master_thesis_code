@@ -375,11 +375,14 @@ Clustering ImbalanceSubgraphParallelILS::runDistributedILS(ConstructClustering *
 
 	Clustering c = distributeSubgraphsBetweenProcessesAndRunILS(construct, vnd, g,
 			iter, iterMaxILS, perturbationLevelMax, problem, info, splitgraphClusterArray, processClusterImbMatrix);
-	int retries = 0;
+	int retries = 1;
 
-	while((c.getImbalance().getValue() >= currentSolution.getImbalance().getValue()) and (retries < MAX_ILS_RETRIES)) {
+	// TODO return the last global solution found by distributed ILS or the less worse one?
+	while((c.getImbalance().getValue() >= currentSolution.getImbalance().getValue()) and (retries <= MAX_ILS_RETRIES)) {
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Found worse global solution with I(P) = "
-				<< c.getImbalance().getValue() << ". Retrying...";
+				<< c.getImbalance().getValue() << " (best known I(P) = " << currentSolution.getImbalance().getValue()
+				<< "). Retry " << retries << "...";
+		retries++;
 		c = distributeSubgraphsBetweenProcessesAndRunILS(construct, vnd, g,
 				iter, iterMaxILS, perturbationLevelMax, problem, info, splitgraphClusterArray, processClusterImbMatrix);
 	}
