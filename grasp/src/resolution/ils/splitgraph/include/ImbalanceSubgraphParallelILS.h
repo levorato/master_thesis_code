@@ -25,7 +25,7 @@ using namespace boost::numeric::ublas;
 #define POS_EDGE_PERC_RELAX 0.7  // minimum percentage of positive edges in pseudo-clique
 #define NEG_EDGE_PERC_RELAX 0.3  // maximum percentage of negative edges in pseudo-clique
 // Defines the number of times each neighborhood structure will rerun local ILS while global solution does not improve
-#define MAX_ILS_RETRIES 5
+#define MAX_ILS_RETRIES 2
 #define EPS 10e-6
 
 namespace resolution {
@@ -143,6 +143,12 @@ public:
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
 			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix);
+
+	/**
+	 * Rebalances clusters between processes without running ILS (zero-cost moves).
+	 */
+	void rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, Clustering& bestSplitgraphClustering,
+			Clustering& bestClustering,	const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix);
 
 	ImbalanceMatrix calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
 
