@@ -162,12 +162,13 @@ public:
 	int iterMaxILS;
 	int perturbationLevelMax;
 	Clustering CCclustering;  // best solution found by CC problem (for use on RCC problem solve)
+	bool isSplitGraph;
 	std::vector<long> vertexList;  // list of vertices of the subgraph (used on split graph feature)
 
 	InputMessageParallelILS() : InputMessage(),
 			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
-			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), vertexList() {
+			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(false), vertexList() {
 
 	}
 
@@ -179,7 +180,8 @@ public:
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
-					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering(), vertexList() {
+					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering(),
+					isSplitGraph(false), vertexList() {
 			if(cl != NULL) {
 				CCclustering = *cl;
 			}
@@ -193,6 +195,7 @@ public:
 
 	void setVertexList(std::vector<long> vlist) {
 		vertexList = vlist;
+		isSplitGraph = true;
 	}
 
 	string toString() {
@@ -230,6 +233,7 @@ public:
 		ar & iterMaxILS;
 		ar & perturbationLevelMax;
 		ar & CCclustering;
+		ar & isSplitGraph;
 		ar & vertexList;
 	}
 };

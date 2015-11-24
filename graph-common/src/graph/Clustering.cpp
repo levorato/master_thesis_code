@@ -54,23 +54,30 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 		clusterSize(), imbalance(0.0, 0.0), problemType(p.getType()), positiveSum(), negativeSum(),
 		processOrigin() {
 	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
-	long numberOfClusters = (*pos) + 1;
-	// cout << "number of clusters = " << numberOfClusters << endl;
-	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
+	long numberOfClusters = (*pos);
+	if(numberOfClusters >= 0) {
+		numberOfClusters++;
+	} else {
+		numberOfClusters = 0;
+	}
+	if(numberOfClusters > 0) {
+		// cout << "number of clusters = " << numberOfClusters << endl;
+		std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
 
-	long n = g.getN();
-	for(unsigned long i = 0; i < n; i++) {
-		assert(clusterArray[i] < numberOfClusters);
-		clusters[clusterArray[i]].push_back(i);
+		long n = g.getN();
+		for(unsigned long i = 0; i < n; i++) {
+			assert(clusterArray[i] < numberOfClusters);
+			clusters[clusterArray[i]].push_back(i);
+		}
+		// compute clusters' size
+		for(long k = 0; k < numberOfClusters; k++) {
+			clusterSize.push_back(clusters[k].size());
+			processOrigin.push_back(0);
+			// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
+		}
+		// compute the imbalance
+		this->setImbalance(p.objectiveFunction(g, *this));
 	}
-	// compute clusters' size
-	for(long k = 0; k < numberOfClusters; k++) {
-		clusterSize.push_back(clusters[k].size());
-		processOrigin.push_back(0);
-		// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
-	}
-	// compute the imbalance
-	this->setImbalance(p.objectiveFunction(g, *this));
 }
 
 Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
@@ -78,20 +85,27 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 				imbalance(positiveImbalance, negativeImbalance), problemType(p.getType()),
 				positiveSum(), negativeSum(), processOrigin() {
 	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
-	long numberOfClusters = (*pos) + 1;
-	// cout << "number of clusters = " << numberOfClusters << endl;
-	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
-
-	long n = g.getN();
-	for(unsigned long i = 0; i < n; i++) {
-		assert(clusterArray[i] < numberOfClusters);
-		clusters[clusterArray[i]].push_back(i);
+	long numberOfClusters = (*pos);
+	if(numberOfClusters >= 0) {
+		numberOfClusters++;
+	} else {
+		numberOfClusters = 0;
 	}
-	// compute clusters' size
-	for(long k = 0; k < numberOfClusters; k++) {
-		clusterSize.push_back(clusters[k].size());
-		processOrigin.push_back(0);
-		// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
+	if(numberOfClusters > 0) {
+		// cout << "number of clusters = " << numberOfClusters << endl;
+		std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
+
+		long n = g.getN();
+		for(unsigned long i = 0; i < n; i++) {
+			assert(clusterArray[i] < numberOfClusters);
+			clusters[clusterArray[i]].push_back(i);
+		}
+		// compute clusters' size
+		for(long k = 0; k < numberOfClusters; k++) {
+			clusterSize.push_back(clusters[k].size());
+			processOrigin.push_back(0);
+			// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
+		}
 	}
 }
 
@@ -100,19 +114,26 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 		clusterArray(cArray), clusterSize(), imbalance(positiveImbalance, negativeImbalance), problemType(p.getType()),
 		positiveSum(), negativeSum(), processOrigin(clusterProcessOrigin.begin(), clusterProcessOrigin.end()) {
 	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
-	long numberOfClusters = (*pos) + 1;
-	// cout << "number of clusters = " << numberOfClusters << endl;
-	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
-
-	long n = g.getN();
-	for(unsigned long i = 0; i < n; i++) {
-		assert(clusterArray[i] < numberOfClusters);
-		clusters[clusterArray[i]].push_back(i);
+	long numberOfClusters = (*pos);
+	if(numberOfClusters >= 0) {
+		numberOfClusters++;
+	} else {
+		numberOfClusters = 0;
 	}
-	// compute clusters' size
-	for(long k = 0; k < numberOfClusters; k++) {
-		clusterSize.push_back(clusters[k].size());
-		// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
+	if(numberOfClusters > 0) {
+		// cout << "number of clusters = " << numberOfClusters << endl;
+		std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
+
+		long n = g.getN();
+		for(unsigned long i = 0; i < n; i++) {
+			assert(clusterArray[i] < numberOfClusters);
+			clusters[clusterArray[i]].push_back(i);
+		}
+		// compute clusters' size
+		for(long k = 0; k < numberOfClusters; k++) {
+			clusterSize.push_back(clusters[k].size());
+			// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
+		}
 	}
 }
 
