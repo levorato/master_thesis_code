@@ -839,45 +839,54 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// info about the processed graph
 						long n = num_vertices(g->graph), e = num_edges(g->graph);
 
-						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
-						if(imsgpils.vertexList.size() > 0) {
+						// If split graph is enabled, creates a subgraph induced by the vertex set
+						if(imsgpils.isSplitGraph) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
-							SignedGraph sg(g->graph, imsgpils.vertexList);
-							/*
-							sg.graph = (g->graph).create_subgraph(); // imsgpils.vertexList.begin(), imsgpils.vertexList.end());
-							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
-								add_vertex(*it, sg.graph);
-							} */
-							n = num_vertices(sg.graph);
-							e = num_edges(sg.graph);
-							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;
-
-							GainFunctionFactory functionFactory(&sg);
-							ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
-							ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering);
-							ConstructClustering* construct = &defaultConstruct;
-							if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
-									construct = &noConstruct;
-							}
-
-							if(imsgpils.cudaEnabled) {
-								bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
-										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
-								timeSpent = CUDAILS.getTotalTimeSpent();
+							if(imsgpils.vertexList.size() == 0) {
+								BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
+								std::vector<unsigned int> clusterProcessOrigin;
+								ClusterArray cArray(g->getN(), Clustering::NO_CLUSTER);
+								bestClustering = Clustering(cArray, *g, problemFactory.build(imsgpils.problemType, imsgpils.k),
+										0.0, 0.0, clusterProcessOrigin);
+								n = 0;
+								e = 0;
 							} else {
-								bestClustering = resolution.executeILS(construct, &vnd, &sg, imsgpils.iter,
-										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
-								timeSpent = resolution.getTotalTimeSpent();
-							}
+								SignedGraph sg(g->graph, imsgpils.vertexList);
+								/*
+								sg.graph = (g->graph).create_subgraph(); // imsgpils.vertexList.begin(), imsgpils.vertexList.end());
+								for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
+									add_vertex(*it, sg.graph);
+								} */
+								n = num_vertices(sg.graph);
+								e = num_edges(sg.graph);
+								BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;
 
-							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
-							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
-							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-								globalVertexId.push_back(sg.graph.local_to_global(*it));
-							}
+								GainFunctionFactory functionFactory(&sg);
+								ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
+								ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering);
+								ConstructClustering* construct = &defaultConstruct;
+								if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
+										construct = &noConstruct;
+								}
 
+								if(imsgpils.cudaEnabled) {
+									bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
+											imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+											problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+									timeSpent = CUDAILS.getTotalTimeSpent();
+								} else {
+									bestClustering = resolution.executeILS(construct, &vnd, &sg, imsgpils.iter,
+											imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+											problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+									timeSpent = resolution.getTotalTimeSpent();
+								}
+
+								// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
+								std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
+								for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+									globalVertexId.push_back(sg.graph.local_to_global(*it));
+								}
+							}
 						} else {
 							if(imsgpils.cudaEnabled) {
 								bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,

@@ -16,12 +16,17 @@
 using namespace boost::numeric::ublas;
 
 // TODO CHANGE TO APPLICATION CLI PARAMETER
+// Defines the parameters used in global VND neighborhoods
 #define PERCENTAGE_OF_PROCESS_PAIRS 0.2
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
 #define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
-#define CLUSTERING_ALPHA 0.2
-#define POS_EDGE_PERC_RELAX 0.7
-#define NEG_EDGE_PERC_RELAX 0.3
+// Defines the parameters used in pseudo-clique (splitcluster) neighborhood
+#define CLUSTERING_ALPHA 0.2  // pseudo-clique alpha constructive parameter
+#define POS_EDGE_PERC_RELAX 0.7  // minimum percentage of positive edges in pseudo-clique
+#define NEG_EDGE_PERC_RELAX 0.3  // maximum percentage of negative edges in pseudo-clique
+// Defines the number of times each neighborhood structure will rerun local ILS while global solution does not improve
+#define MAX_ILS_RETRIES 5
+#define EPS 10e-6
 
 namespace resolution {
 namespace ils {
@@ -119,6 +124,21 @@ public:
 
 	Clustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem, bool partitionByVertex);
 
+	/**
+	 * Triggers the distributed ILS (split graph) resolution, invoking the local ILS
+	 * resolution in each process (distributeSubgraphsBetweenProcessesAndRunILS)
+	 * as many times as needed to improve the global solution.
+	 */
+	Clustering runDistributedILS(ConstructClustering *construct,
+			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
+			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
+			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix,
+			Clustering& currentSolution);
+
+	/**
+	 * Executes a local ILS in each subgraph / process, gathers the individual results and
+	 * merges them into a global CC solution.
+	 */
 	Clustering distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
