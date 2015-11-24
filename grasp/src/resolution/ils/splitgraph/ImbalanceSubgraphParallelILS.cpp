@@ -1522,7 +1522,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		boost::timer::cpu_times start_time = timer.elapsed();
 		BOOST_LOG_TRIVIAL(debug)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
 
-		rebalanceClustersBetweenProcessesWithZeroCost(g, bestSplitgraphClustering, bestClustering,
+		rebalanceClustersBetweenProcessesWithZeroCost(g, problem, bestSplitgraphClustering, bestClustering,
 				numberOfProcesses, processClusterImbMatrix);
 
 		bool improved = false;
@@ -2106,7 +2106,7 @@ long ImbalanceSubgraphParallelILS::chooseRandomVertex(std::list<VertexDegree>& v
 	return selectedVertex.id;
 }
 
-void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g,
+void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, ClusteringProblem& problem,
 		Clustering& bestSplitgraphClustering, Clustering& bestClustering, const int& numberOfProcesses,
 		ImbalanceMatrix& processClusterImbMatrix) {
 
@@ -2133,7 +2133,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 		// TODO possible parametrization here!
 		long maxVerticesAllowedInProcess = boost::math::lround(n / (double)2.0); // (2 * n) / bestSplitgraphClustering.getNumberOfClusters();
 		std::vector<long> clustersToMove;
-		std::vector<Coordinate> fullClusterList = obtainListOfClustersFromProcess(g, bestClustering, procSourceNum);
+		std::vector<Coordinate> fullClusterList = obtainListOfClustersFromProcess(*g, bestClustering, procSourceNum);
 		// sorts the list of clusters according to the number of vertices, ascending order
 		std::sort(fullClusterList.begin(), fullClusterList.end(), coordinate_ordering_asc());
 		long numberOfVerticesToMove = 0;
@@ -2170,9 +2170,10 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 						currentSplitgraphClusterArray[listOfMovedVerticesFromClusterA[elem]] = procDestNum;
 					}
 					// INCREMENTAL UPDATE OF THE CLUSTER IMBALANCE MATRIX, reusing the matrix processC
+					/*
 					updateProcessToProcessImbalanceMatrix(*g, previousSplitgraphClusterArray, tempSplitgraphClusterArray,
 							listOfMovedVerticesFromClusterA, tempProcessClusterImbMatrix);
-					previousSplitgraphClusterArray = tempSplitgraphClusterArray;
+					previousSplitgraphClusterArray = tempSplitgraphClusterArray; */
 					// Valida se a matriz incremental e a full sao iguais
 					/*
 					ImbalanceMatrix tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
@@ -2180,20 +2181,21 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 					bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix2.neg, 0.001, 0.1);
 					BOOST_LOG_TRIVIAL(info) << "Op1 *** As matrizes de delta sao iguais: " << igual << " e " << igual2; */
 
-					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix from move done.";
+					// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix from move done.";
 
-					// Moves the clusters to the destination process
+					// Moves the clusters to the destination process -> does NOT change the imbalance
 					bestClustering.setProcessOrigin(clusterA, procDestNum);
 
 					// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
-					bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
-					// the movement for this cluster is done
+					bestSplitgraphClustering = Clustering(currentSplitgraphClusterArray, *g, problem);
+					// the movement for this cluster is done, proceed to the next one
 					break;
 				}
 			}  // next destination process to be tested
 		}  // next cluster to be moved
 	}  // next overloaded processor
-
+	// recalculates the process-process imbalance matrix
+	processClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray);
 }
 
 } /* namespace ils */

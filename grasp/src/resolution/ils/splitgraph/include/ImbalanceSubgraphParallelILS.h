@@ -147,7 +147,8 @@ public:
 	/**
 	 * Rebalances clusters between processes without running ILS (zero-cost moves).
 	 */
-	void rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, Clustering& bestSplitgraphClustering,
+	void rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, ClusteringProblem& problem,
+			Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering,	const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix);
 
 	ImbalanceMatrix calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
