@@ -240,6 +240,9 @@ protected:
 	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
 				Clustering& splitGraphClustering);
 
+	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
+					Clustering& splitGraphClustering, long maximumNumberOfVertices);
+
 	std::vector<Coordinate> obtainListOfClustersFromProcess(SignedGraph& g,
 				Clustering& globalClustering, int processNumber);
 

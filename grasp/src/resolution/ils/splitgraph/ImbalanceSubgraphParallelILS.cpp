@@ -830,20 +830,18 @@ std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfImbalancedClus
 }
 
 std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfOverloadedProcesses(SignedGraph& g,
-		Clustering& splitGraphClustering) {
-
+		Clustering& splitGraphClustering, long maximumNumberOfVertices) {
 	long n = g.getN();
 	int numberOfProcesses = splitGraphClustering.getNumberOfClusters();
-	// A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.
-	long numberOfEquallyDividedVertices = (long)ceil(n / (double)numberOfProcesses);
+	// A vertex-overloaded process is a process with more than (maximumNumberOfVertices) vertices.
 	BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] List of overloaded processes (with more than "
-			<< numberOfEquallyDividedVertices << " vertices): ";
+			<< maximumNumberOfVertices << " vertices): ";
 
 	std::vector<Coordinate> overloadedProcessList;
 	stringstream processListStr;
 	// For each process px
 	for(long px = 0; px < numberOfProcesses; px++) {
-		if(splitGraphClustering.getClusterSize(px) > numberOfEquallyDividedVertices) {
+		if(splitGraphClustering.getClusterSize(px) > maximumNumberOfVertices) {
 			overloadedProcessList.push_back(Coordinate(px, 0, splitGraphClustering.getClusterSize(px)));
 			processListStr << px << " ";
 		}
@@ -854,6 +852,16 @@ std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfOverloadedProc
 		BOOST_LOG_TRIVIAL(debug) << processListStr.str() << " ";
 	}
 	return overloadedProcessList;
+}
+
+std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfOverloadedProcesses(SignedGraph& g,
+		Clustering& splitGraphClustering) {
+
+	long n = g.getN();
+	int numberOfProcesses = splitGraphClustering.getNumberOfClusters();
+	// A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.
+	long numberOfEquallyDividedVertices = (long)ceil(n / (double)numberOfProcesses);
+	return obtainListOfOverloadedProcesses(g, splitGraphClustering, numberOfEquallyDividedVertices);
 }
 
 std::vector<Coordinate> ImbalanceSubgraphParallelILS::obtainListOfClustersFromProcess(SignedGraph& g,
@@ -2133,9 +2141,12 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 	ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
 	RandomUtil randomUtil;
 
-	std::vector<Coordinate> overloadedProcessList = obtainListOfOverloadedProcesses(*g, bestSplitgraphClustering);
+	// A vertex-overloaded process is a process with more than (2* n / numberOfProcesses) vertices.
+	long numberOfMaxVertices = (long)ceil(2 * n / (double)numberOfProcesses);
+	std::vector<Coordinate> overloadedProcessList = obtainListOfOverloadedProcesses(*g, bestSplitgraphClustering, numberOfMaxVertices);
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] ***************** rebalanceClustersBetweenProcessesWithZeroCost";
-	BOOST_LOG_TRIVIAL(debug) << "[SplitGraph twoMoveCluster] Found " << overloadedProcessList.size()  << " overloaded processes.";
+	BOOST_LOG_TRIVIAL(debug) << "[SplitGraph twoMoveCluster] Found " << overloadedProcessList.size()  << " overloaded processes (with more than "
+			<< numberOfMaxVertices << " vertices.";
 	// sorts the list of overloaded processes according to the number of vertices, descending order
 	std::sort(overloadedProcessList.begin(), overloadedProcessList.end(), coordinate_ordering_desc());
 	for(std::vector<Coordinate>::iterator prIter = overloadedProcessList.begin(); prIter != overloadedProcessList.end(); prIter++) {
