@@ -101,6 +101,7 @@ int Clustering::getBiggestClusterIndex() {
 void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k,
 		bool updateImbalance) {
 	assert(clusterArray.size() > 0);
+	assert(k < clusterSize.size());
 	//BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
 	this->clusterArray[i] = k;
 	this->clusterSize[k]++;
@@ -116,6 +117,7 @@ void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const un
 
 void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 	assert(clusterArray.size() > 0);
+	assert(k < clusterSize.size());
 	// clusterArray.erase(clusterArray.begin()+k);
 	// TODO complete code
 	// only if cluster has been removed
@@ -131,16 +133,19 @@ void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 }
 
 unsigned long Clustering::getClusterSize(unsigned long k) {
+	assert(k < clusterSize.size());
 	return this->clusterSize[k];
 }
 
 void Clustering::setClusterSize(unsigned long k, unsigned long size) {
+	assert(k < clusterSize.size());
 	this->clusterSize[k] = size;
 }
 
 void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, 
 		const unsigned long& k, bool updateImbalance) {
 	assert(clusterArray.size() > 0);
+	assert(k < clusterSize.size());
 	// verifica se o cluster eh unitario
 	//BOOST_LOG_TRIVIAL(trace) << "Removing vertex " << i << " from cluster " << k;
 	if(updateImbalance) {

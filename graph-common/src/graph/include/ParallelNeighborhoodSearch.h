@@ -40,6 +40,10 @@ public:
 					int myRank,	unsigned long initialSearchIndex, unsigned long finalSearchIndex,
 					bool firstImprovementOnOneNeig, unsigned long k);
 
+	virtual bool isParallel() {
+		return true;
+	}
+
 private:
 	/**
 	 * Machine-process allocation strategy for VND slave processes.

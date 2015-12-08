@@ -75,12 +75,13 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 	BOOST_LOG_TRIVIAL(trace) << "RemainingVertices is " << remainingVertices << endl;
 
 	double bestValue = numeric_limits<double>::infinity();
-	Clustering bestClustering;
+	BOOST_LOG_TRIVIAL(trace) << "Leader is running local search.";
 	// a busca abaixo, que eh feita pelo mestre, sera interrompida se ele receber uma solucao melhor de um dos escravos
-	bestClustering = this->searchNeighborhood(l, g, clustering,
+	Clustering bestClustering = this->searchNeighborhood(l, g, clustering,
 			problem, timeSpentSoFar, timeLimit, randomSeed, myRank,
 			i * sizeOfChunk, g->getN() - 1, firstImprovementOnOneNeig, k);
 	bestValue = bestClustering.getImbalance().getValue();
+	BOOST_LOG_TRIVIAL(trace) << "Leader local search done.";
 	if((firstImprovementOnOneNeig and l == 1) or (l == 2)) {
         	InputMessageParallelVND imsg;
                 BOOST_LOG_TRIVIAL(debug) << "*** [Parallel VND] First improvement on PVND: interrupting other VND slaves.";

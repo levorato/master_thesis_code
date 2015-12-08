@@ -59,13 +59,13 @@ Clustering NeighborhoodSearch::search1opt(SignedGraph* g,
 	ClusterArray myCluster = clustering->getClusterArray();
 
 	if(problem.getType() == ClusteringProblem::CC_PROBLEM) {  // runs optimized local search for CC Problem
-		// rebuilds the auxiliary matrices in case it is needed (between metaheuristic iterations)
-		if(h_vertexClusterPosSum.empty() or h_vertexClusterNegSum.empty() or h_isNeighborCluster.empty()) {
+		// rebuilds the auxiliary matrices in case it is needed (between metaheuristic iterations)  FIXME TODO verificar se isso esta causando o erro do VND paralelo
+		if(this->isParallel() or h_vertexClusterPosSum.empty() or h_vertexClusterNegSum.empty() or h_isNeighborCluster.empty()) {
 			// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
 			h_vertexClusterPosSum.resize(n * (nc + 1), double(0));
 			h_vertexClusterNegSum.resize(n * (nc + 1), double(0));
 			h_isNeighborCluster.resize(n * (nc + 1), 0);
-			// BOOST_LOG_TRIVIAL(trace) << "Generating local search auxiliary matrices.";
+			BOOST_LOG_TRIVIAL(trace) << "Regenerating local search auxiliary matrices.";
 			updateVertexClusterSumArrays(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster, clustering);
 		}
 		// BOOST_LOG_TRIVIAL(trace) << "Invoking optimized 1-opt CC local search...";
@@ -183,15 +183,13 @@ Clustering NeighborhoodSearch::search2opt(SignedGraph* g,
 
 	ClusterArray myCluster = clustering->getClusterArray();
 	if(problem->getType() == ClusteringProblem::CC_PROBLEM) {  // runs optimized local search for CC Problem
-		// rebuilds the auxiliary matrices in case it is needed (between metaheuristic iterations)
-		if(h_vertexClusterPosSum.empty() or h_vertexClusterNegSum.empty() or h_isNeighborCluster.empty()) {
-			// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
-			h_vertexClusterPosSum.resize(n * (nc + 1), double(0));
-			h_vertexClusterNegSum.resize(n * (nc + 1), double(0));
-			h_isNeighborCluster.resize(n * (nc + 1), 0);
-			// BOOST_LOG_TRIVIAL(trace) << "Generating local search auxiliary matrices.";
-			updateVertexClusterSumArrays(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster, clustering);
-		}
+		// for 2-opt local search, always rebuilds the auxiliary matrices in case it is needed (between metaheuristic iterations)
+		// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
+		h_vertexClusterPosSum.resize(n * (nc + 1), double(0));
+		h_vertexClusterNegSum.resize(n * (nc + 1), double(0));
+		h_isNeighborCluster.resize(n * (nc + 1), 0);
+		// BOOST_LOG_TRIVIAL(trace) << "Generating local search auxiliary matrices.";
+		updateVertexClusterSumArrays(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster, clustering);
 		return search2optCCProblem(g, clustering, *problem, timeSpentSoFar, timeLimit, randomSeed,
 						myRank, initialSearchIndex, finalSearchIndex, firstImprovement, k,
 						myCluster, h_isNeighborCluster, h_vertexClusterPosSum, h_vertexClusterNegSum);
@@ -463,7 +461,7 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		}
 		cBest = newClustering;
 
-		// BOOST_LOG_TRIVIAL(trace) << "Updating auxiliary matrices with delta...";
+		BOOST_LOG_TRIVIAL(trace) << "Updating auxiliary matrices with delta...";
 		long nc = bestClustering.getNumberOfClusters();
 		long new_nc = cBest.getNumberOfClusters();
 		// CASO ESPECIAL 1: novo cluster
@@ -475,15 +473,18 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		this->updateVertexClusterSumArraysDelta(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster,
 				cBest, nc, new_nc, bestSrcVertex, k1, k2);
 		bestClustering = cBest;
-		// CASO ESPECIAL 2: cluster removido
+		// CASO ESPECIAL 2: cluster removido => FARA RECALCULO COMPLETO DAS MATRIZES
 		if(new_nc < nc) {
 			h_vertexClusterPosSum.resize(n * (new_nc + 1), double(0));
 			h_vertexClusterNegSum.resize(n * (new_nc + 1), double(0));
 			h_isNeighborCluster.resize(n * (new_nc + 1), 0);
+			// pre-calculates, in a list, for each vertex, which clusters are neighbors of it (i.e. has edges)
+			// BOOST_LOG_TRIVIAL(trace) << "Generating local search auxiliary matrices.";
+			updateVertexClusterSumArrays(g, h_vertexClusterPosSum, h_vertexClusterNegSum, h_isNeighborCluster, &bestClustering);
 		}
-		// BOOST_LOG_TRIVIAL(trace) << "Updated.";
+		BOOST_LOG_TRIVIAL(trace) << "Updated.";
 	} else {
-		// BOOST_LOG_TRIVIAL(debug) << "[New local search] Validation. No improvement.";
+		BOOST_LOG_TRIVIAL(debug) << "[New local search] Validation. No improvement.";
 	}
 
 	// returns the best combination found in 1-opt

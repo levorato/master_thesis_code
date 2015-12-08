@@ -62,6 +62,10 @@ public:
 			bestClustering = coClustering;
 		}
 
+		virtual bool isParallel() {
+			return false;
+		}
+
 protected:
 
     	/**
