@@ -601,6 +601,7 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search 2-opt] Processing complete. Best result: vertex " << bestSrcVertex1 << " (from cluster " << myCluster[bestSrcVertex1]
 		// 			<< ") goes to cluster " << bestDestCluster1 << " with I(P) = " << bestImbalance.getValue() << " " << bestImbalance.getPositiveValue() << " " << bestImbalance.getNegativeValue();
 		Clustering newClustering(*clustering);
+		Clustering newClusteringTemp(*clustering);
 		int k1 = myCluster[bestSrcVertex1];
 		int k3 = bestDestCluster1;
 		int k2 = myCluster[bestSrcVertex2];
@@ -609,25 +610,19 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 		bool newClusterK4 = (k4 == nc);
 		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex1, k1);
 		int newnc1 = newClustering.getNumberOfClusters();
+		newClusteringTemp.removeNodeFromCluster(*g, problem, bestSrcVertex2, k2);
+		int newnc2 = newClusteringTemp.getNumberOfClusters();
+		int removedK1 = (newnc1 < nc);  // cluster k1 has been removed
+		int removedK2 = (newnc2 < nc);  // cluster k2 has been removed
+		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex2, k2 - (removedK1 ? (k2 >= k1) : 0));
+
 		if(not newClusterK3) {  // existing cluster k3
-			if((newnc1 < nc) && (k3 >= k1)) {
-				// cluster k1 has been removed
-				newClustering.addNodeToCluster(*g, problem, bestSrcVertex1, k3 - 1);
-			} else {
-				newClustering.addNodeToCluster(*g, problem, bestSrcVertex1, k3);
-			}
+			newClustering.addNodeToCluster(*g, problem, bestSrcVertex1, k3 - (removedK1 ? (k3 >= k1) : 0) - (removedK2 ? (k3 >= k2) : 0));
 		} else {  // new cluster k3
 			newClustering.addCluster(*g, problem, bestSrcVertex1);
 		}
-		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex2, k2);
-		int newnc2 = newClustering.getNumberOfClusters();
 		if(not newClusterK4) {  // existing cluster k4
-			if((newnc2 < newnc1) && (k4 >= k1)) {
-				// cluster k2 has been removed
-				newClustering.addNodeToCluster(*g, problem, bestSrcVertex2, k4 - 1);
-			} else {
-				newClustering.addNodeToCluster(*g, problem, bestSrcVertex2, k4);
-			}
+			newClustering.addNodeToCluster(*g, problem, bestSrcVertex2, k4 - (removedK1 ? (k4 >= k1) : 0) - (removedK2 ? (k4 >= k2) : 0));
 		} else {  // new cluster k4
 			newClustering.addCluster(*g, problem, bestSrcVertex2);
 		}
