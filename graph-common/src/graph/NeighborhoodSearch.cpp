@@ -449,15 +449,17 @@ Clustering NeighborhoodSearch::search1optCCProblem(SignedGraph* g,
 		int k2 = bestDestCluster;
 		bool newClusterK2 = (k2 == nc);
 		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex, k1);
-		if(not newClusterK2) {  // existing cluster k2
-			if((newClustering.getNumberOfClusters() < nc) && (k2 >= k1)) {
+		bool removedK1 = (newClustering.getNumberOfClusters() < nc);
+
+		if(newClusterK2 or (removedK1 and (k2 == k1))) {  // existing cluster k2
+			newClustering.addCluster(*g, problem, bestSrcVertex);
+		} else {  // existing cluster k2
+			if(removedK1 && (k2 > k1)) {
 				// cluster k1 has been removed
 				newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2 - 1);
 			} else {
 				newClustering.addNodeToCluster(*g, problem, bestSrcVertex, k2);
 			}
-		} else {  // new cluster k2
-			newClustering.addCluster(*g, problem, bestSrcVertex);
 		}
 		cBest = newClustering;
 
@@ -614,23 +616,40 @@ Clustering NeighborhoodSearch::search2optCCProblem(SignedGraph* g,
 		int newnc2 = newClusteringTemp.getNumberOfClusters();
 		int removedK1 = (newnc1 < nc);  // cluster k1 has been removed
 		int removedK2 = (newnc2 < nc);  // cluster k2 has been removed
-		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex2, k2 - (removedK1 ? (k2 >= k1) : 0));
+		newClustering.removeNodeFromCluster(*g, problem, bestSrcVertex2, k2 - (removedK1 and (k2 >= k1) ? 1 : 0));
 
-		if(not newClusterK3) {  // existing cluster k3
-			newClustering.addNodeToCluster(*g, problem, bestSrcVertex1, k3 - (removedK1 ? (k3 >= k1) : 0) - (removedK2 ? (k3 >= k2) : 0));
-		} else {  // new cluster k3
+		if(newClusterK3 or (removedK1 and (k3 == k1)) or (removedK2 and (k3 == k2))) {  // new cluster k3
 			newClustering.addCluster(*g, problem, bestSrcVertex1);
+		} else {  // existing cluster k3
+			int destCluster = k3 - (removedK1 and (k3 > k1) ? 1 : 0) - (removedK2 and (k3 > k2) ? 1 : 0);
+			if(destCluster >= newClustering.getNumberOfClusters())  {  // debug info
+				BOOST_LOG_TRIVIAL(error) << "K3: removedK1 = " << removedK1 << " and removedK2 = " << removedK2;
+				BOOST_LOG_TRIVIAL(error) << "k1 = " << k1 << " and k2 = " << k2;
+				BOOST_LOG_TRIVIAL(error) << "K3: k3 = " << k3;
+				BOOST_LOG_TRIVIAL(error) << "K3: destCluster = " << destCluster << " but nc = " << newClustering.getNumberOfClusters();
+				destCluster--;
+			}
+			newClustering.addNodeToCluster(*g, problem, bestSrcVertex1, destCluster);
 		}
-		if(not newClusterK4) {  // existing cluster k4
-			newClustering.addNodeToCluster(*g, problem, bestSrcVertex2, k4 - (removedK1 ? (k4 >= k1) : 0) - (removedK2 ? (k4 >= k2) : 0));
-		} else {  // new cluster k4
+		if(newClusterK4 or (removedK1 and (k4 == k1)) or (removedK2 and (k4 == k2)) ) {  // new cluster k4
 			newClustering.addCluster(*g, problem, bestSrcVertex2);
+		} else {  // existing cluster k4
+			int destCluster = k4 - (removedK1 and (k4 > k1) ? 1 : 0) - (removedK2 and (k4 > k2) ? 1 : 0);
+			if(destCluster >= newClustering.getNumberOfClusters())  {  // debug info
+				BOOST_LOG_TRIVIAL(error) << "K4: removedK1 = " << removedK1 << " and removedK2 = " << removedK2;
+				BOOST_LOG_TRIVIAL(error) << "k1 = " << k1 << " and k2 = " << k2;
+				BOOST_LOG_TRIVIAL(error) << "K4: k4 = " << k4;
+				BOOST_LOG_TRIVIAL(error) << "K4: destCluster = " << destCluster << " but nc = " << newClustering.getNumberOfClusters();
+				destCluster--;
+			}
+			newClustering.addNodeToCluster(*g, problem, bestSrcVertex2, destCluster);
 		}
-		cBest = newClustering;
-		/*
-		if(newClustering.getImbalance().getValue() != bestImbalance.getValue()) {
-			BOOST_LOG_TRIVIAL(error) << "New-calculation and old-calculation objective function values DO NOT MATCH!";
-		}*/
+		if(newClustering.getImbalance().getValue() < cBest.getImbalance().getValue()) {
+			cBest = newClustering;
+		}
+		// if(newClustering.getImbalance().getValue() != bestImbalance.getValue()) {
+		// 	BOOST_LOG_TRIVIAL(error) << "New-calculation and old-calculation objective function values DO NOT MATCH!";
+		// }
 		// BOOST_LOG_TRIVIAL(debug) << "[New local search 2-opt] Validation. Best result: I(P) = " << newClustering.getImbalance().getValue() << " "
 		// 		<< newClustering.getImbalance().getPositiveValue() << " " << newClustering.getImbalance().getNegativeValue();
 	} else {
