@@ -6,7 +6,8 @@ import os
 import os.path
 import re
 import argparse
-#from pandas import *
+import pandas as pd
+import scipy.stats as stats
 
 
 def main(argv):
@@ -64,11 +65,11 @@ def processCCResult(folders):
                     filename = filename[filename.rfind("/")+1:]
                     datetime = root[root.rfind("/") + 1:]
 
-                    best_value = 100000000L
+                    best_value = float(100000000)
                     value = 0
 
                     while count >= 0:
-                        # Process all files from all metaheuristic executions, including those in parallel
+                        # Process all files from all algorithm executions, including those in parallel
                         #print "Processing file " + file_list[count] + "\n"
                         content_file = open(file_list[count], 'r')
                         try:
@@ -90,10 +91,11 @@ def processCCResult(folders):
                         finally:
                             content_file.close()
 
-                    # captura o melhor resultado dadas todas as execucoes de um mesmo grafo
+                    # captura o PIOR resultado dadas todas as execucoes de um mesmo grafo / instancia
+                    # deve ser o pior resultado encontrado, dadas todas as execucoes de um determinado algoritmo
                     if best_file_summary.has_key(filename):
                         current_value = float(best_file_summary[filename])
-                        if (best_value < current_value):
+                        if (best_value > current_value):
                             best_file_summary[filename] = str(best_value)
                     else:
                         best_file_summary[filename] = str(best_value)
@@ -148,27 +150,59 @@ def processCCResult(folders):
             else:
                 worse_sol[instance_name] = str(sol_value)
 
-    print "\n\nWorst solution values for each instance"
-    for key in sorted(best_file_summary.iterkeys()):
-        print "%s, %s" % (key, best_file_summary[key])
+    print "\n\nWorst solution values for each instance, comparing all algorithms:"
+    InstanceTargetSolDataSet = list(zip(best_file_summary.iterkeys(), best_file_summary.itervalues()))
+    df = pd.DataFrame(data = InstanceTargetSolDataSet, columns=['Instance', 'Target I(P)'])
+    print df
 
     # for each instance in worse_sol, discover the time each algorithm took to reach that solution
+    ttt_for_algorithm = dict()  # contains the ttt dict for a specific algorithm / folder
     for folder in folders:
-        processTimeToTarget(folder, worse_sol)
+        ttt_for_algorithm[folder] = processTimeToTarget(folder, worse_sol)
+
+    # now, for each instance, we need to calculate the columns: AvgTimeToTarget, Stddev(TTT), Speedup.
+    # and also the Standard Error of the Mean (SEM)
+    AvgTimeToTarget = dict()
+    StddevTTT = dict()
+    Speedup = []
+    for folder in folders:
+        AvgTimeToTarget[folder] = []
+        StddevTTT[folder] = []
+    for instance_name in best_file_summary.iterkeys():
+        # for each algorithm,
+        for folder in folders:
+            tttdict = ttt_for_algorithm[folder]
+            tttlist = tttdict[instance_name]
+            # obtains a list of execution times (time-to-target) of the algorithm for this specific instance
+            # calculates the average, stddev and confidence internal for the ttt variable
+            avg_ttt =  stats.mean(tttlist)
+            AvgTimeToTarget[folder].append(avg_ttt)
+            stddev_ttt = stats.std(tttlist)
+            StddevTTT[folder].append(stddev_ttt)
+
+
+    # Instance, Target I(P), AvgTimeToTarget, Stddev(TTT), Speedup.
+    CompleteInstanceDataSet = list(zip(best_file_summary.iterkeys(), best_file_summary.itervalues()))
+    columns = ['Instance', 'Target I(P)']
+    for folder in folders:
+        CompleteInstanceDataSet['AvgTime'] = AvgTimeToTarget[folder]
+        CompleteInstanceDataSet['Stddev-Time'] = StddevTTT[folder]
+        columns.append('AvgTime')
+        columns.append('Stddev-Time')
+
+    df = pd.DataFrame(data = CompleteInstanceDataSet, columns=columns)
+    print df
 
 def processTimeToTarget(folder, worse_sol):
-    # CC results
-    all_files_summary = dict()
-    full_iteration_data = dict()
-    target_iteration_history = dict()
 
-    previous_filename = ""
+    print "\nProcessing time-to-target for result folder = " + str(folder) + "\n"
+    instance_dict = dict()
     for root, subFolders, files in os.walk(folder):
         # sort dirs and files
         subFolders.sort()
         files.sort()
 
-        print "Processing folder " + ''.join(root)
+        #print "Processing folder " + ''.join(root)
         if (len(files) and ''.join(root) != folder):
             file_list = []
             file_list.extend(glob.glob(root + "/CC*-iterations.csv"))
@@ -180,6 +214,52 @@ def processTimeToTarget(folder, worse_sol):
                 filename = (root[:root.rfind("/")])
                 datetime = root[root.rfind("/") + 1:]
                 filename = filename[filename.rfind("/") + 1:]
+                myfolder = root[:root.rfind("/")]
+                #print "Processing instance " + myfolder + ", " + filename
+                if instance_dict.has_key(filename):
+                    if instance_dict[filename] <> myfolder:
+                        print "WARN: problem with result folder structure!\n"
+                else:
+                    instance_dict[filename] = root[:root.rfind("/")]
+    # end result folder scan
+    tttdict = dict()  # tttdict contains the time-to-target list for each instance for this algorithm
+    for key in sorted(instance_dict.iterkeys()):
+        instance_name = str(instance_dict[key])
+        print "Processing instance " + str(instance_name) + ", " + str(key)
+        tttlist = processTimeToTargetOnInstance(instance_name, str(key), worse_sol)
+        tttdict[instance_name] = tttlist
+
+    return tttdict
+
+def processTimeToTargetOnInstance(folder, filename, worse_sol):
+    # CC results
+    all_files_summary = dict()
+    full_iteration_data = dict()
+    target_iteration_history = dict()
+
+    print "\n\nTime-to-target for instance " + str(filename)
+    target_value = float(worse_sol[filename])
+    print "\nDesired target I(P) = " + str(target_value)
+
+    previous_filename = ""
+    for root, subFolders, files in os.walk(folder):
+        # sort dirs and files
+        subFolders.sort()
+        files.sort()
+
+        #print "Processing folder " + ''.join(root)
+        if (len(files) and ''.join(root) != folder):
+            file_list = []
+            file_list.extend(glob.glob(root + "/CC*-iterations.csv"))
+            file_list.extend(glob.glob(root + "/Node*-iterations.csv"))
+            count = len(file_list) - 1
+
+            # Process CC results
+            if os.path.isfile(root + "/cc-result.txt"):
+                filename = (root[:root.rfind("/")])
+                datetime = root[root.rfind("/") + 1:]
+                filename = filename[filename.rfind("/") + 1:]
+                # print "Processing instance " + filename
 
                 value = 0
                 pos_value = 0
@@ -190,7 +270,7 @@ def processTimeToTarget(folder, worse_sol):
 
                 while count >= 0:
                     # Process all files from all metaheuristic executions, including those in parallel
-                    print "Processing file " + file_list[count] + "\n"
+                    #print "Processing file " + file_list[count] + "\n"
                     content_file = open(file_list[count], 'r')
                     full_iteration_data.clear()
                     try:
@@ -210,7 +290,7 @@ def processTimeToTarget(folder, worse_sol):
                                 break
 
                             # obtains each iteration result found by a specific execution of a specific node (can be parallel)
-                            iteration = linecount
+                            iteration = long(linecount)
                             value = float(column[1])
                             pos_value = float(column[2])
                             neg_value = float(column[3])
@@ -218,7 +298,7 @@ def processTimeToTarget(folder, worse_sol):
                             time = float(column[5])
 
                             key = file_list[count]
-                            iter_data = [iter, value, pos_value, neg_value, K, time, key]
+                            iter_data = [iteration, value, pos_value, neg_value, K, time, key]
 
                             if not full_iteration_data.has_key(key):
                                 full_iteration_data[key] = [iter_data]
@@ -228,7 +308,6 @@ def processTimeToTarget(folder, worse_sol):
                     finally:
                         content_file.close()
 
-                    target_value = float(worse_sol[filename])
                     # for each execution of the algorithm
                     for executionId in sorted(full_iteration_data.iterkeys()):
                         executionIdIterations = full_iteration_data[executionId]
@@ -242,22 +321,36 @@ def processTimeToTarget(folder, worse_sol):
                                 break
                         # stores the info about the target iteration when the target solution was found
                         if desired_iteration < 0:
-                            print "Error retrieving target iteration info for executionId = " + str(executionId)
-                        if target_iteration_history.has_key(filename):
-                            target_iteration_history[filename].append(desired_iteration)
+                            # if the code gets to this point, it means the algorithm was running in parallel and one
+                            # of the nodes did not get to the best solution => can be safely ignored
+                            continue
+                        jobId = executionId[:executionId.rfind('/')]
+                        jobId = jobId[jobId.rfind('/') + 1:]
+                        if target_iteration_history.has_key(jobId):
+                            current_iteration_info = target_iteration_history[jobId]
+                            current_iteration_time = float(current_iteration_info[5])
+                            new_iteration_time = float(desired_iteration[5])
+                            if current_iteration_time > new_iteration_time:
+                                # replaces current iteration info with another one, which is faster
+                                # only happens in parallel algorithms
+                                target_iteration_history[jobId] = desired_iteration
+                                # print "found better result in the same job: " + str(jobId) + ", time = " + str(new_iteration_time) +  "\n"
                         else:
-                            target_iteration_history[filename] = [desired_iteration]
+                            target_iteration_history[jobId] = desired_iteration
+                # end process all result files for one execution of the algorithm
+        # end process all executions of the algorithm
 
-                # now we know the time-to-target of each algorithm execution for each instance file
-                print "\n\nDesired target I(P) = " + str(target_value)
-                print "\nTime-to-target for instance " + str(filename)
-                print "Time, Iter, Info"
-                for iteration_info in target_iteration_history[filename]:
-                    print "%s %s %s" % (str(iteration_info[5]), str(iteration_info[0]), str(iteration_info))
+    # now we know the time-to-target of each algorithm execution for this instance
+    print "Total: " + str(len(target_iteration_history)) + " results"
+    print "Time, Iter, Info"
+    tttlist = []
+    for key in target_iteration_history.iterkeys():
+        iteration_info = target_iteration_history[key]
+        tttlist.append(iteration_info[5])
+        print "%s %s %s" % (str(iteration_info[5]), str(long(iteration_info[0])), str(iteration_info))
 
-            # end loop
-            # process last file
-    print "\nProcessing CC Results...\n"
+    print "\nFinished TTT processing for instance " + str(filename) + ".\n"
+    return tttlist
 
 
 if __name__ == "__main__":
