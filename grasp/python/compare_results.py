@@ -6,7 +6,7 @@ import os
 import os.path
 import re
 import argparse
-from pandas import *
+#from pandas import *
 
 
 def main(argv):
@@ -37,27 +37,20 @@ def processCCResult(folders):
     # Using this Target I(P), determines the average time spent by each algorithm and outputs a table with the comparison
     # Also outputs a sequence of all execution times of each algorithm, to allow the creation of TTTplots
 
+    bestSolValues = []
+
     for folder in folders:
+        print "Processing folder " + ''.join(folder)
         # CC results
         all_files_summary = dict()
         best_file_summary = dict()
-        avg_file_summary = dict()
-        timeInterval = dict()
-        timeCount = dict()
         previous_filename = ""
-        avg_ip_const = 0
-        avg_value = 0
-        avg_k = 0
-        avg_time = 0
-        avg_count = 0
-        avg_iter = 0
-        avg_comb = 0
         for root, subFolders, files in os.walk(folder):
             # sort dirs and files
             subFolders.sort()
             files.sort()
 
-            print "Processing folder " + ''.join(root)
+            #print "Processing folder " + ''.join(root)
             if (len(files) and ''.join(root) != folder):
                 file_list = []
                 file_list.extend(glob.glob(root + "/CC*.csv"))
@@ -66,45 +59,17 @@ def processCCResult(folders):
 
                 # Process CC results
                 if os.path.isfile(root + "/cc-result.txt"):
-                    input_file = open(root + "/cc-result.txt", "r")
 
-                    content = input_file.read()
-                    reader = csv.reader(StringIO.StringIO(content), delimiter='\n')
-                    for row in reader:
-                        if ''.join(row).find("time spent:") >= 0:
-                            line = ''.join(row)
-                            # the global time is the total time spent by the algorithm (including the parallel version)
-                            global_time = float(line[line.find("time spent:") + 11:])
-                            break
-                    input_file.close
-
-                    text_file = open(root + "/summary.txt", "w")
                     filename = (root[:root.rfind("/")])
+                    filename = filename[filename.rfind("/")+1:]
                     datetime = root[root.rfind("/") + 1:]
-                    filename = filename[filename.rfind("/") + 1:]
-                    text_file.write("CC Summary for graph file: %s\n" % filename)
-                    local_avg_ip_const = 0
-                    local_avg_count = 0
 
                     best_value = 100000000L
-                    best_pos_value = 0
-                    best_neg_value = 0
-                    best_K = 0
-                    best_iteration = 0
-                    best_time = 0
-                    best_param = ''
                     value = 0
-                    pos_value = 0
-                    neg_value = 0
-                    K = 0
-                    iteration = 0
-                    time = 0
-                    total_iter = 0
-                    total_comb = 0
 
                     while count >= 0:
                         # Process all files from all metaheuristic executions, including those in parallel
-                        print "Processing file " + file_list[count] + "\n"
+                        #print "Processing file " + file_list[count] + "\n"
                         content_file = open(file_list[count], 'r')
                         try:
                             content = content_file.read()
@@ -116,115 +81,28 @@ def processCCResult(folders):
                                 for col in row:
                                     column.append(col)
                                 if linestring.startswith('Best value'):
-                                    filepath = ''.join(file_list[count])
-                                    text_file.write(filepath[filepath.rfind("/") + 1:] + ' ' + linestring + '\n')
                                     # obtains the best result found by a specific execution of a specific node (can be parallel)
                                     value = float(column[1])
-                                    pos_value = float(column[2])
-                                    neg_value = float(column[3])
-                                    K = long(column[4])
-                                    iteration = long(column[5])
-                                    time = float(column[6])
-                                    total_iter = long(column[7])
-                                    # totalizes the number of visited solutions of all nodes running in parallel
-                                    total_comb += long(column[8])
                                     if value < best_value:
                                         # if the results from the execution of this node are better, replace the data
                                         best_value = value
-                                        best_pos_value = pos_value
-                                        best_neg_value = neg_value
-                                        best_K = K
-                                        best_iteration = iteration
-                                        best_time = time
-                                        best_param = filepath[filepath.rfind("/") + 1:]
-                                    elif value == best_value and iteration < best_iteration:
-                                        best_K = K
-                                        best_iteration = iteration
-                                        best_time = time
-                                        best_param = filepath[filepath.rfind("/") + 1:]
-                                        best_pos_value = pos_value
-                                        best_neg_value = neg_value
-                                elif linestring.startswith('Average initial I(P)'):
-                                    # computa o valor medio da solucao inicial da fase construtiva para determinado no da execucao paralela
-                                    ip_const = float(column[1])
-                                    local_avg_ip_const = local_avg_ip_const + ip_const
-                                    local_avg_count = local_avg_count + 1
                             count = count - 1
                         finally:
                             content_file.close()
-                    text_file.close()
-                    all_files_summary[filename + "/" + datetime] = str(best_value) + "; " + str(pos_value) + "; " + str(
-                            neg_value) + "; " + str(best_K) + "; " + str(iteration) + "; " + str(best_time) + "; " + str(
-                            global_time) + "; " + best_param + "; " + str(total_iter) + "; " + str(total_comb)
-
-                    # calcula a media dos valores de I(P) da fase de construcao para este set de arquivos de resultado
-                    if local_avg_count == 0:
-                        local_avg_ip_const = 0
-                    else:
-                        local_avg_ip_const = local_avg_ip_const / local_avg_count
-                    # armazena os valores de todas as execucoes de um mesmo grafo para calculo da media
-                    if filename == previous_filename:
-                        avg_comb = avg_comb + total_comb
-                        avg_ip_const = avg_ip_const + local_avg_ip_const
-                        avg_value = avg_value + best_value
-                        avg_k = avg_k + best_K
-                        avg_time = avg_time + global_time
-                        avg_iter = avg_iter + total_iter
-                        avg_count = avg_count + 1
-                    else:
-                        if avg_count > 0:
-                            print "storing " + previous_filename + ", number of executions = " + str(avg_count)
-                            avg_file_summary[previous_filename] = str(avg_ip_const / avg_count) + ", " + str(
-                                    avg_value / avg_count) + ", " + str(avg_k / avg_count) + ", " + str(
-                                    avg_time / avg_count) + ", " + str(avg_iter / avg_count) + ", " + str(
-                                    avg_comb / avg_count) + ", " + str(avg_count)
-                            print "average execution times for file " + previous_filename
-                            tdir = "./times"
-                            if not os.path.exists(tdir):
-                                os.makedirs(tdir)
-                            times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
-                            for key, value in sorted(timeInterval.items()):
-                                times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
-                            times_file.close()
-                            timeInterval = dict()
-                            timeCount = dict()
-                        avg_comb = total_comb
-                        avg_ip_const = local_avg_ip_const
-                        avg_value = best_value
-                        avg_k = best_K
-                        avg_time = global_time
-                        avg_iter = total_iter
-                        avg_count = 1
 
                     # captura o melhor resultado dadas todas as execucoes de um mesmo grafo
                     if best_file_summary.has_key(filename):
-                        element = best_file_summary[filename]
-                        value = float(element[0:element.find(';') - 1])
-                        if (best_value < value):
-                            best_file_summary[filename] = str(all_files_summary[filename + "/" + datetime])
+                        current_value = float(best_file_summary[filename])
+                        if (best_value < current_value):
+                            best_file_summary[filename] = str(best_value)
                     else:
-                        best_file_summary[filename] = str(all_files_summary[filename + "/" + datetime])
+                        best_file_summary[filename] = str(best_value)
 
                     previous_filename = filename
                 # end loop
                 # process last file
-                print "storing " + previous_filename + ", number of executions = " + str(avg_count)
-                avg_file_summary[previous_filename] = str(avg_ip_const / avg_count) + ", " + str(
-                        avg_value / avg_count) + ", " + str(avg_k / avg_count) + ", " + str(
-                    avg_time / avg_count) + ", " + str(
-                        avg_iter / avg_count) + ", " + str(avg_comb / avg_count) + ", " + str(avg_count)
-                print "average execution times for file " + previous_filename
-                tdir = "./times"
-                if not os.path.exists(tdir):
-                    os.makedirs(tdir)
-                    times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
-                    for key, value in sorted(timeInterval.items()):
-                        times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
-                    times_file.close()
-                    timeInterval = dict()
-                    timeCount = dict()
-                    # end process CC results
         print "\nProcessing CC Results...\n"
+        bestSolValues.append(best_file_summary)
 
 
         # Group the results by instance (filename)
@@ -244,22 +122,142 @@ def processCCResult(folders):
 
 
         # Save CC results of all executions of all instances to csv file: Time to reach best solution and total time spent
-        result_file = open(folder + "/summary.csv", "w")
+        #result_file = open(folder + "/summary.csv", "w")
         #print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
-        result_file.write(
-                "ExecutionID; I(P); I(P)+; I(P)-; k; IterBestSol; TimeToBestSol; Global time(s); Params; Total Iter; NumVisitedSolutions\n")
-        for key in sorted(all_files_summary.iterkeys()):
+        #result_file.write("ExecutionID; I(P); I(P)+; I(P)-; k; IterBestSol; TimeToBestSol; Global time(s); Params; Total Iter; NumVisitedSolutions\n")
+        #for key in sorted(all_files_summary.iterkeys()):
             #print "%s, %s" % (key, all_files_summary[key])
-            result_file.write("%s; %s\n" % (key, all_files_summary[key]))
-        result_file.close()
+        #    result_file.write("%s; %s\n" % (key, all_files_summary[key]))
+        #result_file.close()
         print "------ CC Best results:"
         print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
         for key in sorted(best_file_summary.iterkeys()):
             print "%s, %s" % (key, best_file_summary[key])
-        print "------ CC Average results:"
-        print "Instance, Avg I(P) const, Avg I(P), Avg K, Avg Time(s), Avg Iter, Avg combinations, Num executions"
-        for key in sorted(avg_file_summary.iterkeys()):
-            print "%s, %s" % (key, avg_file_summary[key])
+
+    # compare the best results of each algorithm, choosing the worst
+    worse_sol = dict()
+
+    for best_result_dict in bestSolValues:
+        for key in sorted(best_result_dict.iterkeys()):
+            instance_name = str(key)
+            sol_value = float(best_result_dict[key])
+            if worse_sol.has_key(instance_name):
+                current_value = float(worse_sol[instance_name])
+                if sol_value > current_value:
+                    worse_sol[instance_name] = str(sol_value)
+            else:
+                worse_sol[instance_name] = str(sol_value)
+
+    print "\n\nWorst solution values for each instance"
+    for key in sorted(best_file_summary.iterkeys()):
+        print "%s, %s" % (key, best_file_summary[key])
+
+    # for each instance in worse_sol, discover the time each algorithm took to reach that solution
+    for folder in folders:
+        processTimeToTarget(folder, worse_sol)
+
+def processTimeToTarget(folder, worse_sol):
+    # CC results
+    all_files_summary = dict()
+    full_iteration_data = dict()
+    target_iteration_history = dict()
+
+    previous_filename = ""
+    for root, subFolders, files in os.walk(folder):
+        # sort dirs and files
+        subFolders.sort()
+        files.sort()
+
+        print "Processing folder " + ''.join(root)
+        if (len(files) and ''.join(root) != folder):
+            file_list = []
+            file_list.extend(glob.glob(root + "/CC*-iterations.csv"))
+            file_list.extend(glob.glob(root + "/Node*-iterations.csv"))
+            count = len(file_list) - 1
+
+            # Process CC results
+            if os.path.isfile(root + "/cc-result.txt"):
+                filename = (root[:root.rfind("/")])
+                datetime = root[root.rfind("/") + 1:]
+                filename = filename[filename.rfind("/") + 1:]
+
+                value = 0
+                pos_value = 0
+                neg_value = 0
+                K = 0
+                iteration = 0
+                time = 0
+
+                while count >= 0:
+                    # Process all files from all metaheuristic executions, including those in parallel
+                    print "Processing file " + file_list[count] + "\n"
+                    content_file = open(file_list[count], 'r')
+                    full_iteration_data.clear()
+                    try:
+                        content = content_file.read()
+
+                        reader = csv.reader(StringIO.StringIO(content), delimiter=',')
+                        linecount = 0
+                        for row in reader:
+                            if linecount == 0:  # skip the first line of csv file
+                                linecount += 1
+                                continue
+                            linestring = ''.join(row)
+                            column = []
+                            for col in row:
+                                column.append(col)
+                            if linestring.startswith('Best value'):
+                                break
+
+                            # obtains each iteration result found by a specific execution of a specific node (can be parallel)
+                            iteration = linecount
+                            value = float(column[1])
+                            pos_value = float(column[2])
+                            neg_value = float(column[3])
+                            K = long(column[4])
+                            time = float(column[5])
+
+                            key = file_list[count]
+                            iter_data = [iter, value, pos_value, neg_value, K, time, key]
+
+                            if not full_iteration_data.has_key(key):
+                                full_iteration_data[key] = [iter_data]
+                            full_iteration_data[key].append(iter_data)
+                            linecount += 1
+                        count = count - 1
+                    finally:
+                        content_file.close()
+
+                    target_value = float(worse_sol[filename])
+                    # for each execution of the algorithm
+                    for executionId in sorted(full_iteration_data.iterkeys()):
+                        executionIdIterations = full_iteration_data[executionId]
+                        desired_iteration = -1
+                        # for each iteration of an execution of the algorithm
+                        for iter_data in executionIdIterations:
+                            # find out in which iteration the algorithm reaches the target solution value
+                            sol_value = float(iter_data[1])
+                            if sol_value <= target_value:
+                                desired_iteration = iter_data
+                                break
+                        # stores the info about the target iteration when the target solution was found
+                        if desired_iteration < 0:
+                            print "Error retrieving target iteration info for executionId = " + str(executionId)
+                        if target_iteration_history.has_key(filename):
+                            target_iteration_history[filename].append(desired_iteration)
+                        else:
+                            target_iteration_history[filename] = [desired_iteration]
+
+                # now we know the time-to-target of each algorithm execution for each instance file
+                print "\n\nDesired target I(P) = " + str(target_value)
+                print "\nTime-to-target for instance " + str(filename)
+                print "Time, Iter, Info"
+                for iteration_info in target_iteration_history[filename]:
+                    print "%s %s %s" % (str(iteration_info[5]), str(iteration_info[0]), str(iteration_info))
+
+            # end loop
+            # process last file
+    print "\nProcessing CC Results...\n"
 
 
 if __name__ == "__main__":
