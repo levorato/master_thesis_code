@@ -1,3 +1,6 @@
+# to run this script, please install:
+# sudo apt-get install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose python-tk
+
 import sys, getopt
 import csv
 import StringIO
@@ -8,7 +11,8 @@ import re
 import argparse
 import pandas as pd
 import scipy.stats as stats
-
+import numpy
+from matplotlib import pyplot as plt
 
 def main(argv):
 
@@ -19,19 +23,22 @@ def main(argv):
                         help='the folders containing the result files (one for each experiment / MH)')
     parser.add_argument('--filefilter', default='*.csv', required=False,
                         help='the file extension for result files (default: *.csv)')
+    parser.add_argument('--labels', nargs='+',
+                        help='the experiment labels (one for each experiment / MH)')
     args = parser.parse_args()
     folders = args.folders
     filter = args.filefilter
+    labels = args.labels
 
     args = parser.parse_args()
 
     print 'Input folders are ', folders
     print 'File filter is ', filter
 
-    processCCResult(folders)
+    processCCResult(folders, labels)
 
 
-def processCCResult(folders):
+def processCCResult(folders, labels):
 
     # for each folder (algorithm), determines the best solution value
     # compares the solution values of each folder and uses the worst solution value as Target I(P)
@@ -119,10 +126,6 @@ def processCCResult(folders):
 
 
 
-        # TODO export (to csv) the results of the time spent to get to a specific target I(P) for each instance
-
-
-
         # Save CC results of all executions of all instances to csv file: Time to reach best solution and total time spent
         #result_file = open(folder + "/summary.csv", "w")
         #print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
@@ -170,28 +173,60 @@ def processCCResult(folders):
         StddevTTT[folder] = []
     for instance_name in best_file_summary.iterkeys():
         # for each algorithm,
+        count = 0
+        data_to_plot = []
         for folder in folders:
-            tttdict = ttt_for_algorithm[folder]
+            tttdict = dict(ttt_for_algorithm[folder])
             tttlist = tttdict[instance_name]
             # obtains a list of execution times (time-to-target) of the algorithm for this specific instance
             # calculates the average, stddev and confidence internal for the ttt variable
-            avg_ttt =  stats.mean(tttlist)
+            avg_ttt =  numpy.mean(tttlist)
             AvgTimeToTarget[folder].append(avg_ttt)
-            stddev_ttt = stats.std(tttlist)
+            stddev_ttt = numpy.std(tttlist)
             StddevTTT[folder].append(stddev_ttt)
 
+            # student's t-test for time-to-target
+            #(tstat, pvalue) = stats.ttest_1samp(list(tttlist), avg_ttt)
+            SEM = stats.sem(list(tttlist))
+            data_to_plot.append(list(tttlist))
 
-    # Instance, Target I(P), AvgTimeToTarget, Stddev(TTT), Speedup.
-    CompleteInstanceDataSet = list(zip(best_file_summary.iterkeys(), best_file_summary.itervalues()))
-    columns = ['Instance', 'Target I(P)']
+            print 'For %s solved by %s : StdErrorOfMean = %6.4f' % (instance_name, labels[count], SEM)
+            count += 1
+
+
+        # box plot of time-to-target
+        # Create a figure instance
+        fig = plt.figure(1, figsize=(9, 6))
+
+        # Create an axes instance
+        ax = fig.add_subplot(111)
+        ax.set_xticklabels(list(labels))
+
+        # Create the boxplot
+        bp = ax.boxplot(list(data_to_plot))
+        plt.show()
+
+        # Save the figure
+        fig.savefig(str(instance_name) + '-boxplot.png', bbox_inches='tight')
+
+    # TODO export TTT series to be used in TTT-plot-latex
+
+
+    cols = ['Instance', 'Target I(P)']  # 'AvgTimeToTarget', 'Stddev-TTT', 'Speedup'
+    CompleteInstanceDataSet = {'Instance' : list(best_file_summary.iterkeys()), 'Target I(P)' : list(best_file_summary.itervalues())}
+    count = 0
     for folder in folders:
-        CompleteInstanceDataSet['AvgTime'] = AvgTimeToTarget[folder]
-        CompleteInstanceDataSet['Stddev-Time'] = StddevTTT[folder]
-        columns.append('AvgTime')
-        columns.append('Stddev-Time')
+        colname = 'AvgTimeToTarget-' + str(labels[count])
+        CompleteInstanceDataSet[colname] = AvgTimeToTarget[folder]
+        cols.append(colname)
+        colname = 'Stddev-TTT-' + str(labels[count])
+        CompleteInstanceDataSet[colname] = StddevTTT[folder]
+        cols.append(colname)
+        count += 1
 
-    df = pd.DataFrame(data = CompleteInstanceDataSet, columns=columns)
-    print df
+    df = pd.DataFrame(CompleteInstanceDataSet)
+    print df[cols]
+
 
 def processTimeToTarget(folder, worse_sol):
 
@@ -227,7 +262,7 @@ def processTimeToTarget(folder, worse_sol):
         instance_name = str(instance_dict[key])
         print "Processing instance " + str(instance_name) + ", " + str(key)
         tttlist = processTimeToTargetOnInstance(instance_name, str(key), worse_sol)
-        tttdict[instance_name] = tttlist
+        tttdict[key] = tttlist
 
     return tttdict
 
