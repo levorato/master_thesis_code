@@ -46,13 +46,15 @@ def processCCResult(folders, labels):
     # Also outputs a sequence of all execution times of each algorithm, to allow the creation of TTTplots
 
     bestSolValues = []
+    worstSolValues = []
 
     for folder in folders:
         print "Processing folder " + ''.join(folder)
         # CC results
-        all_files_summary = dict()
+        worst_file_summary = dict()
         best_file_summary = dict()
         previous_filename = ""
+
         for root, subFolders, files in os.walk(folder):
             # sort dirs and files
             subFolders.sort()
@@ -102,29 +104,24 @@ def processCCResult(folders, labels):
                     # deve ser o pior resultado encontrado, dadas todas as execucoes de um determinado algoritmo
                     if best_file_summary.has_key(filename):
                         current_value = float(best_file_summary[filename])
-                        if (best_value > current_value):
+                        if (best_value < current_value):
                             best_file_summary[filename] = str(best_value)
                     else:
                         best_file_summary[filename] = str(best_value)
+
+                    if worst_file_summary.has_key(filename):
+                        current_value = float(worst_file_summary[filename])
+                        if (best_value > current_value):
+                            worst_file_summary[filename] = str(best_value)
+                    else:
+                        worst_file_summary[filename] = str(best_value)
 
                     previous_filename = filename
                 # end loop
                 # process last file
         print "\nProcessing CC Results...\n"
         bestSolValues.append(best_file_summary)
-
-
-        # Group the results by instance (filename)
-        for key in sorted(all_files_summary.iterkeys()):
-            with open(folder + '/' + str(key) + '-all_executions.csv', 'wb') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-
-                csvwriter.writerow(['','ExecutionID','BestSol','I(P)+','I(P)-','k','IterBestSol','TimeToBestSol','Total time','Params','Total iter','NumVisitedSolutions'])
-                executions = all_files_summary[key]
-                for item in executions:
-                    csvwriter.writerow(str(item))
-
-
+        worstSolValues.append(worst_file_summary)
 
         # Save CC results of all executions of all instances to csv file: Time to reach best solution and total time spent
         #result_file = open(folder + "/summary.csv", "w")
@@ -141,11 +138,12 @@ def processCCResult(folders, labels):
 
     # compare the best results of each algorithm, choosing the worst
     worse_sol = dict()
+    best_sol = dict()
 
-    for best_result_dict in bestSolValues:
-        for key in sorted(best_result_dict.iterkeys()):
+    for worst_result_dict in worstSolValues:
+        for key in sorted(worst_result_dict.iterkeys()):
             instance_name = str(key)
-            sol_value = float(best_result_dict[key])
+            sol_value = float(worst_result_dict[key])
             if worse_sol.has_key(instance_name):
                 current_value = float(worse_sol[instance_name])
                 if sol_value > current_value:
@@ -153,15 +151,31 @@ def processCCResult(folders, labels):
             else:
                 worse_sol[instance_name] = str(sol_value)
 
-    print "\n\nWorst solution values for each instance, comparing all algorithms:"
+    for best_result_dict in bestSolValues:
+        for key in sorted(best_result_dict.iterkeys()):
+            instance_name = str(key)
+            sol_value = float(best_result_dict[key])
+            if best_sol.has_key(instance_name):
+                current_value = float(best_sol[instance_name])
+                if sol_value < current_value:
+                    best_sol[instance_name] = str(sol_value)
+            else:
+                best_sol[instance_name] = str(sol_value)
+
+    print "\n\nBest solution values for each instance, comparing all algorithms:"
     InstanceTargetSolDataSet = list(zip(best_file_summary.iterkeys(), best_file_summary.itervalues()))
     df = pd.DataFrame(data = InstanceTargetSolDataSet, columns=['Instance', 'Target I(P)'])
     print df
 
+    print "\n\nWorst solution values for each instance, comparing all algorithms:"
+    InstanceTargetSolDataSet2 = list(zip(worst_file_summary.iterkeys(), worst_file_summary.itervalues()))
+    df2 = pd.DataFrame(data = InstanceTargetSolDataSet2, columns=['Instance', 'Target I(P)'])
+    print df2
+
     # for each instance in worse_sol, discover the time each algorithm took to reach that solution
     ttt_for_algorithm = dict()  # contains the ttt dict for a specific algorithm / folder
     for folder in folders:
-        ttt_for_algorithm[folder] = processTimeToTarget(folder, worse_sol)
+        ttt_for_algorithm[folder] = processTimeToTarget(folder, worse_sol)  # worse_sol, best_sol
 
     # now, for each instance, we need to calculate the columns: AvgTimeToTarget, Stddev(TTT), Speedup.
     # and also the Standard Error of the Mean (SEM)
@@ -190,24 +204,24 @@ def processCCResult(folders, labels):
             SEM = stats.sem(list(tttlist))
             data_to_plot.append(list(tttlist))
 
-            print 'For %s solved by %s : StdErrorOfMean = %6.4f' % (instance_name, labels[count], SEM)
+            # print 'For %s solved by %s : StdErrorOfMean = %6.4f' % (instance_name, labels[count], SEM)
             count += 1
 
 
         # box plot of time-to-target
         # Create a figure instance
-        fig = plt.figure(1, figsize=(9, 6))
+        #fig = plt.figure(1, figsize=(9, 6))
 
         # Create an axes instance
-        ax = fig.add_subplot(111)
-        ax.set_xticklabels(list(labels))
+        #ax = fig.add_subplot(111)
+        #ax.set_xticklabels(list(labels))
 
         # Create the boxplot
-        bp = ax.boxplot(list(data_to_plot))
-        plt.show()
+        #bp = ax.boxplot(list(data_to_plot))
+        #plt.show()
 
         # Save the figure
-        fig.savefig(str(instance_name) + '-boxplot.png', bbox_inches='tight')
+        #fig.savefig(str(instance_name) + '-boxplot.png', bbox_inches='tight')
 
     # TODO export TTT series to be used in TTT-plot-latex
 
