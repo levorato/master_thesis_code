@@ -6,7 +6,10 @@ import os
 import os.path
 import re
 import argparse
-from pandas import *
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy import stats as st
 
 # gambit para python 2.4
 class _minmax(object):
@@ -63,6 +66,11 @@ def main(argv):
 
     csv.field_size_limit(sys.maxsize)
 
+    # Make the graphs a bit prettier, and bigger
+    pd.set_option('display.mpl_style', 'default')
+    pd.set_option('display.line_width', 5000)
+    pd.set_option('display.max_columns', 60)
+
     parser = argparse.ArgumentParser(description='Process GRASP / ILS - CC and SRCC result files.')
     parser.add_argument('folder',
                         help='the folder containing the result files')
@@ -90,18 +98,8 @@ def main(argv):
 def processCCResult(folder):
     # CC results
     all_files_summary = dict()
-    best_file_summary = dict()
-    avg_file_summary = dict()
-    timeInterval = dict()
-    timeCount = dict()
+    experiment_name = folder[folder.rfind('/') + 1:]
     previous_filename = ""
-    avg_ip_const = 0
-    avg_value = 0
-    avg_k = 0
-    avg_time = 0
-    avg_count = 0
-    avg_iter = 0
-    avg_comb = 0
     for root, subFolders, files in os.walk(folder):
         # sort dirs and files
         subFolders.sort()
@@ -133,8 +131,8 @@ def processCCResult(folder):
                 datetime = root[root.rfind("/") + 1:]
                 filename = filename[filename.rfind("/") + 1:]
                 text_file.write("CC Summary for graph file: %s\n" % filename)
-                local_avg_ip_const = 0
-                local_avg_count = 0
+                if not all_files_summary.has_key(filename):
+                    all_files_summary[filename] = []
 
                 best_value = 100000000L
                 best_pos_value = 0
@@ -187,129 +185,78 @@ def processCCResult(folder):
                                     best_iteration = iteration
                                     best_time = time
                                     best_param = filepath[filepath.rfind("/") + 1:]
-                                elif value == best_value and iteration < best_iteration:
+                                elif value == best_value and time < best_time:  # or if imbalance equals but execution time is smaller
                                     best_K = K
                                     best_iteration = iteration
                                     best_time = time
                                     best_param = filepath[filepath.rfind("/") + 1:]
                                     best_pos_value = pos_value
                                     best_neg_value = neg_value
-                            elif linestring.startswith('Average initial I(P)'):
-                                # computa o valor medio da solucao inicial da fase construtiva para determinado no da execucao paralela
-                                ip_const = float(column[1])
-                                local_avg_ip_const = local_avg_ip_const + ip_const
-                                local_avg_count = local_avg_count + 1
                         count = count - 1
                     finally:
                         content_file.close()
                 text_file.close()
-                all_files_summary[filename + "/" + datetime] = str(best_value) + "; " + str(pos_value) + "; " + str(
+                all_files_summary[filename].append(str(filename) + "; " + str(datetime) + "; " + str(best_value) + "; " + str(pos_value) + "; " + str(
                         neg_value) + "; " + str(best_K) + "; " + str(iteration) + "; " + str(best_time) + "; " + str(
-                        global_time) + "; " + best_param + "; " + str(total_iter) + "; " + str(total_comb)
+                        global_time) + "; " + best_param + "; " + str(total_iter) + "; " + str(total_comb))
 
-                # calcula a media dos valores de I(P) da fase de construcao para este set de arquivos de resultado
-                if local_avg_count == 0:
-                    local_avg_ip_const = 0
-                else:
-                    local_avg_ip_const = local_avg_ip_const / local_avg_count
-                # armazena os valores de todas as execucoes de um mesmo grafo para calculo da media
-                if filename == previous_filename:
-                    avg_comb = avg_comb + total_comb
-                    avg_ip_const = avg_ip_const + local_avg_ip_const
-                    avg_value = avg_value + best_value
-                    avg_k = avg_k + best_K
-                    avg_time = avg_time + global_time
-                    avg_iter = avg_iter + total_iter
-                    avg_count = avg_count + 1
-                else:
-                    if avg_count > 0:
-                        print "storing " + previous_filename + ", number of executions = " + str(avg_count)
-                        avg_file_summary[previous_filename] = str(avg_ip_const / avg_count) + ", " + str(
-                                avg_value / avg_count) + ", " + str(avg_k / avg_count) + ", " + str(
-                                avg_time / avg_count) + ", " + str(avg_iter / avg_count) + ", " + str(
-                                avg_comb / avg_count) + ", " + str(avg_count)
-                        print "average execution times for file " + previous_filename
-                        tdir = "./times"
-                        if not os.path.exists(tdir):
-                            os.makedirs(tdir)
-                        times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
-                        for key, value in sorted(timeInterval.items()):
-                            times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
-                        times_file.close()
-                        timeInterval = dict()
-                        timeCount = dict()
-                    avg_comb = total_comb
-                    avg_ip_const = local_avg_ip_const
-                    avg_value = best_value
-                    avg_k = best_K
-                    avg_time = global_time
-                    avg_iter = total_iter
-                    avg_count = 1
-
-                # captura o melhor resultado dadas todas as execucoes de um mesmo grafo
-                if best_file_summary.has_key(filename):
-                    element = best_file_summary[filename]
-                    value = float(element[0:element.find(';') - 1])
-                    if (best_value < value):
-                        best_file_summary[filename] = str(all_files_summary[filename + "/" + datetime])
-                else:
-                    best_file_summary[filename] = str(all_files_summary[filename + "/" + datetime])
-
-                previous_filename = filename
             # end loop
             # process last file
-            print "storing " + previous_filename + ", number of executions = " + str(avg_count)
-            avg_file_summary[previous_filename] = str(avg_ip_const / avg_count) + ", " + str(
-                    avg_value / avg_count) + ", " + str(avg_k / avg_count) + ", " + str(
-                avg_time / avg_count) + ", " + str(
-                    avg_iter / avg_count) + ", " + str(avg_comb / avg_count) + ", " + str(avg_count)
-            print "average execution times for file " + previous_filename
-            tdir = "./times"
-            if not os.path.exists(tdir):
-                os.makedirs(tdir)
-                times_file = open(tdir + "/" + previous_filename + "-executionTimes.txt", "w")
-                for key, value in sorted(timeInterval.items()):
-                    times_file.write(str(key) + "," + str(value / timeCount[key]) + "\n")
-                times_file.close()
-                timeInterval = dict()
-                timeCount = dict()
-                # end process CC results
-    print "\nProcessing CC Results...\n"
-
-
-    # Group the results by instance (filename)
-    for key in sorted(all_files_summary.iterkeys()):
-        with open(folder + '/' + str(key) + '-all_executions.csv', 'wb') as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-
-            csvwriter.writerow(['','ExecutionID','BestSol','I(P)+','I(P)-','k','IterBestSol','TimeToBestSol','Total time','Params','Total iter','NumVisitedSolutions'])
-            executions = all_files_summary[key]
-            for item in executions:
-                csvwriter.writerow(str(item))
-
-
-
-    # TODO export (to csv) the results of the time spent to get to a specific target I(P) for each instance
-
+            # end process CC results
+    print "\nExporting consolidated CC Results to csv file...\n"
 
 
     # Save CC results of all executions of all instances to csv file: Time to reach best solution and total time spent
     result_file = open(folder + "/summary.csv", "w")
     #print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
     result_file.write(
-            "ExecutionID; I(P); I(P)+; I(P)-; k; IterBestSol; TimeToBestSol; Global time(s); Params; Total Iter; NumVisitedSolutions\n")
+            "Instance; ExecutionID; I(P); I(P)+; I(P)-; k; IterBestSol; TimeToBestSol; Global time(s); Params; Total Iter; NumVisitedSolutions\n")
     for key in sorted(all_files_summary.iterkeys()):
         #print "%s, %s" % (key, all_files_summary[key])
-        result_file.write("%s; %s\n" % (key, all_files_summary[key]))
+        execution_list = all_files_summary[key]
+        for execution in execution_list:
+            result_file.write("%s\n" % (execution))
     result_file.close()
+
+    # re-reads the contents of summary.csv back to pandas dataframe
+    df = pd.read_csv(folder + "/summary.csv", sep='; ', encoding="utf-8-sig")  # index_col='Instance',
+
+    grouped_results = df.groupby('Instance')
+    avg_results = grouped_results.agg([np.mean, lambda x: (np.std(x, ddof=1)/np.sqrt(x.count())) * 1.96])  # , np.std
+    print avg_results
+
+    # Obtain mean of each group
+    grouped = grouped_results['TimeToBestSol']
+    means = grouped.mean()
+    # print means
+
+    # Calculate 95% confidence interval for each group => margin of error
+    # http://www.wikihow.com/Calculate-Confidence-Interval
+    ci_time_best_sol = grouped.aggregate(lambda x: (np.std(x, ddof=1)/np.sqrt(x.count())) * 1.96)
+    # confidence interval = means +/- ci
+    #print ci_time_best_sol
+    #print means + " +/- " + ci
+
+    # http://pandas.pydata.org/pandas-docs/version/0.15.1/generated/pandas.DataFrame.to_latex.html
+    # print avg_results.to_latex()
+    # http://pandas.pydata.org/pandas-docs/version/0.15.1/generated/pandas.DataFrame.to_csv.html?highlight=to_csv#pandas.DataFrame.to_csv
+    avg_results.to_csv(str(experiment_name) + '.csv')
+
+    #print best_results.agg([np.sum, np.mean, np.std])
+
+
+
+    print df[['I(P)', 'TimeToBestSol']].plot()
+
+
+
+    plt.show(block=True)
+
+
     print "------ CC Best results:"
     print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
-    for key in sorted(best_file_summary.iterkeys()):
-        print "%s, %s" % (key, best_file_summary[key])
     print "------ CC Average results:"
-    print "Instance, Avg I(P) const, Avg I(P), Avg K, Avg Time(s), Avg Iter, Avg combinations, Num executions"
-    for key in sorted(avg_file_summary.iterkeys()):
-        print "%s, %s" % (key, avg_file_summary[key])
+    print "Instance, Avg I(P), Avg K, Avg Time(s), Avg Iter, Avg combinations, Num executions"
 
 
 def processSRCCResult(folder):
