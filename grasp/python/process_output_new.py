@@ -98,7 +98,8 @@ def main(argv):
 def processCCResult(folder):
     # CC results
     all_files_summary = dict()
-    experiment_name = folder[folder.rfind('/') + 1:]
+    prefix_name = folder[:folder.rfind('/')]
+    experiment_name = prefix_name[prefix_name.rfind('/') + 1:] + '-' + folder[folder.rfind('/') + 1:]
     previous_filename = ""
     for root, subFolders, files in os.walk(folder):
         # sort dirs and files
@@ -222,7 +223,7 @@ def processCCResult(folder):
     df = pd.read_csv(folder + "/summary.csv", sep='; ', encoding="utf-8-sig")  # index_col='Instance',
 
     grouped_results = df.groupby('Instance')
-    avg_results = grouped_results.agg([np.mean, lambda x: (np.std(x, ddof=1)/np.sqrt(x.count())) * 1.96])  # , np.std
+    avg_results = grouped_results.agg([np.mean, np.max, lambda x: (np.std(x, ddof=1)/np.sqrt(x.count())) * 1.96])  # , np.std
     print avg_results
 
     # Obtain mean of each group
