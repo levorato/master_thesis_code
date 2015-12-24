@@ -11,7 +11,7 @@ import re
 import argparse
 import pandas as pd
 import scipy.stats as stats
-import numpy
+import numpy as np
 from matplotlib import pyplot as plt
 
 def main(argv):
@@ -194,9 +194,9 @@ def processCCResult(folders, labels):
             tttlist = tttdict[instance_name]
             # obtains a list of execution times (time-to-target) of the algorithm for this specific instance
             # calculates the average, stddev and confidence internal for the ttt variable
-            avg_ttt =  numpy.mean(tttlist)
+            avg_ttt =  np.mean(tttlist)
             AvgTimeToTarget[folder].append(avg_ttt)
-            stddev_ttt = numpy.std(tttlist)
+            stddev_ttt = (np.std(tttlist, ddof=1)/np.sqrt(len(tttlist)) * 1.96) # numpy.std(tttlist)
             StddevTTT[folder].append(stddev_ttt)
 
             # student's t-test for time-to-target
@@ -224,6 +224,13 @@ def processCCResult(folders, labels):
         #fig.savefig(str(instance_name) + '-boxplot.png', bbox_inches='tight')
 
     # TODO export TTT series to be used in TTT-plot-latex
+    print '\nTTT data for use with TTT-Latex\n'
+    for instance_name in best_file_summary.iterkeys():
+        print str(instance_name) + ':\n'
+        for folder in folders:
+            tttdict = dict(ttt_for_algorithm[folder])
+            tttlist = tttdict[instance_name]
+            print str(folder[folder.rfind('/') + 1:]) + ': ' + str(tttlist).replace(',', '').replace('[', '').replace(']', '') + '\n'
 
 
     cols = ['Instance', 'Target I(P)']  # 'AvgTimeToTarget', 'Stddev-TTT', 'Speedup'
@@ -240,6 +247,12 @@ def processCCResult(folders, labels):
 
     df = pd.DataFrame(CompleteInstanceDataSet)
     print df[cols]
+
+    experiment_name = ''
+    for folder in folders:
+        experiment_name = experiment_name + folder[folder.rfind('/') + 1:] + '-vs-'
+
+    df.to_csv(str(experiment_name) + '.csv')
 
 
 def processTimeToTarget(folder, worse_sol):
@@ -319,7 +332,7 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
 
                 while count >= 0:
                     # Process all files from all metaheuristic executions, including those in parallel
-                    #print "Processing file " + file_list[count] + "\n"
+                    # print "Processing file " + file_list[count] + "\n"
                     content_file = open(file_list[count], 'r')
                     full_iteration_data.clear()
                     try:
@@ -367,6 +380,7 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
                             sol_value = float(iter_data[1])
                             if sol_value <= target_value:
                                 desired_iteration = iter_data
+                                #print "Found target at " + iter_data[5] + " seconds.\n"
                                 break
                         # stores the info about the target iteration when the target solution was found
                         if desired_iteration < 0:
