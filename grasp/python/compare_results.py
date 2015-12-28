@@ -234,7 +234,7 @@ def processCCResult(folders, labels):
 
 
     cols = ['Instance', 'Target I(P)']  # 'AvgTimeToTarget', 'Stddev-TTT', 'Speedup'
-    CompleteInstanceDataSet = {'Instance' : list(best_file_summary.iterkeys()), 'Target I(P)' : list(best_file_summary.itervalues())}
+    CompleteInstanceDataSet = {'Instance' : list(worst_file_summary.iterkeys()), 'Target I(P)' : list(worst_file_summary.itervalues())}
     count = 0
     for folder in folders:
         colname = 'AvgTimeToTarget-' + str(labels[count])
@@ -252,7 +252,10 @@ def processCCResult(folders, labels):
     for folder in folders:
         experiment_name = experiment_name + folder[folder.rfind('/') + 1:] + '-vs-'
 
-    df.to_csv(str(experiment_name) + '.csv')
+    tdir = './compare_results'
+    if not os.path.exists(tdir):
+        os.makedirs(tdir)
+    df.to_csv(tdir + '/' + str(experiment_name) + '.csv')
 
 
 def processTimeToTarget(folder, worse_sol):
