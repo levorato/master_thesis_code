@@ -24,7 +24,8 @@ import math
 import argparse
 import collections
 import random
-
+import time
+from scipy.sparse import dok_matrix
 
 class Range(object):
     def __init__(self, start, end):
@@ -36,73 +37,6 @@ class Range(object):
 
     def __str__(self):
         return "range(" + str(self.start) + ", " + str(self.end) + ")"
-
-
-class Vertex:
-    def __init__(self, key):
-        self.id = key
-        self.connectedTo = {}
-
-    def addNeighbor(self, nbr, weight=0):
-        self.connectedTo[nbr] = weight
-
-    def __str__(self):
-        return str(self.id) + ' connectedTo: ' + str([x.id for x in self.connectedTo])
-
-    def getConnections(self):
-        return self.connectedTo.keys()
-
-    def getConnectionsWithValues(self):
-        return self.connectedTo
-
-    def getId(self):
-        return self.id
-
-    def getWeight(self, nbr):
-        return self.connectedTo[nbr]
-
-
-class Graph:
-    def __init__(self):
-        self.vertList = {}
-        self.numVertices = 0
-
-    def addVertex(self, key):
-        self.numVertices = self.numVertices + 1
-        newVertex = Vertex(key)
-        self.vertList[key] = newVertex
-        return newVertex
-
-    def getVertex(self, n):
-        if n in self.vertList:
-            return self.vertList[n]
-        else:
-            return None
-
-    def __contains__(self, n):
-        return n in self.vertList
-
-    def addEdge(self, f, t, cost=0):
-        if f not in self.vertList:
-            nv = self.addVertex(f)
-        if t not in self.vertList:
-            nv = self.addVertex(t)
-        self.vertList[f].addNeighbor(self.vertList[t], cost)
-
-    def getVertices(self):
-        return self.vertList.keys()
-
-    def __iter__(self):
-        return iter(self.vertList.values())
-
-    def getM(self):
-        count = 0
-        for vertex in self.vertList.iterkeys():
-            count += len(self.getVertex(vertex).getConnections())
-            #print str(len(self.getVertex(vertex).getConnections())) + " -> " + str(self.getVertex(vertex).getConnections()) + "\n"
-        return count
-
-# end class graph
 
 
 edge = collections.namedtuple('Edge', ['x', 'y'])
@@ -119,10 +53,8 @@ def pick_random_edge(n):
 
 
 def generate_random_graph(n, d, dneg):
-    # M = [[0 for x in xrange(n)] for x in xrange(n)]
-    g = Graph()
-    for i in range(n):
-        g.addVertex(i)
+    M = dok_matrix((n, n))
+    # [[0 for x in xrange(n)] for x in xrange(n)]
 
     m = 0  # number of edges
     mneg = 0  # number of neg edges
@@ -132,44 +64,29 @@ def generate_random_graph(n, d, dneg):
     mneg_min = int(math.ceil(dneg * (float(d) * (n * (n - 1) / 2.0))))
 
     while mneg < mneg_min:
-    #while g.getM() < mneg_min:
         e = pick_random_edge(n)
         i = e.x
         j = e.y
-        vi = g.getVertex(i)
-        vj = g.getVertex(j)
-        if vj not in vi.getConnections():
-            g.addEdge(i, j, -1)
+
+        if M[i,j] == 0:
             mneg += 1
             m += 1
-
-        #if (M[i][j] == 0):
-        #    mneg += 1
-        #    m += 1
-        #    M[i][j] = -1
-        #    M[j][i] = -1
+            M[i,j] = -1
+            M[j,i] = -1
     print "Generated {0} negative edges.".format(str(mneg))
 
-    mneg = g.getM()
-    print str(mneg)
     m = mneg
     while m < m_min:
         e = pick_random_edge(n)
         i = e.x
         j = e.y
 
-        vi = g.getVertex(i)
-        vj = g.getVertex(j)
-        #if M[i][j] == 0:
-        if vj not in vi.getConnections():
-            g.addEdge(i, j, 1)
+        if M[i,j] == 0:
             mpos += 1
             m += 1
-            #M[i][j] = 1
-            #M[j][i] = 1
+            M[i,j] = 1
+            M[j,i] = 1
     print "Generated the remaining {0} (positive) edges.".format(mpos)
-    mpos = g.getM() - mneg
-    print str(mpos)
 
     # Writes output file in XPRESS Mosel format (.mos)
     # --------------------------------------------------
@@ -191,9 +108,9 @@ def generate_random_graph(n, d, dneg):
         # graph contents
         edge_list = ""
         for i in xrange(n):
-            vi = g.getVertex(i)
-            for vertex in sorted(vi.getConnections()): # connectedTo dict
-                edge_list += '({0},{1}){2} \r\n'.format(str(i + 1), str(vertex.getId() + 1), str(vi.getWeight(vertex)))
+            for j in xrange(n):
+                if M[i,j] != 0:
+                    edge_list += '({0},{1}){2} \r\n'.format(str(i + 1), str(j + 1), str(M[i,j]))
         g_file.write('Mrel: [ {0}]'.format(edge_list))
 
     print "Number of negative edges: {0} ({1}%), number of positive edges: {2} ({3}%), total edges: {4} ({5}%).".format(
@@ -210,8 +127,15 @@ def main(argv):
                         help="negative density of edges of the graph")
     args = parser.parse_args()
 
+    # measure elapsed time during graph generation
+    start = time.time()
+
     # Call random graph generation procedure
     generate_random_graph(args.n, args.d, args.nd)
+
+    end = time.time()
+    elapsed = end - start
+    print "Graph generation took {0:.2f} seconds.".format(elapsed)
 
 
 if __name__ == "__main__":
