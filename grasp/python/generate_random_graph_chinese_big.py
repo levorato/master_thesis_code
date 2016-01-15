@@ -92,41 +92,51 @@ def pick_random_internal_edge(N, indegree, outdegree, k):
 
 # Returns a new random edge that connects 2 nodes of different clusters
 # Each node must have degree < k
-def pick_random_external_edge(N, indegree, outdegree, k):
+def pick_random_external_edge(N, indegree, outdegree, k, c):
     # Global variables
     global mycluster
     global matrix
     global vertex_list
+    global cluster_node_list
+
+    cluster_list = range(c)
+    random.shuffle(cluster_list)
+
+    # removes the vertices that have exceeded their maximum degrees
+    for a in vertex_list:
+        if indegree[a] + outdegree[a] >= k:
+            vertex_list.remove(a)
+            # print 'removed node {0}\n'.format(str(a))
+    random.shuffle(vertex_list)
 
     found = False
-    while not found:
-        found_a = False
-        # Selects a random node of degree < k
-        random.shuffle(vertex_list)
-        for a in vertex_list:
-            if indegree[a] + outdegree[a] >= k:
-                vertex_list.remove(a)
-                # print 'removed node {0}\n'.format(str(a))
-            else:
-                found_a = True
-                # print 'found a = {0}\n'.format(str(a))
-                break
-        if not found_a:
+    i = 0
+    while i < len(vertex_list):
+        # Selects a random node of degree < k which belongs to vertex_list
+        if len(vertex_list) == 0:
             return None
+        a = vertex_list[i]
+        i += 1
         # print 'selected node {0}\n'.format(str(a))
-        # Selects a non-neighbour of a (different cluster) with degree < k
-        random.shuffle(vertex_list)
-        for b in vertex_list:
-            if indegree[b] + outdegree[b] >= k:
-                vertex_list.remove(b)
-                continue
-            if b != a and mycluster[a] != mycluster[b] and matrix[a, b] == 0 and (indegree[b] + outdegree[b] < k):
-                found = True
+        # Selects a vertex b, non-neighbour of a (different cluster) with degree < k
+        # vertex b belongs to cluster c1 in cluster_list
+        for c1 in cluster_list:
+            if c1 != mycluster[a]:
+                random.shuffle(cluster_node_list[c1])
+                for b in cluster_node_list[c1]:
+                    if matrix[a, b] == 0 and (indegree[b] + outdegree[b] < k):
+                        found = True
+                        break
+            if found:
                 break
-        if not found:
-            print 'b not found!'
-            return None
-    return edge(a, b)
+        if found:
+            break
+    # end while
+    if not found:
+        print 'b not found!'
+        return None
+    else:
+        return edge(a, b)
 
 
 def CCObjectiveFunction(N):
@@ -310,7 +320,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
         percentage = 0
         for i in xrange(external_edge_num):
             # Randomly picks a pair of nodes that do not belong to the same cluster
-            e = pick_random_external_edge(N, indegree, outdegree, k)
+            e = pick_random_external_edge(N, indegree, outdegree, k, c)
             if e is None:
                 print "Warn: no more external edge found."
                 break
@@ -332,7 +342,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
         print '\nGenerated {0} random external edges.'.format(ext_count)
         external_edge_num = ext_count
 
-        print 'now there are {0} internal edges and {1} external edges'.format(str(int_count), str(ext_count))
+        print 'Now there are {0} internal edges and {1} external edges'.format(str(int_count), str(ext_count))
         # internal_edge_num = count
         # external_edge_num = total_edges - internal_edge_num
 
@@ -356,25 +366,32 @@ def SG(c, n, k, p_in, p_minus, p_plus):
     print 'Number of internal edges of the graph is {0}'.format(str(internal_edge_num))
     print 'Number of external edges of the graph is {0}'.format(str(external_edge_num))
 
-    total_internal_edges = 0
-    for c1 in xrange(c):
-        for v1 in cluster_node_list[c1]:
-            for v2 in cluster_node_list[c1]:
-                if matrix[v1, v2] != 0:
-                    total_internal_edges += 1
-    assert total_internal_edges == internal_edge_num, "There must be (c x n x k x p_in) edges connecting pairs of nodes of the same cluster"
+    # this assertion was disabled
+    # total_internal_edges = 0
+    # for c1 in xrange(c):
+    #     for v1 in cluster_node_list[c1]:
+    #         for v2 in cluster_node_list[c1]:
+    #             if matrix[v1, v2] != 0:
+    #                 total_internal_edges += 1
+    # assert total_internal_edges == internal_edge_num, "There must be (c x n x k x p_in) edges connecting pairs of nodes of the same cluster"
 
     # 3- uses probability p- to generate the negative sign of the internal clusters' edges (connecting vertices inside a given cluster)
     print "Step 3: uses probability p- to generate the negative sign of the internal clusters' edges..."
     neg_links_num = int(math.ceil(internal_edge_num * p_minus))
-    print "Converting %s random negative internal cluster edges to negative sign." % str(neg_links_num)
+    print "Converting %s random internal cluster edges to negative sign." % str(neg_links_num)
     # Traverses all internal clusters' edges
     count = neg_links_num
     previous_total = -1
     percentage = 0
-    # TODO also shuffle the communities, together with the vertices inside each community
-    for c1 in xrange(c):
+    # equally divides the number of internal negative edges between all clusters / communities
+    c1 = 0
+    negative_edges_per_cluster = int(math.ceil(neg_links_num / c))
+    print "There will be {0} random negative internal cluster edges per cluster.".format(negative_edges_per_cluster)
+    while count > 0:
+    # for c1 in xrange(c):
+        negative_edges_in_cluster = 0
         random.shuffle(cluster_node_list[c1])
+        # print "cluster {0} => ".format(c1),
         for v1 in cluster_node_list[c1]:
             for v2 in cluster_node_list[c1]:
                 if count == 0:
@@ -389,36 +406,58 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                 if matrix[v1, v2] > 0:
                     matrix[v1, v2] *= -1
                     count -= 1
+                    negative_edges_in_cluster += 1
+                if negative_edges_in_cluster >= negative_edges_per_cluster:
+                    break
+            if negative_edges_in_cluster >= negative_edges_per_cluster or count == 0:
+                break
+        if count == 0:
+            break
+        # circular loop increment
+        c1 = (c1 + 1) % c
+    # end while count > 0
     print "100 % completed."
     assert count == 0, "3. There must be (c x n x k x pin x p-) negative links within communities"
 
     # 4- uses probability p+ to generate the positive sign of the external clusters' edges (connecting vertices between different clusters)
     print "Step 4: uses probability p+ to generate the positive sign of the external clusters' edges..."
     pos_links_num = int(math.ceil(external_edge_num * p_plus))
-    print "Converting %s random positive external cluster edges to positive sign." % str(pos_links_num)
+    print "Converting %s random external cluster edges to positive sign." % str(pos_links_num)
     # Traverses all external clusters' edges
     previous_total = -1
     percentage = 0
     count = pos_links_num
-    conj1 = (range(N))
-    conj2 = (range(N))
+    conj1 = range(c)
+    conj2 = range(c)
     random.shuffle(conj1)
     random.shuffle(conj2)
-    for v1 in conj1:
-        for v2 in conj2:
-            if (matrix[v1, v2] < 0) and mycluster[v1] != mycluster[v2]:
-                total_done = pos_links_num - count
-                threshold = int(math.floor(pos_links_num / 10.0))
-                percentage = int(100 * (float(total_done) / pos_links_num))
-                #print str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
-                if total_done % threshold < EPS and percentage != previous_total:
-                    print str(percentage) + " % ",
-                    previous_total = percentage
-                if count > 0:
-                    matrix[v1, v2] *= -1
-                    count -= 1
-                else:
+    # shuffles the vertices in each cluster
+    for c1 in conj1:
+        random.shuffle(cluster_node_list[c1])
+
+    for c1 in conj1:
+        for c2 in conj2:
+            if c1 != c2 and count > 0:
+                for v1 in cluster_node_list[c1]:
+                    for v2 in cluster_node_list[c2]:
+                        if v1 != v2 and matrix[v1, v2] < 0:
+                            total_done = pos_links_num - count
+                            threshold = int(math.floor(pos_links_num / 10.0))
+                            percentage = int(100 * (float(total_done) / pos_links_num))
+                            if total_done % threshold < EPS and percentage != previous_total:
+                                print str(percentage) + " % ",
+                                previous_total = percentage
+                            if count > 0:
+                                matrix[v1, v2] *= -1
+                                count -= 1
+                        if count == 0:
+                            break
+                    if count == 0:
+                        break
+                if count == 0:
                     break
+        if count == 0:
+            break
     print "100 % completed."
     assert count == 0, "4. There must be (c x n x k x (1 - p_in) x p+) positive links outside communities"
 
@@ -465,7 +504,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
             assert count == n
             t_file.write('\r\n')
 
-    print "\nOutput files successfully generated."
+    print "\nOutput files successfully generated: {0}".format(filename)
 
 
 def main(argv):
