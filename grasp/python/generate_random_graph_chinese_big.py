@@ -177,6 +177,9 @@ def SG(c, n, k, p_in, p_minus, p_plus):
     print 'Generating random graph with {0} vertices...'.format(str(N))
     success = False
 
+    # measure elapsed time during graph generation
+    start = time.time()
+
     while not success:
 
         # Array that controls to which cluster a vertex belongs (size = N)
@@ -269,7 +272,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                                     break
                                 if b != node and matrix[node, b] == 0 and (indegree[b] + outdegree[b] < k):
                                     # Uses a random uniform distribution to generate edges' weights in the [0, 1] interval
-                                    matrix[node, b] = round(random.uniform(EPS, 1), 4)
+                                    matrix[node, b] = 1 # round(random.uniform(EPS, 1), 4)
                                     outdegree[node] += 1
                                     indegree[b] += 1
                                     if (indegree[b] + outdegree[b] > k) or (indegree[node] + outdegree[node] > k):
@@ -281,14 +284,14 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                                     # sys.stdout.write('.')
                         # display percentage of work completed
                         threshold = int(math.floor(edge_count / 10.0))
-                        percentage = int(100 * (float(i) / edge_count))
+                        percentage = int(math.ceil(100 * (float(i) / edge_count)))
                         if i % threshold < EPS and percentage != previous_total:
                             print str(percentage) + " % ",
                             previous_total = percentage
                 if not inserted:
                     print 'No more internal edge found! Count = {0}'.format(str(int_count))
                     break
-                print "100 % completed."
+                print " completed."
         print 'internal edge count is {0}'.format(str(int_count))
 
         # tries to add more internal edges by locating the vertices whose degree is smaller than k
@@ -301,7 +304,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                         break
                     if matrix[node, v] == 0 and (indegree[v] + outdegree[v] < k):
                         # creates an internal edge (node,v)
-                        matrix[node, v] = round(random.uniform(EPS, 1), 4)
+                        matrix[node, v] = 1 # round(random.uniform(EPS, 1), 4)
                         outdegree[node] += 1
                         indegree[v] += 1
                         int_count += 1
@@ -326,19 +329,19 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                 break
             # edges are directed
             # TODO: generate edges' weight randomly in the [0, 1] interval
-            matrix[e.x, e.y] = round(random.uniform(-1, -EPS), 4)
+            matrix[e.x, e.y] = -1 # round(random.uniform(-1, -EPS), 4)
             outdegree[e.x] += 1
             indegree[e.y] += 1
             ext_count += 1
 
             threshold = int(math.floor(external_edge_num / 10.0))
-            percentage = int(100 * (float(ext_count) / external_edge_num))
+            percentage = int(math.ceil(100 * (float(ext_count) / external_edge_num)))
             if ext_count % threshold < EPS and percentage != previous_total:
                 print str(percentage) + " % ",
                 previous_total = percentage
             # sys.stdout.write('.')
 
-        print "100 % completed."
+        print " completed."
         print '\nGenerated {0} random external edges.'.format(ext_count)
         external_edge_num = ext_count
 
@@ -398,7 +401,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                     break
                 total_done = neg_links_num - count
                 threshold = int(math.floor(neg_links_num / 10.0))
-                percentage = int(100 * (float(total_done) / neg_links_num))
+                percentage = int(math.ceil(100 * (float(total_done) / neg_links_num)))
                 #print str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
                 if total_done % threshold < EPS and percentage != previous_total:
                     print str(percentage) + " % ",
@@ -416,7 +419,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
         # circular loop increment
         c1 = (c1 + 1) % c
     # end while count > 0
-    print "100 % completed."
+    print " completed."
     assert count == 0, "3. There must be (c x n x k x pin x p-) negative links within communities"
 
     # 4- uses probability p+ to generate the positive sign of the external clusters' edges (connecting vertices between different clusters)
@@ -443,7 +446,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                         if v1 != v2 and matrix[v1, v2] < 0:
                             total_done = pos_links_num - count
                             threshold = int(math.floor(pos_links_num / 10.0))
-                            percentage = int(100 * (float(total_done) / pos_links_num))
+                            percentage = int(math.ceil(100 * (float(total_done) / pos_links_num)))
                             if total_done % threshold < EPS and percentage != previous_total:
                                 print str(percentage) + " % ",
                                 previous_total = percentage
@@ -458,7 +461,7 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                     break
         if count == 0:
             break
-    print "100 % completed."
+    print " completed."
     assert count == 0, "4. There must be (c x n x k x (1 - p_in) x p+) positive links outside communities"
 
     # Writes output file in XPRESS Mosel format (.mos)
@@ -472,21 +475,51 @@ def SG(c, n, k, p_in, p_minus, p_plus):
     directory = "output"
     if not os.path.exists(directory):
         os.makedirs(directory)
+    print("Saving output graph file...")
+    previous_total = -1
+    percentage = 0
+    count = int_count + ext_count
     with open(directory + "/" + filename, "w") as g_file:
         # file header
         g_file.write('people: {0}\r\n\r\n'.format(str(N)))
         g_file.write('VarErr: 0.5\r\n\r\n')
-        vertex_names = ""
+        vertex_names = []
+        g_file.write('Names: [')
         for x in xrange(1, N + 1):
-            vertex_names += str(x) + " "
-        g_file.write('Names: [{0}]\r\n\r\n'.format(vertex_names))
+            vertex_names.append(str(x))
+            vertex_names.append(" ")
+            if x % 20 == 0:
+                vertex_names.append('\r\n')
+            if len(vertex_names) >= 4096:
+                g_file.write(''.join(vertex_names))
+                vertex_names = []
+        g_file.write(''.join(vertex_names))
+        g_file.write(']\r\n')
         # graph contents
-        edge_list = ""
+        edge_list = []
+        edge_count = 0
+        g_file.write('Mrel: [ ')
         for i in xrange(N):
             for j in xrange(N):
                 if matrix[i, j] != 0:
-                    edge_list += '({0},{1}){2} \r\n'.format(str(i + 1), str(j + 1), str(matrix[i,j]))
-        g_file.write('Mrel: [ {0}]'.format(edge_list))
+                    edge_list.append('({0},{1}){2} \r\n'.format(str(i + 1), str(j + 1), str(matrix[i,j])))
+                    edge_count += 1
+                    if len(edge_list) >= 4096:
+                        g_file.write(''.join(edge_list))
+                        edge_list = []
+                    threshold = int(math.floor(count / 10.0))
+                    percentage = int(math.ceil(100 * (float(edge_count) / count)))
+                    if edge_count % threshold < EPS and percentage != previous_total:
+                        print str(percentage) + " % ",
+                        previous_total = percentage
+        g_file.write(''.join(edge_list))
+        g_file.write(']\r\n')
+        print "  completed."
+
+    print "Graph file generated: {0}".format(filename)
+    end = time.time()
+    elapsed = end - start
+    print "Graph generation took {0:.2f} seconds.".format(elapsed)
 
     # Writes output file with additional information about graph generation
     imbalance = CCObjectiveFunction(N)
@@ -503,6 +536,8 @@ def SG(c, n, k, p_in, p_minus, p_plus):
                 count += 1
             assert count == n
             t_file.write('\r\n')
+
+    print "Info file generated: {0}".format(filename_prefix + "-info.txt")
 
     print "\nOutput files successfully generated: {0}".format(filename)
 
