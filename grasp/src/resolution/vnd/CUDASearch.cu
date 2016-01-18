@@ -1105,34 +1105,39 @@ using namespace std;
 					h_nc = d_nc;
 					// h_functionValue = d_functionValue;
 					// printf("After: nc = %d, cluster = %d, imbalance = %.2f\n", h_nc[0], h_mycluster[bestSrcVertex], h_functionValue[0]);
-
-					if(h_nc[0] > h_old_nc[0]) {
-						// acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
-						// printf("New cluster. Growing vectors.\n");
-						d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
-						d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
-						d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
-						vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
-						vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
-						isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
-					}
-
-					updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
-							vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
-					checkCudaErrors(cudaDeviceSynchronize());
-					// CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
-					// h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
-					// CASO ESPECIAL 2: cluster removido
-					if(h_nc[0] < h_old_nc[0]) {
-						// remove uma fileira correpondente a um cluster removido na matriz de soma
-						// BOOST_LOG_TRIVIAL(debug) << "Deleted cluster. Shrinking vectors." << endl;
-						d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
-						d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
-						d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
-						vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
-						vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
-						isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
-					}
+					// TODO check if full recalculation of the arrays is faster than delta calculation
+					/*
+                                        if(h_nc[0] > h_old_nc[0]) {
+                                                // acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
+                                                // printf("New cluster. Growing vectors.\n");
+                                                d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
+                                                d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
+                                                d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
+                                                vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
+                                                vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
+                                                isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+                                        } */
+                                        if(h_nc[0] == h_old_nc[0]) {  // must not update the arrays if the number of clusters decreased
+                                                updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
+                                                        vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
+                                                checkCudaErrors(cudaDeviceSynchronize());
+                                        }
+                                        // CASO ESPECIAL 2: o cluster k1 foi removido -> parcialmente tratado dentro do kernel anterior
+                                        // h_mycluster = d_mycluster; // retrieves new cluster configuration from GPU
+                                        // CASO ESPECIAL 2: cluster removido
+                                        if(h_nc[0] != h_old_nc[0]) {  // number of cluster decreased => FULL recalculation
+                                                        // recalculates sum matrices
+                                                        d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
+                                                        d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
+                                                        d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
+                                                        vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
+                                                        vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
+                                                        isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+                                                        long blocksPerGrid = (n + threadsCount - 1) / threadsCount;  // , n*sizeof(int)
+                                                        updateVertexClusterSumArrays<<<blocksPerGrid, threadsCount>>>(weightArray, destArray, numArray,
+                                                                offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, ncArray);
+                                                        checkCudaErrors(cudaDeviceSynchronize());
+                                        }
 					// printf("Preparing new VND loop...\n");
 					if(bestImbalance < 0)  break;
 				} else {  // no better result found in neighborhood
