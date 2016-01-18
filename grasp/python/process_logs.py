@@ -155,19 +155,22 @@ def processCCResult(folders, labels, filter):
         for experiment_name in sorted(construction_times_for_experiment.iterkeys()):
             print 'Experiment ' + str(experiment_name)
 
-            cols = ['Instance', 'Avg Construction time', 'Avg Local search time', 'Avg Global time']
+            cols = ['Instance', 'Avg Construction time', 'Avg Local search time', 'Avg Global time', 'Num executions']
             construction_time_array = []
             search_time_array = []
             global_time_array = []
+            num_exec_array = []
             for instance_name in sorted(construction_times_for_experiment[experiment_name].iterkeys()):
                 construction_time_array.append(np.mean(construction_times_for_experiment[experiment_name][instance_name]))
                 search_time_array.append(np.mean(search_times_for_experiment[experiment_name][instance_name]))
                 global_time_array.append(np.mean(global_time_for_experiment[experiment_name][instance_name]))
+                num_exec_array.append(len(global_time_for_experiment[experiment_name][instance_name]))
 
             CompleteInstanceDataSet = {'Instance' : list(sorted(construction_times_for_experiment[experiment_name].iterkeys())),
                                    'Avg Construction time' : construction_time_array,
                                    'Avg Local search time' : search_time_array,
-                                    'Avg Global time' : global_time_array }
+                                    'Avg Global time' : global_time_array,
+                                    'Num executions' : num_exec_array }
 
             df = pd.DataFrame(CompleteInstanceDataSet)
             # print df[cols]

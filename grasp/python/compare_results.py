@@ -12,7 +12,9 @@ import argparse
 import pandas as pd
 import scipy.stats as stats
 import numpy as np
+import random
 from matplotlib import pyplot as plt
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 def main(argv):
 
@@ -55,68 +57,58 @@ def processCCResult(folders, labels):
         best_file_summary = dict()
         previous_filename = ""
 
-        for root, subFolders, files in os.walk(folder):
+        for root1, subFolders1, files1 in os.walk(folder):
             # sort dirs and files
-            subFolders.sort()
-            files.sort()
+            subFolders1.sort()
+            files1.sort()
 
-            #print "Processing folder " + ''.join(root)
-            if (len(files) and ''.join(root) != folder):
-                file_list = []
-                file_list.extend(glob.glob(root + "/CC*.csv"))
-                file_list.extend(glob.glob(root + "/Node*.csv"))
-                count = len(file_list) - 1
+            print "Processing folder " + ''.join(root1)
+            if (''.join(root1) != folder):  # process only subfolders
+                current_folder = (root1[root1.rfind("/") + 1 :])
+                if '.g' in current_folder:
+                    filename = current_folder
 
-                # Process CC results
-                if os.path.isfile(root + "/cc-result.txt"):
+                    for root, subFolders, files in os.walk(root1):
+                        # Process CC results
+                        if os.path.isfile(root + "/cc-result.txt"):
+                            filename = (root[:root.rfind("/")])
+                            filename = filename[filename.rfind("/")+1:]
+                            datetime = root[root.rfind("/") + 1:]
 
-                    filename = (root[:root.rfind("/")])
-                    filename = filename[filename.rfind("/")+1:]
-                    datetime = root[root.rfind("/") + 1:]
+                            best_value = float(100000000)
 
-                    best_value = float(100000000)
-                    value = 0
+                            content_file = open(root + "/cc-result.txt", 'r')
+                            try:
+                                content = content_file.read()
 
-                    while count >= 0:
-                        # Process all files from all algorithm executions, including those in parallel
-                        #print "Processing file " + file_list[count] + "\n"
-                        content_file = open(file_list[count], 'r')
-                        try:
-                            content = content_file.read()
+                                reader = csv.reader(StringIO.StringIO(content), delimiter='=')
+                                for row in reader:
+                                    linestring = ''.join(row)
+                                    column = []
+                                    for col in row:
+                                        column.append(col)
+                                    if linestring.startswith('I(P)'):
+                                        # obtains the best result found by a specific execution of a specific node (can be parallel)
+                                        best_value = float(str(column[1]).strip())
+                                        break
+                            finally:
+                                content_file.close()
+                            # captura o PIOR resultado dadas todas as execucoes de um mesmo grafo / instancia
+                            # deve ser o pior resultado encontrado, dadas todas as execucoes de um determinado algoritmo
+                            if best_file_summary.has_key(filename):
+                                current_value = float(best_file_summary[filename])
+                                if (best_value < current_value):
+                                    best_file_summary[filename] = str(best_value)
+                            else:
+                                best_file_summary[filename] = str(best_value)
 
-                            reader = csv.reader(StringIO.StringIO(content), delimiter=',')
-                            for row in reader:
-                                linestring = ''.join(row)
-                                column = []
-                                for col in row:
-                                    column.append(col)
-                                if linestring.startswith('Best value'):
-                                    # obtains the best result found by a specific execution of a specific node (can be parallel)
-                                    value = float(column[1])
-                                    if value < best_value:
-                                        # if the results from the execution of this node are better, replace the data
-                                        best_value = value
-                            count = count - 1
-                        finally:
-                            content_file.close()
-
-                    # captura o PIOR resultado dadas todas as execucoes de um mesmo grafo / instancia
-                    # deve ser o pior resultado encontrado, dadas todas as execucoes de um determinado algoritmo
-                    if best_file_summary.has_key(filename):
-                        current_value = float(best_file_summary[filename])
-                        if (best_value < current_value):
-                            best_file_summary[filename] = str(best_value)
-                    else:
-                        best_file_summary[filename] = str(best_value)
-
-                    if worst_file_summary.has_key(filename):
-                        current_value = float(worst_file_summary[filename])
-                        if (best_value > current_value):
-                            worst_file_summary[filename] = str(best_value)
-                    else:
-                        worst_file_summary[filename] = str(best_value)
-
-                    previous_filename = filename
+                            if worst_file_summary.has_key(filename):
+                                current_value = float(worst_file_summary[filename])
+                                if (best_value > current_value):
+                                    worst_file_summary[filename] = str(best_value)
+                            else:
+                                worst_file_summary[filename] = str(best_value)
+                    # end process all result files of an instance / filename
                 # end loop
                 # process last file
         print "\nProcessing CC Results...\n"
@@ -131,10 +123,6 @@ def processCCResult(folders, labels):
             #print "%s, %s" % (key, all_files_summary[key])
         #    result_file.write("%s; %s\n" % (key, all_files_summary[key]))
         #result_file.close()
-        print "------ CC Best results:"
-        print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
-        for key in sorted(best_file_summary.iterkeys()):
-            print "%s, %s" % (key, best_file_summary[key])
 
     # compare the best results of each algorithm, choosing the worst
     worse_sol = dict()
@@ -173,31 +161,43 @@ def processCCResult(folders, labels):
     print df2
 
     # for each instance in worse_sol, discover the time each algorithm took to reach that solution
+    chsol = dict()
+    for key in best_sol.iterkeys():
+        chsol[key] = (float(best_sol[key])*(1.001))
     ttt_for_algorithm = dict()  # contains the ttt dict for a specific algorithm / folder
     for folder in folders:
-        ttt_for_algorithm[folder] = processTimeToTarget(folder, worse_sol)  # worse_sol, best_sol
+        ttt_for_algorithm[folder] = processTimeToTarget(folder, chsol)  # worse_sol, best_sol
 
     # now, for each instance, we need to calculate the columns: AvgTimeToTarget, Stddev(TTT), Speedup.
     # and also the Standard Error of the Mean (SEM)
     AvgTimeToTarget = dict()
     StddevTTT = dict()
+    Anova = []
+    Tukey = []
+    num_exec = dict()
+
     Speedup = []
     for folder in folders:
         AvgTimeToTarget[folder] = []
         StddevTTT[folder] = []
+        num_exec[folder] = []
+
     for instance_name in best_file_summary.iterkeys():
         # for each algorithm,
         count = 0
         data_to_plot = []
+        tttseries = []
         for folder in folders:
             tttdict = dict(ttt_for_algorithm[folder])
             tttlist = tttdict[instance_name]
+            tttseries.append(tttlist)
             # obtains a list of execution times (time-to-target) of the algorithm for this specific instance
             # calculates the average, stddev and confidence internal for the ttt variable
             avg_ttt =  np.mean(tttlist)
             AvgTimeToTarget[folder].append(avg_ttt)
             stddev_ttt = (np.std(tttlist, ddof=1)/np.sqrt(len(tttlist)) * 1.96) # numpy.std(tttlist)
             StddevTTT[folder].append(stddev_ttt)
+            num_exec[folder].append(len(tttlist))
 
             # student's t-test for time-to-target
             #(tstat, pvalue) = stats.ttest_1samp(list(tttlist), avg_ttt)
@@ -207,6 +207,40 @@ def processCCResult(folders, labels):
             # print 'For %s solved by %s : StdErrorOfMean = %6.4f' % (instance_name, labels[count], SEM)
             count += 1
 
+        # To run Wilcoxon signed rank test, sample sizes must be equal!
+        if len(tttseries[0]) > len(tttseries[1]):
+            while len(tttseries[0]) > len(tttseries[1]):
+                tttseries[0].pop(random.randint(0,len(tttseries[0])-1))
+        elif len(tttseries[1]) > len(tttseries[0]):
+            while len(tttseries[1]) > len(tttseries[0]):
+                tttseries[1].pop(random.randint(0,len(tttseries[1])-1))
+
+        # Wilcoxon.append(stats.mannwhitneyu(tttseries[0], tttseries[1]))
+        # Applies ANOVA to verify that the samples differ
+        f, p = stats.f_oneway(tttseries[0], tttseries[1])
+        if p > 0.05:
+            print "WARN: p-value above 0.05! Samples may not differ!"
+        Anova.append((f, p))
+
+        # runs tukey's test to compare all the samples
+        ttt_tukey = []
+        for item in tttseries[0]:
+            ttt_tukey.append((labels[0], item))
+        for item in tttseries[1]:
+            ttt_tukey.append((labels[1], item))
+
+        names = ['id','ttt']
+        formats = ['U30','f8']
+        dtype = dict(names = names, formats=formats)
+        #array = np.rec.array(ttt_tukey, dtype=dtype)
+
+        #res = pairwise_tukeyhsd(array['ttt'], array['id'], alpha=0.05)
+        #res.plot_simultaneous()
+        #plt.show()
+        #print res
+        #print res.meandiffs[0]
+        #Tukey.append(res.meandiffs[0])
+        Tukey.append(0)
 
         # box plot of time-to-target
         # Create a figure instance
@@ -234,7 +268,8 @@ def processCCResult(folders, labels):
 
 
     cols = ['Instance', 'Target I(P)']  # 'AvgTimeToTarget', 'Stddev-TTT', 'Speedup'
-    CompleteInstanceDataSet = {'Instance' : list(worst_file_summary.iterkeys()), 'Target I(P)' : list(worst_file_summary.itervalues())}
+    CompleteInstanceDataSet = {'Instance' : list(worst_file_summary.iterkeys()), 'Target I(P)' : list(chsol.itervalues()),
+                               'ANOVA' : list(Anova), 'Tukey' : list(Tukey) }
     count = 0
     for folder in folders:
         colname = 'AvgTimeToTarget-' + str(labels[count])
@@ -242,6 +277,9 @@ def processCCResult(folders, labels):
         cols.append(colname)
         colname = 'Stddev-TTT-' + str(labels[count])
         CompleteInstanceDataSet[colname] = StddevTTT[folder]
+        cols.append(colname)
+        colname = 'NumExec-' + str(labels[count])
+        CompleteInstanceDataSet[colname] = num_exec[folder]
         cols.append(colname)
         count += 1
 
