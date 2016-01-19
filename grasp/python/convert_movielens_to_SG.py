@@ -138,59 +138,72 @@ def processMovieLensFiles(folders, filter):
                         previous_total = -1
                         percentage = 0
                         join_df = pd.merge(df, df, on='movie_id', how='inner')
-                        ab_df = join_df.groupby(['user_id_x', 'user_id_y']).count()
-                        print ab_df
+                        #ab_df = join_df.groupby(['user_id_x', 'user_id_y']).count()
 
-                        #for user_a in xrange(0, max_user_id):
-                        #    for user_b in xrange(0, user_a):
-                        for idx, row2 in ab_df.iterrows():
-                                user_a = row2['user_id_x']
-                                user_b = row2['user_id_y']
+                        for user_a in xrange(0, max_user_id):
+                            for user_b in xrange(0, user_a):
+                                #for idx, row2 in ab_df.iterrows():
+                                #user_a = row2['user_id_x']
+                                #user_b = row2['user_id_y']
                                 if user_a != user_b:
                                     common_rating_count = 0
                                     common_similar_rating_count = 0
-                                    df_a = df[df.user_id == user_a]
-                                    df_b = df[df.user_id == user_b]
-                                    common_movies_df = pd.merge(df_a, df_b, on='movie_id', how='inner')
-                                    movies = common_movies_df['movie_id'] #, 'rating_x', 'rating_y']
-                                    if len(movies) > 0:
-                                        # print "common movies for users {0} and {1}: ".format(user_a, user_b)
-                                        # print common_movies_df
+                                    #df_a = df[df.user_id == user_a]
+                                    #df_b = df[df.user_id == user_b]
+                                    #common_movies_df = pd.merge(df_a, df_b, on='movie_id', how='inner')
+                                    #movies = common_movies_df['movie_id'] #, 'rating_x', 'rating_y']
+                                    movies = join_df[join_df.user_id_x == user_a]
+                                    movies = movies[movies.user_id_y == user_b]
+                                    common_rating_count = movies['movie_id'].count()
 
-                                        #for movie_id in xrange(0, max_movie_id):
-                                        #    if star[user_a, movie_id] != 0 and star[user_b, movie_id] != 0:
-                                        for index, row in common_movies_df.iterrows():
-                                            #print row
-                                            # columns: user_id_x  movie_id  rating_x  timestamp_x  user_id_y  rating_y
-                                            movie_id = row['movie_id']
-                                            rating_a = row['rating_x']
-                                            rating_b = row['rating_y']
-                                            #print "{0} {1} {2}".format(movie_id, rating_a, rating_b),
-                                            # users A and B have voted on the same movie
-                                            common_rating_count += 1
-                                            #if(star[user_a, movie_id] <= BAD_MOVIE and star[user_b, movie_id] <= BAD_MOVIE) \
-                                            #        or star[user_a, movie_id] >= GOOD_MOVIE and star[user_b, movie_id] >= GOOD_MOVIE:
-                                            if(rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE) \
-                                                    or rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE \
-                                                    or rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE:
-                                                # users A and B have the same opinion about the movie
-                                                common_similar_rating_count += 1
-                                                #print "agree"
-                                        # end for all movies
-                                        if common_rating_count > 0:
-                                            common_similar_rating_ratio = float(common_similar_rating_count) / common_rating_count
-                                        else:
-                                            common_similar_rating_ratio = 0
+                                    bad = movies[movies.rating_x <= BAD_MOVIE]
+                                    bad = bad[movies.rating_y <= BAD_MOVIE]
 
-                                        if common_similar_rating_ratio >= POS_EDGE_PERC:
-                                            #SG[user_a, user_b] = 1
-                                            edge_list.append("{0} {1} 1\n".format(user_a, user_b))
-                                        if common_similar_rating_ratio <= NEG_EDGE_PERC:
-                                            #SG[user_a, user_b] = -1
-                                            edge_list.append("{0} {1} -1\n".format(user_a, user_b))
+                                    good = movies[movies.rating_x >= GOOD_MOVIE]
+                                    good = good[movies.rating_y >= GOOD_MOVIE]
+
+                                    regular = movies[movies.rating_x == REGULAR_MOVIE]
+                                    regular = regular[movies.rating_y == REGULAR_MOVIE]
+                                    common_similar_rating_count = bad['movie_id'].count() + good['movie_id'].count() + regular['movie_id'].count()
+
+                                    # if len(movies) > 0:
+                                    #     # print "common movies for users {0} and {1}: ".format(user_a, user_b)
+                                    #     # print common_movies_df
+                                    #
+                                    #     #for movie_id in xrange(0, max_movie_id):
+                                    #     #    if star[user_a, movie_id] != 0 and star[user_b, movie_id] != 0:
+                                    #     for index, row in movies.iterrows(): #common_movies_df.iterrows():
+                                    #         #print row
+                                    #         # columns: user_id_x  movie_id  rating_x  timestamp_x  user_id_y  rating_y
+                                    #         movie_id = row['movie_id']
+                                    #         rating_a = row['rating_x']
+                                    #         rating_b = row['rating_y']
+                                    #         #print "{0} {1} {2}".format(movie_id, rating_a, rating_b),
+                                    #         # users A and B have voted on the same movie
+                                    #         common_rating_count += 1
+                                    #         #if(star[user_a, movie_id] <= BAD_MOVIE and star[user_b, movie_id] <= BAD_MOVIE) \
+                                    #         #        or star[user_a, movie_id] >= GOOD_MOVIE and star[user_b, movie_id] >= GOOD_MOVIE:
+                                    #         if(rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE) \
+                                    #                 or rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE \
+                                    #                 or rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE:
+                                    #             # users A and B have the same opinion about the movie
+                                    #             common_similar_rating_count += 1
+                                    #             #print "agree"
+                                    #     # end for all movies
+                                    if common_rating_count > 0:
+                                        common_similar_rating_ratio = float(common_similar_rating_count) / common_rating_count
+                                    else:
+                                        common_similar_rating_ratio = 0
+
+                                    if common_similar_rating_ratio >= POS_EDGE_PERC:
+                                        #SG[user_a, user_b] = 1
+                                        edge_list.append("{0} {1} 1\n".format(user_a, user_b))
+                                    if common_similar_rating_ratio <= NEG_EDGE_PERC:
+                                        #SG[user_a, user_b] = -1
+                                        edge_list.append("{0} {1} -1\n".format(user_a, user_b))
                                 # display status of processing done
                                 total_done = user_a * user_b
-                                threshold = int(math.floor(count / 10.0))
+                                threshold = int(math.floor(count / 5.0))
                                 percentage = int(math.ceil(100 * (float(total_done) / count)))
                                 #print str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
                                 if total_done % threshold < EPS and percentage != previous_total:
