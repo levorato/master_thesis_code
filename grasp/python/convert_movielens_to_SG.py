@@ -92,123 +92,88 @@ def processMovieLensFiles(folders, filter):
                     output_file = open(os.path.join(directory, filename), 'w')
 
                     # STAR(A,F) -> the number of stars (rating) user A gave to movie F
-                    star = dok_matrix((MAX_USERS, MAX_MOVIES))
+                    #star = dok_matrix((MAX_USERS, MAX_MOVIES))
 
                     try:
                         # detect the dialect (separator used in the csv file
-                        dialect = csv.Sniffer().sniff(content_file.read(1024)) # , delimiters=";,"
-                        content_file.seek(0)
-                        reader = csv.reader(content_file, dialect)
+                        dialect = csv.Sniffer().sniff(content_file.read(1024)) #, delimiters=":: ")
                         max_user_id = 0
-                        max_movie_id = 0
 
-                        # reads all the votes for movies
-                        for row in reader:
-                            linestring = ''.join(row)
-                            column = []
-                            for col in row:
-                                column.append(col)
-                            if len(row) == 0:
-                                continue
-
-                            user_id = long(column[0])
-                            movie_id = long(column[1])
-                            rating = float(column[2])
-                            # user_id and movie_id both begin with 1
-                            star[user_id - 1, movie_id - 1] = rating
-
-                            # detects the number of users and movies in the dataset
-                            if user_id > max_user_id:
-                                max_user_id = user_id
-                            if movie_id > max_movie_id:
-                                max_movie_id = movie_id
-                        # end reading voting file
-                        print "Successfully read input file, generating signed graph file."
-
-                        # re-reads the contents of csv back to pandas dataframe
+                        # reads the contents of csv to pandas dataframe
                         content_file2 = open(file, 'r')
-                        df = pd.read_csv(content_file2, dialect=dialect, encoding="utf-8-sig",
+                        text_content = content_file2.read()
+                        text_content = text_content.replace("::", ":")
+                        output = StringIO.StringIO(text_content)
+                        df = pd.read_csv(output, dialect=dialect, encoding="utf-8-sig",
                                          header=None, names=['user_id', 'movie_id', 'rating', 'timestamp'])  # index_col='Instance',
                         content_file2.close()
+                        print "Successfully read input file, generating signed graph file."
 
                         # the signed graph representing the voting in movie lens dataset
-                        SG = dok_matrix((max_user_id, max_user_id))
                         edge_list = []
-                        count = max_user_id * max_user_id
+                        join_df = pd.merge(df, df, on='movie_id', how='inner')
+                        join_df = join_df[join_df.user_id_x != join_df.user_id_y]
+                        join_df_g = join_df.groupby(['user_id_x', 'user_id_y']).size()
+                        join_df_g = join_df_g.reset_index()
+                        join_df_g.columns = join_df_g.columns.map(lambda x: 'count_cr' if "0" == str(x) else str(x))
+                        #print join_df_g.columns
+                        #print join_df_g
+
+                        bad_df = join_df[join_df.rating_x <= BAD_MOVIE]
+                        bad_df = bad_df[bad_df.rating_y <= BAD_MOVIE]
+                        bad_df_g = bad_df.groupby(['user_id_x', 'user_id_y']).size()
+                        bad_df_g = bad_df_g.reset_index()
+                        bad_df_g.columns = bad_df_g.columns.map(lambda x: 'count_bad' if "0" == str(x) else str(x))
+
+                        good_df = join_df[join_df.rating_x >= GOOD_MOVIE]
+                        good_df = good_df[good_df.rating_y >= GOOD_MOVIE]
+                        good_df_g = good_df.groupby(['user_id_x', 'user_id_y']).size()
+                        good_df_g = good_df_g.reset_index()
+                        good_df_g.columns = good_df_g.columns.map(lambda x: 'count_good' if "0" == str(x) else str(x))
+
+                        regular_df = join_df[join_df.rating_x == REGULAR_MOVIE]
+                        regular_df = regular_df[regular_df.rating_y == REGULAR_MOVIE]
+                        regular_df_g = regular_df.groupby(['user_id_x', 'user_id_y']).size()
+                        regular_df_g = regular_df_g.reset_index()
+                        regular_df_g.columns = regular_df_g.columns.map(lambda x: 'count_reg' if "0" == str(x) else str(x))
+
+                        result = pd.merge(join_df_g, bad_df_g, how='outer', on=['user_id_x', 'user_id_y'])
+                        result = pd.merge(result, good_df_g, how='outer', on=['user_id_x', 'user_id_y'])
+                        result = pd.merge(result, regular_df_g, how='outer', on=['user_id_x', 'user_id_y'])
+                        #print result
+
+                        count = result.count()['user_id_x']
                         previous_total = -1
                         percentage = 0
-                        join_df = pd.merge(df, df, on='movie_id', how='inner')
-                        #ab_df = join_df.groupby(['user_id_x', 'user_id_y']).count()
+                        total_done = 0
+                        for index, row in result.iterrows():
+                            user_a = long(row['user_id_x'])
+                            user_b = long(row['user_id_y'])
+                            common_rating_count = row['count_cr']
+                            common_similar_rating_count = row['count_bad'] + row['count_good'] + row['count_reg']
 
-                        for user_a in xrange(0, max_user_id):
-                            for user_b in xrange(0, user_a):
-                                #for idx, row2 in ab_df.iterrows():
-                                #user_a = row2['user_id_x']
-                                #user_b = row2['user_id_y']
-                                if user_a != user_b:
-                                    common_rating_count = 0
-                                    common_similar_rating_count = 0
-                                    #df_a = df[df.user_id == user_a]
-                                    #df_b = df[df.user_id == user_b]
-                                    #common_movies_df = pd.merge(df_a, df_b, on='movie_id', how='inner')
-                                    #movies = common_movies_df['movie_id'] #, 'rating_x', 'rating_y']
-                                    movies = join_df[join_df.user_id_x == user_a]
-                                    movies = movies[movies.user_id_y == user_b]
-                                    common_rating_count = movies['movie_id'].count()
+                            if common_rating_count > 0:
+                                common_similar_rating_ratio = float(common_similar_rating_count) / common_rating_count
+                            else:
+                                common_similar_rating_ratio = 0
 
-                                    bad = movies[movies.rating_x <= BAD_MOVIE]
-                                    bad = bad[movies.rating_y <= BAD_MOVIE]
-
-                                    good = movies[movies.rating_x >= GOOD_MOVIE]
-                                    good = good[movies.rating_y >= GOOD_MOVIE]
-
-                                    regular = movies[movies.rating_x == REGULAR_MOVIE]
-                                    regular = regular[movies.rating_y == REGULAR_MOVIE]
-                                    common_similar_rating_count = bad['movie_id'].count() + good['movie_id'].count() + regular['movie_id'].count()
-
-                                    # if len(movies) > 0:
-                                    #     # print "common movies for users {0} and {1}: ".format(user_a, user_b)
-                                    #     # print common_movies_df
-                                    #
-                                    #     #for movie_id in xrange(0, max_movie_id):
-                                    #     #    if star[user_a, movie_id] != 0 and star[user_b, movie_id] != 0:
-                                    #     for index, row in movies.iterrows(): #common_movies_df.iterrows():
-                                    #         #print row
-                                    #         # columns: user_id_x  movie_id  rating_x  timestamp_x  user_id_y  rating_y
-                                    #         movie_id = row['movie_id']
-                                    #         rating_a = row['rating_x']
-                                    #         rating_b = row['rating_y']
-                                    #         #print "{0} {1} {2}".format(movie_id, rating_a, rating_b),
-                                    #         # users A and B have voted on the same movie
-                                    #         common_rating_count += 1
-                                    #         #if(star[user_a, movie_id] <= BAD_MOVIE and star[user_b, movie_id] <= BAD_MOVIE) \
-                                    #         #        or star[user_a, movie_id] >= GOOD_MOVIE and star[user_b, movie_id] >= GOOD_MOVIE:
-                                    #         if(rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE) \
-                                    #                 or rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE \
-                                    #                 or rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE:
-                                    #             # users A and B have the same opinion about the movie
-                                    #             common_similar_rating_count += 1
-                                    #             #print "agree"
-                                    #     # end for all movies
-                                    if common_rating_count > 0:
-                                        common_similar_rating_ratio = float(common_similar_rating_count) / common_rating_count
-                                    else:
-                                        common_similar_rating_ratio = 0
-
-                                    if common_similar_rating_ratio >= POS_EDGE_PERC:
-                                        #SG[user_a, user_b] = 1
-                                        edge_list.append("{0} {1} 1\n".format(user_a, user_b))
-                                    if common_similar_rating_ratio <= NEG_EDGE_PERC:
-                                        #SG[user_a, user_b] = -1
-                                        edge_list.append("{0} {1} -1\n".format(user_a, user_b))
-                                # display status of processing done
-                                total_done = user_a * user_b
-                                threshold = int(math.floor(count / 5.0))
-                                percentage = int(math.ceil(100 * (float(total_done) / count)))
-                                #print str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
-                                if total_done % threshold < EPS and percentage != previous_total:
-                                    print str(percentage) + " % ",
-                                    previous_total = percentage
+                            if common_similar_rating_ratio >= POS_EDGE_PERC:
+                                #SG[user_a, user_b] = 1
+                                edge_list.append("{0} {1} 1\n".format(user_a, user_b))
+                            if common_similar_rating_ratio <= NEG_EDGE_PERC:
+                                #SG[user_a, user_b] = -1
+                                edge_list.append("{0} {1} -1\n".format(user_a, user_b))
+                            if user_a > max_user_id:
+                                max_user_id = user_a
+                            if user_b > max_user_id:
+                                max_user_id = user_b
+                            # display status of processing done
+                            total_done += 1
+                            threshold = int(math.floor(count / 20.0))
+                            percentage = int(math.ceil(100 * (float(total_done) / count)))
+                            if total_done % threshold < EPS and percentage != previous_total:
+                                print str(percentage) + " % ",
+                                previous_total = percentage
 
                         # writes the header info
                         output_file.write("{0}\t{1}\r\n".format(max_user_id, len(edge_list)))
@@ -218,7 +183,7 @@ def processMovieLensFiles(folders, filter):
                     finally:
                         content_file.close()
                         output_file.close()
-                    print "Created output signed graph file {0}".format(filename)
+                    print "\nCreated output signed graph file {0}".format(filename)
                     end = time.time()
                     elapsed = end - start
                     print "Graph generation took {0:.2f} seconds.".format(elapsed)
