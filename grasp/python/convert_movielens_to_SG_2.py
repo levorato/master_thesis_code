@@ -173,15 +173,13 @@ def processMovieLensFiles(folders, filter):
                                 if user_a != user_b:
                                     if common_rating_count[user_a,user_b] > 0:
                                         common_similar_rating_ratio = float(common_similar_rating_count[user_a,user_b]) / common_rating_count[user_a,user_b]
-                                    else:
-                                        common_similar_rating_ratio = 0
-
-                                    if common_similar_rating_ratio >= POS_EDGE_PERC:
-                                        #SG[user_a, user_b] = 1
-                                        edge_list.append("{0} {1} 1\n".format(user_a, user_b))
-                                    if common_similar_rating_ratio <= NEG_EDGE_PERC:
-                                        #SG[user_a, user_b] = -1
-                                        edge_list.append("{0} {1} -1\n".format(user_a, user_b))
+                                        if common_similar_rating_ratio >= POS_EDGE_PERC:
+                                            #SG[user_a, user_b] = 1
+                                            edge_list.append("{0} {1} 1\n".format(user_a, user_b))
+                                        if common_similar_rating_ratio <= NEG_EDGE_PERC:
+                                            #SG[user_a, user_b] = -1
+                                            edge_list.append("{0} {1} -1\n".format(user_a, user_b))
+                                # end if a != b
                                 # display status of processing done
                                 total_done = user_a * max_user_id + user_b
                                 threshold = int(math.floor(count / 10.0))
