@@ -19,6 +19,7 @@ from random import randint
 from time import sleep
 import time
 from scipy.sparse import dok_matrix
+import scipy.io
 
 # Global variables
 mycluster = []
@@ -476,45 +477,49 @@ def SG(c, n, k, p_in, p_minus, p_plus):
     if not os.path.exists(directory):
         os.makedirs(directory)
     print("Saving output graph file...")
-    previous_total = -1
-    percentage = 0
-    count = int_count + ext_count
-    with open(directory + "/" + filename, "w") as g_file:
-        # file header
-        g_file.write('people: {0}\r\n\r\n'.format(str(N)))
-        g_file.write('VarErr: 0.5\r\n\r\n')
-        vertex_names = []
-        g_file.write('Names: [')
-        for x in xrange(1, N + 1):
-            vertex_names.append(str(x))
-            vertex_names.append(" ")
-            if x % 20 == 0:
-                vertex_names.append('\r\n')
-            if len(vertex_names) >= 4096:
-                g_file.write(''.join(vertex_names))
-                vertex_names = []
-        g_file.write(''.join(vertex_names))
-        g_file.write(']\r\n')
-        # graph contents
-        edge_list = []
-        edge_count = 0
-        g_file.write('Mrel: [ ')
-        for i in xrange(N):
-            for j in xrange(N):
-                if matrix[i, j] != 0:
-                    edge_list.append('({0},{1}){2} \r\n'.format(str(i + 1), str(j + 1), str(matrix[i,j])))
-                    edge_count += 1
-                    if len(edge_list) >= 4096:
-                        g_file.write(''.join(edge_list))
-                        edge_list = []
-                    threshold = int(math.floor(count / 10.0))
-                    percentage = int(math.ceil(100 * (float(edge_count) / count)))
-                    if edge_count % threshold < EPS and percentage != previous_total:
-                        print str(percentage) + " % ",
-                        previous_total = percentage
-        g_file.write(''.join(edge_list))
-        g_file.write(']\r\n')
-        print "  completed."
+
+    # write the matrix to matrix market file format
+    scipy.io.mmwrite(directory + "/" + filename, matrix)
+
+    # previous_total = -1
+    # percentage = 0
+    # count = int_count + ext_count
+    # with open(directory + "/" + filename, "w") as g_file:
+    #     # file header
+    #     g_file.write('people: {0}\r\n\r\n'.format(str(N)))
+    #     g_file.write('VarErr: 0.5\r\n\r\n')
+    #     vertex_names = []
+    #     g_file.write('Names: [')
+    #     for x in xrange(1, N + 1):
+    #         vertex_names.append(str(x))
+    #         vertex_names.append(" ")
+    #         if x % 20 == 0:
+    #             vertex_names.append('\r\n')
+    #         if len(vertex_names) >= 4096:
+    #             g_file.write(''.join(vertex_names))
+    #             vertex_names = []
+    #     g_file.write(''.join(vertex_names))
+    #     g_file.write(']\r\n')
+    #     # graph contents
+    #     edge_list = []
+    #     edge_count = 0
+    #     g_file.write('Mrel: [ ')
+    #     for i in xrange(N):
+    #         for j in xrange(N):
+    #             if matrix[i, j] != 0:
+    #                 edge_list.append('({0},{1}){2} \r\n'.format(str(i + 1), str(j + 1), str(matrix[i,j])))
+    #                 edge_count += 1
+    #                 if len(edge_list) >= 4096:
+    #                     g_file.write(''.join(edge_list))
+    #                     edge_list = []
+    #                 threshold = int(math.floor(count / 10.0))
+    #                 percentage = int(math.ceil(100 * (float(edge_count) / count)))
+    #                 if edge_count % threshold < EPS and percentage != previous_total:
+    #                     print str(percentage) + " % ",
+    #                     previous_total = percentage
+    #     g_file.write(''.join(edge_list))
+    #     g_file.write(']\r\n')
+    #     print "  completed."
 
     print "Graph file generated: {0}".format(filename)
     end = time.time()
