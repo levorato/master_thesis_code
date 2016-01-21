@@ -99,7 +99,10 @@ def processMovieLensFiles(folders, filter):
                         # detect the dialect (separator used in the csv file
                         dialect = csv.Sniffer().sniff(content_file.read(1024)) # , delimiters=";,"
                         content_file.seek(0)
-                        reader = csv.reader(content_file, dialect)
+                        text_content = content_file.read()
+                        text_content = text_content.replace("::", ":")
+                        output = StringIO.StringIO(text_content)
+                        reader = csv.reader(output, dialect)
                         max_user_id = 0
                         max_movie_id = 0
 
