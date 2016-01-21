@@ -88,7 +88,7 @@ def generate_random_graph(n, d, dneg):
 
     previous_total = -1
     percentage = 0
-    threshold = int(math.floor(m_min / 10.0))
+    threshold = int(math.floor(m_min - mneg / 10.0))
     m = mneg
     print "Generating positive edges..."
     while m < m_min:
@@ -102,7 +102,7 @@ def generate_random_graph(n, d, dneg):
             M[i,j] = 1
             M[j,i] = 1
             edge_list.append('({0},{1})1\n'.format(str(i + 1), str(j + 1)))
-            percentage = int(math.ceil(100 * (float(m) / m_min)))
+            percentage = int(math.ceil(100 * (float(m - mneg) / (m_min - mneg))))
             if m % threshold < EPS and percentage != previous_total:
                 print str(percentage) + " % ",
                 previous_total = percentage
