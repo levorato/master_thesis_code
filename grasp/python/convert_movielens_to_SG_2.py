@@ -28,7 +28,7 @@ import pandas as pd
 # Global variables
 EPS = 0.0001
 # Be sure to update these numbers as the movielens dataset grows!
-MAX_MOVIES = 35000
+MAX_MOVIES = 100000
 MAX_USERS = 250000
 # BAD_MOVIE -> maximum number of stars so that a rated movie is judged as a bad movie (e.g. 2 stars)
 BAD_MOVIE = 2
@@ -119,6 +119,7 @@ def processMovieLensFiles(folders, filter):
                             movie_id = long(column[1])
                             rating = float(column[2])
                             # user_id and movie_id both begin with 1
+                            #print "{0} {1}".format(user_id, movie_id)
                             star[user_id - 1, movie_id - 1] = rating
                             movie_users[movie_id - 1].append((user_id - 1, rating))
 
