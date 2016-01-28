@@ -145,6 +145,15 @@ public:
 			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix);
 
 	/**
+	 * Executes 2 local ILS procedures for each cluster movement (2 subgraphs), gathers the individual results,
+	 * merges them into a global CC solution and returns the best movement between all.
+	 */
+	Clustering distributeClusterMovementsAndRunILS(ConstructClustering *construct,
+			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
+			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
+			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix);
+
+	/**
 	 * Rebalances clusters between processes without running ILS (zero-cost moves).
 	 */
 	void rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, ClusteringProblem& problem,

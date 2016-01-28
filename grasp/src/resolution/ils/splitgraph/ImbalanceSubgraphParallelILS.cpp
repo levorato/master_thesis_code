@@ -109,18 +109,19 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 
 	// STEP 2: TRY TO IMPROVE THE GLOBAL SOLUTION THROUGH A DISTRIBUTED METAHEURISTIC WHICH
 	// EXCHANGES VERTICES BETWEEN PROCESSES
-	int improvementCount = 0;
+	int improvementCount = 0, improvements = 0;
 	do {
 		// 1. O processo mestre será o responsável por manter duas estruturas de dados de controle do imbalance:
 		//		Um vetor com os vértices que mais contribuem para I(P) (soma de imbalance de cada vertice)
 		//		Uma matriz com a soma do imbalance entre processos
 
 		// VND: for now, using 2 neighborhood structures, first 1-opt cluster move, then 1-opt vertex move
-		improvementCount = variableNeighborhoodDescent(g, bestSplitgraphClustering,
+		improvements = variableNeighborhoodDescent(g, bestSplitgraphClustering,
 				bestClustering, numberOfProcesses,
 				processClusterImbMatrix, construct, vnd,
 				iter, iterMaxILS, perturbationLevelMax,
 				problem, info, timeSpentInILS);
+		improvementCount += improvements;
 
 		// Last step. Stops the timer and stores the elapsed time
 		timer.stop();
@@ -140,7 +141,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
-	} while(improvementCount > 0);
+	} while(improvements > 0);
 
 	// prints all the info about time spent in each distributed MH invocation
 	for(int it = 0; it < timeSpentAtIteration.size(); it++) {
@@ -1012,7 +1013,24 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 		numberOfImbalancedClustersToBeMoved = 1;
 	}
 	bool foundBetterSolution = false;
+	// Creates the subgraphs for each processor, based on the splitgraphClusterArray structure
+	mpi::communicator world;
+	// the leader distributes the work across the processors
+	// the leader itself (i = 0) does part of the work too
+	std::vector<int> slaveList;
+	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
+
 	long n = g->getN();
+	// unsigned int numberOfProcesses = numberOfSlaves + 1;
+	// max number of clusters (RCC Problem Only)
+	long k = 0;
+	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		k = rp.getK();
+		if(k < 0) {  // reuses CC problem's best solution in the constructive phase
+			CCclustering = *(construct->getCCclustering());
+		}
+	}
 	long nc = bestClustering.getNumberOfClusters();
 	std::vector<unsigned int> clusterProcessOrigin = bestClustering.getClusterProcessOrigin();
 	// obtains the number of clusters from each process 'procNum'
@@ -1023,124 +1041,306 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 	}
 
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] ***************** moveCluster1opt";
+	// stores the list of movements (x, y) where x is the cluster that will be moved to process y
+	std::vector<Coordinate> movementList;
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] List of clusters to be moved: ";
 	for(long nic = 0; nic < numberOfImbalancedClustersToBeMoved; nic++) {
 		long clusterToMove = clusterImbalanceList[nic].x;
-		std::vector<long> listOfModifiedVertices = getListOfVeticesInCluster(*g, bestClustering, clusterToMove);
 		// finds out to which process the cluster belongs to
 		int currentProcess = clusterProcessOrigin[clusterToMove];
 		// avoid moving the cluster in case it is the only one inside the process
 		if(numberOfClustersInProcess[currentProcess] <= 1)  continue;
-
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Move " << nic << ": Moving global cluster " << clusterToMove << " of size " <<
-				bestClustering.getClusterSize(clusterToMove) << " and imbalance = " << clusterImbalanceList[nc - nic - 1].value << ".";
-
-		// LOAD BALANCING: Try to move the cluster to a process with less vertices than a given threshold (less loaded process)
-		ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
-		// the maximum number of vertices allowed in a process is 2 times the initial number of vertices of a process
-		// TODO possible parametrization here!
-		long maxVerticesAllowedInProcess = boost::math::lround((2 * n) / (double)bestSplitgraphClustering.getNumberOfClusters());
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Global cluster " << clusterToMove << " of size " <<
+				bestClustering.getClusterSize(clusterToMove) << " and imbalance = " << clusterImbalanceList[nic].value << ".";
 		for(int px = 0; px < numberOfProcesses; px++) {
-			if((px != currentProcess)) {  // TODO the line below was disabled for narrowing the search space too much...
-					// (bestSplitgraphClustering.getClusterSize(px) + listOfModifiedVertices.size() < maxVerticesAllowedInProcess)) {
-				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to move global cluster " << clusterToMove
-						<< " from process " << currentProcess << " to process " << px;
-				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] numClusters of sourceProcess is " << numberOfClustersInProcess[currentProcess];
-				ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
+			if((px != currentProcess)) {
+				Coordinate movement(clusterToMove, px);
+				movementList.push_back(movement);
+			}
+		}
+	}
+
+	// uses parallelism to evaluate more than one movement at the same time, according to the number of available processes
+	int numberOfParallelEvaluations = (int)boost::math::floor(numberOfProcesses / double(2.0));
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Number of cluster movements evaluated in parallel: " << numberOfParallelEvaluations;
+	ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
+	while(not movementList.empty()) {
+		// generates a list with the cluster-process movements that will be executed in parallel
+		std::vector<Coordinate> movementsInParallel;
+		for(int mov = 0; mov < numberOfParallelEvaluations; mov++) {
+			movementsInParallel.push_back(movementList.back());
+			movementList.pop_back();
+			if(movementList.empty())  break;
+		}
+
+		// executes the movements of list movementsInParallel
+		// STEP 1: sends the movements to each pair of processes through MPI
+		Clustering leaderClustering;
+		for(int mov = numberOfParallelEvaluations - 1; mov >= 0; mov--) {
+			int workerProcess1 = 2 * mov;
+			int workerProcess2 = 2 * mov + 1;
+
+			long clusterToMove = movementsInParallel[mov].x;
+			int destinationProcess = movementsInParallel[mov].y;
+			std::vector<long> listOfModifiedVertices = getListOfVeticesInCluster(*g, bestClustering, clusterToMove);
+			// finds out to which process the cluster belongs to
+			int currentProcess = clusterProcessOrigin[clusterToMove];
+			std::vector< long > verticesInSourceProcess;
+			std::vector< long > verticesInDestinationProcess, verticesInLeaderProcess;
+			for(long i = 0; i < n; i++) {
+				long k = splitgraphClusterArray[i];
+				if(k == currentProcess) {
+					verticesInSourceProcess.push_back(i);
+				} else if(k == destinationProcess) {
+					verticesInDestinationProcess.push_back(i);
+				}
+			}
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to move global cluster " << clusterToMove
+					<< " from process " << currentProcess << " to process " << destinationProcess;
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] numClusters of sourceProcess is " << numberOfClustersInProcess[currentProcess];
+			ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
+
+			if(mov >= 1) {
+				// O processo mestre solicita que cada trabalhador execute um novo ILS tendo como base a configuracao de cluster modificada
+				// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
+				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
+									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, true);
+				if(k < 0) {  imsg.setClustering(&CCclustering);  }
+				InputMessageParallelILS imsg2 = imsg;
+				// sends the modified subgraphs that will be solved by ILS
+				imsg.setVertexList(verticesInSourceProcess);
+				imsg2.setVertexList(verticesInDestinationProcess);
+				world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+				world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+				BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message sent to processes " << workerProcess1 << " and " << workerProcess2;
+				// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
+			} else {
+				// STEP 2: Executes the movements to be executed by workerProcess ranks 0 and 1
+				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
+									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, true);
+				if(k < 0) {  imsg.setClustering(&CCclustering);  }
+				imsg.setVertexList(verticesInSourceProcess);
+				world.send(1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+				BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message sent to process 1.";
+
+				// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
+				BOOST_LOG_TRIVIAL(info) << "[Master process] Creating subgraph";
+				// Structure containing processing time of each MH slave
+				std::vector<double> timeSpent(numberOfProcesses, double(0.0));
+				// structure containing the vertex id in the global graph / clustering
+				std::vector<long> globalVertexId;
+				if(verticesInDestinationProcess.size() == 0) {
+					BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
+					std::vector<unsigned int> clusterProcessOrigin;
+					ClusterArray cArray(g->getN(), Clustering::NO_CLUSTER);
+					leaderClustering = Clustering(cArray, *g, problem, 0.0, 0.0, clusterProcessOrigin);
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph 0" << ": num_edges = 0" <<
+											" , num_vertices = 0" << ", I(P) = "
+											<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
+				} else {
+					CUDAILS cudails;
+					SignedGraph sg(g->graph, verticesInDestinationProcess);
+					verticesInLeaderProcess = verticesInDestinationProcess;
+					BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
+
+					// rebuilds construct clustering objects based on partial graph 'sg'
+					GainFunctionFactory functionFactory(&sg);
+					ConstructClustering defaultConstruct(functionFactory.build(construct->getGainFunctionType()),
+							construct->getRandomSeed(), construct->getAlpha());
+					ConstructClustering noConstruct(functionFactory.build(construct->getGainFunctionType()),
+							construct->getRandomSeed(), construct->getAlpha(), construct->getCCclustering());
+					ConstructClustering* construct2 = &defaultConstruct;
+					if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+						RCCProblem& rp = static_cast<RCCProblem&>(problem);
+						int RCCk = rp.getK();
+						if(RCCk < 0) {
+							construct2 = &noConstruct;
+						}
+					}
+					// Leader processing his own partition
+					leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+					timeSpent[0] = cudails.getTotalTimeSpent();
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph 0" << ": num_edges = " <<
+											num_edges(sg.graph) << " , num_vertices = " << num_vertices(sg.graph) << ", I(P) = "
+											<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
+				}
+
+			}
+		}
+
+		// STEP 3: the leader receives the processing results
+		// Maps the messages according to the movement executed
+		std::map<int, OutputMessage> messageMap;
+		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Waiting for slaves return messages.";
+		for(int i = 0; i < numberOfSlaves; i++) {
+			OutputMessage omsg;
+			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+			int procNum = stat.source();
+			BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ". Obj = " <<
+					omsg.clustering.getImbalance().getValue();
+			// process the result of the execution of process i
+			// sums the total number of tested combinations
+			numberOfTestedCombinations += omsg.numberOfTestedCombinations;
+			// stores the time spent by each process
+			timeSpent[i+1] = omsg.timeSpent;
+			messageMap[procNum] = omsg;
+		}
+
+		// STEP 4: For each movement, merge the partial solutions into a global solution for the whole graph
+		for(int mov = numberOfParallelEvaluations - 1; mov >= 0; mov--) {
+			int workerProcess1 = 2 * mov;
+			int workerProcess2 = 2 * mov + 1;
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Movement pair " << mov;
+
+			// Global cluster array
+			ClusterArray globalClusterArray(g->getN(), 0);
+			long clusterOffset = 0;
+			double internalImbalancePosSum = 0.0;
+			double internalImbalanceNegSum = 0.0;
+			std::vector<unsigned int> clusterProcessOrigin;
+
+			if(mov >= 1) {
+				// Merge the partial solutions into a global solution for the whole graph
+				std::vector<OutputMessage> sourceAndDestinationMovementMsg;
+				sourceAndDestinationMovementMsg.push_back(messageMap[workerProcess1]);
+				sourceAndDestinationMovementMsg.push_back(messageMap[workerProcess2]);
+
+				// TODO recuperar o imbalance parcial usando a matriz de imbalance entre processos
+				for(int proc = 0; proc <= 1; proc++) {
+					OutputMessage msg = sourceAndDestinationMovementMsg[proc];
+					ClusterArray localClusterArray = msg.clustering.getClusterArray();
+					internalImbalancePosSum += msg.clustering.getImbalance().getPositiveValue();
+					internalImbalanceNegSum += msg.clustering.getImbalance().getNegativeValue();
+
+					long nc = msg.clustering.getNumberOfClusters();
+					if(nc > 0) {
+						assert(localClusterArray.size() == msg.globalVertexId.size());
+						for(long v = 0; v < localClusterArray.size(); v++) {
+							// Obtains vertex v's number in the global graph
+							long vglobal = msg.globalVertexId[v];
+							globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+						}
+						clusterOffset += nc;
+						// all the clusters in this interval belong to process 'stat.source()'
+						for(int clusterCount = 0; clusterCount < nc; clusterCount++) {
+							clusterProcessOrigin.push_back(workerProcess1 + proc);
+						}
+					}
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << workerProcess1 << ": num_edges = " <<
+							msg.num_edges << " , num_vertices = " << msg.num_vertices
+									<< ", I(P) = " << msg.clustering.getImbalance().getValue()
+									 << ", k = " << nc;
+				}
+				// TODO analisar se o imbalance desta movimentacao melhorou
+
 				// Realiza a movimentacao dos vertices de um cluster especifico (cluster move)
 				for(long elem = 0; elem < listOfModifiedVertices.size(); elem++) {
-					tempSplitgraphClusterArray[listOfModifiedVertices[elem]] = px;
+					tempSplitgraphClusterArray[listOfModifiedVertices[elem]] = destinationProcess;
 				}
 				// O RECALCULO DA MATRIZ ABAIXO EH FEITO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
-				// ImbalanceMatrix tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
 				ImbalanceMatrix tempProcessClusterImbMatrix = processClusterImbMatrix;
 				// Realiza o calculo do delta da matriz de imbalance entre processos
 				updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
 						listOfModifiedVertices, tempProcessClusterImbMatrix);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
-				// Valida se a matriz incremental e a full sao iguais
-				/*
-				bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix2.pos, 0.001, 0.1);
-				bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix2.neg, 0.001, 0.1);
-				BOOST_LOG_TRIVIAL(info) << "*** As matrizes de delta sao iguais: " << igual << " e " << igual2;
-				*/
 
-				// c) O processo mestre solicita que cada processo participante execute um novo ILS tendo como base a configuracao de cluster modificada
-				Clustering newGlobalClustering = runDistributedILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem,
-						info, tempSplitgraphClusterArray, tempProcessClusterImbMatrix, bestClustering);
-				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] New solution found: I(P) = " << newGlobalClustering.getImbalance().getValue();
-				/*
-				ClusterArray cTemp = newGlobalClustering.getClusterArray();
-				Clustering validation(cTemp, *g, problem);
-				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Full Obj Calc: I(P) = " << validation.getImbalance().getValue();
-				if(validation.getImbalance().getValue() != newGlobalClustering.getImbalance().getValue()) {
-					BOOST_LOG_TRIVIAL(error) << "[MoveCluster1opt] Obj functions do not match.";
-				} */
-
-				if(newGlobalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
-					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] moveCluster1opt Improved solution found! I(P) = " << newGlobalClustering.getImbalance().getValue();
-					bestClustering = newGlobalClustering;
-
-					// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
-					processClusterImbMatrix = tempProcessClusterImbMatrix;
-
-					// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
-					bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
-					foundBetterSolution = true;
-					break;
-				} else {
-					long sizeOfSourceCluster = bestSplitgraphClustering.getClusterSize(currentProcess);
-					long sizeOfDestCluster = bestSplitgraphClustering.getClusterSize(px);
-					long newSizeOfSourceCluster = sizeOfSourceCluster - listOfModifiedVertices.size();
-					long newSizeOfDestCluster = sizeOfDestCluster + listOfModifiedVertices.size();
-
-					if (newGlobalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
-						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost move.";
-					} else {
-						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found. Fixing to zero-cost move.";
-					}
-					numberOfFrustratedSolutions++;
-
-					// WARNING: It is possible that the new solution has worse imbalance than it should, since
-					//    the local ILS of one of the processes may not find the most efficient local solution.
-					//    In these cases, discards the clustering solutions of each process and simply creates
-					//    a zero-cost move solution (i.e. same imbalance than previous) based on the moved vertices
-					//    and the previous best-known clustering.
-
-					// => simply moves the cluster to the new process, with the same global imbalance value
-					// evaluate if this zero-cost move improves the vertex balancing between processes
-					if (labs(newSizeOfSourceCluster - newSizeOfDestCluster) <
-							labs(sizeOfSourceCluster - sizeOfDestCluster)) {  // this zero-cost move is good
-
-						// Realiza a movimentacao de um cluster especifico (cluster move) para outro processo
-						// O valor da FO continua o mesmo
-						bestClustering.setProcessOrigin(clusterToMove, px);
-						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost moveCluster1opt improving solution found! I(P) = "
-														<< bestClustering.getImbalance().getValue();
-
-						// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
-						processClusterImbMatrix = tempProcessClusterImbMatrix;
-
-						// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
-						bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
-						foundBetterSolution = true;
-						break;
-					} else {
-						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Rejected zero-cost moveCluster1opt move.";
+				// Calculates the external imbalance sum (between processes)
+				double externalImbalancePosSum = 0.0;
+				double externalImbalanceNegSum = 0.0;
+				for (unsigned i = 0; i < processClusterImbMatrix.pos.size1(); ++i) {
+					for (unsigned j = 0; j < processClusterImbMatrix.pos.size2(); ++j) {
+						if((i != j) and not (i == workerProcess and j == )) {
+							externalImbalancePosSum += processClusterImbMatrix.pos(i, j);
+							externalImbalanceNegSum += processClusterImbMatrix.neg(i, j);
+						}
 					}
 				}
+
+				// 5. Builds the clustering with the merge of each process local ILS result
+				// EVITA O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
+				Clustering globalClustering(globalClusterArray, *g, problem, internalImbalancePosSum + externalImbalancePosSum,
+						internalImbalanceNegSum + externalImbalanceNegSum, clusterProcessOrigin);
+
 			} else {
-				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Rejected moveCluster1opt move.";
+				// includes the leader's processing result as well
+				// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
+				if(verticesInLeaderProcess.size() > 0) {
+					SignedGraph sg(g->graph, verticesInLeaderProcess);
+					std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
+					for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+						globalVertexId.push_back(sg.graph.local_to_global(*it));
+					}
+				}
+				// 4. Merges the leader's partial solution into a global solution for the whole graph
+				if(leaderClustering.getNumberOfClusters() > 0) {
+					ClusterArray localClusterArray = leaderClustering.getClusterArray();
+					for(long v = 0; v < localClusterArray.size(); v++) {
+						// Obtains vertex v's number in the global graph
+						long vglobal = globalVertexId[v];
+						globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+					}
+				}
+				long nc = leaderClustering.getNumberOfClusters();
+				clusterOffset += nc;
+				// all clusters in this interval belong to process zero
+				for(int clusterCount = 0; clusterCount < nc; clusterCount++) {
+					clusterProcessOrigin.push_back(info.processRank);
+				}
+				internalImbalancePosSum += leaderClustering.getImbalance().getPositiveValue();
+				internalImbalanceNegSum += leaderClustering.getImbalance().getNegativeValue();
+
+				// Merge the partial solutions into a global solution for the whole graph
+				// TODO recuperar o imbalance parcial usando a matriz de imbalance entre processos
+				// solution from worker process 1
+				OutputMessage msg = messageMap[1];
+				ClusterArray localClusterArray = msg.clustering.getClusterArray();
+				internalImbalancePosSum += msg.clustering.getImbalance().getPositiveValue();
+				internalImbalanceNegSum += msg.clustering.getImbalance().getNegativeValue();
+
+				long nc = msg.clustering.getNumberOfClusters();
+				if(nc > 0) {
+					assert(localClusterArray.size() == msg.globalVertexId.size());
+					for(long v = 0; v < localClusterArray.size(); v++) {
+						// Obtains vertex v's number in the global graph
+						long vglobal = msg.globalVertexId[v];
+						globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
+					}
+					clusterOffset += nc;
+					// all the clusters in this interval belong to process '1'
+					for(int clusterCount = 0; clusterCount < nc; clusterCount++) {
+						clusterProcessOrigin.push_back(1);
+					}
+				}
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << workerProcess1 << ": num_edges = " <<
+						msg.num_edges << " , num_vertices = " << msg.num_vertices
+								<< ", I(P) = " << msg.clustering.getImbalance().getValue()
+								 << ", k = " << nc;
+				// TODO analisar se o imbalance desta movimentacao (primeiro par) melhorou
+
+
+				// Calculates the external imbalance sum (between processes)
+				double externalImbalancePosSum = 0.0;
+				double externalImbalanceNegSum = 0.0;
+				for (unsigned i = 0; i < processClusterImbMatrix.pos.size1(); ++i) {
+					for (unsigned j = 0; j < processClusterImbMatrix.pos.size2(); ++j) {
+						if(i != j) {
+							externalImbalancePosSum += processClusterImbMatrix.pos(i, j);
+							externalImbalanceNegSum += processClusterImbMatrix.neg(i, j);
+						}
+					}
+				}
+
+				// 5. Builds the clustering with the merge of each process local ILS result
+				// EVITA O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
+				Clustering globalClustering(globalClusterArray, *g, problem, internalImbalancePosSum + externalImbalancePosSum,
+						internalImbalanceNegSum + externalImbalanceNegSum, clusterProcessOrigin);
 			}
 		}
 		if(foundBetterSolution) {
 			break;
 		}
-		// d) Dúvida: rodar um novo ILS inteiro para cada movimentação ou apenas uma busca local?
-		// e) Cada processo envia o resultado (novo clustering) para o mestre e este calcula se vale a pena manter a alteração
-		// f) O cálculo feito pelo mestre baseia-se na variação do imbalance dentro de cada processo (delta I(P) int) mais o novo imbalance externo, entre os processos (I(P) ext)
-		// 		(a variação dentro de cada processo já é fornecida por cada processo, via mensagem – diferença do I(P) anterior)
-		// 		(a variação do imbalance entre os processos é calculada varrendo a vizinhança do vértice movido)
-		// g) Se gerar um imbalance pior, o movimento pode ser rejeitado, gerando uma volta da configuração anterior, por isso cada processo deve guardar o clustering anterior
 	}
 	return foundBetterSolution;
 }
@@ -1611,16 +1811,16 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 
 	stringstream splitgraphVNDResults;
 	BOOST_LOG_TRIVIAL(info) << "[Splitgraph] Number of frustrated ILS solutions: " << numberOfFrustratedSolutions;
-	splitgraphVNDResults << "[Splitgraph] Number of frustrated ILS solutions: " << numberOfFrustratedSolutions << "\n";
+	splitgraphVNDResults << "Number of frustrated ILS solutions, " << numberOfFrustratedSolutions << "\n";
 	BOOST_LOG_TRIVIAL(info) << "[Splitgraph] Execution and Improvement statistics for each neighborhood: ";
-	splitgraphVNDResults << "[Splitgraph] Execution and Improvement statistics for each neighborhood: \n";
+	splitgraphVNDResults << "Execution and Improvement statistics for each neighborhood: \n";
 	BOOST_LOG_TRIVIAL(info) << "Neighborhood size, Num exec, Num improv";
 	splitgraphVNDResults << "Neighborhood size, Num exec, Num improv\n";
 	for(int i = 1; i <= l; i++) {
 		BOOST_LOG_TRIVIAL(info) << "r = " << i << ", " << neigExecStats[i] << ", " << improvementStats[i];
 		splitgraphVNDResults << "r = " << i << ", " << neigExecStats[i] << ", " << improvementStats[i] << "\n";
 	}
-	splitgraphVNDResults << "[Splitgraph] Best solution found: ";
+	splitgraphVNDResults << "Best solution found \n";
 
 	std::vector< std::vector< long > > verticesInCluster(numberOfProcesses, std::vector< long >());
 	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
@@ -1629,19 +1829,17 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		long k = splitgraphClusterArray[i];
 		verticesInCluster[k].push_back(i);
 	}
+	splitgraphVNDResults << "Subgraph, n, m, k \n";
 	for(int p = 0; p < numberOfProcesses; p++) {
 		SignedGraph sg(g->graph, verticesInCluster[p]);
 		std::vector<Coordinate> clusterList = obtainListOfClustersFromProcess(*g, bestClustering, p);
 
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_edges = " <<
-				sg.getM() << " , num_vertices = " << sg.getN()
-				<< ", k = " << clusterList.size();
-		splitgraphVNDResults << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_edges = " <<
-				sg.getM() << " , num_vertices = " << sg.getN()
-				<< ", k = " << clusterList.size() << "\n";
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_vertices = " << sg.getN() <<
+				"; num_edges = " <<	sg.getM() << "; k = " << clusterList.size();
+		splitgraphVNDResults << p << ", " << sg.getN() << ", " << sg.getM() << ", " << clusterList.size() << "\n";
 	}
-	splitgraphVNDResults << "[Parallel ILS SplitGraph] I(P) = " << bestClustering.getImbalance().getValue() << "\n";
-	splitgraphVNDResults << "[Parallel ILS SplitGraph] Time spent = " << timeSpentOnLocalSearch << " s.\n";
+	splitgraphVNDResults << "I(P), " << bestClustering.getImbalance().getValue() << "\n";
+	splitgraphVNDResults << "Time spent, " << timeSpentOnLocalSearch << "\n";
 
 	// Saves the splitgraph statistics to csv file
 	generateOutputFile(problem, splitgraphVNDResults, info.outputFolder, info.fileId, info.executionId,
@@ -1693,8 +1891,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	generateOutputFile(problem, sshistory, info.outputFolder, info.fileId, info.executionId,
 			info.processRank, string("solutionHistory-splitgraph"), construct->getAlpha(), l, iter);
 
-	// return improvedOnVND;
-	return 0;  // TODO for now, we only run global VND once
+	return improvedOnVND;
 }
 
 std::vector<long> ImbalanceSubgraphParallelILS::getListOfVeticesInCluster(SignedGraph& g, Clustering& globalClustering,
@@ -1711,7 +1908,6 @@ std::vector<long> ImbalanceSubgraphParallelILS::getListOfVeticesInCluster(Signed
 	}
 	return vertexList;
 }
-
 
 /**
   *  Identifies a pseudo clique C+ inside an overloaded cluster, and tries to
@@ -2239,6 +2435,112 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 				<< bestSplitgraphClustering.getClusterSize(px) << ", k = " << k;
 	}
 }
+
+Clustering ImbalanceSubgraphParallelILS::distributeClusterMovementsAndRunILS(ConstructClustering *construct,
+		VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
+		const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
+		ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix) {
+
+	// Creates the subgraphs for each processor, based on the splitgraphClusterArray structure
+	mpi::communicator world;
+	// the leader distributes the work across the processors
+	// the leader itself (i = 0) does part of the work too
+	std::vector<int> slaveList;
+	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
+
+	long n = g->getN();
+	unsigned int numberOfProcesses = numberOfSlaves + 1;
+	// max number of clusters (RCC Problem Only)
+	long k = 0;
+	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		k = rp.getK();
+		if(k < 0) {  // reuses CC problem's best solution in the constructive phase
+			CCclustering = *(construct->getCCclustering());
+		}
+	}
+
+
+
+	// Realiza a movimentacao dos vertices de um cluster especifico (cluster move)
+	for(long elem = 0; elem < listOfModifiedVertices.size(); elem++) {
+		tempSplitgraphClusterArray[listOfModifiedVertices[elem]] = destinationProcess;
+	}
+	// O RECALCULO DA MATRIZ ABAIXO EH FEITO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
+	ImbalanceMatrix tempProcessClusterImbMatrix = processClusterImbMatrix;
+	// Realiza o calculo do delta da matriz de imbalance entre processos
+	updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
+			listOfModifiedVertices, tempProcessClusterImbMatrix);
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
+
+
+
+
+	// BOOST_LOG_TRIVIAL(info) << "Separate internal imbalance I(P) = " << (internalImbalanceSum) << " and external I(P) = " << (externalImbalanceSum);
+	//BOOST_LOG_TRIVIAL(info) << "Separate clustering imbalance I(P) = " << (internalImbalancePosSum + externalImbalancePosSum +
+	//		internalImbalanceNegSum + externalImbalanceNegSum)
+	//		<< " versus full calculated I(P) = " << globalClustering.getImbalance().getValue();
+
+	// 6. Stores the time spent in this iteration of distributed MH
+	timeSpentAtIteration.push_back(timeSpent);
+
+	if(newGlobalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] moveCluster1opt Improved solution found! I(P) = " << newGlobalClustering.getImbalance().getValue();
+		bestClustering = newGlobalClustering;
+
+		// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
+		processClusterImbMatrix = tempProcessClusterImbMatrix;
+
+		// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
+		bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
+		foundBetterSolution = true;
+		break;
+	} else {
+		long sizeOfSourceCluster = bestSplitgraphClustering.getClusterSize(currentProcess);
+		long sizeOfDestCluster = bestSplitgraphClustering.getClusterSize(destinationProcess);
+		long newSizeOfSourceCluster = sizeOfSourceCluster - listOfModifiedVertices.size();
+		long newSizeOfDestCluster = sizeOfDestCluster + listOfModifiedVertices.size();
+
+		if (newGlobalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost move.";
+		} else {
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Worse solution found. Fixing to zero-cost move.";
+		}
+		numberOfFrustratedSolutions++;
+
+		// WARNING: It is possible that the new solution has worse imbalance than it should, since
+		//    the local ILS of one of the processes may not find the most efficient local solution.
+		//    In these cases, discards the clustering solutions of each process and simply creates
+		//    a zero-cost move solution (i.e. same imbalance than previous) based on the moved vertices
+		//    and the previous best-known clustering.
+
+		// => simply moves the cluster to the new process, with the same global imbalance value
+		// evaluate if this zero-cost move improves the vertex balancing between processes
+		if (labs(newSizeOfSourceCluster - newSizeOfDestCluster) <
+				labs(sizeOfSourceCluster - sizeOfDestCluster)) {  // this zero-cost move is good
+
+			// Realiza a movimentacao de um cluster especifico (cluster move) para outro processo
+			// O valor da FO continua o mesmo
+			bestClustering.setProcessOrigin(clusterToMove, destinationProcess);
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost moveCluster1opt improving solution found! I(P) = "
+											<< bestClustering.getImbalance().getValue();
+
+			// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
+			processClusterImbMatrix = tempProcessClusterImbMatrix;
+
+			// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
+			bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
+			foundBetterSolution = true;
+			break;
+		} else {
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Rejected zero-cost moveCluster1opt move.";
+		}
+	}
+
+
+	return globalClustering;
+}
+
 
 } /* namespace ils */
 } /* namespace resolution */
