@@ -845,9 +845,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							if(imsgpils.vertexList.size() == 0) {
 								BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
 								std::vector<unsigned int> clusterProcessOrigin;
+								std::vector<Imbalance> internalImbalance;
 								ClusterArray cArray(g->getN(), Clustering::NO_CLUSTER);
 								bestClustering = Clustering(cArray, *g, problemFactory.build(imsgpils.problemType, imsgpils.k),
-										0.0, 0.0, clusterProcessOrigin);
+										0.0, 0.0, clusterProcessOrigin, internalImbalance);
 								n = 0;
 								e = 0;
 							} else {

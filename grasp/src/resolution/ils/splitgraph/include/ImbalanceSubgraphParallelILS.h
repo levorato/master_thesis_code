@@ -288,6 +288,16 @@ protected:
 
 	long chooseRandomVertex(std::list<VertexDegree>& vertexList, long x);
 
+	/**
+	 * Executes ILS locally (execution performed by leader process, rank 0) on the subgraph of g, induced by vertexList.
+	 */
+	Clustering runILSLocallyOnSubgraph(ConstructClustering *construct,
+			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
+			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& vertexList);
+
+	Imbalance calculateExternalImbalanceSumBetweenProcesses(ImbalanceMatrix& processClusterImbMatrix);
+
+	Imbalance calculateInternalImbalanceSumOfAllProcesses(std::vector<Imbalance>& internalProcessImbalance);
 };
 
 } /* namespace ils */
