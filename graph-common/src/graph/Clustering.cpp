@@ -30,13 +30,14 @@ const long Clustering::NO_CLUSTER;
 
 Clustering::Clustering() : clusterArray(), clusterSize(),
 		imbalance(0.0, 0.0), problemType(0), positiveSum(),
-		negativeSum(), processOrigin()
+		negativeSum(), processOrigin(), internalProcessImbalance()
 {
 
 }
 
 Clustering::Clustering(SignedGraph& g) : clusterArray(g.getN(), NO_CLUSTER), clusterSize(),
-		imbalance(0.0, 0.0), problemType(0), positiveSum(), negativeSum(), processOrigin() {
+		imbalance(0.0, 0.0), problemType(0), positiveSum(), negativeSum(), processOrigin(),
+		internalProcessImbalance() {
 
 }
 
@@ -46,13 +47,14 @@ Clustering::Clustering(const Clustering& clustering) :
 		imbalance(clustering.imbalance), problemType(clustering.problemType),
 		positiveSum(clustering.positiveSum),
 		negativeSum(clustering.negativeSum),
-		processOrigin(clustering.processOrigin.begin(), clustering.processOrigin.end()) {
+		processOrigin(clustering.processOrigin.begin(), clustering.processOrigin.end()),
+		internalProcessImbalance(clustering.internalProcessImbalance.begin(), clustering.internalProcessImbalance.end()) {
 
 }
 
 Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p) : clusterArray(cArray),
 		clusterSize(), imbalance(0.0, 0.0), problemType(p.getType()), positiveSum(), negativeSum(),
-		processOrigin() {
+		processOrigin(), internalProcessImbalance() {
 	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
 	long numberOfClusters = (*pos);
 	if(numberOfClusters >= 0) {
@@ -77,13 +79,14 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 		}
 		// compute the imbalance
 		this->setImbalance(p.objectiveFunction(g, *this));
+		internalProcessImbalance.push_back(this->getImbalance());
 	}
 }
 
 Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
 		double positiveImbalance, double negativeImbalance) : clusterArray(cArray), clusterSize(),
 				imbalance(positiveImbalance, negativeImbalance), problemType(p.getType()),
-				positiveSum(), negativeSum(), processOrigin() {
+				positiveSum(), negativeSum(), processOrigin(), internalProcessImbalance() {
 	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
 	long numberOfClusters = (*pos);
 	if(numberOfClusters >= 0) {
@@ -106,13 +109,16 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 			processOrigin.push_back(0);
 			// cout << "Size of cluster " << k << " is " << clusterSize[k] << endl;
 		}
+		internalProcessImbalance.push_back(Imbalance(positiveImbalance, negativeImbalance));
 	}
 }
 
 Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
-		double positiveImbalance, double negativeImbalance, std::vector<unsigned int>& clusterProcessOrigin) :
+		double positiveImbalance, double negativeImbalance, std::vector<unsigned int>& clusterProcessOrigin,
+		std::vector<Imbalance>& inProcessImbalance) :
 		clusterArray(cArray), clusterSize(), imbalance(positiveImbalance, negativeImbalance), problemType(p.getType()),
-		positiveSum(), negativeSum(), processOrigin(clusterProcessOrigin.begin(), clusterProcessOrigin.end()) {
+		positiveSum(), negativeSum(), processOrigin(clusterProcessOrigin.begin(), clusterProcessOrigin.end()),
+		internalProcessImbalance(inProcessImbalance.begin(), inProcessImbalance.end()) {
 	ClusterArray::iterator pos = std::max_element(cArray.begin(), cArray.end());
 	long numberOfClusters = (*pos);
 	if(numberOfClusters >= 0) {
@@ -271,6 +277,23 @@ bool Clustering::equals(Clustering& c) {
 		return true;
 	else
 		return false;
+}
+
+void Clustering::removeAllClustersFromProcess(SignedGraph *g, unsigned int processNumber) {
+	long nc = this->getNumberOfClusters();
+	std::vector<long> clustersToRemove;
+	for(long c = 0; c < nc; c++) {  // for each cluster c
+		if(processOrigin[c] == processNumber) {  // if the cluster belongs to process 'processNumber'
+			clustersToRemove.push_back(c);
+		}
+	}
+	// removes the clusters in reverse order, to avoid problem with the cluster number
+	while(not clustersToRemove.empty()) {
+		// removes the cluster c
+		long clusterNumber = clustersToRemove.back();
+		clustersToRemove.pop_back();
+		this->removeCluster(*g, clusterNumber);
+	}
 }
 
 } /* namespace clusteringgraph */

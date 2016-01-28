@@ -145,6 +145,15 @@ public:
 			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix);
 
 	/**
+	 * Executes 2 local ILS procedures for each cluster movement (2 subgraphs), gathers the individual results,
+	 * merges them into a global CC solution and returns the best movement between all.
+	 */
+	Clustering distributeClusterMovementsAndRunILS(ConstructClustering *construct,
+			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
+			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
+			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix);
+
+	/**
 	 * Rebalances clusters between processes without running ILS (zero-cost moves).
 	 */
 	void rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, ClusteringProblem& problem,
@@ -279,6 +288,16 @@ protected:
 
 	long chooseRandomVertex(std::list<VertexDegree>& vertexList, long x);
 
+	/**
+	 * Executes ILS locally (execution performed by leader process, rank 0) on the subgraph of g, induced by vertexList.
+	 */
+	Clustering runILSLocallyOnSubgraph(ConstructClustering *construct,
+			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
+			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& vertexList);
+
+	Imbalance calculateExternalImbalanceSumBetweenProcesses(ImbalanceMatrix& processClusterImbMatrix);
+
+	Imbalance calculateInternalImbalanceSumOfAllProcesses(std::vector<Imbalance>& internalProcessImbalance);
 };
 
 } /* namespace ils */

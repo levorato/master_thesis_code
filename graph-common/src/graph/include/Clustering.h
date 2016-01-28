@@ -75,7 +75,8 @@ public:
 	 */
 	Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &p,
 			double positiveImbalance, double negativeImbalance,
-			std::vector<unsigned int>& clusterProcessOrigin);
+			std::vector<unsigned int>& clusterProcessOrigin,
+			std::vector<Imbalance>& inProcessImbalance);
 
 	virtual ~Clustering();
 
@@ -178,6 +179,25 @@ public:
 		processOrigin[clusterNumber] = processNumber;
 	}
 
+	/**
+	 * Returns a list containing the internal process imbalance for each process in splitgraph.
+	 */
+	const std::vector<Imbalance>& getInternalProcessImbalance() {
+		return internalProcessImbalance;
+	}
+
+	/**
+	 * Sets the internal imbalance of a specific process.
+	 */
+	void setProcessImbalance(unsigned int processNumber, Imbalance imb) {
+		internalProcessImbalance[processNumber] = imb;
+	}
+
+	/**
+	 * Deletes all the clusters which belong to a specific process (spligraph mode).
+	 */
+	void removeAllClustersFromProcess(SignedGraph *g, unsigned int processNumber);
+
 private:
 	/** the cluster array, with dimension n */
 	ClusterArray clusterArray;
@@ -189,6 +209,8 @@ private:
 	int problemType;
 	/** To which process a cluster belongs to (used in splitgraph clustering only) */
 	std::vector<unsigned int> processOrigin;
+	/** Stores the internal imbalance (positive and negative) for a given process (splitgraph only) */
+	std::vector<Imbalance> internalProcessImbalance;
 
 	void print(std::ostream& os, ClusterArray& a, unsigned long n);
 
@@ -203,6 +225,8 @@ private:
 		ar & problemType;
 		ar & positiveSum;
 		ar & negativeSum;
+		ar & processOrigin;
+		ar & internalProcessImbalance;
 	}
 };
 

@@ -1105,17 +1105,18 @@ using namespace std;
 					h_nc = d_nc;
 					// h_functionValue = d_functionValue;
 					// printf("After: nc = %d, cluster = %d, imbalance = %.2f\n", h_nc[0], h_mycluster[bestSrcVertex], h_functionValue[0]);
+					// TODO check if full recalculation of the arrays is faster than delta calculation
 					/*
-					if(h_nc[0] > h_old_nc[0]) {
-						// acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
-						// printf("New cluster. Growing vectors.\n");
-						d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
-						d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
-						d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
-						vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
-						vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
-						isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
-					}*/
+                                        if(h_nc[0] > h_old_nc[0]) {
+                                                // acrescenta uma nova fileira correpondente a um novo cluster na matriz de soma
+                                                // printf("New cluster. Growing vectors.\n");
+                                                d_VertexClusterPosSum.resize(n * (h_nc[0]+1), 0.0);
+                                                d_VertexClusterNegSum.resize(n * (h_nc[0]+1), 0.0);
+                                                d_neighbor_cluster.resize(n * (h_nc[0]+1), 0);
+                                                vertexClusterPosSumArray = thrust::raw_pointer_cast( &d_VertexClusterPosSum[0] );
+                                                vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
+                                                isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+                                        } */
                                         if(h_nc[0] == h_old_nc[0]) {  // must not update the arrays if the number of clusters decreased
                                                 updateVertexClusterSumArraysDelta<<<1, 1, n*sizeof(int)>>>(weightArray, destArray, numArray, offsetArray, clusterArray, vertexClusterPosSumArray,
                                                         vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray, bestSrcVertex, sourceCluster, destCluster);
