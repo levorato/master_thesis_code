@@ -20,6 +20,7 @@ namespace clusteringgraph {
  */
 class Imbalance {
 public:
+	Imbalance();
 	Imbalance(double positive, double negative);
 	Imbalance(const Imbalance& i);
 	virtual ~Imbalance();

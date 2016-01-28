@@ -10,6 +10,10 @@
 
 namespace clusteringgraph {
 
+Imbalance::Imbalance() : positiveValue(0.0), negativeValue(0.0) {
+
+}
+
 Imbalance::Imbalance(double positive, double negative) : positiveValue(positive),
 		negativeValue(negative) {
 	// TODO Auto-generated constructor stub
