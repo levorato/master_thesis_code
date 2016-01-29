@@ -155,6 +155,8 @@ void Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const unsigned
 	assert(clusterArray.size() > 0);
 	// 1. Increase the number of clusters
 	this->clusterSize.push_back(1);
+	// 2. Set the process origin for this new cluster
+	this->processOrigin.push_back(0);
 
 	// Adds i to the newly created cluster
 	// BOOST_LOG_TRIVIAL(trace) <<  "Adding vertex " << i << " to a new cluster.";
@@ -196,6 +198,7 @@ void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 	// TODO complete code
 	// only if cluster has been removed
 	clusterSize.erase(clusterSize.begin()+k);
+	processOrigin.erase(processOrigin.begin()+k);
 	// if cluster k was removed, all cluster numbers above k
 	// must be subtracted by one
 	long n = g.getN();
