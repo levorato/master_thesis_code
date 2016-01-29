@@ -298,6 +298,12 @@ protected:
 	Imbalance calculateExternalImbalanceSumBetweenProcesses(ImbalanceMatrix& processClusterImbMatrix);
 
 	Imbalance calculateInternalImbalanceSumOfAllProcesses(std::vector<Imbalance>& internalProcessImbalance);
+
+	Imbalance calculateProcessInternalImbalance(SignedGraph *g, Clustering& c, unsigned int processNumber);
+
+	void moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
+			Clustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess,
+			ImbalanceMatrix& processClusterImbMatrix);
 };
 
 } /* namespace ils */

@@ -854,7 +854,6 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best global solution so far: I(P) = " << bestClustering.getImbalance().getValue();
 	long nc = bestClustering.getNumberOfClusters();
 	std::vector<unsigned int> clusterProcessOrigin = bestClustering.getClusterProcessOrigin();
-	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] cluster";
 	// ----------------------------------------------------------------------
 	ClusterArray globalClusterArray = bestClustering.getClusterArray();
 	std::vector<Coordinate> clusterImbalanceList = obtainListOfImbalancedClusters(*g, splitgraphClusterArray, bestClustering);
@@ -909,10 +908,12 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 	int numberOfParallelEvaluations = np - 1;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Number of cluster movements evaluated in parallel: " << numberOfParallelEvaluations;
 	ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
+	Clustering initialGlobalClustering = bestClustering;
+	ImbalanceMatrix initialProcessClusterImbMatrix = processClusterImbMatrix;
 	for(std::vector<long>::iterator mviter = movementList.begin(); mviter != movementList.end(); mviter++) {
 		long clusterToMove = *mviter;
 		unsigned int sourceProcess = clusterProcessOrigin[clusterToMove];
-		std::vector<long> listOfModifiedVertices = getListOfVeticesInCluster(*g, bestClustering, clusterToMove);
+		std::vector<long> listOfModifiedVertices = getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToMove);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] numClusters of sourceProcess is " << numberOfClustersInProcess[sourceProcess];
 
 		// STEP 1: sends the movements to each processes through MPI
@@ -992,12 +993,11 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Analyzing movement to process " << destinationProcess;
 
 				// the list containing the internal imbalance of each process local clustering
-				std::vector<Imbalance> newInternalProcessImbalance = bestClustering.getInternalProcessImbalance();
-				Clustering globalClustering;
+				std::vector<Imbalance> newInternalProcessImbalance = initialGlobalClustering.getInternalProcessImbalance();
 				ClusterArray tempSplitgraphClusterArray = currentSplitgraphClusterArray;
 				// removes all the clusters which belong to the processes participating in this cluster movement
 				// and calculates the new number of clusters, to be used in the offset below
-				Clustering tempClustering = bestClustering;
+				Clustering tempClustering = initialGlobalClustering;
 				tempClustering.removeAllClustersFromProcess(g, sourceProcess);
 				tempClustering.removeAllClustersFromProcess(g, destinationProcess);
 				long clusterOffset = tempClustering.getNumberOfClusters();
@@ -1015,9 +1015,9 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 				}
 				nc = leaderClustering.getNumberOfClusters();
 				clusterOffset += nc;
-				// all clusters in this interval belong to process zero
+				// all clusters in this interval belong to source process
 				for(int clusterCount = 0; clusterCount < nc; clusterCount++) {
-					clusterProcessOrigin.push_back(info.processRank);
+					clusterProcessOrigin.push_back(sourceProcess);
 				}
 				// sets the new imbalance for cluster-move source process
 				newInternalProcessImbalance[sourceProcess] = leaderClustering.getImbalance();
@@ -1038,18 +1038,18 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 					clusterOffset += nc;
 					// all the clusters in this interval belong to process '(workerProcess)'
 					for(int clusterCount = 0; clusterCount < nc; clusterCount++) {
-						clusterProcessOrigin.push_back(workerProcess);
+						clusterProcessOrigin.push_back(destinationProcess);
 					}
 				}
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P" << (workerProcess) << ": num_edges = " << msg.num_edges
 						<< " , num_vertices = " << msg.num_vertices	<< ", I(P) = " << msg.clustering.getImbalance().getValue() << ", k = " << nc;
 
-				// Realiza a movimentacao dos vertices de um cluster especifico (cluster move)
+				// Realiza a movimentacao dos vertices de um cluster especifico (cluster move) para o processo de destino
 				for(long elem = 0; elem < listOfModifiedVertices.size(); elem++) {
 					tempSplitgraphClusterArray[listOfModifiedVertices[elem]] = destinationProcess;
 				}
 				// O RECALCULO DA MATRIZ ABAIXO EH FEITO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
-				ImbalanceMatrix tempProcessClusterImbMatrix = processClusterImbMatrix;
+				ImbalanceMatrix tempProcessClusterImbMatrix = initialProcessClusterImbMatrix;
 				// Realiza o calculo do delta da matriz de imbalance entre processos
 				updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
 						listOfModifiedVertices, tempProcessClusterImbMatrix);
@@ -1062,23 +1062,27 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 
 				// 5. Builds the clustering with the merge of each process local ILS result
 				// EVITA O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
-				globalClustering = Clustering(globalClusterArray, *g, problem, internalImbalance.getPositiveValue() + externalImbalance.getPositiveValue(),
+				Clustering globalClustering = Clustering(globalClusterArray, *g, problem, internalImbalance.getPositiveValue() + externalImbalance.getPositiveValue(),
 						internalImbalance.getNegativeValue() + externalImbalance.getNegativeValue(), clusterProcessOrigin, newInternalProcessImbalance);
 
-				// Validacao do calculo da FO - TODO remover
+				// Validacao do calculo da FO
+				/*
 				ClusterArray cTemp = globalClustering.getClusterArray();
 				Clustering validation(cTemp, *g, problem);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Full Obj Calc: I(P) = " << validation.getImbalance().getValue();
 				if(validation.getImbalance().getValue() != globalClustering.getImbalance().getValue()) {
-					BOOST_LOG_TRIVIAL(error) << "[SwapCluster1opt] Obj functions do not match.";
-				}
+					BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Obj functions do not match.";
+				} */
 
 				if(globalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
 					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 1-move-Cluster Improved solution found! I(P) = "
 							<< globalClustering.getImbalance().getValue();
-					bestClustering = globalClustering;
+					BOOST_LOG_TRIVIAL(info) << "Move from process " << sourceProcess << " to process " << destinationProcess;
+					// BOOST_LOG_TRIVIAL(info) << "new sourceProcess imbalance: " << leaderClustering.getImbalance().getValue();
+					// BOOST_LOG_TRIVIAL(info) << "new destinationProcess imbalance: " << messageMap[workerProcess].clustering.getImbalance().getValue();
 
 					// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
+					bestClustering = globalClustering;
 					processClusterImbMatrix = tempProcessClusterImbMatrix;
 
 					// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
@@ -1087,7 +1091,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 					/*  FIRST IMPROVEMENT ON PARALLEL DISTRIBUTED ILS EVALUATIONS IS DISABLED!
 					break;
 					*/
-				} else if(globalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
+				} else if(initialGlobalClustering.getImbalance().getValue() == bestClustering.getImbalance().getValue()) {
 					long sizeOfSourceCluster = bestSplitgraphClustering.getClusterSize(sourceProcess);
 					long sizeOfDestCluster = bestSplitgraphClustering.getClusterSize(destinationProcess);
 					long newSizeOfSourceCluster = sizeOfSourceCluster - listOfModifiedVertices.size();
@@ -1111,17 +1115,17 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 					if (labs(newSizeOfSourceCluster - newSizeOfDestCluster) <
 							labs(sizeOfSourceCluster - sizeOfDestCluster)) {  // this zero-cost move is good
 
-						// Realiza a movimentacao de um cluster especifico (cluster move) para outro processo
-						// O valor da FO continua o mesmo
-						bestClustering.setProcessOrigin(clusterToMove, destinationProcess);
+						bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
+						// The imbalance matrix between processes has already been updated in the code above
+						processClusterImbMatrix = tempProcessClusterImbMatrix;
+						// Simply moves the cluster to the destination process -> does NOT change the imbalance
+						// The internal and external imbalance values of the participating processes must be updated
+						moveClusterToDestinationProcessZeroCost(g, bestClustering, bestSplitgraphClustering, clusterToMove,
+								sourceProcess, destinationProcess, processClusterImbMatrix);
+
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost moveCluster1opt improving solution found! I(P) = "
 														<< bestClustering.getImbalance().getValue();
 
-						// Atualiza a matriz de imbalance entre processos apos aceitar uma nova solucao
-						processClusterImbMatrix = tempProcessClusterImbMatrix;
-
-						// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
-						bestSplitgraphClustering = Clustering(tempSplitgraphClusterArray, *g, problem);
 						foundBetterSolution = true;
 					} else {
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Rejected zero-cost moveCluster1opt move.";
@@ -1543,9 +1547,8 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		boost::timer::cpu_times start_time = timer.elapsed();
 		BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
 
-		/* FIXME reenable after implementing internal process imbalance calculation
 		rebalanceClustersBetweenProcessesWithZeroCost(g, problem, bestSplitgraphClustering, bestClustering,
-				numberOfProcesses, processClusterImbMatrix); */
+				numberOfProcesses, processClusterImbMatrix);
 
 		bool improved = false;
 		if(r == 1) {
@@ -2176,6 +2179,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] After move, process " << procSourceNum << " will remain with "
 				<< (numberOfVerticesInProcess - numberOfVerticesToMove) << " vertices and "
 				<< (fullClusterList.size() - clustersToMove.size()) << " clusters.";
+		ClusterArray previousSplitgraphClusterArray = currentSplitgraphClusterArray;
 
 		for(std::vector<long>::iterator iter = clustersToMove.begin(); iter != clustersToMove.end(); iter++) {
 			// finds a cluster in procSourceNum that can be moved to another process
@@ -2194,11 +2198,13 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 					for(long elem = 0; elem < listOfMovedVerticesFromClusterA.size(); elem++) {
 						currentSplitgraphClusterArray[listOfMovedVerticesFromClusterA[elem]] = procDestNum;
 					}
-					// INCREMENTAL UPDATE OF THE CLUSTER IMBALANCE MATRIX, reusing the matrix processC
-					/*
-					updateProcessToProcessImbalanceMatrix(*g, previousSplitgraphClusterArray, tempSplitgraphClusterArray,
+					// INCREMENTAL UPDATE OF THE CLUSTER IMBALANCE MATRIX
+					ImbalanceMatrix tempProcessClusterImbMatrix = processClusterImbMatrix;
+					// Realiza o calculo do delta da matriz de imbalance entre processos
+					updateProcessToProcessImbalanceMatrix(*g, previousSplitgraphClusterArray, currentSplitgraphClusterArray,
 							listOfMovedVerticesFromClusterA, tempProcessClusterImbMatrix);
-					previousSplitgraphClusterArray = tempSplitgraphClusterArray; */
+					previousSplitgraphClusterArray = currentSplitgraphClusterArray;
+					// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
 					// Valida se a matriz incremental e a full sao iguais
 					/*
 					ImbalanceMatrix tempProcessClusterImbMatrix2 = calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray);
@@ -2207,13 +2213,14 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 					BOOST_LOG_TRIVIAL(info) << "Op1 *** As matrizes de delta sao iguais: " << igual << " e " << igual2; */
 
 					// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix from move done.";
-
-					// Moves the clusters to the destination process -> does NOT change the imbalance
-					bestClustering.setProcessOrigin(clusterA, procDestNum);
-					// TODO FIXME atualizar o valor interno de imbalance dos processsos de origem e destino
-
+					// Assumes the imbalance matrix between processes has already been updated in the code above
+					processClusterImbMatrix = tempProcessClusterImbMatrix;
 					// TODO validar o calculo da FO AQUI! e estudar calculo incremental aqui tb
 					bestSplitgraphClustering = Clustering(currentSplitgraphClusterArray, *g, problem);
+					// Moves the clusters to the destination process -> does NOT change the imbalance
+					moveClusterToDestinationProcessZeroCost(g, bestClustering, bestSplitgraphClustering, clusterA,
+							procSourceNum, procDestNum, processClusterImbMatrix);
+
 					// the movement for this cluster is done, proceed to the next one
 					break;
 				}
@@ -2226,7 +2233,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 		}  // next cluster to be moved
 	}  // next overloaded processor
 	// recalculates the process-process imbalance matrix
-	processClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray);
+	// processClusterImbMatrix = calculateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray);
 	// prints the new process x vertex configuration
 	int np = bestSplitgraphClustering.getNumberOfClusters();
 	for(int px = 0; px < np; px++) {
@@ -2300,6 +2307,95 @@ Imbalance ImbalanceSubgraphParallelILS::calculateInternalImbalanceSumOfAllProces
 		internalImbalanceNegSum += internalProcessImbalance[i].getNegativeValue();
 	}
 	return Imbalance(internalImbalancePosSum, internalImbalanceNegSum);
+}
+
+Imbalance ImbalanceSubgraphParallelILS::calculateProcessInternalImbalance(SignedGraph *g, Clustering& c,
+		unsigned int processNumber) {
+
+	double positiveSum = 0.0, negativeSum = 0.0;
+	int nc = c.getNumberOfClusters();
+	int n = g->getN();
+	ClusterArray myCluster = c.getClusterArray();
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	UndirectedGraph::edge_descriptor e;
+
+	// creates a bool array where every cluster in process 'processNumber' is marked with 1
+	const std::vector<unsigned int> clusterProcessOrigin = c.getClusterProcessOrigin();
+	std::vector<bool> processContainsCluster(nc, false);
+	for(long k = 0; k < nc; k++) {
+		if(clusterProcessOrigin[k] == processNumber) {
+			processContainsCluster[k] = true;
+		}
+	}
+	// creates a bool array where every vertex in process 'processNumber' is marked with 1
+	std::vector<bool> processContainsVertex(n, false);
+	for(long i = 0; i < n; i++) {
+		if(processContainsCluster[myCluster[i]]) {  // the vertex belongs to this process
+			processContainsVertex[i] = true;
+		}
+	}
+
+	// For each vertex i that belongs to process 'processNumber'
+	for(long i = 0; i < n; i++) {
+		if(processContainsVertex[i]) {
+			long ki = myCluster[i];
+			UndirectedGraph::out_edge_iterator f, l;
+			// For each out edge of i
+			for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
+				e = *f;
+				double weight = ew[e].weight;
+				long j = target(*f, g->graph);
+				if(processContainsVertex[j]) {  // only takes into account vertices inside the process
+					long kj = myCluster[j];
+					bool sameCluster = (ki == kj);
+					if(weight < 0 and sameCluster) {  // negative edge
+						// i and j are in the same cluster
+						negativeSum += fabs(weight);
+					} else if(weight > 0 and (not sameCluster)) {  // positive edge
+						// i and j are NOT in the same cluster
+						positiveSum += weight;
+					}
+				}
+			}
+		}
+	}
+	return Imbalance(positiveSum, negativeSum);
+}
+
+void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
+		Clustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess,
+		ImbalanceMatrix& processClusterImbMatrix) {
+	// Simply moves the cluster to the destination process, with zero-cost imbalance change
+	bestClustering.setProcessOrigin(clusterToMove, destinationProcess);
+	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
+	// However, the internal and external imbalance values of the participating processes must be updated
+	// Assumes the imbalance matrix between processes has already been updated
+	// Updates the internal imbalance of the participating processes
+	Imbalance imbSrc = calculateProcessInternalImbalance(g, bestClustering, sourceProcess);
+	bestClustering.setProcessImbalance(sourceProcess, imbSrc);
+	Imbalance imbDest = calculateProcessInternalImbalance(g, bestClustering, destinationProcess);
+	bestClustering.setProcessImbalance(destinationProcess, imbDest);
+
+	// validating imbalance value FIXME remover esta validacao
+	// Calculates the internal imbalance sum (inside each process)
+	/*
+	std::vector<Imbalance> internalProcessImbalance = bestClustering.getInternalProcessImbalance();
+	Imbalance internalImbalance = calculateInternalImbalanceSumOfAllProcesses(internalProcessImbalance);
+	// Calculates the external imbalance sum (between processes)
+	Imbalance externalImbalance = calculateExternalImbalanceSumBetweenProcesses(processClusterImbMatrix);
+	if(internalImbalance.getPositiveValue() + externalImbalance.getPositiveValue() +
+			internalImbalance.getNegativeValue() + externalImbalance.getNegativeValue() != bestClustering.getImbalance().getValue()) {
+		BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] REBALANCE Zero-cost imbalance does not match!";
+	}
+	BOOST_LOG_TRIVIAL(info) << "AFTER => internalImbalance vector contents: ";
+	stringstream ss;
+	int count = 0;
+	for (std::vector<Imbalance>::const_iterator i = internalProcessImbalance.begin(); i != internalProcessImbalance.end(); ++i) {
+		Imbalance imb = calculateProcessInternalImbalance(g, bestClustering, count++);
+		ss << i->getValue() << " (" << imb.getValue() << "); ";
+	}
+	BOOST_LOG_TRIVIAL(info) << ss.str();
+	*/
 }
 
 } /* namespace ils */
