@@ -1065,6 +1065,14 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 				globalClustering = Clustering(globalClusterArray, *g, problem, internalImbalance.getPositiveValue() + externalImbalance.getPositiveValue(),
 						internalImbalance.getNegativeValue() + externalImbalance.getNegativeValue(), clusterProcessOrigin, newInternalProcessImbalance);
 
+				// Validacao do calculo da FO - TODO remover
+				ClusterArray cTemp = globalClustering.getClusterArray();
+				Clustering validation(cTemp, *g, problem);
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Full Obj Calc: I(P) = " << validation.getImbalance().getValue();
+				if(validation.getImbalance().getValue() != globalClustering.getImbalance().getValue()) {
+					BOOST_LOG_TRIVIAL(error) << "[SwapCluster1opt] Obj functions do not match.";
+				}
+
 				if(globalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
 					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 1-move-Cluster Improved solution found! I(P) = "
 							<< globalClustering.getImbalance().getValue();
