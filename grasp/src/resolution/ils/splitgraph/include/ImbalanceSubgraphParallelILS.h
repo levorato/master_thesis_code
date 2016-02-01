@@ -109,6 +109,13 @@ struct ImbalanceMatrix {
 	ImbalanceMatrix(int nc) : pos(zero_matrix<double>(nc, nc)), neg(zero_matrix<double>(nc, nc)) { }
 };
 
+/**
+ * This class is responsible for all logic related to the SplitGraph Distributed ILS algorithm,
+ * which splits a large graph into smaller subgraphs, distributes them among several processes,
+ * invokes a local ILS procedure for each one, and then merges all partial solutions into a global one.
+ * After that, the algorithm iteratively tries to improve the global solution by moving clusters
+ * between processes, using 4 different neighborhood structures.
+ */
 class ImbalanceSubgraphParallelILS: public ILS {
 public:
 	ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
@@ -166,6 +173,9 @@ public:
 			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
 			ImbalanceMatrix& processClusterImbMatrix);
 
+	/**
+	 * 1-move-vertex: (DISABLED) moves a vertex from one process to another.
+	 */
 	bool moveVertex1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
 			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
@@ -173,6 +183,9 @@ public:
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
+	/**
+	 * 1-move-cluster: moves a cluster from one process to another.
+	 */
 	bool moveCluster1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
 			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
@@ -202,7 +215,8 @@ public:
 			ClusteringProblem& problem, ExecutionInfo& info);
 
 	/**
-	 *
+	 * quasi-clique-move or pseudo-clique-move: moves a quasi-clique from an existing cluster to
+	 * a new cluster in another process.
 	 */
 	bool splitClusterMove(SignedGraph* g, Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
@@ -211,11 +225,15 @@ public:
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
+	/**
+	 * Distributed VND: alternates between 4 types of neighborhood structures that move clusters
+	 * between processes, in a distributed fashion.
+	 */
 	long variableNeighborhoodDescent(SignedGraph* g, Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering, const int& numberOfProcesses,
 			ImbalanceMatrix& processClusterImbMatrix, ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-			ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar);
+			ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar, int invocationNumber);
 
 protected:
 	int machineProcessAllocationStrategy;
@@ -224,7 +242,7 @@ protected:
 	Clustering CCclustering;
 	bool splitGraph;
 	bool cudaEnabled;
-	// counts the number of times the local ILS found solutions worse than the current solution (worse than zero-cost move)
+	// counts the number of times the local ILS found solutions worse than the current solution (worse than zero-cost move).
 	long numberOfFrustratedSolutions;
 
 	// data structures containing the imbalance contribution of each vertex and between processes

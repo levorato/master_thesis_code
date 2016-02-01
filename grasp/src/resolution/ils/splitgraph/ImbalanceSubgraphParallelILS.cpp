@@ -109,7 +109,9 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 
 	// STEP 2: TRY TO IMPROVE THE GLOBAL SOLUTION THROUGH A DISTRIBUTED METAHEURISTIC WHICH
 	// EXCHANGES VERTICES BETWEEN PROCESSES
-	int improvementCount = 0, improvements = 0;
+	iterationResults << "VNDCount,BestSol,BestSol+,BestSol-,k,Time,NumImprovements,NumFrustrations\n";
+	int improvementCount = 0, improvements = 0, executionCount = 0;
+	long totalFrustratedSolutions = 0;
 	do {
 		// 1. O processo mestre será o responsável por manter duas estruturas de dados de controle do imbalance:
 		//		Um vetor com os vértices que mais contribuem para I(P) (soma de imbalance de cada vertice)
@@ -120,8 +122,9 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 				bestClustering, numberOfProcesses,
 				processClusterImbMatrix, construct, vnd,
 				iter, iterMaxILS, perturbationLevelMax,
-				problem, info, timeSpentInILS);
+				problem, info, timeSpentInILS, executionCount++);
 		improvementCount += improvements;
+		totalFrustratedSolutions += numberOfFrustratedSolutions;
 
 		// Last step. Stops the timer and stores the elapsed time
 		timer.stop();
@@ -131,9 +134,10 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 		// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
 		timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
 		// iteration results are only being shown when the solution improved
-		iterationResults << (improvementCount+1) << "," << bestClustering.getImbalance().getValue() << "," << bestClustering.getImbalance().getPositiveValue()
+		iterationResults << (executionCount) << "," << bestClustering.getImbalance().getValue() << "," << bestClustering.getImbalance().getPositiveValue()
 				<< "," << bestClustering.getImbalance().getNegativeValue() << "," << bestClustering.getNumberOfClusters()
-				<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
+				<< "," << fixed << setprecision(4) << timeSpentInILS
+				<< "," << improvements << "," << numberOfFrustratedSolutions << "\n";
 		timer.resume();
 		start_time = timer.elapsed();
 		// if elapsed time is bigger than timeLimit, break
@@ -179,9 +183,10 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	// 8. Write the results into ostream os, using csv format
 	// Format: iterationNumber,imbalance,imbalance+,imbalance-,time(s),boolean
 	timeSpentInILS += (end_time.wall - start_time.wall) / double(1000000000);
-	iterationResults << (improvementCount+2) << "," << bestClustering.getImbalance().getValue() << "," << bestClustering.getImbalance().getPositiveValue()
+	iterationResults << executionCount << "," << bestClustering.getImbalance().getValue() << "," << bestClustering.getImbalance().getPositiveValue()
 			<< "," << bestClustering.getImbalance().getNegativeValue() << "," << bestClustering.getNumberOfClusters()
-			<< "," << fixed << setprecision(4) << (timeSpentInILS + timeSpentInConstruction) << "\n";
+			<< "," << fixed << setprecision(4) << (timeSpentInILS + timeSpentInConstruction)
+			<< "," << improvementCount << "," << totalFrustratedSolutions << "\n";
 	Imbalance bestValue = bestClustering.getImbalance();
 	int iterationValue = 1;
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
@@ -191,8 +196,8 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 				<< "," << bestClustering.getNumberOfClusters()
 				<< "," << (iterationValue+1)
 				<< "," << fixed << setprecision(4) << (timeSpentInILS + timeSpentInConstruction) // timeSpentOnBestSolution
-				<< "," << iter
-				<< "," << numberOfTestedCombinations << "\n";
+				<< "," << improvementCount
+				<< "," << totalFrustratedSolutions << "\n";
 
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Solution found after 1 ILS parallel graph iteration: I(P) = " << bestClustering.getImbalance().getValue();
 
@@ -1516,7 +1521,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 		Clustering& bestClustering, const int& numberOfProcesses,
 		ImbalanceMatrix& processClusterImbMatrix, ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-		ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar) {
+		ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar, int invocationNumber) {
 
 	int r = 1, iteration = 0, l = 4;
 	double timeSpentOnLocalSearch = 0.0;
@@ -1644,8 +1649,12 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	splitgraphVNDResults << "Time spent, " << timeSpentOnLocalSearch << "\n";
 
 	// Saves the splitgraph statistics to csv file
+	stringstream filePrefix;
+	filePrefix << "VND";
+	filePrefix << (invocationNumber);
+	filePrefix << "-statistics-splitgraph";
 	generateOutputFile(problem, splitgraphVNDResults, info.outputFolder, info.fileId, info.executionId,
-			info.processRank, string("statistics-splitgraph"), construct->getAlpha(), l, iter);
+			info.processRank, filePrefix.str(), construct->getAlpha(), l, iter);
 
 	// Exports the splitgraph solutions to csv file
 	stringstream sshistory;
@@ -1690,8 +1699,12 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, C
 	sshistory << "Frustrated ILS solutions, " << numberOfFrustratedSolutions << "\n";
 
 	// Saves the splitgraph solution history to csv file
+	stringstream filePrefix2;
+	filePrefix2 << "VND";
+	filePrefix2 << (invocationNumber);
+	filePrefix2 << "-solutionHistory-splitgraph";
 	generateOutputFile(problem, sshistory, info.outputFolder, info.fileId, info.executionId,
-			info.processRank, string("solutionHistory-splitgraph"), construct->getAlpha(), l, iter);
+			info.processRank, filePrefix2.str(), construct->getAlpha(), l, iter);
 
 	return improvedOnVND;
 }
