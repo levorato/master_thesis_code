@@ -8,30 +8,30 @@
 #ifndef SRC_MOVIELENSSGCONVERTER_H_
 #define SRC_MOVIELENSSGCONVERTER_H_
 
-#include "../../include/ParallelILS.h"
-
 #include <map>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 
 using namespace boost::numeric::ublas;
+using namespace std;
 
 namespace generation {
 
 class MovieLensSGConverter {
 public:
 	MovieLensSGConverter();
+	~MovieLensSGConverter();
 	
-	void processMovieLensFolder(const string& folder, const string& filter);
-	void readMovieLensCSVFile(const string& filename);
-	void generateSGFromMovieRatings();
+	bool processMovieLensFolder(const string& folder, const string& filter);
+	bool readMovieLensCSVFile(const string& filename, long& max_user_id, long& max_movie_id);
+	bool generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id, const string& outputFileName);
 	
 private:
 	// the movie_users structure maps a movie_id (long) to a vector of <user_id, rating> pairs
-	std::map< long, std::vector< std::pair<long, double> > > movie_users;
+	std::vector< std::vector< std::pair<long, double> > > movie_users;
 	// the sparse matrix with movie ratings
-	ublas::compressed_matrix<double> star;
+	compressed_matrix<double> star;
 
 	std::string get_file_contents(const char *filename);
 	void find_and_replace(string& source, string const& find, string const& replace);
