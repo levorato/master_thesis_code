@@ -1,0 +1,59 @@
+import os
+from waflib import Options
+from waflib.Errors import WafError
+
+APPNAME = 'movielens'
+VERSION = '1.0'
+
+top = '.'
+out = 'build'
+
+def dist(ctx):
+        ctx.algo      = 'tar.bz2'
+        ctx.excl      = ' **/*~ **/*.swp **/.lock-w* **/.git build Debug'
+
+
+def options(opt):
+	opt.load('compiler_c')
+	opt.load('compiler_cxx')
+	opt.load('boost')
+#	opt.load('eclipse')
+
+def configure(conf):
+        print('configuring the project')
+
+	#conf.find_icpc()
+	conf.find_ar()
+	conf.gxx_common_flags()
+	#conf.gxx_modifier_platform()
+	conf.cxx_load_tools()
+	conf.cxx_add_flags()
+	conf.link_add_flags()
+
+	conf.load('compiler_c')
+	conf.env.append_value('LINKFLAGS', '-ldl')
+	#conf.check(compiler='cxx', lib='boost_serialization', uselib_store='BSERIAL', mandatory=True)
+
+	conf.load('compiler_cxx')
+	conf.load('boost')
+#        conf.check_boost(lib='serialization system filesystem timer program_options random mpi thread date_time log log_setup', mt=True)
+
+	conf.path.ant_glob('**/*.cpp') # find all .cpp files
+
+        #conf.env.append_value('LIBPATH', conf.env['/usr/lib64'])
+	
+	pass
+
+def build(bld):
+		
+	bld.stlib(
+                features='cxx cxxprogram',
+				cxxflags  = ['-DBOOST_ALL_DYN_LINK', '-m64', '-O3', '-fPIC', '-pthread'], 
+                source   = bld.path.ant_glob("**/*.cpp"),
+                target   = 'movielens',
+		includes = '. /home_nfs/mlevorato/include /usr/local/include /usr/include/mpi /opt/mpich2_p1/include /opt/mpi/mpibull2-1.3.9-18.s/include /usr/include/openmpi-x86_64 /usr/lib/openmpi/include/openmpi /usr/lib/openmpi/include /usr/local/boost-1.56.0/include',
+                uselib='BSERIAL dl opa rt boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_date_time boost_log boost_log_setup',
+                lib = ['dl', 'pthread', 'rt', 'uuid', 'mpi', 'mpi_cxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_chrono', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log_setup', 'boost_log', 'open-rte', 'open-pal', 'nsl', 'util', 'm'],
+                libpath = ['/home_nfs/mlevorato/lib', '/usr/local/lib', '/lib64', '/usr/lib64', '/usr/lib', '/usr/lib64/openmpi/lib', '/usr/lib/openmpi/lib', '/usr/lib64/mpich2/lib', '/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi', '/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock', '/opt/mpi/mpibull2-1.3.9-18.s/lib', '/home_nfs/3.2.2.006/lib64', '/usr/local/boost-1.56.0/lib'],
+                )
+
