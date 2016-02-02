@@ -35,6 +35,12 @@
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/vector_sparse.hpp>
+#include <boost/numeric/ublas/vector_of_vector.hpp>
+#include <boost/numeric/ublas/vector_expression.hpp>
+
 #include "MovieLensSGConverter.h"
 
 // TODO CHANGE TO APPLICATION CLI PARAMETER
@@ -53,6 +59,8 @@
 #define POS_EDGE_PERC 0.8
 // %NEG -> edge percentual when comparing 2 users and assuming their relation is negative (e.g. 20%)
 #define NEG_EDGE_PERC 0.2
+// NUMBER_OF_CHUNKS -> the number of chunks the matrix will be split for processing (saves memory)
+#define NUMBER_OF_CHUNKS 32
 
 using namespace boost::numeric::ublas;
 namespace fs = boost::filesystem;
@@ -144,7 +152,7 @@ bool MovieLensSGConverter::readMovieLensCSVFile(const string& filename, long& ma
 	lines.assign(tokens.begin(),tokens.end());
 	
 	star = compressed_matrix<double>(MAX_USERS, MAX_MOVIES);
-	movie_users = std::vector< std::vector< std::pair<long, double> > >(MAX_MOVIES);
+	movie_users = std::vector< std::vector< std::pair<long, char> > >(MAX_MOVIES);
     
 	// reads all votes for movies
 	for(std::vector<string>::iterator line_iter = lines.begin(); line_iter != lines.end(); line_iter++) {
@@ -157,7 +165,7 @@ bool MovieLensSGConverter::readMovieLensCSVFile(const string& filename, long& ma
 
 		long user_id = boost::lexical_cast< long >( column[0] );
         long movie_id = boost::lexical_cast< long >( column[1] );
-		double rating = boost::lexical_cast< double >( column[2] );
+		char rating = boost::lexical_cast< int >( column[2] );
 		// user_id and movie_id both begin with 1
 		// print "{0} {1}".format(user_id, movie_id)
 		star(user_id - 1, movie_id - 1) = rating;
@@ -178,79 +186,96 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	int previous_total = -1;
 	int percentage = 0;
 
-	compressed_matrix<long> common_rating_count(max_user_id, max_user_id);
-	compressed_matrix<long> common_similar_rating_count(max_user_id, max_user_id);
+	// compressed_matrix<long> common_rating_count(max_user_id, max_user_id);
+	// compressed_matrix<long> common_similar_rating_count(max_user_id, max_user_id);
 	cout << "Processing graph with " << max_user_id << " users and " << max_movie_id << " movies..." << endl;
 
-	cout << "Begin movie list traversal..." << endl;
-	for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
-		std::vector< std::pair<long, double> > ratingList = movie_users[movie_id];
-		// cout << movie_id << " with size " << ratingList.size() << endl;
-		for(long x = 0; x < ratingList.size(); x++) {
-			std::pair<long, double> user_rating_x = ratingList[x];
-			long user_a = user_rating_x.first;
-			double rating_a = user_rating_x.second;
-			for(long y = x + 1; y < ratingList.size(); y++) {
-				std::pair<long, double> user_rating_y = ratingList[y];
-				long user_b = user_rating_y.first;
-				double rating_b = user_rating_y.second;
-				if(user_a != user_b) {
-					common_rating_count(user_a, user_b) += 1;
-					if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE) 
-							or (rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE) 
-							or (rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE)) {
-						// users A and B have the same opinion about the movie
-						common_similar_rating_count(user_a, user_b) += 1;
-						// print "agree"
-					}
-				}
-			}
-		}
-		// display status of processing done
-		int threshold = int(std::floor(max_movie_id / 10.0));
-		int percentage = int(std::ceil(100 * (double(movie_id) / max_movie_id)));
-		if((movie_id % threshold < EPS) and (percentage != previous_total)) {
-			cout << percentage << " % ";
-			cout.flush();
-			previous_total = percentage;
-		}
-	}
-
-	cout << "\nBegin edge generation...\n";
-	long count = max_user_id * max_user_id;
-	previous_total = -1;
-	percentage = 0;
+	// Begin dividing the matrix into chunks for processing
+	long chunkSize = long(std::floor(double(max_user_id) / NUMBER_OF_CHUNKS));
+	long remainingVertices = max_user_id % NUMBER_OF_CHUNKS;
 	std::ostringstream out;
 	long edgeCount = 0;
-	for(long user_a = 0; user_a < max_user_id; user_a++) {
-		for(long user_b = 0; user_b < max_user_id; user_b++) {
-			if(user_a != user_b) {
-				if(common_rating_count(user_a, user_b) > 0) {
-					double common_similar_rating_ratio = double(common_similar_rating_count(user_a, user_b)) /
-							common_rating_count(user_a, user_b);
-					if(common_similar_rating_ratio >= POS_EDGE_PERC) {
-						// SG[user_a, user_b] = 1;
-						out << user_a << " " << user_b << " 1\n";
-						edgeCount++;
-					}
-					else if(common_similar_rating_ratio <= NEG_EDGE_PERC) {
-						// SG[user_a, user_b] = -1;
-						out << user_a << " " << user_b << " -1\n";
-						edgeCount++;
+	for(int i = 0; i < NUMBER_OF_CHUNKS; i++) {
+		// will process only the range (initialUserIndex <= user_a <= finalUserIndex)
+		long initialUserIndex = i * chunkSize;
+		long finalUserIndex = (i + 1) * chunkSize - 1;
+		if(remainingVertices > 0 and i == NUMBER_OF_CHUNKS - 1) {
+			finalUserIndex = max_user_id - 1;
+		}
+		cout << "\nProcessing user range [" << initialUserIndex << ", " << finalUserIndex << "]" << endl;
+		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_rating_count(max_user_id, max_user_id);;
+		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_similar_rating_count(max_user_id, max_user_id);
+
+		cout << "Begin movie list traversal (" << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
+		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
+			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
+			// cout << movie_id << " with size " << ratingList.size() << endl;
+			for(long x = 0; x < ratingList.size(); x++) {
+				std::pair<long, char> user_rating_x = ratingList[x];
+				long user_a = user_rating_x.first;
+				char rating_a = user_rating_x.second;
+				if(initialUserIndex <= user_a and user_a <= finalUserIndex) {
+					for(long y = x + 1; y < ratingList.size(); y++) {
+						std::pair<long, char> user_rating_y = ratingList[y];
+						long user_b = user_rating_y.first;
+						char rating_b = user_rating_y.second;
+						if(user_a != user_b) {
+							common_rating_count(user_a, user_b) += 1;
+							if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE)
+									or (rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE)
+									or (rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE)) {
+								// users A and B have the same opinion about the movie
+								common_similar_rating_count(user_a, user_b) += 1;
+							}
+						}
 					}
 				}
 			}
 			// display status of processing done
-			int total_done = user_a * max_user_id + user_b;
-			int threshold = int(std::floor(count / 10.0));
-			int percentage = int(std::ceil(100 * (double(total_done) / count)));
-			// print str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
-			if((total_done % threshold < EPS) and (percentage != previous_total)) {
+			int threshold = int(std::floor(max_movie_id / 10.0));
+			int percentage = int(std::ceil(100 * (double(movie_id) / max_movie_id)));
+			if((movie_id % threshold < EPS) and (percentage != previous_total)) {
 				cout << percentage << " % ";
+				cout.flush();
 				previous_total = percentage;
 			}
 		}
+
+		cout << "\nBegin edge generation(" << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
+		long count = max_user_id * max_user_id;
+		previous_total = -1;
+		percentage = 0;
+		for(long user_a = 0; user_a < max_user_id; user_a++) {
+			for(long user_b = 0; user_b < max_user_id; user_b++) {
+				if(user_a != user_b) {
+					if(common_rating_count(user_a, user_b) > 0) {
+						double common_similar_rating_ratio = double(common_similar_rating_count(user_a, user_b)) /
+								common_rating_count(user_a, user_b);
+						if(common_similar_rating_ratio >= POS_EDGE_PERC) {
+							// SG[user_a, user_b] = 1;
+							out << user_a << " " << user_b << " 1\n";
+							edgeCount++;
+						}
+						else if(common_similar_rating_ratio <= NEG_EDGE_PERC) {
+							// SG[user_a, user_b] = -1;
+							out << user_a << " " << user_b << " -1\n";
+							edgeCount++;
+						}
+					}
+				}
+				// display status of processing done
+				int total_done = user_a * max_user_id + user_b;
+				int threshold = int(std::floor(count / 10.0));
+				int percentage = int(std::ceil(100 * (double(total_done) / count)));
+				// print str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
+				if((total_done % threshold < EPS) and (percentage != previous_total)) {
+					cout << percentage << " % ";
+					previous_total = percentage;
+				}
+			}
+		}
 	}
+
 	// write the signed graph to output file
 	ofstream output_file(outputFileName.c_str(), ios::out | ios::trunc);
 	if(!output_file) {

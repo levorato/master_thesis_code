@@ -29,7 +29,7 @@ public:
 	
 private:
 	// the movie_users structure maps a movie_id (long) to a vector of <user_id, rating> pairs
-	std::vector< std::vector< std::pair<long, double> > > movie_users;
+	std::vector< std::vector< std::pair<long, char> > > movie_users;
 	// the sparse matrix with movie ratings
 	compressed_matrix<double> star;
 
