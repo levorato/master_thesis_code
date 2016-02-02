@@ -60,7 +60,7 @@
 // %NEG -> edge percentual when comparing 2 users and assuming their relation is negative (e.g. 20%)
 #define NEG_EDGE_PERC 0.2
 // NUMBER_OF_CHUNKS -> the number of chunks the matrix will be split for processing (saves memory)
-#define NUMBER_OF_CHUNKS 32
+#define NUMBER_OF_CHUNKS 256
 
 using namespace boost::numeric::ublas;
 namespace fs = boost::filesystem;
@@ -201,12 +201,13 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 		long finalUserIndex = (i + 1) * chunkSize - 1;
 		if(remainingVertices > 0 and i == NUMBER_OF_CHUNKS - 1) {
 			finalUserIndex = max_user_id - 1;
+			chunkSize = finalUserIndex - initialUserIndex + 1;
 		}
 		cout << "\nProcessing user range [" << initialUserIndex << ", " << finalUserIndex << "]" << endl;
-		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_rating_count(max_user_id, max_user_id);;
-		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_similar_rating_count(max_user_id, max_user_id);
+		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_rating_count(chunkSize, max_user_id);;
+		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_similar_rating_count(chunkSize, max_user_id);
 
-		cout << "Begin movie list traversal (" << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
+		cout << "Begin movie list traversal (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
 		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
 			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
 			// cout << movie_id << " with size " << ratingList.size() << endl;
@@ -220,12 +221,12 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 						long user_b = user_rating_y.first;
 						char rating_b = user_rating_y.second;
 						if(user_a != user_b) {
-							common_rating_count(user_a, user_b) += 1;
+							common_rating_count(user_a - initialUserIndex, user_b) += 1;
 							if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE)
 									or (rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE)
 									or (rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE)) {
 								// users A and B have the same opinion about the movie
-								common_similar_rating_count(user_a, user_b) += 1;
+								common_similar_rating_count(user_a - initialUserIndex, user_b) += 1;
 							}
 						}
 					}
@@ -241,16 +242,16 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 			}
 		}
 
-		cout << "\nBegin edge generation(" << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
+		cout << "\nBegin edge generation (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
 		long count = max_user_id * max_user_id;
 		previous_total = -1;
 		percentage = 0;
-		for(long user_a = 0; user_a < max_user_id; user_a++) {
+		for(long user_a = initialUserIndex; user_a <= finalUserIndex; user_a++) {
 			for(long user_b = 0; user_b < max_user_id; user_b++) {
 				if(user_a != user_b) {
-					if(common_rating_count(user_a, user_b) > 0) {
-						double common_similar_rating_ratio = double(common_similar_rating_count(user_a, user_b)) /
-								common_rating_count(user_a, user_b);
+					if(common_rating_count(user_a - initialUserIndex, user_b) > 0) {
+						double common_similar_rating_ratio = double(common_similar_rating_count(user_a - initialUserIndex, user_b)) /
+								common_rating_count(user_a - initialUserIndex, user_b);
 						if(common_similar_rating_ratio >= POS_EDGE_PERC) {
 							// SG[user_a, user_b] = 1;
 							out << user_a << " " << user_b << " 1\n";
