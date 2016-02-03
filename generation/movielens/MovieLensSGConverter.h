@@ -23,9 +23,12 @@ public:
 	MovieLensSGConverter();
 	~MovieLensSGConverter();
 	
-	bool processMovieLensFolder(const string& folder, const string& filter);
+	bool processMovieLensFolder(const string& folder, const string& filter,
+			const unsigned int &myRank, const unsigned int &numProcessors);
 	bool readMovieLensCSVFile(const string& filename, long& max_user_id, long& max_movie_id);
-	bool generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id, const string& outputFileName);
+	bool generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
+			const string& outputFileName, const unsigned int &myRank,
+			const unsigned int &numProcessors);
 	
 private:
 	// the movie_users structure maps a movie_id (long) to a vector of <user_id, rating> pairs
@@ -35,6 +38,32 @@ private:
 
 	std::string get_file_contents(const char *filename);
 	void find_and_replace(string& source, string const& find, string const& replace);
+};
+
+class InputMessage {
+public:
+	// the identifier of the graph
+	unsigned int id;
+	static const int TERMINATE_MSG_TAG;
+	static const int DONE_MSG_TAG;
+
+	InputMessage() : id(0) {
+
+	}
+
+	InputMessage(unsigned int i) :
+		id(i) {
+	}
+
+	~InputMessage(){};
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, unsigned int file_version)
+	{
+		ar & id;
+	}
 };
 
 } /* namespace generation */

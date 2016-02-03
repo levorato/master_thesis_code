@@ -22,7 +22,6 @@
 #include <iterator>     // ostream_operator
 
 #include <boost/tokenizer.hpp>
-#include <boost/mpi/communicator.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -34,12 +33,14 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/numeric/ublas/io.hpp>
-
+#include <boost/log/trivial.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/vector_sparse.hpp>
 #include <boost/numeric/ublas/vector_of_vector.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
 
 #include "MovieLensSGConverter.h"
 
@@ -62,8 +63,12 @@
 // NUMBER_OF_CHUNKS -> the number of chunks the matrix will be split for processing (saves memory)
 #define NUMBER_OF_CHUNKS 256
 
+const int generation::InputMessage::TERMINATE_MSG_TAG = 0;
+const int generation::InputMessage::DONE_MSG_TAG = 1;
+
 using namespace boost::numeric::ublas;
 namespace fs = boost::filesystem;
+namespace mpi = boost::mpi;
 
 namespace generation {
 
@@ -79,14 +84,15 @@ MovieLensSGConverter::~MovieLensSGConverter() {
 	// TODO Auto-generated destructor stub
 }
 
-bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const string& filter) {
-	cout << "Processing folder " << folder << endl;
+bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const string& filter,
+		const unsigned int &myRank, const unsigned int &numProcessors) {
+	BOOST_LOG_TRIVIAL(info) << "Processing folder " << folder;
 	
 	// read the files in the specified folder
 	fs::path inputDir(folder);
 	fs::directory_iterator end_iter;
 	if (!fs::exists(inputDir) || !fs::is_directory(inputDir)) {
-		cerr << "Input file directory not found. Exiting." << endl;
+		BOOST_LOG_TRIVIAL(fatal) << "Input file directory not found. Exiting." << endl;
 		return false;
 	}
 	std::vector<fs::path> fileList;
@@ -100,7 +106,7 @@ bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const st
 			fileList.push_back(filePath);
 		}
 	}
-	cout << "Found " << fileList.size() << " file(s)." << endl;
+	BOOST_LOG_TRIVIAL(info) << "Found " << fileList.size() << " file(s).";
 	// output folder
 	stringstream path_ss;
 	path_ss << folder << boost::filesystem::path::preferred_separator << "unweightedSG";
@@ -125,18 +131,20 @@ bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const st
 		long max_user_id = 0, max_movie_id = 0;
 		readMovieLensCSVFile(filePath.string(), max_user_id, max_movie_id);
 		// process the dataset file and generate signed graph
-		if(generateSGFromMovieRatings(max_user_id, max_movie_id, file_ss.str())) {
-			cout << "\nCreated output signed graph file " << file_ss.str() << endl;
+		if(generateSGFromMovieRatings(max_user_id, max_movie_id, file_ss.str(), myRank, numProcessors)) {
+			if(myRank == 0) {
+				BOOST_LOG_TRIVIAL(info) << "\nCreated output signed graph file " << file_ss.str();
+			}
 			// Stops the timer and stores the elapsed time
 			timer.stop();
 			end_time = timer.elapsed();
 			timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-			cout << "Graph generation took " << timeSpent << " seconds." << endl;
+			BOOST_LOG_TRIVIAL(info) << "Graph generation took " << timeSpent << " seconds.";
 		} else {
-			cerr << "Error generating signed graph file " << file_ss.str() << endl;
+			BOOST_LOG_TRIVIAL(fatal) << "Error generating signed graph file " << file_ss.str() << endl;
 		}
 	}
-	cout << "Done." << endl;
+	BOOST_LOG_TRIVIAL(info) << "Done.";
 	return true;
 }
 
@@ -176,38 +184,52 @@ bool MovieLensSGConverter::readMovieLensCSVFile(const string& filename, long& ma
 		if(movie_id > max_movie_id)
 			max_movie_id = movie_id;
     }
-	cout << "Successfully read input file, generating signed graph file." << endl;
+	BOOST_LOG_TRIVIAL(info) << "Successfully read input file, generating signed graph file.";
 	return true;
 }
 
 bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
-		const string& outputFileName) {
+		const string& outputFileName, const unsigned int &myRank, const unsigned int &numProcessors) {
 	// the signed graph representing the voting in movie lens dataset
 	int previous_total = -1;
 	int percentage = 0;
 
 	// compressed_matrix<long> common_rating_count(max_user_id, max_user_id);
 	// compressed_matrix<long> common_similar_rating_count(max_user_id, max_user_id);
-	cout << "Processing graph with " << max_user_id << " users and " << max_movie_id << " movies..." << endl;
+	BOOST_LOG_TRIVIAL(info) << "Processing graph with " << max_user_id << " users and " << max_movie_id << " movies...";
 
-	// Begin dividing the matrix into chunks for processing
-	long chunkSize = long(std::floor(double(max_user_id) / NUMBER_OF_CHUNKS));
-	long remainingVertices = max_user_id % NUMBER_OF_CHUNKS;
+	// Parallel processing with MPI *************************************
+	// Splits the processing in (n / numProcessors) chunks,
+	// to be consumed by numProcessors processes
+	long MPIChunkSize = long(std::floor(double(max_user_id) / numProcessors));
+	long MPIRemainingVertices = max_user_id % numProcessors;
+	long initialProcessorUserIndex = myRank * MPIChunkSize;
+	long finalProcessorUserIndex = (myRank + 1) * MPIChunkSize - 1;
+	if(MPIRemainingVertices > 0 and myRank == numProcessors - 1) {
+		finalProcessorUserIndex = max_user_id - 1;
+		MPIChunkSize = finalProcessorUserIndex - initialProcessorUserIndex + 1;
+	}
+	BOOST_LOG_TRIVIAL(info) << "This is process " << myRank << ". Will process user range [" << initialProcessorUserIndex << ", " << finalProcessorUserIndex << "]";
+
+	// Begin dividing the MPI Chunk into smaller chunks for local processing
+	long chunkSize = long(std::floor(double(MPIChunkSize) / NUMBER_OF_CHUNKS));
+	long remainingVertices = MPIChunkSize % NUMBER_OF_CHUNKS;
 	std::ostringstream out;
 	long edgeCount = 0;
 	for(int i = 0; i < NUMBER_OF_CHUNKS; i++) {
 		// will process only the range (initialUserIndex <= user_a <= finalUserIndex)
-		long initialUserIndex = i * chunkSize;
-		long finalUserIndex = (i + 1) * chunkSize - 1;
+		long initialUserIndex = initialProcessorUserIndex + i * chunkSize;
+		long finalUserIndex = initialProcessorUserIndex + (i + 1) * chunkSize - 1;
 		if(remainingVertices > 0 and i == NUMBER_OF_CHUNKS - 1) {
-			finalUserIndex = max_user_id - 1;
+			finalUserIndex = finalProcessorUserIndex;
 			chunkSize = finalUserIndex - initialUserIndex + 1;
 		}
-		cout << "\nProcessing user range [" << initialUserIndex << ", " << finalUserIndex << "]" << endl;
+		BOOST_LOG_TRIVIAL(info) << "\nProcessing user range [" << initialUserIndex << ", " << finalUserIndex << "]";
 		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_rating_count(chunkSize, max_user_id);;
 		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_similar_rating_count(chunkSize, max_user_id);
 
-		cout << "Begin movie list traversal (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
+		BOOST_LOG_TRIVIAL(info) << "Begin movie list traversal (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")...";
+		cout << "\nBegin movie list traversal (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
 		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
 			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
 			// cout << movie_id << " with size " << ratingList.size() << endl;
@@ -238,12 +260,14 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 			if((movie_id % threshold < EPS) and (percentage != previous_total)) {
 				cout << percentage << " % ";
 				cout.flush();
+				BOOST_LOG_TRIVIAL(info) << percentage << " % ";
 				previous_total = percentage;
 			}
 		}
 
+		BOOST_LOG_TRIVIAL(info) << "\nBegin edge generation (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")...";
 		cout << "\nBegin edge generation (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
-		long count = max_user_id * max_user_id;
+		long count = (finalUserIndex - initialUserIndex + 1) * max_user_id;
 		previous_total = -1;
 		percentage = 0;
 		for(long user_a = initialUserIndex; user_a <= finalUserIndex; user_a++) {
@@ -265,12 +289,14 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 					}
 				}
 				// display status of processing done
-				int total_done = user_a * max_user_id + user_b;
+				int total_done = (user_a - initialUserIndex) * max_user_id + user_b;
 				int threshold = int(std::floor(count / 10.0));
 				int percentage = int(std::ceil(100 * (double(total_done) / count)));
 				// print str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
 				if((total_done % threshold < EPS) and (percentage != previous_total)) {
 					cout << percentage << " % ";
+					cout.flush();
+					BOOST_LOG_TRIVIAL(info) << percentage << " % ";
 					previous_total = percentage;
 				}
 			}
@@ -278,15 +304,52 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	}
 
 	// write the signed graph to output file
-	ofstream output_file(outputFileName.c_str(), ios::out | ios::trunc);
+	stringstream partialFilename_ss;
+	partialFilename_ss << outputFileName << ".part" << myRank;
+	ofstream output_file(partialFilename_ss.str().c_str(), ios::out | ios::trunc);
 	if(!output_file) {
-		cerr << "Cannot open output result file to: " << outputFileName;
+		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << outputFileName;
 		return false;
 	}
-	output_file << max_user_id << "\t" << edgeCount << "\r\n";
+	if(myRank == 0) {
+		output_file << max_user_id << "\t" << edgeCount << "\r\n";
+	}
 	output_file << out.str();
 	// Close the file
 	output_file.close();
+
+	boost::mpi::communicator world;
+	if(myRank == 0) {
+		// wait for the message 'done' from all workers
+		for(int i = 1; i < numProcessors; i++) {
+			InputMessage imsg;
+			boost::mpi::status msg = world.recv(boost::mpi::any_source, InputMessage::DONE_MSG_TAG, imsg);
+		}
+		// merge all the output files into a full graph output file
+		ofstream output_full_file(outputFileName.c_str(), ios::out | ios::trunc);
+		if(!output_full_file) {
+			BOOST_LOG_TRIVIAL(fatal) << "Cannot open full output result file to: " << outputFileName;
+			return false;
+		}
+		for(int i = 0; i < numProcessors; i++) {
+			stringstream partialFilenameN_ss;
+			partialFilenameN_ss << outputFileName << ".part" << i;
+			ifstream in(partialFilenameN_ss.str().c_str());
+			if (!in.is_open()){
+				BOOST_LOG_TRIVIAL(fatal) << "Error opening output file number " << i;
+				return false;
+			}
+			string fileContents = get_file_contents(partialFilenameN_ss.str().c_str());
+			output_full_file << fileContents;
+		}
+		output_full_file.close();
+
+	} else {
+		// send a message to the leader process to inform that the task is done
+		BOOST_LOG_TRIVIAL(info) << "Sending done message to leader...";
+		InputMessage imsg;
+		world.send(0, InputMessage::DONE_MSG_TAG, imsg);
+	}
 
 	return true;
 }
