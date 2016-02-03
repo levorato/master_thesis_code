@@ -143,9 +143,9 @@ int main(int argc, char* argv[])
 		converter.processMovieLensFolder(folder, fileFilter, world.rank(), world.size());
 
 		// ------------------ M P I    T E R M I N A T I O N ---------------------
-		BOOST_LOG_TRIVIAL(info) << "Terminating MPI worker processes...";
 		if(world.size() > 1) {
 			if(world.rank() == 0) {
+				BOOST_LOG_TRIVIAL(info) << "Terminating MPI worker processes...";
 				InputMessage imsg;
 				for(int i = 1; i < world.size(); i++) {
 					world.send(i, InputMessage::TERMINATE_MSG_TAG, imsg);
