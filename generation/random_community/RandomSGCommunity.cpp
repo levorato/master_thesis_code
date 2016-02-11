@@ -364,7 +364,7 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
 					if(int_count >= internal_edge_num)  break;
                     if(matrix(node, v) == 0 and (indegree[v] + outdegree[v] < k)) {
                         // creates an internal edge (node,v)
-                        //matrix(node, v) = 1; // round(random.uniform(EPS, 1), 4)
+                        matrix(node, v) = 1; // round(random.uniform(EPS, 1), 4)
                         outdegree[node] += 1;
                         indegree[v] += 1;
                         int_count += 1;
@@ -395,7 +395,7 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
 			}
             // edges are directed
             // TODO: generate edges' weight randomly in the [0, 1] interval
-            //matrix(e.x, e.y) = -1; // round(random.uniform(-1, -EPS), 4)
+            matrix(e.x, e.y) = -1; // round(random.uniform(-1, -EPS), 4)
             outdegree[e.x] += 1;
             indegree[e.y] += 1;
             ext_count += 1;
@@ -465,7 +465,7 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
                     previous_total = percentage;
 				}
                 if(matrix(v1, v2) > 0) {
-                    //matrix(v1, v2) *= -1;
+                    matrix(v1, v2) *= -1;
                     count -= 1;
                     negative_edges_in_cluster += 1;
 				}
@@ -518,7 +518,7 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
                                 previous_total = percentage;
 							}
                             if(count > 0) {
-                                //matrix(v1, v2) *= -1;
+                                matrix(v1, v2) *= -1;
                                 count -= 1;
 							}
 						}
@@ -532,9 +532,7 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
         if(count == 0)  break;
 	}
     BOOST_LOG_TRIVIAL(info) << " completed.";
-    BOOST_LOG_TRIVIAL(info) << "There must be " << pos_links_num << " positive links outside communities.";
-    BOOST_LOG_TRIVIAL(info) << "There are " << (pos_links_num - count) << " positive links outside communities.";
-    //assert(count == 0 && "4. There must be (c x n x k x (1 - p_in) x p+) positive links outside communities");
+    assert(count == 0 && "4. There must be (c x n x k x (1 - p_in) x p+) positive links outside communities");
 
     // Writes output file in XPRESS Mosel format (.mos)
     // --------------------------------------------------
@@ -550,8 +548,23 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
 	boost::filesystem::create_directories( outputPath, returnedError );
     BOOST_LOG_TRIVIAL(info) << "Saving output graph file...";
 
-    // TODO insert code to write the graph edges
-
+    stringstream partialFilename_ss;
+	partialFilename_ss << directory << "/" << filename.str();
+	ofstream output_g(partialFilename_ss.str().c_str(), ios::out | ios::trunc);
+	if (!output_g.is_open()){
+		BOOST_LOG_TRIVIAL(fatal) << "Error opening output file " << partialFilename_ss.str();
+		return false;
+	}
+	output_g << N << "\t" << (internal_edge_num + external_edge_num) << endl;
+	// iterates only over non-zero elements of the sparse matrix
+	typedef Matrix::iterator1 it1_t;
+	typedef Matrix::iterator2 it2_t;
+	for (it1_t it1 = matrix.begin1(); it1 != matrix.end1(); it1++) {
+	  for (it2_t it2 = it1.begin(); it2 != it1.end(); it2++) {
+		  output_g << it2.index1() << " " << it2.index2() << " " << *it2 << endl;
+	  }
+	}
+	output_g.close();
 	BOOST_LOG_TRIVIAL(info) << "Graph file generated: " << filename.str();
 
     // Writes output file with additional information about graph generation
@@ -579,9 +592,9 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
 		assert(count == n);
 		output_info << endl;
 	}
+	output_info.close();
 
     BOOST_LOG_TRIVIAL(info) << "Info file generated: " << filename.str() << "-info.txt";
-    BOOST_LOG_TRIVIAL(info) << "\nOutput files successfully generated: " << filename;
     return true;
 }
 
