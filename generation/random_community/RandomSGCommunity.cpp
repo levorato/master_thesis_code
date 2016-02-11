@@ -13,7 +13,6 @@
 #include <cfloat>
 #include <algorithm>
 #include <iterator>     // ostream_operator
-#include <random>
 #include <iterator>
 
 #include <boost/tokenizer.hpp>
@@ -36,6 +35,13 @@
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <boost/range/irange.hpp>
+#include <boost/range/algorithm_ext/push_back.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/nondet_random.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/linear_congruential.hpp>
 
 #include "RandomSGCommunity.h"
 
@@ -51,18 +57,24 @@ namespace fs = boost::filesystem;
 namespace mpi = boost::mpi;
 
 // http://stackoverflow.com/questions/6942273/get-random-element-from-container-c-stl
+typedef boost::minstd_rand RandomGeneratorType;
 template<typename Iter, typename RandomGenerator>
-Iter select_randomly(Iter start, Iter end, RandomGenerator& g) {
-    std::uniform_int_distribution<> dis(0, std::distance(start, end) - 1);
-    std::advance(start, dis(g));
+Iter select_randomly(Iter start, Iter end, RandomGenerator& rg) {
+	// we are supposing the random generator is already seeded here
+	rg.seed(boost::random::random_device()());
+	boost::uniform_int<> distribution(0, std::distance(start, end) - 1);
+	boost::variate_generator<RandomGenerator&, boost::uniform_int<> > LimitedInt(
+			rg, distribution);
+
+    std::advance(start, LimitedInt());
     return start;
 }
 
 template<typename Iter>
 Iter select_randomly(Iter start, Iter end) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    return select_randomly(start, end, gen);
+
+	static RandomGeneratorType rg;
+    return select_randomly(start, end, rg);
 }
 
 namespace generation {
@@ -80,7 +92,7 @@ RandomSGCommunity::~RandomSGCommunity() {
 }
 
 // Returns a random node of in-degree + out-degree < k
-long RandomSGCommunity::pick_random_vertex(vector<long>& indegree, vector<long>& outdegree, const long& k)
+long RandomSGCommunity::pick_random_vertex(std::vector<long>& indegree, std::vector<long>& outdegree, const long& k)
 {
     if(vertex_list.size() == 0) {
         // BOOST_LOG_TRIVIAL(info) << "Empty vertex list!!!\n";
@@ -101,43 +113,44 @@ long RandomSGCommunity::pick_random_vertex(vector<long>& indegree, vector<long>&
 
 // Returns a new random edge that connects 2 nodes of the same cluster
 // Each node must have in-degree + out-degree < k ???
-Edge RandomSGCommunity::pick_random_internal_edge(const long& N, const long& indegree, const long& outdegree, const long& k)
+Edge RandomSGCommunity::pick_random_internal_edge(const long& N, Matrix &matrix, std::vector<long>& indegree,
+		std::vector<long>& outdegree, const long& k)
 {
-    std::random_shuffle(vertex_list.begin(), vertex_list.end());
+	// std::list CANNOT be shuffled with random_shuffle!
+    // std::random_shuffle(vertex_list.begin(), vertex_list.end());
 	
     bool found = false;
     while(not found) {
         // Selects a random node of in-degree + out-degree < k
-        long a = pick_random_vertex(vertex_list, indegree, outdegree, k);
-        if(a < 0)  return None;
+        long a = pick_random_vertex(indegree, outdegree, k);
+        if(a < 0)  return Edge();
         // BOOST_LOG_TRIVIAL(info) << "1- Selected vertex " << a;
         // Selects a neighbour of a (= same cluster) with degree < k
         // BOOST_LOG_TRIVIAL(info) << "mycluster of " << a << " is " << mycluster[a];
-        vector<long> neighbour_list = cluster_node_list[mycluster[a]];
+        std::vector<long> neighbour_list = cluster_node_list[mycluster[a]];
 		std::random_shuffle(neighbour_list.begin(), neighbour_list.end());
-        for(vector<long>::iterator v_it = neighbour_list.begin(); v_it != neighbour_list.end(); v_it++)
+        for(std::vector<long>::iterator v_it = neighbour_list.begin(); v_it != neighbour_list.end(); v_it++)
 		{
 			long b = *v_it;
             if(b != a and matrix(a, b) == 0 and indegree[b] + outdegree[b] < k) {
-                found = true;
-                break;
+            	return Edge(a, b);
 			}
 		}
 	}
-    return Edge(a, b);
+    return Edge();
 }
 
 // Returns a new random edge that connects 2 nodes of different clusters
 // Each node must have degree < k
-Edge RandomSGCommunity::pick_random_external_edge(const long& N, const long& indegree, const long& outdegree, 
-		const long& k, const long& c)
+Edge RandomSGCommunity::pick_random_external_edge(const long& N, Matrix& matrix, std::vector<long>& indegree,
+		std::vector<long>& outdegree, const long& k, const long& c)
 {
     std::vector<long> cluster_list;
-	boost::push_back(cluster_list, boost::irange(0, c));
+	boost::push_back(cluster_list, boost::irange(0, (int)c));
     std::random_shuffle(cluster_list.begin(), cluster_list.end());
 
     // removes the vertices that have exceeded their maximum degrees
-	for(vector<long>::iterator v_it = vertex_list.begin(); v_it != vertex_list.end(); v_it++)
+	for(std::list<long>::iterator v_it = vertex_list.begin(); v_it != vertex_list.end(); v_it++)
 	{
 		long a = *v_it;
 		if(indegree[a] + outdegree[a] >= k) {
@@ -145,45 +158,34 @@ Edge RandomSGCommunity::pick_random_external_edge(const long& N, const long& ind
             // BOOST_LOG_TRIVIAL(info) << "removed node " << a;
 		}
 	}
-    std::random_shuffle(vertex_list.begin(), vertex_list.end());
-
-    bool found = false;
-    long i = 0;
-    while(i < vertex_list.size()) {
-        // Selects a random node of degree < k which belongs to vertex_list
-        if(vertex_list.size() == 0)  return None;
-        long a = vertex_list[i];
-        i++;
-        // BOOST_LOG_TRIVIAL(info) << 'selected node {0}\n'.format(str(a))
+	bool found = false;
+	while(not found) {
+		// Selects a random node of in-degree + out-degree < k which belongs to vertex_list
+		long a = pick_random_vertex(indegree, outdegree, k);
+		if(a < 0)  return Edge();
+    	// BOOST_LOG_TRIVIAL(info) << 'selected node {0}\n'.format(str(a))
         // Selects a vertex b, non-neighbour of a (different cluster) with degree < k
         // vertex b belongs to cluster c1 in cluster_list
 		for(long c1 = 0; c1 < cluster_node_list.size(); c1++)
 		{
 			if(c1 != mycluster[a]) {
-				vector<long> nodeList = cluster_node_list[c1];
+				std::vector<long> nodeList = cluster_node_list[c1];
 				std::random_shuffle(nodeList.begin(), nodeList.end());
-				for(vector<long>::iterator v_it = nodeList.begin(); v_it != nodeList.end(); v_it++)
+				for(std::vector<long>::iterator v_it = nodeList.begin(); v_it != nodeList.end(); v_it++)
 				{
 					long b = *v_it;
-					if(matrix(a, b) == 0 and (indegree[b] + outdegree[b] < k) {
-                        found = true;
-                        break;
+					if(matrix(a, b) == 0 and (indegree[b] + outdegree[b] < k)) {
+						return Edge(a, b);
 					}
 				}
 			}
-            if(found)  break;
 		}
-        if(found)  break;
     } // end while
-    if(not found) {
-        BOOST_LOG_TRIVIAL(info) << "b not found!";
-        return None;
-	} else {
-        return Edge(a, b);
-	}
+    BOOST_LOG_TRIVIAL(info) << "b not found!";
+    return Edge();
 }
 
-double RandomSGCommunity::CCObjectiveFunction(const long& N)
+double RandomSGCommunity::CCObjectiveFunction(const long& N, Matrix& matrix)
 {
     double positiveSum = double(0.0);
     double negativeSum = double(0.0);
@@ -208,73 +210,73 @@ double RandomSGCommunity::CCObjectiveFunction(const long& N)
 		}
 	}
 
-    BOOST_LOG_TRIVIAL(info) << 'CC calculated value. Obj = {0}\n'.format(str(positiveSum + negativeSum))
+    BOOST_LOG_TRIVIAL(info) << "CC calculated value. Obj = " << (positiveSum + negativeSum);
     return positiveSum + negativeSum;
 }
 
-void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus) 
+bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
+		const double& p_in, const double& p_minus, const double& p_plus)
 {
     // Variables used in graph generation
     long N = n * c;
     BOOST_LOG_TRIVIAL(info) << "Generating random graph with " << N << " vertices...";
     bool success = false;
-
-    // measure elapsed time during graph generation
-    start = time.time()
+    long internal_edge_num = 0;
+    long external_edge_num = 0;
+    long edge_count = 0;
+    // Graph adjacency matrix (with dimensions N x N)
+    Matrix matrix(N, N);
 
     while(not success)
 	{
         // Array that controls to which cluster a vertex belongs (size = N)
-		mycluster = vector<long>(N, 0);
-        // List of nodes inside a cluster
-        //cluster_node_list = [[] for x in xrange(c)]
-        // Graph adjacency matrix (with dimensions N x N)
-        // Creates a list containing N lists initialized to 0 (index begins with 0)
-        matrix = std::vector< std::vector< std::pair<long, char> > >(N);
+		mycluster = std::vector<long>(N, 0);
+        // clusterNodeList: List of nodes inside a cluster
         // Arrays that control the degree of each vertex
-        indegree = vector<long>(N, 0);
-        outdegree = vector<long>(N, 0);
+        std::vector<long> indegree = std::vector<long>(N, 0);
+        std::vector<long> outdegree = std::vector<long>(N, 0);
 
         // builds a list with all the N vertices of the graph
-		std::list<long> vertex_list;
-		boost::push_back(vertex_list, boost::irange(0, N));
+		std::vector<long> vertex_list;
+		boost::push_back(vertex_list, boost::irange(0, (int)N));
+		std::random_shuffle(vertex_list.begin(), vertex_list.end());
+		BOOST_LOG_TRIVIAL(info) << "Shuffled list with " << vertex_list.size() << " elements";
 		
         // 1- randomly chooses n vertices to insert in each of the c clusters
         BOOST_LOG_TRIVIAL(info) << "Step 1: randomly chooses n vertices to insert in each of the c clusters...";
+        long vCount = 0;
         for(long cluster_number = 0; cluster_number < c; cluster_number++) {
-			for(long i = 0; i < n; i++) {
+        	cluster_node_list.push_back(std::vector<long>());
+			for(long i = 0; i < n; i++, vCount++) {
                 // randomly removes a vertex from the vertex_list
-                long v = *select_randomly(vertex_list.begin(), vertex_list.end());
-                vertex_list.remove(v);
+                long v = vertex_list[vCount];
                 mycluster[v] = cluster_number;
                 cluster_node_list[cluster_number].push_back(v);
 			}
 		}
-        assert(vertex_list.size() == 0 && "All vertices must belong to a cluster");
+        assert(vertex_list.size() == vCount && "All vertices must belong to a cluster");
 
         // assertion tests / sanity check
-        cluster_count = vector<long>(c, 0);
+        std::vector<long> cluster_count = std::vector<long>(c, 0);
         for(long v = 0; v < N; v++) {
             cluster_count[mycluster[v]] += 1;
 		}
         for(long x = 0; x < c; x++) {
             assert(cluster_count[x] == n && "There must be n vertices in each cluster");
-            assert(len(cluster_node_list[x]) == n && "There must be n vertices in each cluster");
+            assert(cluster_node_list[x].size() == n && "There must be n vertices in each cluster");
 		}
-        assert(vertex_list.size() == 0 && "Vertex list must be empty after cluster-vertex distribution");
 
         // 2- uses probability p_in to generate k edges (initially positive) connecting each of the vertices
         // p_in % of the edges connect nodes of the same cluster
         BOOST_LOG_TRIVIAL(info) << "Step 2: uses probability p_in to generate k edges (initially positive) connecting each of the vertices...";
         long total_edges = long(std::ceil((c * n * k) / double(2.0)));
-        long internal_edge_num = long(std::ceil(total_edges * p_in));
-        long external_edge_num = total_edges - internal_edge_num;
+        internal_edge_num = long(std::ceil(total_edges * p_in));
+        external_edge_num = total_edges - internal_edge_num;
         BOOST_LOG_TRIVIAL(info) << "Number of total edges of the graph is " << total_edges;
         BOOST_LOG_TRIVIAL(info) << "Number of expected internal edges of the graph is " << internal_edge_num;
         BOOST_LOG_TRIVIAL(info) << "Number of expected external edges of the graph is " << external_edge_num;
         assert((internal_edge_num + external_edge_num == total_edges) && "Sum of internal and external edges do not match");
-        boost::push_back(vertex_list, boost::irange(0, N));
-        std::random_shuffle(vertex_list.begin(), vertex_list.end());
+        boost::push_back(vertex_list, boost::irange(0, (int)N));
 
         // Guarantees that each node has exactly k edges (TODO: in-degree + out-degree = k ???)
         // 2.1- Creates the internal edges (within same cluster), initially positive
@@ -294,10 +296,10 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
         // for each node, generate an internal cluster edge
         long int_count = 0;
         // each cluster will get (internal_edge_num) / c internal edges
-        long edge_count = int(math.floor((internal_edge_num) / c));
+        edge_count = (long)floor((internal_edge_num) / double(c));
         long rest = internal_edge_num - (c * edge_count);
         while(int_count < c * edge_count) {
-            inserted = False
+            bool inserted = false;
             BOOST_LOG_TRIVIAL(info) << "there are " << int_count << " internal edges so far";
             for(long cluster = 0; cluster < c; cluster++) {
                 BOOST_LOG_TRIVIAL(info) << "must generate " << edge_count << " internal edges for cluster " << cluster;
@@ -306,15 +308,15 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
                 int percentage = 0;
                 while(i < edge_count) {
 					std::vector<long> nodeList = cluster_node_list[cluster];
-                    std::shuffle(nodeList.begin(), nodeList.end());
+                    std::random_shuffle(nodeList.begin(), nodeList.end());
 					for(std::vector<long>::iterator v_it = nodeList.begin(); v_it != nodeList.end(); v_it++) {
-						node = *v_it;
+						long node = *v_it;
                         if(i >= edge_count)  break;
                         if(indegree[node] + outdegree[node] < k) {
                             // selects another node in the same cluster
                             // BOOST_LOG_TRIVIAL(info) << 'selected node {0} with outdegree = {1}\n'.format(str(node), str(outdegree[node]))
                             std::vector<long> neighbour_list = cluster_node_list[mycluster[node]];
-							std::shuffle(neighbour_list.begin(), neighbour_list.end());
+							std::random_shuffle(neighbour_list.begin(), neighbour_list.end());
 							for(std::vector<long>::iterator vb_it = neighbour_list.begin(); vb_it != neighbour_list.end(); vb_it++) {
 								long b = *vb_it;
                                 if(indegree[node] + outdegree[node] >= k)  break;
@@ -334,7 +336,7 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
 							}
                         }
                         // display percentage of work completed
-                        threshold = int(math.floor(edge_count / 10.0));
+                        int threshold = int(floor(edge_count / double(10.0)));
                         percentage = int(std::ceil(100 * (double(i) / edge_count)));
                         if(i % threshold < EPS and percentage != previous_total) {
                             BOOST_LOG_TRIVIAL(info) << percentage << " % ";
@@ -355,14 +357,14 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
         for(long node = 0; node < N; node++) {
             while(int_count < internal_edge_num) {
                 // gets a vertex with indegree + outdegree < k
-                executed = false;
+                bool executed = false;
 				std::vector<long> nodeList = cluster_node_list[mycluster[node]];
 				for(std::vector<long>::iterator v_it = nodeList.begin(); v_it != nodeList.end(); v_it++) {
 					long v = *v_it;
 					if(int_count >= internal_edge_num)  break;
                     if(matrix(node, v) == 0 and (indegree[v] + outdegree[v] < k)) {
                         // creates an internal edge (node,v)
-                        matrix(node, v) = 1; // round(random.uniform(EPS, 1), 4)
+                        //matrix(node, v) = 1; // round(random.uniform(EPS, 1), 4)
                         outdegree[node] += 1;
                         indegree[v] += 1;
                         int_count += 1;
@@ -386,19 +388,19 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
         int percentage = 0;
         for(long i = 0; i < external_edge_num; i++) {
             // Randomly picks a pair of nodes that do not belong to the same cluster
-            Edge e = pick_random_external_edge(N, indegree, outdegree, k, c);
-            if e is None: {
-                BOOST_LOG_TRIVIAL(warn) << "Warn: no more external edge found.";
+            Edge e = pick_random_external_edge(N, matrix, indegree, outdegree, k, c);
+            if(e.x < 0) {
+                BOOST_LOG_TRIVIAL(info) << "Warn: no more external edge found.";
                 break;
 			}
             // edges are directed
             // TODO: generate edges' weight randomly in the [0, 1] interval
-            matrix[e.x, e.y] = -1; // round(random.uniform(-1, -EPS), 4)
+            //matrix(e.x, e.y) = -1; // round(random.uniform(-1, -EPS), 4)
             outdegree[e.x] += 1;
             indegree[e.y] += 1;
             ext_count += 1;
 
-            threshold = int(std::floor(external_edge_num / double(10.0)));
+            int threshold = int(std::floor(external_edge_num / double(10.0)));
             percentage = int(std::ceil(100 * (double(ext_count) / external_edge_num)));
             if(ext_count % threshold < EPS and percentage != previous_total) {
                 BOOST_LOG_TRIVIAL(info) << percentage << " % ";
@@ -406,18 +408,17 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
 			}
 		}
 
-        BOOST_LOG_TRIVIAL(info) << " completed."
+        BOOST_LOG_TRIVIAL(info) << " completed.";
         BOOST_LOG_TRIVIAL(info) << "Generated " << ext_count << " random external edges.";
         external_edge_num = ext_count;
 
         BOOST_LOG_TRIVIAL(info) << "Now there are " << int_count << " internal edges and " << ext_count << " external edges";
-        // internal_edge_num = count
-        // external_edge_num = total_edges - internal_edge_num
+        internal_edge_num = int_count;
+        external_edge_num = total_edges - internal_edge_num;
 
         // DISABLED - restarts graph generation until the correct number of edges is obtained
         success = true;
 	} // end while not success
-
     BOOST_LOG_TRIVIAL(info) << "Number of internal edges of the graph is " << internal_edge_num;
     BOOST_LOG_TRIVIAL(info) << "Number of external edges of the graph is " << external_edge_num;
 
@@ -447,16 +448,16 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
         long negative_edges_in_cluster = 0;
 		// BOOST_LOG_TRIVIAL(info) << "cluster {0} => ".format(c1),
         std::vector<long> nodeList1 = cluster_node_list[c1];
-		std::shuffle(nodeList1.begin(), nodeList1.end());
+		std::random_shuffle(nodeList1.begin(), nodeList1.end());
 		std::vector<long> nodeList2 = cluster_node_list[c1];
-		std::shuffle(nodeList2.begin(), nodeList2.end());
+		std::random_shuffle(nodeList2.begin(), nodeList2.end());
 		for(std::vector<long>::iterator v1_it = nodeList1.begin(); v1_it != nodeList1.end(); v1_it++) {
 			long v1 = *v1_it;
             for(std::vector<long>::iterator v2_it = nodeList2.begin(); v2_it != nodeList2.end(); v2_it++) {
 				long v2 = *v2_it;
                 if(count == 0)  break;
-                total_done = neg_links_num - count;
-                threshold = int(math.floor(neg_links_num / double(10.0)));
+                long total_done = neg_links_num - count;
+                int threshold = int(floor(neg_links_num / double(10.0)));
                 percentage = int(std::ceil(100 * (double(total_done) / neg_links_num)));
                 // BOOST_LOG_TRIVIAL(info) << str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
                 if(total_done % threshold < EPS and percentage != previous_total) {
@@ -464,7 +465,7 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
                     previous_total = percentage;
 				}
                 if(matrix(v1, v2) > 0) {
-                    matrix(v1, v2) *= -1;
+                    //matrix(v1, v2) *= -1;
                     count -= 1;
                     negative_edges_in_cluster += 1;
 				}
@@ -488,13 +489,13 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
     percentage = 0;
     count = pos_links_num;
 	std::vector<long> conj1, conj2;
-	boost::push_back(conj1, boost::irange(0, c));
+	boost::push_back(conj1, boost::irange(0, (int)c));
     std::random_shuffle(conj1.begin(), conj1.end());
-    boost::push_back(conj2, boost::irange(0, c));
+    boost::push_back(conj2, boost::irange(0, (int)c));
     std::random_shuffle(conj2.begin(), conj2.end());
     // shuffles the vertices in each cluster
     for(long c1 = 0; c1 < c; c1++) {
-        std::shuffle(cluster_node_list[c1].begin(), cluster_node_list[c1].end());
+        std::random_shuffle(cluster_node_list[c1].begin(), cluster_node_list[c1].end());
 	}
 
 	for(std::vector<long>::iterator c1_it = conj1.begin(); c1_it != conj1.end(); c1_it++) {
@@ -509,15 +510,15 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
 					for(std::vector<long>::iterator v2_it = nodeList2.begin(); v2_it != nodeList2.end(); v2_it++) {
 						long v2 = *v2_it;
                         if(v1 != v2 and matrix(v1, v2) < 0) {
-                            total_done = pos_links_num - count;
-                            threshold = int(math.floor(pos_links_num / double(10.0)));
+                            long total_done = pos_links_num - count;
+                            int threshold = int(floor(pos_links_num / double(10.0)));
                             percentage = int(std::ceil(100 * (double(total_done) / pos_links_num)));
                             if(total_done % threshold < EPS and percentage != previous_total) {
                                 BOOST_LOG_TRIVIAL(info) << percentage << " % ";
                                 previous_total = percentage;
 							}
                             if(count > 0) {
-                                matrix(v1, v2) *= -1;
+                                //matrix(v1, v2) *= -1;
                                 count -= 1;
 							}
 						}
@@ -531,278 +532,80 @@ void RandomSGCommunity::SG(c, n, k, p_in, p_minus, p_plus)
         if(count == 0)  break;
 	}
     BOOST_LOG_TRIVIAL(info) << " completed.";
-    assert(count == 0 && "4. There must be (c x n x k x (1 - p_in) x p+) positive links outside communities");
+    BOOST_LOG_TRIVIAL(info) << "There must be " << pos_links_num << " positive links outside communities.";
+    BOOST_LOG_TRIVIAL(info) << "There are " << (pos_links_num - count) << " positive links outside communities.";
+    //assert(count == 0 && "4. There must be (c x n x k x (1 - p_in) x p+) positive links outside communities");
 
     // Writes output file in XPRESS Mosel format (.mos)
     // --------------------------------------------------
     // file_content[div_a] += str(vertex_a-size*div_a)+"\t"+str(vertex_b-size*div_a)+"\t"+str(value)+"\n"
     // Stores graph file in output folder
     // Vertex numbers start at 1
-    filename_prefix = "c" + str(c) + "n" + str(n) + "k" + str(k) + "pin" + str(p_in) + "p-" + str(p_minus) + "p+" + str(
-        p_plus)
-    filename = filename_prefix + ".g"
-    directory = "output"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    stringstream filename;
+    filename << "c" << c << "n" << n << "k" << k << "pin" << p_in << "p-" << p_minus << "p+" << p_plus << ".g";
+	// output folder
+    string directory = "output";
+	boost::filesystem::path outputPath(directory);
+	boost::system::error_code returnedError;
+	boost::filesystem::create_directories( outputPath, returnedError );
     BOOST_LOG_TRIVIAL(info) << "Saving output graph file...";
 
-    // write the matrix to matrix market file format
-    scipy.io.mmwrite(directory + "/" + filename, matrix)
+    // TODO insert code to write the graph edges
 
-    BOOST_LOG_TRIVIAL(info) << "Graph file generated: " << filename;
-    end = time.time()
-    elapsed = end - start
-    BOOST_LOG_TRIVIAL(info) << "Graph generation took " << elapsed << " seconds.";
+	BOOST_LOG_TRIVIAL(info) << "Graph file generated: " << filename.str();
 
     // Writes output file with additional information about graph generation
-    double imbalance = CCObjectiveFunction(N);
-    with open(directory + "/" + filename_prefix + "-info.txt", "w") as t_file:
-        t_file.write('n: {0} vertices per cluster\r\n'.format(str(n)))
-        t_file.write('c (clusters): {0}\r\n'.format(str(c)))
-        t_file.write('N: {0} total vertices\r\n'.format(str(N)))
-        t_file.write('I(P) = {0}\r\n'.format(str(imbalance)))
-        for cl in xrange(c):
-            t_file.write('Cluster {0}: '.format(str(cl)))
-            count = 0
-            for node in cluster_node_list[cl]:
-                t_file.write('{0} '.format(str(node)))
-                count += 1
-            assert(count == n);
-            t_file.write('\r\n')
+    double imbalance = CCObjectiveFunction(N, matrix);
+    stringstream partialFilenameN_ss;
+    partialFilenameN_ss << directory << "/" << filename.str() << "-info.txt";
+    ofstream output_info(partialFilenameN_ss.str().c_str(), ios::out | ios::trunc);
+	if (!output_info.is_open()){
+		BOOST_LOG_TRIVIAL(fatal) << "Error opening output file " << partialFilenameN_ss.str();
+		return false;
+	}
+	output_info << "n: " << n << " vertices per cluster" << endl;
+	output_info << "c (clusters): " << c << endl;
+	output_info << "N: " << N << " total vertices" << endl;
+	output_info << "I(P) = " << imbalance << endl;
+	for(long cl = 0; cl < c; cl++) {
+		output_info << "Cluster " << cl << ": ";
+		long count = 0;
+		std::vector<long> nodeList = cluster_node_list[cl];
+		for(std::vector<long>::iterator v1_it = nodeList.begin(); v1_it != nodeList.end(); v1_it++) {
+			long node = *v1_it;
+			output_info << node << " ";
+			count++;
+		}
+		assert(count == n);
+		output_info << endl;
+	}
 
-    BOOST_LOG_TRIVIAL(info) << "Info file generated: " << filename_prefix << "-info.txt";
-
+    BOOST_LOG_TRIVIAL(info) << "Info file generated: " << filename.str() << "-info.txt";
     BOOST_LOG_TRIVIAL(info) << "\nOutput files successfully generated: " << filename;
+    return true;
 }
 
 bool RandomSGCommunity::generateRandomSG(const long& c, const long& n, const long& k,
 		const double& p_in, const double& p_minus, const double& p_plus,
 		const unsigned int &myRank, const unsigned int &numProcessors) {
-	BOOST_LOG_TRIVIAL(info) << "Processing folder " << folder;
 	
-	// read the files in the specified folder
-	fs::path inputDir(folder);
-	fs::directory_iterator end_iter;
-	if (!fs::exists(inputDir) || !fs::is_directory(inputDir)) {
-		BOOST_LOG_TRIVIAL(fatal) << "Input file directory not found. Exiting." << endl;
-		return false;
-	}
-	std::vector<fs::path> fileList;
-	for( fs::directory_iterator dir_iter(inputDir) ; dir_iter != end_iter ; ++dir_iter) {
-		string ext = dir_iter->path().extension().string();
-		string filename = dir_iter->path().filename().string();
-		boost::algorithm::to_lower(filename);
-		if ((fs::is_regular_file(dir_iter->status())) &&
-				filename == filter) {
-			fs::path filePath = *dir_iter;
-			fileList.push_back(filePath);
-		}
-	}
-	BOOST_LOG_TRIVIAL(info) << "Found " << fileList.size() << " file(s).";
-	// output folder
-	stringstream path_ss;
-	path_ss << folder << boost::filesystem::path::preferred_separator << "unweightedSG";
-	boost::filesystem::path outputPath(path_ss.str());
-	boost::system::error_code returnedError;
-	boost::filesystem::create_directories( outputPath, returnedError );
-	
-	// read the movielens dataset voting file from CSV
-	for(unsigned int i = 0; i < fileList.size(); i++) {
-		boost::timer::cpu_timer timer;
-		boost::timer::cpu_times start_time, end_time;
-		double timeSpent = 0.0;
-		// measure conversion execution time
-		timer.start();
-		start_time = timer.elapsed();
+	boost::timer::cpu_timer timer;
+	boost::timer::cpu_times start_time, end_time;
+	double timeSpent = 0.0;
+	// measure conversion execution time
+	timer.start();
+	start_time = timer.elapsed();
 
-		fs::path filePath = fileList.at(i);
-		string filename = filePath.parent_path().filename().string();
-		stringstream file_ss;
-		file_ss << path_ss.str() << boost::filesystem::path::preferred_separator << filename << ".g";
-
-		long max_user_id = 0, max_movie_id = 0;
-		readMovieLensCSVFile(filePath.string(), max_user_id, max_movie_id);
-		// process the dataset file and generate signed graph
-		if(generateSGFromMovieRatings(max_user_id, max_movie_id, file_ss.str(), myRank, numProcessors)) {
-			if(myRank == 0) {
-				BOOST_LOG_TRIVIAL(info) << "\nCreated output signed graph file " << file_ss.str();
-			}
-			// Stops the timer and stores the elapsed time
-			timer.stop();
-			end_time = timer.elapsed();
-			timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
-			BOOST_LOG_TRIVIAL(info) << "Graph generation took " << timeSpent << " seconds.";
-		} else {
-			BOOST_LOG_TRIVIAL(fatal) << "Error generating signed graph file " << file_ss.str() << endl;
-		}
+	if(SG(c, n, k, p_in, p_minus, p_plus)) {
+		// Stops the timer and stores the elapsed time
+		timer.stop();
+		end_time = timer.elapsed();
+		timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+		BOOST_LOG_TRIVIAL(info) << "Graph generation took " << timeSpent << " seconds.";
+	} else {
+		BOOST_LOG_TRIVIAL(fatal) << "Error generating signed graph file." << endl;
 	}
 	BOOST_LOG_TRIVIAL(info) << "Done.";
-	return true;
-}
-
-bool RandomSGCommunity::generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
-		const string& outputFileName, const unsigned int &myRank, const unsigned int &numProcessors) {
-	// the signed graph representing the voting in movie lens dataset
-	int previous_total = -1;
-	int percentage = 0;
-
-	// compressed_matrix<long> common_rating_count(max_user_id, max_user_id);
-	// compressed_matrix<long> common_similar_rating_count(max_user_id, max_user_id);
-	BOOST_LOG_TRIVIAL(info) << "Processing graph with " << max_user_id << " users and " << max_movie_id << " movies...";
-
-	// Parallel processing with MPI *************************************
-	// Splits the processing in (n / numProcessors) chunks,
-	// to be consumed by numProcessors processes
-	long MPIChunkSize = long(std::floor(double(max_user_id) / numProcessors));
-	long MPIRemainingVertices = max_user_id % numProcessors;
-	long initialProcessorUserIndex = myRank * MPIChunkSize;
-	long finalProcessorUserIndex = (myRank + 1) * MPIChunkSize - 1;
-	if(MPIRemainingVertices > 0 and myRank == numProcessors - 1) {
-		finalProcessorUserIndex = max_user_id - 1;
-		MPIChunkSize = finalProcessorUserIndex - initialProcessorUserIndex + 1;
-	}
-	BOOST_LOG_TRIVIAL(info) << "This is process " << myRank << ". Will process user range [" << initialProcessorUserIndex << ", " << finalProcessorUserIndex << "]";
-
-	// Begin dividing the MPI Chunk into smaller chunks for local processing
-	long chunkSize = long(std::floor(double(MPIChunkSize) / NUMBER_OF_CHUNKS));
-	long remainingVertices = MPIChunkSize % NUMBER_OF_CHUNKS;
-	std::ostringstream out;
-	long edgeCount = 0;
-	for(int i = 0; i < NUMBER_OF_CHUNKS; i++) {
-		// will process only the range (initialUserIndex <= user_a <= finalUserIndex)
-		long initialUserIndex = initialProcessorUserIndex + i * chunkSize;
-		long finalUserIndex = initialProcessorUserIndex + (i + 1) * chunkSize - 1;
-		if(remainingVertices > 0 and i == NUMBER_OF_CHUNKS - 1) {
-			finalUserIndex = finalProcessorUserIndex;
-			chunkSize = finalUserIndex - initialUserIndex + 1;
-		}
-		BOOST_LOG_TRIVIAL(info) << "\nProcessing user range [" << initialUserIndex << ", " << finalUserIndex << "]";
-		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_rating_count(chunkSize, max_user_id);;
-		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_similar_rating_count(chunkSize, max_user_id);
-
-		BOOST_LOG_TRIVIAL(info) << "Begin movie list traversal (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")...";
-		cout << "\nBegin movie list traversal (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
-		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
-			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
-			// cout << movie_id << " with size " << ratingList.size() << endl;
-			for(long x = 0; x < ratingList.size(); x++) {
-				std::pair<long, char> user_rating_x = ratingList[x];
-				long user_a = user_rating_x.first;
-				char rating_a = user_rating_x.second;
-				if(initialUserIndex <= user_a and user_a <= finalUserIndex) {
-					for(long y = x + 1; y < ratingList.size(); y++) {
-						std::pair<long, char> user_rating_y = ratingList[y];
-						long user_b = user_rating_y.first;
-						char rating_b = user_rating_y.second;
-						if(user_a != user_b) {
-							common_rating_count(user_a - initialUserIndex, user_b) += 1;
-							if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE)
-									or (rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE)
-									or (rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE)) {
-								// users A and B have the same opinion about the movie
-								common_similar_rating_count(user_a - initialUserIndex, user_b) += 1;
-							}
-						}
-					}
-				}
-			}
-			// display status of processing done
-			int threshold = int(std::floor(max_movie_id / 10.0));
-			int percentage = int(std::ceil(100 * (double(movie_id) / max_movie_id)));
-			if((movie_id % threshold < EPS) and (percentage != previous_total)) {
-				cout << percentage << " % ";
-				cout.flush();
-				BOOST_LOG_TRIVIAL(info) << percentage << " % ";
-				previous_total = percentage;
-			}
-		}
-
-		BOOST_LOG_TRIVIAL(info) << "\nBegin edge generation (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")...";
-		cout << "\nBegin edge generation (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
-		long count = (finalUserIndex - initialUserIndex + 1) * max_user_id;
-		previous_total = -1;
-		percentage = 0;
-		for(long user_a = initialUserIndex; user_a <= finalUserIndex; user_a++) {
-			for(long user_b = 0; user_b < max_user_id; user_b++) {
-				if(user_a != user_b) {
-					if(common_rating_count(user_a - initialUserIndex, user_b) > 0) {
-						double common_similar_rating_ratio = double(common_similar_rating_count(user_a - initialUserIndex, user_b)) /
-								common_rating_count(user_a - initialUserIndex, user_b);
-						if(common_similar_rating_ratio >= POS_EDGE_PERC) {
-							// SG[user_a, user_b] = 1;
-							out << user_a << " " << user_b << " 1\n";
-							edgeCount++;
-						}
-						else if(common_similar_rating_ratio <= NEG_EDGE_PERC) {
-							// SG[user_a, user_b] = -1;
-							out << user_a << " " << user_b << " -1\n";
-							edgeCount++;
-						}
-					}
-				}
-				// display status of processing done
-				int total_done = (user_a - initialUserIndex) * max_user_id + user_b;
-				int threshold = int(std::floor(count / 10.0));
-				int percentage = int(std::ceil(100 * (double(total_done) / count)));
-				// BOOST_LOG_TRIVIAL(info) << str(total_done) + " % " + str(threshold) + " = " + str(total_done % threshold)
-				if((total_done % threshold < EPS) and (percentage != previous_total)) {
-					cout << percentage << " % ";
-					cout.flush();
-					BOOST_LOG_TRIVIAL(info) << percentage << " % ";
-					previous_total = percentage;
-				}
-			}
-		}
-	}
-
-	// write the signed graph to output file
-	stringstream partialFilename_ss;
-	partialFilename_ss << outputFileName << ".part" << myRank;
-	ofstream output_file(partialFilename_ss.str().c_str(), ios::out | ios::trunc);
-	if(!output_file) {
-		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << outputFileName;
-		return false;
-	}
-	if(myRank == 0) {
-		output_file << max_user_id << "\t" << edgeCount << "\r\n";
-	}
-	output_file << out.str();
-	// Close the file
-	output_file.close();
-
-	boost::mpi::communicator world;
-	if(myRank == 0) {
-		// wait for the message 'done' from all workers
-		for(int i = 1; i < numProcessors; i++) {
-			InputMessage imsg;
-			boost::mpi::status msg = world.recv(boost::mpi::any_source, InputMessage::DONE_MSG_TAG, imsg);
-		}
-		// merge all the output files into a full graph output file
-		ofstream output_full_file(outputFileName.c_str(), ios::out | ios::trunc);
-		if(!output_full_file) {
-			BOOST_LOG_TRIVIAL(fatal) << "Cannot open full output result file to: " << outputFileName;
-			return false;
-		}
-		for(int i = 0; i < numProcessors; i++) {
-			stringstream partialFilenameN_ss;
-			partialFilenameN_ss << outputFileName << ".part" << i;
-			ifstream in(partialFilenameN_ss.str().c_str());
-			if (!in.is_open()){
-				BOOST_LOG_TRIVIAL(fatal) << "Error opening output file number " << i;
-				return false;
-			}
-			string fileContents = get_file_contents(partialFilenameN_ss.str().c_str());
-			output_full_file << fileContents;
-		}
-		output_full_file.close();
-
-	} else {
-		// send a message to the leader process to inform that the task is done
-		BOOST_LOG_TRIVIAL(info) << "Sending done message to leader...";
-		InputMessage imsg;
-		world.send(0, InputMessage::DONE_MSG_TAG, imsg);
-	}
-
 	return true;
 }
 

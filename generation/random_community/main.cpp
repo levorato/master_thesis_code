@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
         ("c", value<long>(&c), "<number of clusters>")
 		("n", value<long>(&n), "<number of vertices in each cluster>")
 		("k", value<long>(&k), "<degree of each vertex>")
-		("pin", value<double>(&p_in), "<probability of each node connecting other nodes in the same community>")
+		("p_in", value<double>(&p_in), "<probability of each node connecting other nodes in the same community>")
         ("p_minus", value<double>(&p_minus), "<probability of negative links appearing within communities>")
 		("p_plus", value<double>(&p_plus), "<probability of of positive links appearing between communities>")
         ;
@@ -139,12 +139,12 @@ int main(int argc, char* argv[])
 		}
 
 		cout << "Generating random signed graph with community structure with parameters c = " << c << ", n = " 
-			<< n << ", k = " << k << ", pin = " << pin << ", p_minus = " << p_minus << ", p_plus = " << p_plus << endl;
+			<< n << ", k = " << k << ", pin = " << p_in << ", p_minus = " << p_minus << ", p_plus = " << p_plus << endl;
 		BOOST_LOG_TRIVIAL(info) << "Generating random signed graph with community structure with parameters c = " << c << ", n = " 
-			<< n << ", k = " << k << ", pin = " << pin << ", p_minus = " << p_minus << ", p_plus = " << p_plus;
+			<< n << ", k = " << k << ", pin = " << p_in << ", p_minus = " << p_minus << ", p_plus = " << p_plus;
         
 		RandomSGCommunity generator;
-		generator.generateRandomSG(c, n, k, pin, p_minus, p_plus, world.rank(), world.size());
+		generator.generateRandomSG(c, n, k, p_in, p_minus, p_plus, world.rank(), world.size());
 
 		// ------------------ M P I    T E R M I N A T I O N ---------------------
 		if(world.size() > 1) {
