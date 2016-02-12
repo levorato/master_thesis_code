@@ -43,10 +43,10 @@ public:
 	~RandomSGCommunity();
 	
 	bool SG(const long& c, const long& n, const long& k,
-				const double& p_in, const double& p_minus, const double& p_plus);
+				const double& p_in, const double& p_minus, const double& p_plus, bool directed);
 	bool generateRandomSG(const long& c, const long& n, const long& k,
 			const double& p_in, const double& p_minus, const double& p_plus,
-			const unsigned int &myRank, const unsigned int &numProcessors);
+			const unsigned int &myRank, const unsigned int &numProcessors, bool directed);
 	
 private:
 	std::vector<long> mycluster;

@@ -13,7 +13,6 @@
 #include <cfloat>
 #include <algorithm>
 #include <iterator>     // ostream_operator
-#include <iterator>
 
 #include <boost/tokenizer.hpp>
 #include <boost/log/trivial.hpp>
@@ -215,7 +214,7 @@ double RandomSGCommunity::CCObjectiveFunction(const long& N, Matrix& matrix)
 }
 
 bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
-		const double& p_in, const double& p_minus, const double& p_plus)
+		const double& p_in, const double& p_minus, const double& p_plus, bool directed)
 {
     // Variables used in graph generation
     long N = n * c;
@@ -325,6 +324,11 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
                                     matrix(node, b) = 1; // round(random.uniform(EPS, 1), 4)
                                     outdegree[node]++;
                                     indegree[b]++;
+                                    if(not directed) {
+                                    	matrix(b, node) = 1; // round(random.uniform(EPS, 1), 4)
+										//outdegree[b]++;
+										//indegree[node]++;
+                                    }
                                     if((indegree[b] + outdegree[b] > k) or (indegree[node] + outdegree[node] > k)) {
                                         BOOST_LOG_TRIVIAL(error) << "violation!";
 									}
@@ -367,6 +371,11 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
                         matrix(node, v) = 1; // round(random.uniform(EPS, 1), 4)
                         outdegree[node] += 1;
                         indegree[v] += 1;
+                        if(not directed) {
+							matrix(v, node) = 1; // round(random.uniform(EPS, 1), 4)
+							//outdegree[v]++;
+							//indegree[node]++;
+						}
                         int_count += 1;
                         BOOST_LOG_TRIVIAL(info) << "Added one more.";
                         executed = true;
@@ -398,6 +407,11 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
             matrix(e.x, e.y) = -1; // round(random.uniform(-1, -EPS), 4)
             outdegree[e.x] += 1;
             indegree[e.y] += 1;
+            if(not directed) {
+				matrix(e.y, e.x) = 1;
+				//outdegree[e.y]++;
+				//indegree[e.x]++;
+			}
             ext_count += 1;
 
             int threshold = int(std::floor(external_edge_num / double(10.0)));
@@ -466,6 +480,9 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
 				}
                 if(matrix(v1, v2) > 0) {
                     matrix(v1, v2) *= -1;
+                    if(not directed) {
+                    	matrix(v2, v1) *= -1;
+                    }
                     count -= 1;
                     negative_edges_in_cluster += 1;
 				}
@@ -519,6 +536,9 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
 							}
                             if(count > 0) {
                                 matrix(v1, v2) *= -1;
+                                if(not directed) {
+									matrix(v2, v1) *= -1;
+								}
                                 count -= 1;
 							}
 						}
@@ -534,13 +554,16 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
     BOOST_LOG_TRIVIAL(info) << " completed.";
     assert(count == 0 && "4. There must be (c x n x k x (1 - p_in) x p+) positive links outside communities");
 
-    // Writes output file in XPRESS Mosel format (.mos)
+    // Writes output file in .g format
     // --------------------------------------------------
-    // file_content[div_a] += str(vertex_a-size*div_a)+"\t"+str(vertex_b-size*div_a)+"\t"+str(value)+"\n"
-    // Stores graph file in output folder
-    // Vertex numbers start at 1
     stringstream filename;
-    filename << "c" << c << "n" << n << "k" << k << "pin" << p_in << "p-" << p_minus << "p+" << p_plus << ".g";
+    filename << "c" << c << "n" << n << "k" << k << "pin" << p_in << "p-" << p_minus << "p+" << p_plus;
+    if(directed) {
+    	filename << "-directed";
+    } else {
+    	filename << "-undirected";
+    }
+    filename << ".g";
 	// output folder
     string directory = "output";
 	boost::filesystem::path outputPath(directory);
@@ -576,6 +599,11 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
 		BOOST_LOG_TRIVIAL(fatal) << "Error opening output file " << partialFilenameN_ss.str();
 		return false;
 	}
+	if(directed) {
+		output_info << "Graph type: directed" << endl;
+	} else {
+		output_info << "Graph type: undirected" << endl;
+	}
 	output_info << "n: " << n << " vertices per cluster" << endl;
 	output_info << "c (clusters): " << c << endl;
 	output_info << "N: " << N << " total vertices" << endl;
@@ -600,7 +628,7 @@ bool RandomSGCommunity::SG(const long& c, const long& n, const long& k,
 
 bool RandomSGCommunity::generateRandomSG(const long& c, const long& n, const long& k,
 		const double& p_in, const double& p_minus, const double& p_plus,
-		const unsigned int &myRank, const unsigned int &numProcessors) {
+		const unsigned int &myRank, const unsigned int &numProcessors, bool directed) {
 	
 	boost::timer::cpu_timer timer;
 	boost::timer::cpu_times start_time, end_time;
@@ -609,7 +637,7 @@ bool RandomSGCommunity::generateRandomSG(const long& c, const long& n, const lon
 	timer.start();
 	start_time = timer.elapsed();
 
-	if(SG(c, n, k, p_in, p_minus, p_plus)) {
+	if(SG(c, n, k, p_in, p_minus, p_plus, directed)) {
 		// Stops the timer and stores the elapsed time
 		timer.stop();
 		end_time = timer.elapsed();

@@ -98,6 +98,7 @@ int main(int argc, char* argv[])
 
         long c = 0, n = 0, k = 0;
 		double p_in = -1.0, p_minus = -1.0, p_plus = -1.0;
+		bool directed = false;
         
         options_description desc("Generate random unweighted signed graphs with a predefined community structure.");
         desc.add_options()
@@ -111,6 +112,7 @@ int main(int argc, char* argv[])
 		("p_in", value<double>(&p_in), "<probability of each node connecting other nodes in the same community>")
         ("p_minus", value<double>(&p_minus), "<probability of negative links appearing within communities>")
 		("p_plus", value<double>(&p_plus), "<probability of of positive links appearing between communities>")
+		("directed", value<bool>(&directed)->default_value(false), "<true if the generated graph is to be directed, false otherwise>")
         ;
 		
 		variables_map vm;
@@ -142,9 +144,11 @@ int main(int argc, char* argv[])
 			<< n << ", k = " << k << ", pin = " << p_in << ", p_minus = " << p_minus << ", p_plus = " << p_plus << endl;
 		BOOST_LOG_TRIVIAL(info) << "Generating random signed graph with community structure with parameters c = " << c << ", n = " 
 			<< n << ", k = " << k << ", pin = " << p_in << ", p_minus = " << p_minus << ", p_plus = " << p_plus;
+		cout << "Generated graph will be directed ? " << directed << endl;
+		BOOST_LOG_TRIVIAL(info) << "Generated graph will be directed ? " << directed;
         
 		RandomSGCommunity generator;
-		generator.generateRandomSG(c, n, k, p_in, p_minus, p_plus, world.rank(), world.size());
+		generator.generateRandomSG(c, n, k, p_in, p_minus, p_plus, world.rank(), world.size(), directed);
 
 		// ------------------ M P I    T E R M I N A T I O N ---------------------
 		if(world.size() > 1) {
