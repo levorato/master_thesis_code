@@ -23,12 +23,19 @@ public:
 	MovieLensSGConverter();
 	~MovieLensSGConverter();
 	
+	/**
+	 * pos_edge_perc -> edge percentual when comparing 2 users and assuming their relation is positive (e.g. 80%)
+	 * neg_edge_perc -> edge percentual when comparing 2 users and assuming their relation is negative (e.g. 20%)
+	 * number_chunks -> the number of chunks the matrix will be split for processing (saves memory)
+	 */
 	bool processMovieLensFolder(const string& folder, const string& filter,
-			const unsigned int &myRank, const unsigned int &numProcessors);
+			const unsigned int &myRank, const unsigned int &numProcessors, const double& pos_edge_perc,
+			const double& neg_edge_perc, const int& number_chunks);
 	bool readMovieLensCSVFile(const string& filename, long& max_user_id, long& max_movie_id);
 	bool generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
 			const string& outputFileName, const unsigned int &myRank,
-			const unsigned int &numProcessors);
+			const unsigned int &numProcessors, const double& pos_edge_perc,
+			const double& neg_edge_perc, const int& number_chunks);
 	
 private:
 	// the movie_users structure maps a movie_id (long) to a vector of <user_id, rating> pairs

@@ -20,6 +20,7 @@
 #include <cfloat>
 #include <algorithm>
 #include <iterator>     // ostream_operator
+#include <iomanip>
 
 #include <boost/tokenizer.hpp>
 #include <boost/log/trivial.hpp>
@@ -56,12 +57,6 @@
 #define GOOD_MOVIE 4
 // REGULAR_MOVIE -> rating equals to 3
 #define REGULAR_MOVIE 3
-// %POS -> edge percentual when comparing 2 users and assuming their relation is positive (e.g. 80%)
-#define POS_EDGE_PERC 0.8
-// %NEG -> edge percentual when comparing 2 users and assuming their relation is negative (e.g. 20%)
-#define NEG_EDGE_PERC 0.2
-// NUMBER_OF_CHUNKS -> the number of chunks the matrix will be split for processing (saves memory)
-#define NUMBER_OF_CHUNKS 256
 
 const int generation::InputMessage::TERMINATE_MSG_TAG = 0;
 const int generation::InputMessage::DONE_MSG_TAG = 1;
@@ -85,7 +80,8 @@ MovieLensSGConverter::~MovieLensSGConverter() {
 }
 
 bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const string& filter,
-		const unsigned int &myRank, const unsigned int &numProcessors) {
+		const unsigned int &myRank, const unsigned int &numProcessors, const double& pos_edge_perc,
+		const double& neg_edge_perc, const int& number_chunks) {
 	BOOST_LOG_TRIVIAL(info) << "Processing folder " << folder;
 	
 	// read the files in the specified folder
@@ -126,12 +122,14 @@ bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const st
 		fs::path filePath = fileList.at(i);
 		string filename = filePath.parent_path().filename().string();
 		stringstream file_ss;
-		file_ss << path_ss.str() << boost::filesystem::path::preferred_separator << filename << ".g";
+		file_ss << path_ss.str() << boost::filesystem::path::preferred_separator << filename <<
+				"_p+" << std::fixed << std::setprecision(4) << pos_edge_perc << "_p-" << neg_edge_perc << ".g";
 
 		long max_user_id = 0, max_movie_id = 0;
 		readMovieLensCSVFile(filePath.string(), max_user_id, max_movie_id);
 		// process the dataset file and generate signed graph
-		if(generateSGFromMovieRatings(max_user_id, max_movie_id, file_ss.str(), myRank, numProcessors)) {
+		if(generateSGFromMovieRatings(max_user_id, max_movie_id, file_ss.str(), myRank, numProcessors,
+				pos_edge_perc, neg_edge_perc, number_chunks)) {
 			if(myRank == 0) {
 				BOOST_LOG_TRIVIAL(info) << "\nCreated output signed graph file " << file_ss.str();
 			}
@@ -189,7 +187,8 @@ bool MovieLensSGConverter::readMovieLensCSVFile(const string& filename, long& ma
 }
 
 bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
-		const string& outputFileName, const unsigned int &myRank, const unsigned int &numProcessors) {
+		const string& outputFileName, const unsigned int &myRank, const unsigned int &numProcessors,
+		const double& pos_edge_perc, const double& neg_edge_perc, const int& number_chunks) {
 	// the signed graph representing the voting in movie lens dataset
 	int previous_total = -1;
 	int percentage = 0;
@@ -209,27 +208,30 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 		finalProcessorUserIndex = max_user_id - 1;
 		MPIChunkSize = finalProcessorUserIndex - initialProcessorUserIndex + 1;
 	}
-	BOOST_LOG_TRIVIAL(info) << "This is process " << myRank << ". Will process user range [" << initialProcessorUserIndex << ", " << finalProcessorUserIndex << "]";
+	BOOST_LOG_TRIVIAL(info) << "This is process " << myRank << ". Will process user range [" <<
+			initialProcessorUserIndex << ", " << finalProcessorUserIndex << "]";
 
 	// Begin dividing the MPI Chunk into smaller chunks for local processing
-	long chunkSize = long(std::floor(double(MPIChunkSize) / NUMBER_OF_CHUNKS));
-	long remainingVertices = MPIChunkSize % NUMBER_OF_CHUNKS;
+	long chunkSize = long(std::floor(double(MPIChunkSize) / number_chunks));
+	long remainingVertices = MPIChunkSize % number_chunks;
 	std::ostringstream out;
 	long edgeCount = 0;
-	for(int i = 0; i < NUMBER_OF_CHUNKS; i++) {
+	for(int i = 0; i < number_chunks; i++) {
 		// will process only the range (initialUserIndex <= user_a <= finalUserIndex)
 		long initialUserIndex = initialProcessorUserIndex + i * chunkSize;
 		long finalUserIndex = initialProcessorUserIndex + (i + 1) * chunkSize - 1;
-		if(remainingVertices > 0 and i == NUMBER_OF_CHUNKS - 1) {
+		if(remainingVertices > 0 and i == number_chunks - 1) {
 			finalUserIndex = finalProcessorUserIndex;
 			chunkSize = finalUserIndex - initialUserIndex + 1;
 		}
 		BOOST_LOG_TRIVIAL(info) << "\nProcessing user range [" << initialUserIndex << ", " << finalUserIndex << "]";
-		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_rating_count(chunkSize, max_user_id);;
-		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > > common_similar_rating_count(chunkSize, max_user_id);
+		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > >
+				common_rating_count(chunkSize, max_user_id);;
+		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > >
+				common_similar_rating_count(chunkSize, max_user_id);
 
-		BOOST_LOG_TRIVIAL(info) << "Begin movie list traversal (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")...";
-		cout << "\nBegin movie list traversal (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
+		BOOST_LOG_TRIVIAL(info) << "Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")...";
+		cout << "\nBegin movie list traversal (step " << (i+1) << " of " << number_chunks << ")..." << endl;
 		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
 			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
 			// cout << movie_id << " with size " << ratingList.size() << endl;
@@ -265,8 +267,8 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 			}
 		}
 
-		BOOST_LOG_TRIVIAL(info) << "\nBegin edge generation (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")...";
-		cout << "\nBegin edge generation (step " << (i+1) << " of " << NUMBER_OF_CHUNKS << ")..." << endl;
+		BOOST_LOG_TRIVIAL(info) << "\nBegin edge generation (step " << (i+1) << " of " << number_chunks << ")...";
+		cout << "\nBegin edge generation (step " << (i+1) << " of " << number_chunks << ")..." << endl;
 		long count = (finalUserIndex - initialUserIndex + 1) * max_user_id;
 		previous_total = -1;
 		percentage = 0;
@@ -276,12 +278,12 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 					if(common_rating_count(user_a - initialUserIndex, user_b) > 0) {
 						double common_similar_rating_ratio = double(common_similar_rating_count(user_a - initialUserIndex, user_b)) /
 								common_rating_count(user_a - initialUserIndex, user_b);
-						if(common_similar_rating_ratio >= POS_EDGE_PERC) {
+						if(common_similar_rating_ratio >= pos_edge_perc) {
 							// SG[user_a, user_b] = 1;
 							out << user_a << " " << user_b << " 1\n";
 							edgeCount++;
 						}
-						else if(common_similar_rating_ratio <= NEG_EDGE_PERC) {
+						else if(common_similar_rating_ratio <= neg_edge_perc) {
 							// SG[user_a, user_b] = -1;
 							out << user_a << " " << user_b << " -1\n";
 							edgeCount++;

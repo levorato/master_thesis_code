@@ -97,6 +97,9 @@ int main(int argc, char* argv[])
 		mpi::communicator world;
 
         string folder(""), fileFilter = "ratings.dat";
+        int number_chunks = 256;
+        double pos_edge_perc = 0.8;
+        double neg_edge_perc = 0.2;
         
         options_description desc("Convert MovieLens dataset file (ratings.dat) to unweighted signed graph.");
         desc.add_options()
@@ -107,6 +110,9 @@ int main(int argc, char* argv[])
         ("folder", value<string>(&folder), "the folder containing the ratings.dat files")
         ("filefilter", value<string>(&fileFilter)->default_value("ratings.dat"),
          "the filename for MovieLens ratings dataset files (default: ratings.dat)")
+		("number_chunks", value<int>(&number_chunks)->default_value(256), "the number of chunks the matrix will be split for processing (saves memory)")
+		("pos_perc", value<double>(&pos_edge_perc)->default_value(0.8), "edge percentual when comparing 2 users and assuming their relation is positive (e.g. 0.8)")
+		("neg_perc", value<double>(&neg_edge_perc)->default_value(0.2), "edge percentual when comparing 2 users and assuming their relation is negative (e.g. 0.2)")
         ;
     
         variables_map vm;
@@ -135,12 +141,20 @@ int main(int argc, char* argv[])
 		}
 
 		cout << "Input folder is '" << folder << "'" << endl;
-		BOOST_LOG_TRIVIAL(info) << "Input folder is '" << folder << "'" << endl;
-        cout << "File filter is '" << fileFilter << "'" << endl;
-		BOOST_LOG_TRIVIAL(info) << "File filter is '" << fileFilter << "'" << endl;
+		BOOST_LOG_TRIVIAL(info) << "Input folder is '" << folder << "'";
+		BOOST_LOG_TRIVIAL(info) << "File filter is '" << fileFilter << "'";
+		cout << "File filter is '" << fileFilter << "'" << endl;
+
+		BOOST_LOG_TRIVIAL(info) << "Positive edge percentage is " << pos_edge_perc;
+		cout << "Positive edge percentage is " << pos_edge_perc << endl;
+		BOOST_LOG_TRIVIAL(info) << "Negative edge percentage is " << neg_edge_perc;
+		cout << "Negative edge percentage is " << neg_edge_perc << endl;
+		BOOST_LOG_TRIVIAL(info) << "The number of chunks is " << number_chunks;
+		cout << "The number of chunks is " << number_chunks << endl;
 		
 		MovieLensSGConverter converter;
-		converter.processMovieLensFolder(folder, fileFilter, world.rank(), world.size());
+		converter.processMovieLensFolder(folder, fileFilter, world.rank(), world.size(),
+				pos_edge_perc, neg_edge_perc, number_chunks);
 
 		// ------------------ M P I    T E R M I N A T I O N ---------------------
 		if(world.size() > 1) {
