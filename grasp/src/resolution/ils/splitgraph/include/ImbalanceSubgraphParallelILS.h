@@ -13,6 +13,10 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <list>
 
+#include "graph/include/Graph.h"
+#include "graph/include/Clustering.h"
+#include "SplitgraphUtil.h"
+
 using namespace boost::numeric::ublas;
 
 // TODO CHANGE TO APPLICATION CLI PARAMETER
@@ -20,94 +24,12 @@ using namespace boost::numeric::ublas;
 #define PERCENTAGE_OF_PROCESS_PAIRS 0.2
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
 #define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
-// Defines the parameters used in pseudo-clique (splitcluster) neighborhood
-#define CLUSTERING_ALPHA 0.2  // pseudo-clique alpha constructive parameter
-#define POS_EDGE_PERC_RELAX 0.7  // minimum percentage of positive edges in pseudo-clique
-#define NEG_EDGE_PERC_RELAX 0.3  // maximum percentage of negative edges in pseudo-clique
 // Defines the number of times each neighborhood structure will rerun local ILS while global solution does not improve
 #define MAX_ILS_RETRIES 2
 #define EPS 10e-6
 
 namespace resolution {
 namespace ils {
-
-struct Coordinate {
-	int x, y;
-	double value;
-	Coordinate() : x(0), y(0), value(0.0) { }
-	Coordinate(int a, int b, double vl = 0.0) : x(a), y(b), value(vl) { }
-};
-
-struct coordinate_ordering_asc
-{
-    inline bool operator() (const Coordinate& struct1, const Coordinate& struct2)
-    {
-        if(struct1.value == struct2.value) {
-        	return struct1.y < struct2.y;
-        }
-    	return (struct1.value < struct2.value);
-    }
-};
-
-struct coordinate_ordering_desc
-{
-    inline bool operator() (const Coordinate& struct1, const Coordinate& struct2)
-    {
-        if(struct1.value == struct2.value) {
-        	return struct1.y > struct2.y;
-        }
-    	return (struct1.value > struct2.value);
-    }
-};
-
-struct VertexDegree {
-    long id;
-    double positiveDegree;
-    double negativeDegree;
-    VertexDegree() : id(0), positiveDegree(0.0), negativeDegree(0.0) { }
-    VertexDegree(long vid, double posdeg, double negdeg) : id(vid), positiveDegree(posdeg), negativeDegree(negdeg) { }
-};
-
-struct neg_degree_ordering_asc
-{
-    inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
-    {
-        return (struct1.negativeDegree < struct2.negativeDegree);
-    }
-};
-
-struct pos_degree_ordering_asc
-{
-    inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
-    {
-        return (struct1.positiveDegree < struct2.positiveDegree);
-    }
-};
-
-struct pos_degree_ordering_desc
-{
-    inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
-    {
-        return (struct1.positiveDegree > struct2.positiveDegree);
-    }
-};
-
-struct weighted_pos_neg_degree_ordering_desc
-{
-    inline bool operator() (const VertexDegree& struct1, const VertexDegree& struct2)
-    {
-    	// Sorts the vertex list according to a weighted formula of positive and negative degrees (descending order)
-    	double p1 = (POS_EDGE_PERC_RELAX * struct1.positiveDegree) - (NEG_EDGE_PERC_RELAX * struct1.negativeDegree);
-    	double p2 = (POS_EDGE_PERC_RELAX * struct2.positiveDegree) - (NEG_EDGE_PERC_RELAX * struct2.negativeDegree);
-    	return (p1 > p2);
-    }
-};
-
-struct ImbalanceMatrix {
-	matrix<double> pos, neg;
-	ImbalanceMatrix() : pos(), neg() { }
-	ImbalanceMatrix(int nc) : pos(zero_matrix<double>(nc, nc)), neg(zero_matrix<double>(nc, nc)) { }
-};
 
 /**
  * This class is responsible for all logic related to the SplitGraph Distributed ILS algorithm,
@@ -166,12 +88,6 @@ public:
 	void rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, ClusteringProblem& problem,
 			Clustering& bestSplitgraphClustering,
 			Clustering& bestClustering,	const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix);
-
-	ImbalanceMatrix calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster);
-
-	void updateProcessToProcessImbalanceMatrix(SignedGraph& g, const ClusterArray& previousSplitgraphClusterArray,
-			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
-			ImbalanceMatrix& processClusterImbMatrix);
 
 	/**
 	 * 1-move-vertex: (DISABLED) moves a vertex from one process to another.
@@ -251,60 +167,7 @@ protected:
 	// time spent by each process in each iteration
 	std::vector< std::vector<double> > timeSpentAtIteration;
 
-	Coordinate findMaximumElementInMatrix(ImbalanceMatrix &mat);
-
-	std::vector< Coordinate > getMatrixElementsAsList(ImbalanceMatrix &mat);
-
-	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& splitGraphCluster,
-			ClusterArray& globalCluster, Coordinate processPair);
-
-	std::vector<Coordinate> obtainListOfImbalancedClusters(SignedGraph& g,
-			ClusterArray& splitGraphCluster, Clustering& globalClustering);
-
-	/**
-	 * A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.
-	 */
-	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
-				Clustering& splitGraphClustering);
-
-	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
-					Clustering& splitGraphClustering, long maximumNumberOfVertices);
-
-	std::vector<Coordinate> obtainListOfClustersFromProcess(SignedGraph& g,
-				Clustering& globalClustering, int processNumber);
-
-	std::vector<long> getListOfVeticesInCluster(SignedGraph& g, Clustering& globalClustering,
-			long clusterNumber);
-
-	/**
-	  *  Returns a list containing the vertices that belong to the pseudo clique C+,
-	  *  found inside global cluster X. This is a greedy heuristic.
-	*/
-	std::vector<long> findPseudoCliqueC(SignedGraph *g, Clustering& globalClustering,
-			long clusterX);
-
-	/**
-	  *  Determines if the set cliqueC \union {u} is a pseudo clique in the graph g.
-	  *  By definition, cliqueC is already a pseudo clique.
-	*/
-	bool isPseudoClique(SignedGraph *g, std::list<long>& cliqueC,
-			ClusterArray& cliqueCClusterArray, long u);
-
-	/**
-	  *  Determines if the set cliqueC \union {u, v} is a pseudo clique in the graph g.
-	  *  By definition, cliqueC is already a pseudo clique.
-	*/
-	bool isPseudoClique(SignedGraph *g, ClusterArray& cliqueCClusterArray, long cliqueSize,
-			long u, long v);
-
-	/**
-	  *  Calculates the positive and negative degrees of each vertex v in clusterX
-	  *  *relative to clusterX only*.
-	*/
-	std::list<VertexDegree> calculateDegreesInsideCluster(SignedGraph *g,
-			Clustering& globalClustering, long clusterX);
-
-	long chooseRandomVertex(std::list<VertexDegree>& vertexList, long x);
+	SplitgraphUtil util;
 
 	/**
 	 * Executes ILS locally (execution performed by leader process, rank 0) on the subgraph of g, induced by vertexList.
@@ -312,12 +175,6 @@ protected:
 	Clustering runILSLocallyOnSubgraph(ConstructClustering *construct,
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& vertexList);
-
-	Imbalance calculateExternalImbalanceSumBetweenProcesses(ImbalanceMatrix& processClusterImbMatrix);
-
-	Imbalance calculateInternalImbalanceSumOfAllProcesses(std::vector<Imbalance>& internalProcessImbalance);
-
-	Imbalance calculateProcessInternalImbalance(SignedGraph *g, Clustering& c, unsigned int processNumber);
 
 	void moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
 			Clustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess,
