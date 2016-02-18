@@ -1053,7 +1053,7 @@ using namespace std;
 				vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 			}
 			//printf("Idx = %d: The best src vertex is %ld to cluster %ld with I(P) = %.2f\n", resultIdx, v, clusterNumber, bestImbalance);
-			if(bestImbalance < EPS) {  printf("WARNING: Construct I(P) < 0 !!! I(P) = %.2f\n", bestImbalance);  }
+			if(bestImbalance < -EPS) {  printf("WARNING: Construct I(P) < 0 !!! I(P) = %.2f\n", bestImbalance);  }
 
 			updateVertexClusterSumArraysDelta <<< 1,1 >>>(weightArray, destArray, numArray,
 				offsetArray, clusterArray, vertexClusterPosSumArray, vertexClusterNegSumArray, isNeighborClusterArray, n, old_ncArray, ncArray,
@@ -1414,7 +1414,7 @@ using namespace std;
                         timer.resume();
 						
 						// printf("Preparing new VND loop...\n");
-						if(bestImbalance <= EPS)   {  printf("WARNING: I(P) <= 0 !!!\n");  break;  }
+						if(bestImbalance <= -EPS)   {  printf("WARNING: I(P) <= 0 !!!\n");  break;  }
 					} else {  // no better result found in neighborhood
 						// printf("Breaking VND loop...\n");
 						break;
