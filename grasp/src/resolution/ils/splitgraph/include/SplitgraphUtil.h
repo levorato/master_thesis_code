@@ -179,6 +179,9 @@ public:
 	bool isPseudoClique(SignedGraph *g, ClusterArray& cliqueCClusterArray, long cliqueSize,
 			long u, long v);
 
+	std::vector<Imbalance> calculateProcessInternalImbalance(SignedGraph& g,
+			ClusterArray& splitGraphCluster, ClusterArray& globalCluster, int numberOfProcesses);
+
 };
 
 } /* namespace ils */

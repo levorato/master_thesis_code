@@ -654,6 +654,52 @@ bool SplitgraphUtil::isPseudoClique(SignedGraph *g, ClusterArray& cliqueCCluster
 				and ( percOfNegativeConnections <= NEG_EDGE_PERC_RELAX );
 }
 
+std::vector<Imbalance> SplitgraphUtil::calculateProcessInternalImbalance(SignedGraph& g,
+		ClusterArray& splitGraphCluster, ClusterArray& globalCluster, int numberOfProcesses) {
+
+	long n = g.getN();
+	UndirectedGraph::edge_descriptor e;
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	std::vector<Imbalance> processInternalImbalance;
+
+	for(int px = 0; px < numberOfProcesses; px++) {
+		// For each vertex i
+		double positiveSum = double(0.0), negativeSum = double(0.0);
+		for(long i = 0; i < n; i++) {
+			if(splitGraphCluster[i] == px) {
+				long ki = globalCluster[i];
+				UndirectedGraph::out_edge_iterator f, l;
+				// For each out edge of i
+				for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+					e = *f;
+					Vertex src = source(e, g.graph), targ = target(e, g.graph);
+					long j = targ.id;
+					if(splitGraphCluster[j] == px) {
+						long kj = globalCluster[targ.id];
+						double weight = ew[e].weight;
+						bool sameCluster = (kj == ki);
+						if(weight < 0 and sameCluster) {  // negative edge
+							// i and j are in the same cluster
+							negativeSum += fabs(weight);
+						} else if(weight > 0 and (not sameCluster)){ // and ((kj == processPair.x) or (kj == processPair.y))) {  // positive edge
+							// only counts the imbalance between the clusters / processes in the processPair (x and y)
+							// i and j are NOT in the same cluster
+							positiveSum += weight;
+						}
+					}
+				}
+			}
+		}
+		processInternalImbalance.push_back(Imbalance(positiveSum, negativeSum));
+	}
+	stringstream ss;
+	ss << "Calulated InternalImbalanceVector: ";
+	for(int x = 0; x < numberOfProcesses; x++) {
+		ss << processInternalImbalance[x].getValue() << " ";
+	}
+	BOOST_LOG_TRIVIAL(info) << ss.str();
+	return processInternalImbalance;
+}
 
 } /* namespace ils */
 } /* namespace resolution */
