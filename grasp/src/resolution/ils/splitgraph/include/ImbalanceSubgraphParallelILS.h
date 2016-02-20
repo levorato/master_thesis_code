@@ -16,6 +16,7 @@
 #include "graph/include/Graph.h"
 #include "graph/include/Clustering.h"
 #include "SplitgraphUtil.h"
+#include "util/include/MPIMessage.h"
 
 using namespace boost::numeric::ublas;
 
@@ -172,7 +173,7 @@ protected:
 	/**
 	 * Executes ILS locally (execution performed by leader process, rank 0) on the subgraph of g, induced by vertexList.
 	 */
-	Clustering runILSLocallyOnSubgraph(ConstructClustering *construct,
+	OutputMessage runILSLocallyOnSubgraph(ConstructClustering *construct,
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& vertexList);
 
