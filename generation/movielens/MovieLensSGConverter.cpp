@@ -278,12 +278,14 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 					if(common_rating_count(user_a - initialUserIndex, user_b) > 0) {
 						double common_similar_rating_ratio = double(common_similar_rating_count(user_a - initialUserIndex, user_b)) /
 								common_rating_count(user_a - initialUserIndex, user_b);
-						if(common_similar_rating_ratio >= pos_edge_perc) {
+						if(((common_similar_rating_ratio - pos_edge_perc > EPS) and (fabs(common_similar_rating_ratio - pos_edge_perc) > EPS))  // (common_similar_rating_ratio > pos_edge_perc)
+								or (fabs(common_similar_rating_ratio - pos_edge_perc) < EPS)) {  // (common_similar_rating_ratio == pos_edge_perc)
 							// SG[user_a, user_b] = 1;
 							out << user_a << " " << user_b << " 1\n";
 							edgeCount++;
 						}
-						else if(common_similar_rating_ratio <= neg_edge_perc) {
+						else if(((common_similar_rating_ratio - neg_edge_perc < EPS) and (fabs(common_similar_rating_ratio - neg_edge_perc) > EPS))  // (common_similar_rating_ratio < neg_edge_perc)
+								or (fabs(common_similar_rating_ratio - neg_edge_perc) < EPS)) {  // (common_similar_rating_ratio == neg_edge_perc)
 							// SG[user_a, user_b] = -1;
 							out << user_a << " " << user_b << " -1\n";
 							edgeCount++;
