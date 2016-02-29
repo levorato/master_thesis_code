@@ -42,12 +42,13 @@
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
 
 #include "MovieLensSGConverter.h"
 
 // TODO CHANGE TO APPLICATION CLI PARAMETER
 // Global variables
-#define EPS 0.0001
+#define EPS 0.0000001
 // Be sure to update these numbers as the movielens dataset grows!
 #define MAX_MOVIES 100000
 #define MAX_USERS 250000
@@ -70,6 +71,7 @@ namespace generation {
 using namespace boost::algorithm;
 using namespace boost;
 using namespace std;
+using boost::multiprecision::cpp_dec_float_50;
 
 MovieLensSGConverter::MovieLensSGConverter() {
 	
@@ -123,7 +125,7 @@ bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const st
 		string filename = filePath.parent_path().filename().string();
 		stringstream file_ss;
 		file_ss << path_ss.str() << boost::filesystem::path::preferred_separator << filename <<
-				"_p+" << std::fixed << std::setprecision(4) << pos_edge_perc << "_p-" << neg_edge_perc << ".g";
+				"_p+" << std::fixed << std::setprecision(6) << pos_edge_perc << "_p-" << neg_edge_perc << ".g";
 
 		long max_user_id = 0, max_movie_id = 0;
 		readMovieLensCSVFile(filePath.string(), max_user_id, max_movie_id);
@@ -246,9 +248,10 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 						char rating_b = user_rating_y.second;
 						if(user_a != user_b) {
 							common_rating_count(user_a - initialUserIndex, user_b) += 1;
-							if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE)
+							/* if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE)
 									or (rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE)
-									or (rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE)) {
+									or (rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE)) { */
+							if(rating_a == rating_b) {
 								// users A and B have the same opinion about the movie
 								common_similar_rating_count(user_a - initialUserIndex, user_b) += 1;
 							}
@@ -276,16 +279,22 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 			for(long user_b = 0; user_b < max_user_id; user_b++) {
 				if(user_a != user_b) {
 					if(common_rating_count(user_a - initialUserIndex, user_b) > 0) {
-						double common_similar_rating_ratio = double(common_similar_rating_count(user_a - initialUserIndex, user_b)) /
-								common_rating_count(user_a - initialUserIndex, user_b);
-						if(((common_similar_rating_ratio - pos_edge_perc > EPS) and (fabs(common_similar_rating_ratio - pos_edge_perc) > EPS))  // (common_similar_rating_ratio > pos_edge_perc)
-								or (fabs(common_similar_rating_ratio - pos_edge_perc) < EPS)) {  // (common_similar_rating_ratio == pos_edge_perc)
+						long n_a = common_similar_rating_count(user_a - initialUserIndex, user_b);
+						long n_b = common_rating_count(user_a - initialUserIndex, user_b);
+						cpp_dec_float_50 common_similar_rating_ratio = cpp_dec_float_50(n_a);
+						common_similar_rating_ratio /= cpp_dec_float_50(n_b);
+						/*
+						double common_similar_rating_ratio = double(100 * common_similar_rating_count(user_a - initialUserIndex, user_b)) /
+								common_rating_count(user_a - initialUserIndex, user_b); */
+						cpp_dec_float_50 eps = std::numeric_limits<cpp_dec_float_50>::epsilon();
+						if(((common_similar_rating_ratio - pos_edge_perc > eps) and (boost::multiprecision::abs(common_similar_rating_ratio - pos_edge_perc) > eps))  // (common_similar_rating_ratio > pos_edge_perc)
+								or (boost::multiprecision::abs(common_similar_rating_ratio - pos_edge_perc) < eps)) {  // (common_similar_rating_ratio == pos_edge_perc)
 							// SG[user_a, user_b] = 1;
 							out << user_a << " " << user_b << " 1\n";
 							edgeCount++;
 						}
-						else if(((common_similar_rating_ratio - neg_edge_perc < EPS) and (fabs(common_similar_rating_ratio - neg_edge_perc) > EPS))  // (common_similar_rating_ratio < neg_edge_perc)
-								or (fabs(common_similar_rating_ratio - neg_edge_perc) < EPS)) {  // (common_similar_rating_ratio == neg_edge_perc)
+						else if(((common_similar_rating_ratio - neg_edge_perc < eps) and (boost::multiprecision::abs(common_similar_rating_ratio - neg_edge_perc) > eps))  // (common_similar_rating_ratio < neg_edge_perc)
+								or (boost::multiprecision::abs(common_similar_rating_ratio - neg_edge_perc) < eps)) {  // (common_similar_rating_ratio == neg_edge_perc)
 							// SG[user_a, user_b] = -1;
 							out << user_a << " " << user_b << " -1\n";
 							edgeCount++;
