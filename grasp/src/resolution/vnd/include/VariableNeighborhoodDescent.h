@@ -74,6 +74,10 @@ public:
 		return timeSpentOnLocalSearch;
 	}
 
+	void setTimeLimit(double time) {
+		this->timeLimit = time;
+	}
+
 	/**
 	 * Resets internal auxiliary matrices (used between Metaheuristic iterations)
 	 * and updates the best clustering based on the constructive phase result.

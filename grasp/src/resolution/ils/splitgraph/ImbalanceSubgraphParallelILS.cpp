@@ -444,7 +444,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	for(int i = 0; i < numberOfSlaves; i++) {
 		// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
-							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
 							numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, true);
 		if(k < 0) {
 			imsg.setClustering(&CCclustering);
@@ -455,6 +455,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 	}
 	// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
+	vnd->setTimeLimit(LOCAL_ILS_TIME_LIMIT);
 	OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax,
 							problem, info, verticesInCluster[0]);
 
@@ -656,7 +657,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 
 				// Each process will execute 1 ILS procedure for each subgraph
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
-									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
 									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, true);
 				if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				// sends the modified subgraphs that will be solved by ILS
@@ -669,6 +670,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 		}
 		// The leader will process the source-process movement
 		// 2.1. the leader does its part of the work: runs ILS to solve the source subgraph
+		vnd->setTimeLimit(LOCAL_ILS_TIME_LIMIT);
 		OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax,
 				problem, info, verticesInSourceProcess);
 
@@ -1006,7 +1008,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 
 			if(mov >= 1) {  // 2 ILS procedures will be executed by 2 processes through MPI messages
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
-									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
 									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true);
 				// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				InputMessageParallelILS imsg2 = imsg;
@@ -1023,7 +1025,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 			} else {  // 2 ILS procedures will be executed: one by the leader process (this one) and the other through MPI message
 				// STEP 3.2: Movements to be executed by workerProcess ranks 0 (leader process) and 1
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
-									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
 									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true);
 				// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				imsg.setVertexList(verticesInDestinationProcess);
@@ -1033,6 +1035,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 
 				// the leader does its part of the work: runs ILS to solve the second subgraph
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
+				vnd->setTimeLimit(LOCAL_ILS_TIME_LIMIT);
 				leaderOutputMessage = runILSLocallyOnSubgraph(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax,
 						problem, info, verticesInSourceProcess);
 			}
@@ -1416,7 +1419,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 
 			// 2 ILS procedures will be executed by 2 processes through MPI messages
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
-								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, vnd->getTimeLimit(),
+								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
 								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true);
 			// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 			InputMessageParallelILS imsg2 = imsg;
@@ -1432,6 +1435,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 			// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 		}
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
+		vnd->setTimeLimit(LOCAL_ILS_TIME_LIMIT);
 		OutputMessage leaderOutputMessage = runILSLocallyOnSubgraph(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax,
 				problem, info, verticesInSourceProcess);
 
