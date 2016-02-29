@@ -25,6 +25,8 @@ namespace vnd {
 
 class VariableNeighborhoodDescent : public ResolutionStrategy {
 public:
+
+	VariableNeighborhoodDescent(const VariableNeighborhoodDescent &vnd);
 	/**
 	 * @param neighborhoodSearch neighborhood search algorithm (sequential, parallel)
 	 * @param seed random seed

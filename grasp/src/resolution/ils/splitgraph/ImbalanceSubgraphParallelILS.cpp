@@ -69,6 +69,8 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	stringstream iterationTimeSpent;
 	unsigned int numberOfProcesses = numberOfSlaves + 1;
 
+	BOOST_LOG_TRIVIAL(info) << "Starting split graph ILS (local ILS time limit = " << LOCAL_ILS_TIME_LIMIT << " s)...";
+
 	// *** STEP A => PREPROCESSING PHASE OF DISTRIBUTED METAHEURISTIC: New split graph partitioning here
 	// Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
@@ -455,8 +457,9 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 	}
 	// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
-	vnd->setTimeLimit(LOCAL_ILS_TIME_LIMIT);
-	OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax,
+	VariableNeighborhoodDescent localVND = *vnd;
+	localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
+	OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
 							problem, info, verticesInCluster[0]);
 
 	// 3. the leader receives the processing results
@@ -670,8 +673,9 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, Clustering& b
 		}
 		// The leader will process the source-process movement
 		// 2.1. the leader does its part of the work: runs ILS to solve the source subgraph
-		vnd->setTimeLimit(LOCAL_ILS_TIME_LIMIT);
-		OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax,
+		VariableNeighborhoodDescent localVND = *vnd;
+		localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
+		OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
 				problem, info, verticesInSourceProcess);
 
 		// STEP 3: the leader receives the processing results
@@ -1035,8 +1039,9 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 
 				// the leader does its part of the work: runs ILS to solve the second subgraph
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
-				vnd->setTimeLimit(LOCAL_ILS_TIME_LIMIT);
-				leaderOutputMessage = runILSLocallyOnSubgraph(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax,
+				VariableNeighborhoodDescent localVND = *vnd;
+				localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
+				leaderOutputMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
 						problem, info, verticesInSourceProcess);
 			}
 		}
@@ -1108,11 +1113,13 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, Clustering& b
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix from swap done.";
 
 			// Valida se a matriz incremental e a full sao iguais - TODO comentar
+			/*
 			ImbalanceMatrix tempProcessClusterImbMatrix3 = util.calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray,
 					this->vertexImbalance, numberOfSlaves + 1);
 			bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix3.pos, 0.001, 0.1);
 			bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix3.neg, 0.001, 0.1);
 			BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+			*/
 
 			// Merges the partial solutions into a global solution for the whole graph
 			std::vector<OutputMessage> sourceAndDestinationMovementMsg;
@@ -1435,8 +1442,9 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, Clustering& be
 			// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 		}
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
-		vnd->setTimeLimit(LOCAL_ILS_TIME_LIMIT);
-		OutputMessage leaderOutputMessage = runILSLocallyOnSubgraph(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax,
+		VariableNeighborhoodDescent localVND = *vnd;
+		localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
+		OutputMessage leaderOutputMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
 				problem, info, verticesInSourceProcess);
 
 		// STEP 3.3: the leader receives the processing results

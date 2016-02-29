@@ -51,7 +51,8 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 		SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
 		ClusteringProblem& problem,	ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info) << "Initializing CUDA ILS "<< problem.getName() << " procedure for alpha = "
-			<< construct->getAlpha() << " and l = " << vnd->getNeighborhoodSize();
+			<< construct->getAlpha() << ", l = " << vnd->getNeighborhoodSize()
+			<< " and timeLimit = " << vnd->getTimeLimit() << " s...";
 
 	stringstream iterationResults;
 	stringstream constructivePhaseResults;
@@ -135,6 +136,8 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 	generateOutputFile(problem, timeResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("timeIntervals"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
 	// saves the initial solutions data to file
 	generateOutputFile(problem, constructivePhaseResults, info.outputFolder, info.fileId, info.executionId, info.processRank, string("initialSolutions"), construct->getAlpha(), vnd->getNeighborhoodSize(), iterMax);
+
+	BOOST_LOG_TRIVIAL(info) << "CUDA ILS procedure done.";
 
 	return CStar;
 }

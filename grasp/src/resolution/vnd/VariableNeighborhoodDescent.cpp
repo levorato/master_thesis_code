@@ -28,6 +28,16 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace vnd {
 
+VariableNeighborhoodDescent::VariableNeighborhoodDescent(const VariableNeighborhoodDescent &vnd) :
+		timeResults(), randomSeed(vnd.randomSeed), timeSum(vnd.timeSum),
+						timeSpentInSearch(vnd.timeSpentInSearch),	numberOfTestedCombinations(vnd.numberOfTestedCombinations),
+						_neighborhoodSearch(vnd._neighborhoodSearch),
+						l(vnd.l), firstImprovementOnOneNeig(vnd.firstImprovementOnOneNeig), timeLimit(vnd.timeLimit),
+						timeSpentOnLocalSearch(vnd.timeSpentOnLocalSearch)
+{
+
+}
+
 VariableNeighborhoodDescent::VariableNeighborhoodDescent(NeighborhoodSearch &neighborhoodSearch,
 		unsigned long seed, const int &lsize, const bool& firstImprovement1Opt, const long &tlimit) :
 				timeResults(), randomSeed(seed), timeSum(0.0),

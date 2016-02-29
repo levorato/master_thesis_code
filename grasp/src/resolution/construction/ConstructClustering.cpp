@@ -145,7 +145,7 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		// Cc.printClustering();
 	}
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
-	BOOST_LOG_TRIVIAL(debug)<< "Initial clustering completed. Obj = " << Cc.getImbalance().getValue();
+	BOOST_LOG_TRIVIAL(info)<< "Initial clustering completed. Obj = " << Cc.getImbalance().getValue();
 	timer.stop();
         end_time = timer.elapsed();
         timeSpent = (end_time.wall - start_time.wall)
