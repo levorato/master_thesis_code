@@ -35,7 +35,7 @@ public:
 	bool generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
 			const string& outputFileName, const unsigned int &myRank,
 			const unsigned int &numProcessors, const double& pos_edge_perc,
-			const double& neg_edge_perc, const int& number_chunks);
+			const double& neg_edge_perc, int number_chunks);
 	
 private:
 	// the movie_users structure maps a movie_id (long) to a vector of <user_id, rating> pairs
@@ -49,17 +49,18 @@ private:
 
 class InputMessage {
 public:
-	// the identifier of the graph
-	unsigned int id;
-	static const int TERMINATE_MSG_TAG;
-	static const int DONE_MSG_TAG;
+	// the maximum common rating count
+	long max;
+	static const int MAX_COUNT_MSG_TAG = 10;
+	static const int TERMINATE_MSG_TAG = 20;
+	static const int DONE_MSG_TAG = 30;
 
-	InputMessage() : id(0) {
+	InputMessage() : max(0) {
 
 	}
 
-	InputMessage(unsigned int i) :
-		id(i) {
+	InputMessage(long i) :
+		max(i) {
 	}
 
 	~InputMessage(){};
@@ -69,7 +70,7 @@ public:
 	template<class Archive>
 	void serialize(Archive & ar, unsigned int file_version)
 	{
-		ar & id;
+		ar & max;
 	}
 };
 

@@ -59,8 +59,8 @@
 // REGULAR_MOVIE -> rating equals to 3
 #define REGULAR_MOVIE 3
 
-const int generation::InputMessage::TERMINATE_MSG_TAG = 0;
-const int generation::InputMessage::DONE_MSG_TAG = 1;
+// const int generation::InputMessage::TERMINATE_MSG_TAG = 0;
+// const int generation::InputMessage::DONE_MSG_TAG = 1;
 
 using namespace boost::numeric::ublas;
 namespace fs = boost::filesystem;
@@ -190,7 +190,7 @@ bool MovieLensSGConverter::readMovieLensCSVFile(const string& filename, long& ma
 
 bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
 		const string& outputFileName, const unsigned int &myRank, const unsigned int &numProcessors,
-		const double& pos_edge_perc, const double& neg_edge_perc, const int& number_chunks) {
+		const double& pos_edge_perc, const double& neg_edge_perc, int number_chunks) {
 	// the signed graph representing the voting in movie lens dataset
 	int previous_total = -1;
 	int percentage = 0;
@@ -218,6 +218,117 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	long remainingVertices = MPIChunkSize % number_chunks;
 	std::ostringstream out;
 	long edgeCount = 0;
+	std::map<string, long> histogram;
+	if(chunkSize == 0) {
+		number_chunks = 1;
+	}
+
+	// determine the maximum common user rating count
+	BOOST_LOG_TRIVIAL(info) << "1. Determining the maximum common_user_rating_count...";
+	long max_common_rating_count = 0;
+	for(int i = 0; i < number_chunks; i++) {
+		// will process only the range (initialUserIndex <= user_a <= finalUserIndex)
+		long initialUserIndex = initialProcessorUserIndex + i * chunkSize;
+		long finalUserIndex = initialUserIndex + chunkSize - 1;
+		if(remainingVertices > 0 and i == number_chunks - 1) {
+			finalUserIndex = finalProcessorUserIndex;
+			chunkSize = finalUserIndex - initialUserIndex + 1;
+		}
+		BOOST_LOG_TRIVIAL(info) << "1. Processing user range [" << initialUserIndex << ", " << finalUserIndex << "]";
+		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > >
+				common_rating_count(chunkSize, max_user_id);;
+		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > >
+				common_similar_rating_count(chunkSize, max_user_id);
+
+		BOOST_LOG_TRIVIAL(info) << "1. Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")...";
+		cout << "\n1. Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")..." << endl;
+		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
+			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
+			// cout << movie_id << " with size " << ratingList.size() << endl;
+			for(long x = 0; x < ratingList.size(); x++) {
+				std::pair<long, char> user_rating_x = ratingList[x];
+				long user_a = user_rating_x.first;
+				char rating_a = user_rating_x.second;
+				if(initialUserIndex <= user_a and user_a <= finalUserIndex) {
+					for(long y = x + 1; y < ratingList.size(); y++) {
+						std::pair<long, char> user_rating_y = ratingList[y];
+						long user_b = user_rating_y.first;
+						char rating_b = user_rating_y.second;
+						if(user_a != user_b) {
+							common_rating_count(user_a - initialUserIndex, user_b) += 1;
+							/* if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE)
+									or (rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE)
+									or (rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE)) { */
+							if(rating_a == rating_b) {
+								// users A and B have the same opinion about the movie
+								common_similar_rating_count(user_a - initialUserIndex, user_b) += 1;
+							}
+						}
+					}
+				}
+			}
+			// display status of processing done
+			int threshold = int(std::floor(max_movie_id / 10.0));
+			int percentage = int(std::ceil(100 * (double(movie_id) / max_movie_id)));
+			if((movie_id % threshold < EPS) and (percentage != previous_total)) {
+				cout << percentage << " % ";
+				cout.flush();
+				BOOST_LOG_TRIVIAL(info) << percentage << " % ";
+				previous_total = percentage;
+			}
+		}
+		// Discover the maximum common_rating_count between all pairs of users
+		for(long user_a = initialUserIndex; user_a <= finalUserIndex; user_a++) {
+			for(long user_b = 0; user_b < max_user_id; user_b++) {
+				if(user_a != user_b) {
+					long crc = common_rating_count(user_a - initialUserIndex, user_b);
+					if(crc > 0 and crc > max_common_rating_count) {
+						max_common_rating_count = crc;
+					}
+				}
+			}
+		}
+	}
+	boost::mpi::communicator world;
+	if(myRank != 0) {  // every worker process sends its maximum count to the leader
+		BOOST_LOG_TRIVIAL(info) << "1. Sending max_count to leader process. Local value = " << max_common_rating_count;
+		InputMessage imsg(max_common_rating_count);
+		world.send(0, InputMessage::MAX_COUNT_MSG_TAG, imsg);
+		BOOST_LOG_TRIVIAL(info) << "1. Max count sent to leader process.";
+		// receive the overall maximum common count
+		boost::mpi::status msg = world.recv(0, InputMessage::MAX_COUNT_MSG_TAG, imsg);
+		max_common_rating_count = imsg.max;
+		BOOST_LOG_TRIVIAL(info) << "1. Overall max count received from leader. Step 1 done.";
+	} else if(numProcessors > 1) {
+		// wait for the maximum count from all workers
+		BOOST_LOG_TRIVIAL(info) << "1. Waiting for common_user_rating_count from all worker processes...";
+		for(int i = 1; i < numProcessors; i++) {
+			InputMessage imsg;
+			boost::mpi::status msg = world.recv(boost::mpi::any_source, InputMessage::MAX_COUNT_MSG_TAG, imsg);
+			if(imsg.max > max_common_rating_count) {
+				max_common_rating_count = imsg.max;
+			}
+			BOOST_LOG_TRIVIAL(info) << "1. maximum common_user_rating_count received from process " << msg.source();
+		}
+		// send the overall maximum count back to all workers
+		BOOST_LOG_TRIVIAL(info) << "1. (Leader) Sending the overall maximum common_user_rating_count to all worker processes...";
+		for(int i = 1; i < numProcessors; i++) {
+			InputMessage imsg(max_common_rating_count);
+			world.send(i, InputMessage::MAX_COUNT_MSG_TAG, imsg);
+		}
+		BOOST_LOG_TRIVIAL(info) << "1. (Leader) maximum common_user_rating_count sent to all worker processes. Step 1 done.";
+	}
+	BOOST_LOG_TRIVIAL(info) << "1. The maximum common count is " << max_common_rating_count;
+	cout << "1. The maximum common count is " << max_common_rating_count;
+
+
+	BOOST_LOG_TRIVIAL(info) << "2. Calculating all common_similar_rating_count for this process...";
+	chunkSize = long(std::floor(double(MPIChunkSize) / number_chunks));
+	remainingVertices = MPIChunkSize % number_chunks;
+	if(chunkSize == 0) {
+		number_chunks = 1;
+	}
+	edgeCount = 0;
 	for(int i = 0; i < number_chunks; i++) {
 		// will process only the range (initialUserIndex <= user_a <= finalUserIndex)
 		long initialUserIndex = initialProcessorUserIndex + i * chunkSize;
@@ -275,18 +386,33 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 		long count = (finalUserIndex - initialUserIndex + 1) * max_user_id;
 		previous_total = -1;
 		percentage = 0;
+
+		// determine which pairs of users have the ratio (common_rating_count(a, b) / max_common_rating_count) bigger than a certain threshold
 		for(long user_a = initialUserIndex; user_a <= finalUserIndex; user_a++) {
 			for(long user_b = 0; user_b < max_user_id; user_b++) {
 				if(user_a != user_b) {
 					if(common_rating_count(user_a - initialUserIndex, user_b) > 0) {
 						long n_a = common_similar_rating_count(user_a - initialUserIndex, user_b);
-						long n_b = common_rating_count(user_a - initialUserIndex, user_b);
+						// long n_b = common_rating_count(user_a - initialUserIndex, user_b);
+						long n_b = max_common_rating_count;
 						cpp_dec_float_50 common_similar_rating_ratio = cpp_dec_float_50(n_a);
 						common_similar_rating_ratio /= cpp_dec_float_50(n_b);
+
+						// converts the ratio (floating point number) to a string with 5-digit precision
+						stringstream ss;
+						ss << std::setprecision(5) << std::fixed << common_similar_rating_ratio;
+						string key = ss.str();
+						if(histogram.find(key) != histogram.end()) {
+							histogram[key]++;
+						} else {
+							histogram[key] = 1;
+						}
+
 						/*
 						double common_similar_rating_ratio = double(100 * common_similar_rating_count(user_a - initialUserIndex, user_b)) /
 								common_rating_count(user_a - initialUserIndex, user_b); */
 						cpp_dec_float_50 eps = std::numeric_limits<cpp_dec_float_50>::epsilon();
+						/* TODO uncomment this
 						if(((common_similar_rating_ratio - pos_edge_perc > eps) and (boost::multiprecision::abs(common_similar_rating_ratio - pos_edge_perc) > eps))  // (common_similar_rating_ratio > pos_edge_perc)
 								or (boost::multiprecision::abs(common_similar_rating_ratio - pos_edge_perc) < eps)) {  // (common_similar_rating_ratio == pos_edge_perc)
 							// SG[user_a, user_b] = 1;
@@ -298,7 +424,7 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 							// SG[user_a, user_b] = -1;
 							out << user_a << " " << user_b << " -1\n";
 							edgeCount++;
-						}
+						} */
 					}
 				}
 				// display status of processing done
@@ -316,47 +442,98 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 		}
 	}
 
+	// process the histogram values and output to text file
+	stringstream ss_histogram;
+	for(map<string,long>::const_iterator it = histogram.begin(); it != histogram.end(); ++it) {
+	    ss_histogram << it->first << " " << it->second << "\n";
+	}
+
 	// write the signed graph to output file
 	stringstream partialFilename_ss;
 	partialFilename_ss << outputFileName << ".part" << myRank;
 	ofstream output_file(partialFilename_ss.str().c_str(), ios::out | ios::trunc);
 	if(!output_file) {
-		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << outputFileName;
+		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << partialFilename_ss.str();
 		return false;
 	}
 	if(myRank == 0) {
 		output_file << max_user_id << "\t" << edgeCount << "\r\n";
 	}
 	output_file << out.str();
-	// Close the file
+	// Close the SG file
 	output_file.close();
 
-	boost::mpi::communicator world;
+	// write the histogram to a secondary output file
+	stringstream partialFilenameHist_ss, outputFileNameHist_ss;
+	partialFilenameHist_ss << outputFileName << "-histogram.part" << myRank;
+	outputFileNameHist_ss << outputFileName << "-histogram.txt";
+	ofstream output_file_hist(partialFilenameHist_ss.str().c_str(), ios::out | ios::trunc);
+	if(!output_file_hist) {
+		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << partialFilenameHist_ss.str();
+		return false;
+	}
+	output_file_hist << ss_histogram.str();
+	output_file_hist.close();
+
 	if(myRank == 0) {
 		// wait for the message 'done' from all workers
 		for(int i = 1; i < numProcessors; i++) {
 			InputMessage imsg;
 			boost::mpi::status msg = world.recv(boost::mpi::any_source, InputMessage::DONE_MSG_TAG, imsg);
 		}
-		// merge all the output files into a full graph output file
-		ofstream output_full_file(outputFileName.c_str(), ios::out | ios::trunc);
-		if(!output_full_file) {
-			BOOST_LOG_TRIVIAL(fatal) << "Cannot open full output result file to: " << outputFileName;
+		// merge all the signed graph output files into a full graph output file
+		ofstream output_full_file_sg(outputFileName.c_str(), ios::out | ios::trunc);
+		ofstream output_full_file_hist(outputFileNameHist_ss.str().c_str(), ios::out | ios::trunc);
+		if(!output_full_file_sg) {
+			BOOST_LOG_TRIVIAL(fatal) << "Cannot open full SG output result file to: " << outputFileName;
+			return false;
+		}
+		if(!output_full_file_hist) {
+			BOOST_LOG_TRIVIAL(fatal) << "Cannot open full histogram output result file to: " << outputFileNameHist_ss.str();
 			return false;
 		}
 		for(int i = 0; i < numProcessors; i++) {
-			stringstream partialFilenameN_ss;
-			partialFilenameN_ss << outputFileName << ".part" << i;
-			ifstream in(partialFilenameN_ss.str().c_str());
-			if (!in.is_open()){
+			stringstream partialSGFilenameN_ss, partialHistFilenameN_ss;
+			partialSGFilenameN_ss << outputFileName << ".part" << i;
+			partialHistFilenameN_ss << outputFileName << "-histogram.part" << i;
+			ifstream inSG(partialSGFilenameN_ss.str().c_str());
+			ifstream inHist(partialHistFilenameN_ss.str().c_str());
+			if (!inSG.is_open() or !inHist.is_open()){
 				BOOST_LOG_TRIVIAL(fatal) << "Error opening output file number " << i;
 				return false;
 			}
-			string fileContents = get_file_contents(partialFilenameN_ss.str().c_str());
-			output_full_file << fileContents;
-		}
-		output_full_file.close();
+			string SGfileContents = get_file_contents(partialSGFilenameN_ss.str().c_str());
+			output_full_file_sg << SGfileContents;
 
+			if(i > 0) {  // the leader's histogram is already in the histogram map
+				// merges the histogram data using a full map
+				string line;
+				getline(inHist, line);  // Get the frist line from the file, if any.
+				while ( inHist ) {  // Continue if the line was sucessfully read.
+					// Process the line.
+					istringstream iss(line);
+					string key;
+					long value;
+					iss >> key >> value;
+					if(histogram.find(key) != histogram.end()) {
+						histogram[key] += value;
+					} else {
+						histogram[key] = value;
+					}
+
+					getline(inHist, line);   // Try to get another line.
+				}
+			}
+		}
+		// write the consolidated histogram to text file
+		stringstream ss_histogram_full;
+		for(map<string,long>::const_iterator it = histogram.begin(); it != histogram.end(); ++it) {
+			ss_histogram_full << it->first << " " << it->second << "\n";
+		}
+		output_full_file_hist << ss_histogram_full.str();
+
+		output_full_file_sg.close();
+		output_full_file_hist.close();
 	} else {
 		// send a message to the leader process to inform that the task is done
 		BOOST_LOG_TRIVIAL(info) << "Sending done message to leader...";
