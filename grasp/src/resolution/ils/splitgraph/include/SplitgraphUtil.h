@@ -16,6 +16,8 @@
 #include "graph/include/Clustering.h"
 #include "graph/include/Imbalance.h"
 
+#include "ProcessClustering.h"
+
 using namespace boost::numeric::ublas;
 using namespace clusteringgraph;
 
@@ -100,12 +102,6 @@ struct weighted_pos_neg_degree_ordering_desc
     }
 };
 
-struct ImbalanceMatrix {
-	matrix<double> pos, neg;
-	ImbalanceMatrix() : pos(), neg() { }
-	ImbalanceMatrix(int nc) : pos(zero_matrix<double>(nc, nc)), neg(zero_matrix<double>(nc, nc)) { }
-};
-
 class SplitgraphUtil {
 public:
 	SplitgraphUtil();
@@ -114,7 +110,8 @@ public:
 	ImbalanceMatrix calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster,
 			std::vector< pair<long, double> >& vertexImbalance, const int& numberOfProcesses);
 
-	void updateProcessToProcessImbalanceMatrix(SignedGraph& g, const ClusterArray& previousSplitgraphClusterArray,
+	void updateProcessToProcessImbalanceMatrix(SignedGraph& g,
+			const ClusterArray& previousSplitgraphClusterArray,
 			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
 			ImbalanceMatrix& processClusterImbMatrix, const int& numberOfProcesses);
 
@@ -124,7 +121,7 @@ public:
 	std::vector<long> getListOfVeticesInCluster(SignedGraph& g, Clustering& globalClustering,
 			long clusterNumber);
 
-	Imbalance calculateExternalImbalanceSumBetweenProcesses(ImbalanceMatrix& processClusterImbMatrix);
+	Imbalance calculateExternalImbalanceSumBetweenProcesses(const ImbalanceMatrix& processClusterImbMatrix);
 
 	Imbalance calculateInternalImbalanceSumOfAllProcesses(std::vector<Imbalance>& internalProcessImbalance);
 
@@ -143,20 +140,20 @@ public:
 
 	std::vector< Coordinate > getMatrixElementsAsList(ImbalanceMatrix &mat);
 
-	long findMostImbalancedVertexInProcessPair(SignedGraph& g, ClusterArray& splitGraphCluster,
-			ClusterArray& globalCluster, Coordinate processPair);
+	long findMostImbalancedVertexInProcessPair(SignedGraph& g, const ClusterArray& splitGraphCluster,
+			const ClusterArray& globalCluster, Coordinate processPair) const;
 
 	std::vector<Coordinate> obtainListOfImbalancedClusters(SignedGraph& g,
-			ClusterArray& splitGraphCluster, Clustering& globalClustering);
+			Clustering& globalClustering);
 
 	/**
 	 * A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.
 	 */
 	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
-				Clustering& splitGraphClustering);
+				const ProcessClustering& processClustering);
 
 	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
-					Clustering& splitGraphClustering, long maximumNumberOfVertices);
+				const ProcessClustering& processClustering, long maximumNumberOfVertices);
 
 	/**
 	  *  Returns a list containing the vertices that belong to the pseudo clique C+,

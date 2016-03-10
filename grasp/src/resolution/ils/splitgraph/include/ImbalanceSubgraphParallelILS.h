@@ -54,7 +54,7 @@ public:
 			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
-	Clustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem, bool partitionByVertex);
+	ProcessClustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem, bool partitionByVertex);
 
 	/**
 	 * Triggers the distributed ILS (split graph) resolution, invoking the local ILS
@@ -64,8 +64,7 @@ public:
 	Clustering runDistributedILS(ConstructClustering *construct,
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
-			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix,
-			Clustering& currentSolution);
+			ProcessClustering& splitgraphClustering, Clustering& currentSolution);
 
 	/**
 	 * Executes a local ILS in each subgraph / process, gathers the individual results and
@@ -74,7 +73,7 @@ public:
 	Clustering distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
 			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
-			ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix);
+			ProcessClustering& splitgraphClustering);
 
 	/**
 	 * Executes 2 local ILS procedures for each cluster movement (2 subgraphs), gathers the individual results,
@@ -89,25 +88,15 @@ public:
 	 * Rebalances clusters between processes without running ILS (zero-cost moves).
 	 */
 	void rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, ClusteringProblem& problem,
-			Clustering& bestSplitgraphClustering,
-			Clustering& bestClustering,	const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix);
-
-	/**
-	 * 1-move-vertex: (DISABLED) moves a vertex from one process to another.
-	 */
-	bool moveVertex1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
-			Clustering& bestClustering,
-			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
-			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
-			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-			ClusteringProblem& problem, ExecutionInfo& info);
+			ProcessClustering& bestSplitgraphClustering,
+			Clustering& bestClustering,	const int& numberOfProcesses);
 
 	/**
 	 * 1-move-cluster: moves a cluster from one process to another.
 	 */
-	bool moveCluster1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
+	bool moveCluster1opt(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
-			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			const int& numberOfProcesses,
 			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
@@ -116,9 +105,9 @@ public:
 	 * 	swap-cluster: in this neighborhood the priority is swapping a bigger cluster in an overloaded process
 	 * 	with a smaller cluster from a less-loaded process.
 	 */
-	bool swapCluster1opt(SignedGraph* g, Clustering& bestSplitgraphClustering,
+	bool swapCluster1opt(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
-			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			const int& numberOfProcesses,
 			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
@@ -126,9 +115,9 @@ public:
 	/**
 	 * 2-move-cluster: try to move 2 clusters from an overloaded process to 2 less-loaded processes.
 	 */
-	bool twoMoveCluster(SignedGraph* g, Clustering& bestSplitgraphClustering,
+	bool twoMoveCluster(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
-			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			const int& numberOfProcesses,
 			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
@@ -137,9 +126,9 @@ public:
 	 * quasi-clique-move or pseudo-clique-move: moves a quasi-clique from an existing cluster to
 	 * a new cluster in another process.
 	 */
-	bool splitClusterMove(SignedGraph* g, Clustering& bestSplitgraphClustering,
+	bool splitClusterMove(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 			Clustering& bestClustering,
-			const int& numberOfProcesses, ImbalanceMatrix& processClusterImbMatrix,
+			const int& numberOfProcesses,
 			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
@@ -148,9 +137,9 @@ public:
 	 * Distributed VND: alternates between 4 types of neighborhood structures that move clusters
 	 * between processes, in a distributed fashion.
 	 */
-	long variableNeighborhoodDescent(SignedGraph* g, Clustering& bestSplitgraphClustering,
+	long variableNeighborhoodDescent(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 			Clustering& bestClustering, const int& numberOfProcesses,
-			ImbalanceMatrix& processClusterImbMatrix, ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+			ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar, int invocationNumber);
 
@@ -180,8 +169,7 @@ protected:
 			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& vertexList);
 
 	void moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
-			Clustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess,
-			ImbalanceMatrix& processClusterImbMatrix);
+			ProcessClustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess);
 };
 
 } /* namespace ils */

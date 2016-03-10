@@ -61,7 +61,7 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfClustersFromProcess(SignedGr
 	return clusterList;
 }
 
-Imbalance SplitgraphUtil::calculateExternalImbalanceSumBetweenProcesses(ImbalanceMatrix& processClusterImbMatrix) {
+Imbalance SplitgraphUtil::calculateExternalImbalanceSumBetweenProcesses(const ImbalanceMatrix& processClusterImbMatrix) {
 	double externalImbalancePosSum = 0.0;
 	double externalImbalanceNegSum = 0.0;
 	for (unsigned i = 0; i < processClusterImbMatrix.pos.size1(); ++i) {
@@ -181,7 +181,7 @@ long SplitgraphUtil::chooseRandomVertex(std::list<VertexDegree>& vertexList, lon
 }
 
 std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClusters(SignedGraph& g,
-		ClusterArray& splitGraphCluster, Clustering& globalClustering) {
+		Clustering& globalClustering) {
 
 	long n = g.getN();
 	UndirectedGraph::edge_descriptor e;
@@ -247,9 +247,10 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClusters(SignedGra
 }
 
 std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(SignedGraph& g,
-		Clustering& splitGraphClustering, long maximumNumberOfVertices) {
+		const ProcessClustering& processClustering, long maximumNumberOfVertices) {
 	long n = g.getN();
-	int numberOfProcesses = splitGraphClustering.getNumberOfClusters();
+	const Clustering& splitgraphClustering = processClustering.getSplitgraphClustering();
+	int numberOfProcesses = splitgraphClustering.getNumberOfClusters();
 	// A vertex-overloaded process is a process with more than (maximumNumberOfVertices) vertices.
 	BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] List of overloaded processes (with more than "
 			<< maximumNumberOfVertices << " vertices): ";
@@ -258,8 +259,8 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(SignedGr
 	stringstream processListStr;
 	// For each process px
 	for(long px = 0; px < numberOfProcesses; px++) {
-		if(splitGraphClustering.getClusterSize(px) > maximumNumberOfVertices) {
-			overloadedProcessList.push_back(Coordinate(px, 0, splitGraphClustering.getClusterSize(px)));
+		if(splitgraphClustering.getClusterSize(px) > maximumNumberOfVertices) {
+			overloadedProcessList.push_back(Coordinate(px, 0, splitgraphClustering.getClusterSize(px)));
 			processListStr << px << " ";
 		}
 	}
@@ -272,13 +273,14 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(SignedGr
 }
 
 std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(SignedGraph& g,
-		Clustering& splitGraphClustering) {
+		const ProcessClustering& processClustering) {
 
 	long n = g.getN();
-	int numberOfProcesses = splitGraphClustering.getNumberOfClusters();
+	const Clustering& splitgraphClustering = processClustering.getSplitgraphClustering();
+	int numberOfProcesses = splitgraphClustering.getNumberOfClusters();
 	// A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.
 	long numberOfEquallyDividedVertices = (long)ceil(n / (double)numberOfProcesses);
-	return obtainListOfOverloadedProcesses(g, splitGraphClustering, numberOfEquallyDividedVertices);
+	return obtainListOfOverloadedProcesses(g, processClustering, numberOfEquallyDividedVertices);
 }
 
 ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster,
@@ -399,7 +401,7 @@ std::vector< Coordinate > SplitgraphUtil::getMatrixElementsAsList(ImbalanceMatri
 }
 
 long SplitgraphUtil::findMostImbalancedVertexInProcessPair(SignedGraph& g,
-		ClusterArray& splitGraphCluster, ClusterArray& globalCluster, Coordinate processPair) {
+		const ClusterArray& splitGraphCluster, const ClusterArray& globalCluster, Coordinate processPair) const {
 
 	long n = g.getN();
 	UndirectedGraph::edge_descriptor e;
