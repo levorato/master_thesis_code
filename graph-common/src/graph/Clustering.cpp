@@ -147,7 +147,7 @@ Clustering::~Clustering() {
 	// cout << "Freeing memory of Clustering object..." << endl;
 }
 
-unsigned long Clustering::getNumberOfClusters() const {
+const unsigned long Clustering::getNumberOfClusters() const {
 	return this->clusterSize.size();
 }
 
@@ -209,7 +209,7 @@ void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
 	}
 }
 
-unsigned long Clustering::getClusterSize(unsigned long k) {
+unsigned long Clustering::getClusterSize(unsigned long k) const {
 	return this->clusterSize[k];
 }
 

@@ -10,8 +10,10 @@
 
 #include <iostream>
 #include <boost/serialization/access.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
 
 using namespace std;
+using namespace boost::numeric::ublas;
 
 namespace clusteringgraph {
 
@@ -67,6 +69,12 @@ private:
 		ar & positiveValue;
 		ar & negativeValue;
 	}
+};
+
+struct ImbalanceMatrix {
+	matrix<double> pos, neg;
+	ImbalanceMatrix() : pos(), neg() { }
+	ImbalanceMatrix(int nc) : pos(zero_matrix<double>(nc, nc)), neg(zero_matrix<double>(nc, nc)) { }
 };
 
 } /* namespace clusteringgraph */

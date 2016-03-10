@@ -122,7 +122,7 @@ public:
 	/**
 	 * Returns the number of clusters in this clustering configuration.
 	 */
-	unsigned long getNumberOfClusters() const;
+	const unsigned long getNumberOfClusters() const;
 
 	/**
 	 * Removes the k-th cluster. Attention!!! This method DOES NOT
@@ -134,7 +134,7 @@ public:
 	/**
 	 * Calculates the size of the k-th cluster.
 	 */
-	unsigned long getClusterSize(unsigned long k);
+	unsigned long getClusterSize(unsigned long k) const;
 
 	void setClusterSize(unsigned long k, unsigned long size);
 
@@ -161,7 +161,7 @@ public:
 		this->imbalance = imbalance;
 	}
 
-	const ClusterArray& getClusterArray() {
+	const ClusterArray& getClusterArray() const {
 		return clusterArray;
 	}
 
