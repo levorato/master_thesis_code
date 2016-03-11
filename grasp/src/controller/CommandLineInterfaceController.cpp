@@ -742,6 +742,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						std::vector<long> globalVertexId;
 						// time spent on processing
 						double timeSpent = 0.0;
+						long n = 0, m = 0; // number of vertices and edges of the graph
 
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpg.vertexList.size() > 0) {
@@ -753,7 +754,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								add_vertex(*it, subg);
 							}
 							sg.graph = subg; */
-							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
+							n = num_vertices(sg.graph);
+							m = num_edges(sg.graph);
+							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << m;
 
 							GainFunctionFactory functionFactory(&sg);
 							ConstructClustering defaultConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
@@ -773,6 +776,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								timeSpent = resolution.getTotalTimeSpent();
 							}
 						} else {
+							n = g->getN();
+							m = g->getM();
 							if(imsgpg.cudaEnabled) {
 								bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
 													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
@@ -785,7 +790,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						}
 
 						// Sends the result back to the leader process
-						OutputMessage omsg(bestClustering, CUDAgrasp.getNumberOfTestedCombinations(), timeSpent, globalVertexId);
+						OutputMessage omsg(bestClustering, CUDAgrasp.getNumberOfTestedCombinations(), timeSpent, globalVertexId, n, m);
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_GRASP_TAG, omsg);
 						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": GRASP Output Message sent to leader.";
 
@@ -903,7 +908,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						}
 
 						// Sends the result back to the leader process
-						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations(), timeSpent, globalVertexId);
+						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations(), timeSpent, globalVertexId, n, e);
 						omsg.num_vertices = n;
 						omsg.num_edges = e;
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
@@ -952,7 +957,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 						// Sends the result back to the master process
 						int leader = stat.source();
-						OutputMessage omsg(bestClustering, pnSearch.getNumberOfTestedCombinations(), 0.0, globalVertexId);
+						OutputMessage omsg(bestClustering, pnSearch.getNumberOfTestedCombinations(), 0.0, globalVertexId, g->getN(), g->getM());
 						world.send(leader, MPIMessage::OUTPUT_MSG_PARALLEL_VND_TAG, omsg);
 						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << ": VND Output Message sent to master number "
 								<< leader << ". I(P) = " << bestClustering.getImbalance().getValue();

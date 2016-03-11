@@ -309,8 +309,8 @@ public:
 
 	}
 
-	OutputMessage(Clustering &c, long nc, double time, std::vector<long> gVertexId) : clustering(c),
-			numberOfTestedCombinations(nc), timeSpent(time), globalVertexId(gVertexId), num_vertices(0), num_edges(0) {
+	OutputMessage(Clustering &c, long nc, double time, std::vector<long> gVertexId, long n, long m) : clustering(c),
+			numberOfTestedCombinations(nc), timeSpent(time), globalVertexId(gVertexId), num_vertices(n), num_edges(m) {
 
 	}
 

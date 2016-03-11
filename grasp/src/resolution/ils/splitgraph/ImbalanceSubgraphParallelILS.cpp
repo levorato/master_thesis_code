@@ -779,8 +779,9 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 				// Validacao do calculo da FO
 				/*
 				Clustering validation(globalClusterArray, *g, problem);
-				if(validation.getImbalance().getValue() != globalClustering.getImbalance().getValue()) {
-					BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] I(P) DOES NOT MATCH! Correct I(P) = " << validation.getImbalance().getValue()
+				if(fabs(validation.getImbalance().getValue() - globalClustering.getImbalance().getValue()) > EPS) {
+					BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] I(P) DOES NOT MATCH! Correct I(P) = "
+						<< std::setprecision(5) << std::fixed << validation.getImbalance().getValue()
 						<< " vs I(P) = " << globalClustering.getImbalance().getValue();
 				} */
 
@@ -1163,8 +1164,9 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 
 			// TODO comment this validation
 			Clustering validation(globalClusterArray, *g, problem);
-			if(validation.getImbalance().getValue() != globalClustering.getImbalance().getValue()) {
-				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] I(P) DOES NOT MATCH! Correct I(P) = " << validation.getImbalance().getValue()
+			if(fabs(validation.getImbalance().getValue() - globalClustering.getImbalance().getValue()) > EPS) {
+				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] I(P) DOES NOT MATCH! Correct I(P) = "
+						<< std::setprecision(5) << std::fixed << validation.getImbalance().getValue()
 						<< " vs I(P) = " << globalClustering.getImbalance().getValue();
 
 				stringstream ss;
@@ -1508,12 +1510,13 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 					listOfMovedVerticesFromClusterB, tempProcessClusterImbMatrix, numberOfSlaves + 1);
 			// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix from 2-move done.";
 
-			// Valida se a matriz incremental e a full sao iguais - TODO comentar
+			// Valida se a matriz incremental e a full sao iguais
+			/*
 			ImbalanceMatrix tempProcessClusterImbMatrix3 = util.calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray,
 					this->vertexImbalance, numberOfSlaves + 1);
 			bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, tempProcessClusterImbMatrix3.pos, 0.001, 0.1);
 			bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, tempProcessClusterImbMatrix3.neg, 0.001, 0.1);
-			BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+			BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2; */
 
 			// Merges the partial solutions into a global solution for the whole graph
 			std::vector<OutputMessage> sourceAndDestinationMovementMsg;
@@ -1573,9 +1576,10 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 
 			// TODO comment this validation
 			Clustering validation(globalClusterArray, *g, problem);
-			if(validation.getImbalance().getValue() != globalClustering.getImbalance().getValue()) {
-				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] I(P) DOES NOT MATCH! Correct I(P) = " << validation.getImbalance().getValue()
-										<< " vs I(P) = " << globalClustering.getImbalance().getValue();
+			if(fabs(validation.getImbalance().getValue() - globalClustering.getImbalance().getValue()) > EPS) {
+				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] I(P) DOES NOT MATCH! Correct I(P) = "
+						<< std::setprecision(5) << std::fixed << validation.getImbalance().getValue()
+						<< " vs I(P) = " << globalClustering.getImbalance().getValue();
 
 				stringstream ss;
 				ss << "InternalImbalanceVector: ";
@@ -1951,8 +1955,10 @@ bool ImbalanceSubgraphParallelILS::splitClusterMove(SignedGraph* g, ProcessClust
 					ClusterArray cTemp = newGlobalClustering.getClusterArray();
 					Clustering validation(cTemp, *g, problem);
 					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Full Obj Calc: I(P) = " << validation.getImbalance().getValue();
-					if(validation.getImbalance().getValue() != newGlobalClustering.getImbalance().getValue()) {
-						BOOST_LOG_TRIVIAL(error) << "[MoveCluster1opt] Obj functions do not match.";
+					if(fabs(validation.getImbalance().getValue() - globalClustering.getImbalance().getValue()) > EPS) {
+						BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] I(P) DOES NOT MATCH! Correct I(P) = "
+							<< std::setprecision(5) << std::fixed << validation.getImbalance().getValue()
+							<< " vs I(P) = " << globalClustering.getImbalance().getValue();
 					} */
 
 					if(newGlobalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
@@ -2166,7 +2172,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph 0" << ": num_edges = 0" <<
 								" , num_vertices = 0" << ", I(P) = "
 								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
-		return OutputMessage(leaderClustering, 0, 0.0, globalVertexId);
+		return OutputMessage(leaderClustering, 0, 0.0, globalVertexId, 0, 0);
 	} else {
 		CUDAILS cudails;
 		SignedGraph sg(g->graph, vertexList);
@@ -2195,7 +2201,8 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P0" << ": num_edges = " <<
 								num_edges(sg.graph) << " , num_vertices = " << num_vertices(sg.graph) << ", I(P) = "
 								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
-		return OutputMessage(leaderClustering, cudails.getNumberOfTestedCombinations(), cudails.getTotalTimeSpent(), globalVertexId);
+		return OutputMessage(leaderClustering, cudails.getNumberOfTestedCombinations(), cudails.getTotalTimeSpent(), globalVertexId,
+				num_vertices(sg.graph), num_edges(sg.graph));
 	}
 }
 
@@ -2207,10 +2214,12 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(Signe
 	// However, the internal and external imbalance values of the participating processes must be updated
 	// Assumes the imbalance matrix between processes has already been updated
 	// Updates the internal imbalance of the participating processes
+	/*  DISABLED, SINCE rebalanceClustersBetweenProcessesWithZeroCost() INVOKES FULL RECALCULATION IN THE END OF THE PROCEDURE
 	Imbalance imbSrc = util.calculateProcessInternalImbalance(g, bestClustering, sourceProcess);
 	bestClustering.setProcessImbalance(sourceProcess, imbSrc);
 	Imbalance imbDest = util.calculateProcessInternalImbalance(g, bestClustering, destinationProcess);
 	bestClustering.setProcessImbalance(destinationProcess, imbDest);
+	*/
 
 	// validating imbalance value FIXME remover esta validacao
 	// Calculates the internal imbalance sum (inside each process)
