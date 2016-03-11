@@ -28,7 +28,7 @@ SplitgraphUtil::~SplitgraphUtil() {
 	// TODO Auto-generated destructor stub
 }
 
-std::vector<long> SplitgraphUtil::getListOfVeticesInCluster(SignedGraph& g, Clustering& globalClustering,
+std::vector<long> SplitgraphUtil::getListOfVeticesInCluster(SignedGraph& g, const Clustering& globalClustering,
 		long clusterNumber) {
 
 	long n = g.getN();
@@ -44,7 +44,7 @@ std::vector<long> SplitgraphUtil::getListOfVeticesInCluster(SignedGraph& g, Clus
 }
 
 std::vector<Coordinate> SplitgraphUtil::obtainListOfClustersFromProcess(SignedGraph& g,
-		Clustering& globalClustering, int processNumber) {
+		const Clustering& globalClustering, int processNumber) {
 
 	long nc = globalClustering.getNumberOfClusters();
 	ClusterArray globalCluster = globalClustering.getClusterArray();

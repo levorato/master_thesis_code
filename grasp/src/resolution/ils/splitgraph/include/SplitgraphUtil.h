@@ -116,9 +116,9 @@ public:
 			ImbalanceMatrix& processClusterImbMatrix, const int& numberOfProcesses);
 
 	std::vector<Coordinate> obtainListOfClustersFromProcess(SignedGraph& g,
-				Clustering& globalClustering, int processNumber);
+				const Clustering& globalClustering, int processNumber);
 
-	std::vector<long> getListOfVeticesInCluster(SignedGraph& g, Clustering& globalClustering,
+	std::vector<long> getListOfVeticesInCluster(SignedGraph& g, const Clustering& globalClustering,
 			long clusterNumber);
 
 	Imbalance calculateExternalImbalanceSumBetweenProcesses(const ImbalanceMatrix& processClusterImbMatrix);

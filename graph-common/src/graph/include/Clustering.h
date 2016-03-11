@@ -91,7 +91,7 @@ public:
 	/**
 	 * Returns the biggest cluster (index) of the cluster (the one with more elements).
 	 */
-	int getBiggestClusterIndex();
+	int getBiggestClusterIndex() const;
 
 	/**
 	 * Adds a node i in cluster k. Recalculates the objective
@@ -112,12 +112,12 @@ public:
 	/**
 	 * Prints the clustering config on the screen.
 	 */
-	void printClustering(unsigned long n);
+	void printClustering(unsigned long n) const;
 
 	/**
 	 * Prints the clustering config on the ostream os.
 	 */
-	void printClustering(ostream& os, unsigned long n);
+	void printClustering(ostream& os, unsigned long n) const;
 
 	/**
 	 * Returns the number of clusters in this clustering configuration.
@@ -138,7 +138,7 @@ public:
 
 	void setClusterSize(unsigned long k, unsigned long size);
 
-	Imbalance getObjectiveFunctionValue();
+	Imbalance getObjectiveFunctionValue() const;
 
 	void setObjectiveFunctionValue(Imbalance f);
 
@@ -146,14 +146,14 @@ public:
 	 * Verifies if this clustering object equals another clustering object.
 	 * @return bool
 	 */
-	bool equals(Clustering& c);
+	bool equals(Clustering& c) const;
 
-	string toString(unsigned long n);
+	string toString(unsigned long n) const;
 
 	/**
 	 * Returns the value of the objective function corresponding to this cluster.
 	 */
-	Imbalance& getImbalance() {
+	const Imbalance& getImbalance() const {
 		return imbalance;
 	}
 
@@ -168,7 +168,7 @@ public:
 	/**
 	 * Return to which process a cluster belongs to (used in splitgraph clustering only).
 	 */
-	const std::vector<unsigned int>& getClusterProcessOrigin() {
+	const std::vector<unsigned int>& getClusterProcessOrigin() const {
 		return processOrigin;
 	}
 
@@ -182,7 +182,7 @@ public:
 	/**
 	 * Returns a list containing the internal process imbalance for each process in splitgraph.
 	 */
-	const std::vector<Imbalance>& getInternalProcessImbalance() {
+	const std::vector<Imbalance>& getInternalProcessImbalance() const {
 		return internalProcessImbalance;
 	}
 
@@ -212,7 +212,7 @@ private:
 	/** Stores the internal imbalance (positive and negative) for a given process (splitgraph only) */
 	std::vector<Imbalance> internalProcessImbalance;
 
-	void print(std::ostream& os, ClusterArray& a, unsigned long n);
+	void print(std::ostream& os, const ClusterArray& a, unsigned long n) const;
 
 	// serialization-specific code
 	friend class boost::serialization::access;

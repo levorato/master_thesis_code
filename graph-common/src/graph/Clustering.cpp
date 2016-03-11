@@ -171,8 +171,8 @@ void Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const unsigned
 	}
 }
 
-int Clustering::getBiggestClusterIndex() {
-	std::vector<unsigned long>::iterator pos = std::max_element(clusterSize.begin(), clusterSize.end());
+int Clustering::getBiggestClusterIndex() const {
+	std::vector<unsigned long>::const_iterator pos = std::max_element(clusterSize.begin(), clusterSize.end());
 	return std::distance(clusterSize.begin(), pos);
 }
 
@@ -238,18 +238,18 @@ void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, con
 	}
 }
 
-void Clustering::printClustering(unsigned long n) {
+void Clustering::printClustering(unsigned long n) const {
 	BOOST_LOG_TRIVIAL(trace) << "Clustering configuration: I(P) = " << fixed << setprecision(2)
 			<< this->imbalance.getValue();
 	BOOST_LOG_TRIVIAL(trace) << toString(n);
 }
 
-void Clustering::printClustering(ostream& os, unsigned long n) {
+void Clustering::printClustering(ostream& os, unsigned long n) const {
 	os << "Clustering configuration: " << std::endl;
 	print(os, clusterArray, n);
 }
 
-void Clustering::print(std::ostream& os, ClusterArray& a, unsigned long n)
+void Clustering::print(std::ostream& os, const ClusterArray& a, unsigned long n) const
 {
 	unsigned long numberOfClusters = *std::max_element(a.begin(), a.end()) + 1;
 	std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
@@ -267,14 +267,14 @@ void Clustering::print(std::ostream& os, ClusterArray& a, unsigned long n)
     }
 }
 
-string Clustering::toString(unsigned long n) {
+string Clustering::toString(unsigned long n) const {
 	stringstream ss;
 	printClustering(ss, n);
 	return ss.str();
 }
 
 // TODO verificar se essa igualdade funciona
-bool Clustering::equals(Clustering& c) {
+bool Clustering::equals(Clustering& c) const {
 	if(std::equal(&this->clusterArray, &this->clusterArray +
 			this->clusterArray.size(), &c.clusterArray))
 		return true;
