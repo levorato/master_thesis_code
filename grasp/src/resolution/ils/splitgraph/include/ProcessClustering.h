@@ -16,11 +16,11 @@ namespace ils {
 class ProcessClustering {
 public:
 	ProcessClustering(SignedGraph *g, ClusteringProblem &p, ClusterArray& splitgraphClusterArray) :
-		splitgraphClustering(splitgraphClusterArray, *g, p), interProcessImbalanceMatrix() {
+		splitgraphClustering(splitgraphClusterArray, *g, p, 0.0, 0.0), interProcessImbalanceMatrix() {
 
 	}
 	ProcessClustering(SignedGraph *g, ClusteringProblem &p, ClusterArray& splitgraphClusterArray, ImbalanceMatrix& processClusterImbMatrix) :
-		splitgraphClustering(splitgraphClusterArray, *g, p), interProcessImbalanceMatrix(processClusterImbMatrix) {
+		splitgraphClustering(splitgraphClusterArray, *g, p, 0.0, 0.0), interProcessImbalanceMatrix(processClusterImbMatrix) {
 
 	}
 	virtual ~ProcessClustering();

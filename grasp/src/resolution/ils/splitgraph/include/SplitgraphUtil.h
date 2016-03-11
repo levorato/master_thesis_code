@@ -179,6 +179,8 @@ public:
 	std::vector<Imbalance> calculateProcessInternalImbalance(SignedGraph& g,
 			ClusterArray& splitGraphCluster, ClusterArray& globalCluster, int numberOfProcesses);
 
+	void validaSplitgraphArray(SignedGraph &g, ProcessClustering& processClustering, Clustering& globalClustering);
+
 };
 
 } /* namespace ils */
