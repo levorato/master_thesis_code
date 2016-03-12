@@ -704,6 +704,7 @@ std::vector<Imbalance> SplitgraphUtil::calculateProcessInternalImbalance(SignedG
 }
 
 void SplitgraphUtil::validaSplitgraphArray(SignedGraph &g, ProcessClustering& processClustering, Clustering& globalClustering) {
+	/*  DISABLED - USE ONLY FOR DEBUGGING PURPOSES
 	const ClusterArray splitgraphClusterArray = processClustering.getClusterArray();
 	const std::vector<unsigned int> clusterProcessOrigin = globalClustering.getClusterProcessOrigin();
 	long nc = globalClustering.getNumberOfClusters();
@@ -718,11 +719,11 @@ void SplitgraphUtil::validaSplitgraphArray(SignedGraph &g, ProcessClustering& pr
 		for(std::vector<long>::iterator it = vertexList.begin(); it != vertexList.end(); it++) {
 			long v = *it;
 			if(processOrigin != splitgraphClusterArray[v]) {
-				BOOST_LOG_TRIVIAL(error) << "Vertex " << v << " is in process " << splitgraphClusterArray[v]
+				BOOST_LOG_TRIVIAL(error) << "Vertex " << v << " (from global cluster " << k << ") is in process " << splitgraphClusterArray[v]
 					<< " but its cluster is in process " << processOrigin;
 			}
 		}
-	}
+	} */
 }
 
 } /* namespace ils */
