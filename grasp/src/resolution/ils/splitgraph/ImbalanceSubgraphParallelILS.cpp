@@ -117,7 +117,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 		//		Um vetor com os vértices que mais contribuem para I(P) (soma de imbalance de cada vertice)
 		//		Uma matriz com a soma do imbalance entre processos
 
-		// VND: for now, using 2 neighborhood structures, first 1-opt cluster move, then 1-opt vertex move
+		// Distributed VND
 		improvements = variableNeighborhoodDescent(g, bestSplitgraphClustering,
 				bestClustering, numberOfProcesses,
 				construct, vnd,
@@ -1691,12 +1691,13 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	splitgraphVNDProcessBalancingHistory.push_back(ss.str());
 	numberOfFrustratedSolutions = 0;
 
-	if(invocationNumber == 0) {
-		// runs a full execution of distributed ILS, in order to find the internal imbalance value of each process
-		bestClustering = runDistributedILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem,
-									info, bestSplitgraphClustering, bestClustering);
-	}
+	// runs a full execution of distributed ILS, in order to find the internal imbalance value of each process
+	ProcessClustering bestSplitgraphClusteringVND = bestSplitgraphClustering;
+	Clustering bestClusteringVND = bestClustering;
+	bestClusteringVND = runDistributedILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem,
+								info, bestSplitgraphClusteringVND, bestClusteringVND);
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best global solution so far: I(P) = " << bestClustering.getImbalance().getValue();
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best VND solution so far: I(P) = " << bestClusteringVND.getImbalance().getValue();
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
@@ -1705,24 +1706,24 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 		boost::timer::cpu_times start_time = timer.elapsed();
 		BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
 
-		rebalanceClustersBetweenProcessesWithZeroCost(g, problem, bestSplitgraphClustering, bestClustering,	numberOfProcesses);
+		rebalanceClustersBetweenProcessesWithZeroCost(g, problem, bestSplitgraphClusteringVND, bestClusteringVND, numberOfProcesses);
 
 		bool improved = false;
 		if(r == 1) {
 			// ************************   Move   1 - opt   cluster ***********************************
-			improved = moveCluster1opt(g, bestSplitgraphClustering, bestClustering,
+			improved = moveCluster1opt(g, bestSplitgraphClusteringVND, bestClusteringVND,
 									numberOfProcesses, construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		} else if(r == 4) {
 			// ************************   Split  Cluster  Move ***********************************
-			improved = splitClusterMove(g, bestSplitgraphClustering, bestClustering,
+			improved = splitClusterMove(g, bestSplitgraphClusteringVND, bestClusteringVND,
 									numberOfProcesses, construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		} else if(r == 3) {  // TODO return 2-move-cluster to r = 2
 			// ************************   2-Move   cluster ***********************************
-			improved = twoMoveCluster(g, bestSplitgraphClustering, bestClustering,
+			improved = twoMoveCluster(g, bestSplitgraphClusteringVND, bestClusteringVND,
 									numberOfProcesses, construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		} else if(r == 2) {
 			// ************************   Swap   1 - opt   cluster ***********************************
-			improved = swapCluster1opt(g, bestSplitgraphClustering, bestClustering,
+			improved = swapCluster1opt(g, bestSplitgraphClusteringVND, bestClusteringVND,
 									numberOfProcesses, construct, vnd, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		}
 		// records statistics for neighborhood structures execution
@@ -1734,29 +1735,29 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 		boost::timer::cpu_times end_time = timer.elapsed();
 		timeSpentOnLocalSearch += (end_time.wall - start_time.wall)	/ double(1000000000);
 
-		if(bestClustering.getImbalance().getValue() < 0.0) {
-			BOOST_LOG_TRIVIAL(error)<< "[Splitgraph] Objective function below zero. Obj = " << bestClustering.getImbalance().getValue();
+		if(bestClusteringVND.getImbalance().getValue() < 0.0) {
+			BOOST_LOG_TRIVIAL(error)<< "[Splitgraph] Objective function below zero. Obj = " << bestClusteringVND.getImbalance().getValue();
 			break;
 		}
 		if(improved) {
 			// BOOST_LOG_TRIVIAL(trace) << myRank << ": New local solution found: " << setprecision(2) << il.getValue() << endl;
 			r = 1;
 			improvedOnVND++;
-			solutionHistory.push_back( std::make_pair(bestClustering, bestSplitgraphClustering) );
+			solutionHistory.push_back( std::make_pair(bestClusteringVND, bestSplitgraphClusteringVND) );
 			stringstream ss;
-			ss << iteration << ", " << timeSpentOnLocalSearch << ", " << bestClustering.getImbalance().getValue();
+			ss << iteration << ", " << timeSpentOnLocalSearch << ", " << bestClusteringVND.getImbalance().getValue();
 			splitgraphVNDProcessBalancingHistory.push_back(ss.str());
 
 			// prints the new process x vertex configuration
-			int np = bestSplitgraphClustering.getNumberOfClusters();
+			int np = bestSplitgraphClusteringVND.getNumberOfClusters();
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best clustering config so far:";
 			for(int px = 0; px < np; px++) {
-				int k = util.obtainListOfClustersFromProcess(*g, bestClustering, px).size();
+				int k = util.obtainListOfClustersFromProcess(*g, bestClusteringVND, px).size();
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << px << ": num_vertices = "
-						<< bestSplitgraphClustering.getClusterSize(px) << ", k = " << k;
+						<< bestSplitgraphClusteringVND.getClusterSize(px) << ", k = " << k;
 			}
 
-			if(bestClustering.getImbalance().getValue() <= EPS) {
+			if(bestClusteringVND.getImbalance().getValue() <= EPS) {
 				BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Stopping global VND local search, since I(P) <= 0!";
 				break;
 			}
@@ -1766,7 +1767,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 		}
 		iteration++;
 	}
-	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search done. Obj = " << bestClustering.getImbalance().getValue() <<
+	BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND local search done. Obj = " << bestClusteringVND.getImbalance().getValue() <<
 			". Time spent: " << timeSpentOnLocalSearch << " s.";
 
 	stringstream splitgraphVNDResults;
@@ -1783,7 +1784,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	splitgraphVNDResults << "Best solution found \n";
 
 	std::vector< std::vector< long > > verticesInProcess(numberOfProcesses, std::vector< long >());
-	const ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
+	const ClusterArray splitgraphClusterArray = bestSplitgraphClusteringVND.getClusterArray();
 	long n = g->getN();
 	for(long i = 0; i < n; i++) {
 		long k = splitgraphClusterArray[i];
@@ -1792,13 +1793,13 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	splitgraphVNDResults << "Subgraph, n, m, k \n";
 	for(int p = 0; p < numberOfProcesses; p++) {
 		SignedGraph sg(g->graph, verticesInProcess[p]);
-		std::vector<Coordinate> clusterList = util.obtainListOfClustersFromProcess(*g, bestClustering, p);
+		std::vector<Coordinate> clusterList = util.obtainListOfClustersFromProcess(*g, bestClusteringVND, p);
 
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_vertices = " << sg.getN() <<
 				"; num_edges = " <<	sg.getM() << "; k = " << clusterList.size();
 		splitgraphVNDResults << p << ", " << sg.getN() << ", " << sg.getM() << ", " << clusterList.size() << "\n";
 	}
-	splitgraphVNDResults << "I(P), " << bestClustering.getImbalance().getValue() << "\n";
+	splitgraphVNDResults << "I(P), " << bestClusteringVND.getImbalance().getValue() << "\n";
 	splitgraphVNDResults << "Time spent, " << timeSpentOnLocalSearch << "\n";
 
 	// Saves the splitgraph statistics to csv file
@@ -1859,7 +1860,14 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	generateOutputFile(problem, sshistory, info.outputFolder, info.fileId, info.executionId,
 			info.processRank, filePrefix2.str(), construct->getAlpha(), l, iter);
 
-	return improvedOnVND;
+	if( (fabs(bestClusteringVND.getImbalance().getValue() - bestClustering.getImbalance().getValue()) > EPS)
+			and (bestClusteringVND.getImbalance().getValue() - bestClustering.getImbalance().getValue() < EPS) ) {  // a < b
+		bestClustering = bestClusteringVND;
+		bestSplitgraphClustering = bestSplitgraphClusteringVND;
+		return improvedOnVND;
+	} else {
+		return 0;
+	}
 }
 
 /**
