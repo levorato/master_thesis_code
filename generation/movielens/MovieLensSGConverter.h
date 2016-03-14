@@ -12,9 +12,11 @@
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
 
 using namespace boost::numeric::ublas;
 using namespace std;
+using boost::multiprecision::cpp_dec_float_50;
 
 namespace generation {
 
@@ -45,6 +47,9 @@ private:
 
 	std::string get_file_contents(const char *filename);
 	void find_and_replace(string& source, string const& find, string const& replace);
+	cpp_dec_float_50 cosine_similarity(std::vector<double>& votesFromUserA,
+			std::vector<double>& votesFromUserB);
+	bool is_zero_array(std::vector<double>& array);
 };
 
 class InputMessage {

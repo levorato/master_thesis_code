@@ -199,6 +199,24 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	// compressed_matrix<long> common_similar_rating_count(max_user_id, max_user_id);
 	BOOST_LOG_TRIVIAL(info) << "Processing graph with " << max_user_id << " users and " << max_movie_id << " movies...";
 
+	// Calculates the average rating of each user
+	boost::numeric::ublas::vector<double> avg_user_rating(max_user_id, (double)0.0);
+	boost::numeric::ublas::vector<int> user_rating_count(max_user_id, 0);
+	boost::numeric::ublas::vector<long> user_rating_sum(max_user_id, 0);
+	for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
+		std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
+		for(long x = 0; x < ratingList.size(); x++) {
+			std::pair<long, char> user_rating_x = ratingList[x];
+			long user = user_rating_x.first;
+			char rating = user_rating_x.second;
+			user_rating_count(user)++;
+			user_rating_sum(user) += rating;
+		}
+	}
+	for(long u = 0; u < max_user_id; u++) {
+		avg_user_rating(u) = user_rating_sum(u) / (double) user_rating_count(u);
+	}
+
 	// Parallel processing with MPI *************************************
 	// Splits the processing in (n / numProcessors) chunks,
 	// to be consumed by numProcessors processes
@@ -212,6 +230,8 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	}
 	BOOST_LOG_TRIVIAL(info) << "This is process " << myRank << ". Will process user range [" <<
 			initialProcessorUserIndex << ", " << finalProcessorUserIndex << "]";
+	typedef std::pair<char, char> CommonVote;
+	typedef std::vector<CommonVote> CommonVoteList;
 
 	// Begin dividing the MPI Chunk into smaller chunks for local processing
 	long chunkSize = long(std::floor(double(MPIChunkSize) / number_chunks));
@@ -222,107 +242,9 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	if(chunkSize == 0) {
 		number_chunks = 1;
 	}
-
-	// determine the maximum common user rating count
-	BOOST_LOG_TRIVIAL(info) << "1. Determining the maximum common_user_rating_count...";
-	long max_common_rating_count = 0;
-	for(int i = 0; i < number_chunks; i++) {
-		// will process only the range (initialUserIndex <= user_a <= finalUserIndex)
-		long initialUserIndex = initialProcessorUserIndex + i * chunkSize;
-		long finalUserIndex = initialUserIndex + chunkSize - 1;
-		if(remainingVertices > 0 and i == number_chunks - 1) {
-			finalUserIndex = finalProcessorUserIndex;
-			chunkSize = finalUserIndex - initialUserIndex + 1;
-		}
-		BOOST_LOG_TRIVIAL(info) << "1. Processing user range [" << initialUserIndex << ", " << finalUserIndex << "]";
-		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > >
-				common_rating_count(chunkSize, max_user_id);;
-		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > >
-				common_similar_rating_count(chunkSize, max_user_id);
-
-		BOOST_LOG_TRIVIAL(info) << "1. Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")...";
-		cout << "\n1. Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")..." << endl;
-		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
-			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
-			// cout << movie_id << " with size " << ratingList.size() << endl;
-			for(long x = 0; x < ratingList.size(); x++) {
-				std::pair<long, char> user_rating_x = ratingList[x];
-				long user_a = user_rating_x.first;
-				char rating_a = user_rating_x.second;
-				if(initialUserIndex <= user_a and user_a <= finalUserIndex) {
-					for(long y = x + 1; y < ratingList.size(); y++) {
-						std::pair<long, char> user_rating_y = ratingList[y];
-						long user_b = user_rating_y.first;
-						char rating_b = user_rating_y.second;
-						if(user_a != user_b) {
-							common_rating_count(user_a - initialUserIndex, user_b) += 1;
-							/* if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE)
-									or (rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE)
-									or (rating_a == REGULAR_MOVIE and rating_b == REGULAR_MOVIE)) { */
-							if(rating_a == rating_b) {
-								// users A and B have the same opinion about the movie
-								common_similar_rating_count(user_a - initialUserIndex, user_b) += 1;
-							}
-						}
-					}
-				}
-			}
-			// display status of processing done
-			int threshold = int(std::floor(max_movie_id / 10.0));
-			int percentage = int(std::ceil(100 * (double(movie_id) / max_movie_id)));
-			if((movie_id % threshold < EPS) and (percentage != previous_total)) {
-				cout << percentage << " % ";
-				cout.flush();
-				BOOST_LOG_TRIVIAL(info) << percentage << " % ";
-				previous_total = percentage;
-			}
-		}
-		// Discover the maximum common_rating_count between all pairs of users
-		for(long user_a = initialUserIndex; user_a <= finalUserIndex; user_a++) {
-			for(long user_b = 0; user_b < max_user_id; user_b++) {
-				if(user_a != user_b) {
-					long crc = common_rating_count(user_a - initialUserIndex, user_b);
-					if(crc > 0 and crc > max_common_rating_count) {
-						max_common_rating_count = crc;
-					}
-				}
-			}
-		}
-	}
 	boost::mpi::communicator world;
-	if(myRank != 0) {  // every worker process sends its maximum count to the leader
-		BOOST_LOG_TRIVIAL(info) << "1. Sending max_count to leader process. Local value = " << max_common_rating_count;
-		InputMessage imsg(max_common_rating_count);
-		world.send(0, InputMessage::MAX_COUNT_MSG_TAG, imsg);
-		BOOST_LOG_TRIVIAL(info) << "1. Max count sent to leader process.";
-		// receive the overall maximum common count
-		boost::mpi::status msg = world.recv(0, InputMessage::MAX_COUNT_MSG_TAG, imsg);
-		max_common_rating_count = imsg.max;
-		BOOST_LOG_TRIVIAL(info) << "1. Overall max count received from leader. Step 1 done.";
-	} else if(numProcessors > 1) {
-		// wait for the maximum count from all workers
-		BOOST_LOG_TRIVIAL(info) << "1. Waiting for common_user_rating_count from all worker processes...";
-		for(int i = 1; i < numProcessors; i++) {
-			InputMessage imsg;
-			boost::mpi::status msg = world.recv(boost::mpi::any_source, InputMessage::MAX_COUNT_MSG_TAG, imsg);
-			if(imsg.max > max_common_rating_count) {
-				max_common_rating_count = imsg.max;
-			}
-			BOOST_LOG_TRIVIAL(info) << "1. maximum common_user_rating_count received from process " << msg.source();
-		}
-		// send the overall maximum count back to all workers
-		BOOST_LOG_TRIVIAL(info) << "1. (Leader) Sending the overall maximum common_user_rating_count to all worker processes...";
-		for(int i = 1; i < numProcessors; i++) {
-			InputMessage imsg(max_common_rating_count);
-			world.send(i, InputMessage::MAX_COUNT_MSG_TAG, imsg);
-		}
-		BOOST_LOG_TRIVIAL(info) << "1. (Leader) maximum common_user_rating_count sent to all worker processes. Step 1 done.";
-	}
-	BOOST_LOG_TRIVIAL(info) << "1. The maximum common count is " << max_common_rating_count;
-	cout << "1. The maximum common count is " << max_common_rating_count;
 
-
-	BOOST_LOG_TRIVIAL(info) << "2. Calculating all common_similar_rating_count for this process...";
+	BOOST_LOG_TRIVIAL(info) << "2. Calculating the similarity measure between user votes for this process...";
 	chunkSize = long(std::floor(double(MPIChunkSize) / number_chunks));
 	remainingVertices = MPIChunkSize % number_chunks;
 	if(chunkSize == 0) {
@@ -343,8 +265,11 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > >
 				common_similar_rating_count(chunkSize, max_user_id);
 
-		BOOST_LOG_TRIVIAL(info) << "Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")...";
-		cout << "\nBegin movie list traversal (step " << (i+1) << " of " << number_chunks << ")..." << endl;
+		// for each pair of users, stores a list containing the common votes each user gave to a set of movies
+		std::vector< std::map < long, CommonVoteList > > common_rating_list(chunkSize, std::map < long, CommonVoteList >());
+
+		BOOST_LOG_TRIVIAL(info) << "1. Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")...";
+		cout << "\n1. Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")..." << endl;
 		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
 			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
 			// cout << movie_id << " with size " << ratingList.size() << endl;
@@ -353,11 +278,16 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 				long user_a = user_rating_x.first;
 				char rating_a = user_rating_x.second;
 				if(initialUserIndex <= user_a and user_a <= finalUserIndex) {
-					for(long y = x + 1; y < ratingList.size(); y++) {
+					for(long y = 0; y < ratingList.size(); y++) {
 						std::pair<long, char> user_rating_y = ratingList[y];
 						long user_b = user_rating_y.first;
 						char rating_b = user_rating_y.second;
 						if(user_a != user_b) {
+							if(common_rating_list[user_a - initialUserIndex].count(user_b) == 0) {
+								common_rating_list[user_a - initialUserIndex][user_b] = CommonVoteList();
+							}
+							common_rating_list[user_a - initialUserIndex][user_b].push_back(std::make_pair(rating_a, rating_b));
+
 							common_rating_count(user_a - initialUserIndex, user_b) += 1;
 							/* if((rating_a <= BAD_MOVIE and rating_b <= BAD_MOVIE)
 									or (rating_a >= GOOD_MOVIE and rating_b >= GOOD_MOVIE)
@@ -370,15 +300,6 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 					}
 				}
 			}
-			// display status of processing done
-			int threshold = int(std::floor(max_movie_id / 10.0));
-			int percentage = int(std::ceil(100 * (double(movie_id) / max_movie_id)));
-			if((movie_id % threshold < EPS) and (percentage != previous_total)) {
-				cout << percentage << " % ";
-				cout.flush();
-				BOOST_LOG_TRIVIAL(info) << percentage << " % ";
-				previous_total = percentage;
-			}
 		}
 
 		BOOST_LOG_TRIVIAL(info) << "\nBegin edge generation (step " << (i+1) << " of " << number_chunks << ")...";
@@ -390,24 +311,46 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 		// determine which pairs of users have the ratio (common_rating_count(a, b) / max_common_rating_count) bigger than a certain threshold
 		for(long user_a = initialUserIndex; user_a <= finalUserIndex; user_a++) {
 			for(long user_b = 0; user_b < max_user_id; user_b++) {
-				if(user_a != user_b) {
-					if(common_rating_count(user_a - initialUserIndex, user_b) > 0) {
-						long n_a = common_similar_rating_count(user_a - initialUserIndex, user_b);
-						// long n_b = common_rating_count(user_a - initialUserIndex, user_b);
-						long n_b = max_common_rating_count;
-						cpp_dec_float_50 common_similar_rating_ratio = cpp_dec_float_50(n_a);
-						common_similar_rating_ratio /= cpp_dec_float_50(n_b);
-
-						// converts the ratio (floating point number) to a string with 5-digit precision
-						stringstream ss;
-						ss << std::setprecision(5) << std::fixed << common_similar_rating_ratio;
-						string key = ss.str();
-						if(histogram.find(key) != histogram.end()) {
-							histogram[key]++;
-						} else {
-							histogram[key] = 1;
+				if(user_a < user_b) {
+					if(common_rating_list[user_a - initialUserIndex].count(user_b) > 0) {
+						CommonVoteList& voteList = common_rating_list[user_a - initialUserIndex][user_b];
+						if(voteList.size() == 0)  continue;  // TODO considerar numero de votos em comum > x
+						std::vector<double> votesFromUserA, votesFromUserB;
+						for(CommonVoteList::iterator it = voteList.begin(); it != voteList.end(); it++) {
+							// normalizes the votes of each user by subtracting the rating from the average rating of the user
+							double vote_a = it->first - avg_user_rating(user_a - initialUserIndex);
+							votesFromUserA.push_back(vote_a);
+							double vote_b = it->second - avg_user_rating(user_b - initialUserIndex);
+							votesFromUserB.push_back(vote_b);
 						}
-
+						// calculates the cosine similarity of the vector
+						// Warning: this operation can only be executed on non-zero arrays (v != (0, ..., 0)) !!!
+						if(not (is_zero_array(votesFromUserA) or is_zero_array(votesFromUserB))) {
+							cpp_dec_float_50 edge_weight = cosine_similarity(votesFromUserA, votesFromUserB);
+							if(edge_weight < -1) {
+								BOOST_LOG_TRIVIAL(error) << "Edge_weight = " << edge_weight.str(20);
+								stringstream ss, ss2;
+								for(int x = 0; x < votesFromUserA.size(); x++) {
+									ss << votesFromUserA[x] << " (" << (int)voteList[x].first << "); ";
+									ss2 << votesFromUserB[x] << "( " << (int)voteList[x].second <<  "); ";
+								}
+								BOOST_LOG_TRIVIAL(error) << "Votes from user_a = " << ss.str();
+								BOOST_LOG_TRIVIAL(error) << "Votes from user_b = " << ss2.str();
+							}
+							// converts the weight (floating point number) to a string with 5-digit precision
+							stringstream ss;
+							ss << std::setprecision(5) << std::fixed << edge_weight;
+							string key = ss.str();
+							/*
+							if(key.substr(0, 1) != "0" and key.substr(0, 2) != "-0") {
+								BOOST_LOG_TRIVIAL(error) << "Edge_weight_str = " << key;
+							} */
+							if(histogram.find(key) != histogram.end()) {
+								histogram[key]++;
+							} else {
+								histogram[key] = 1;
+							}
+						}
 						/*
 						double common_similar_rating_ratio = double(100 * common_similar_rating_count(user_a - initialUserIndex, user_b)) /
 								common_rating_count(user_a - initialUserIndex, user_b); */
@@ -564,6 +507,32 @@ void MovieLensSGConverter::find_and_replace(string& source, string const& find, 
         source.replace(i, find.length(), replace);
         i += replace.length();
     }
+}
+
+cpp_dec_float_50 MovieLensSGConverter::cosine_similarity(std::vector<double>& votesFromUserA,
+		std::vector<double>& votesFromUserB)
+{
+	cpp_dec_float_50 dot(0.0);
+	cpp_dec_float_50 denom_a(0.0);
+	cpp_dec_float_50 denom_b(0.0);
+	unsigned long len = votesFromUserA.size();
+	assert(len == votesFromUserB.size());
+	for(unsigned long i = 0u; i < len; i++) {
+		dot += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserB[i];
+		denom_a += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserA[i];
+		denom_b += cpp_dec_float_50(votesFromUserB[i]) * votesFromUserB[i];
+	}
+	return dot / (boost::multiprecision::sqrt(denom_a * denom_b));
+}
+
+bool MovieLensSGConverter::is_zero_array(std::vector<double>& array)
+{
+	for(std::vector<double>::iterator it = array.begin(); it != array.end(); it++) {
+		if(fabs(*it) > EPS) {
+			return false;
+		}
+	}
+	return true;
 }
 
 } /* namespace generation */
