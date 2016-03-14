@@ -49,6 +49,12 @@ private:
 	void find_and_replace(string& source, string const& find, string const& replace);
 	cpp_dec_float_50 cosine_similarity(std::vector<double>& votesFromUserA,
 			std::vector<double>& votesFromUserB);
+	cpp_dec_float_50 pearson_correlation_coefficient(std::vector<double>& votesFromUserA,
+			std::vector<double>& votesFromUserB);
+	cpp_dec_float_50 pearson_correlation_coefficient2(std::vector<double>& votesFromUserA,
+				std::vector<double>& votesFromUserB);
+	cpp_dec_float_50 spearman_correlation_coefficient(std::vector<int>& votesFromUserA,
+			std::vector<int>& votesFromUserB);
 	bool is_zero_array(std::vector<double>& array);
 };
 
