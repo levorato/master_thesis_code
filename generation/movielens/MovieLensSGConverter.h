@@ -31,13 +31,13 @@ public:
 	 * number_chunks -> the number of chunks the matrix will be split for processing (saves memory)
 	 */
 	bool processMovieLensFolder(const string& folder, const string& filter,
-			const unsigned int &myRank, const unsigned int &numProcessors, const double& pos_edge_perc,
-			const double& neg_edge_perc, const int& number_chunks);
+			const unsigned int &myRank, const unsigned int &numProcessors, const double& minimum_edge_weight,
+			const int& number_chunks);
 	bool readMovieLensCSVFile(const string& filename, long& max_user_id, long& max_movie_id);
 	bool generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
 			const string& outputFileName, const unsigned int &myRank,
-			const unsigned int &numProcessors, const double& pos_edge_perc,
-			const double& neg_edge_perc, int number_chunks);
+			const unsigned int &numProcessors, const double& minimum_edge_weight,
+			int number_chunks);
 	
 private:
 	// the movie_users structure maps a movie_id (long) to a vector of <user_id, rating> pairs
@@ -51,11 +51,22 @@ private:
 			std::vector<double>& votesFromUserB);
 	cpp_dec_float_50 pearson_correlation_coefficient(std::vector<double>& votesFromUserA,
 			std::vector<double>& votesFromUserB);
+	// http://projekter.aau.dk/projekter/files/32181941/Report.pdf - pages 24/25
 	cpp_dec_float_50 pearson_correlation_coefficient2(std::vector<double>& votesFromUserA,
 				std::vector<double>& votesFromUserB);
 	cpp_dec_float_50 spearman_correlation_coefficient(std::vector<int>& votesFromUserA,
 			std::vector<int>& votesFromUserB);
 	bool is_zero_array(std::vector<double>& array);
+
+	bool writeSignedGraphToFile(const string& file_prefix, const string& partialFilename,
+			const std::vector<string>& edgeList, const long& max_user_id, const int& myRank);
+	bool writeHistogramToFile(const string& file_prefix, const string& partialFilename,
+			string fileContent, const int& myRank);
+
+	bool mergeSignedGraphToFile(const string& file_prefix, const string& partialFilename,
+			const std::vector<string>& edgeList, const long& max_user_id, const int& numProcessors);
+	bool mergeHistogramToFile(const string& file_prefix, const string& partialFilename,
+			const int& numProcessors, std::map<string, long>& histogram);
 };
 
 class InputMessage {

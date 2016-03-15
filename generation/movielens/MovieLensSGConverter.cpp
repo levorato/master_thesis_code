@@ -82,8 +82,8 @@ MovieLensSGConverter::~MovieLensSGConverter() {
 }
 
 bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const string& filter,
-		const unsigned int &myRank, const unsigned int &numProcessors, const double& pos_edge_perc,
-		const double& neg_edge_perc, const int& number_chunks) {
+		const unsigned int &myRank, const unsigned int &numProcessors, const double& minimum_edge_weight,
+		const int& number_chunks) {
 	BOOST_LOG_TRIVIAL(info) << "Processing folder " << folder;
 	
 	// read the files in the specified folder
@@ -125,13 +125,13 @@ bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const st
 		string filename = filePath.parent_path().filename().string();
 		stringstream file_ss;
 		file_ss << path_ss.str() << boost::filesystem::path::preferred_separator << filename <<
-				"_p+" << std::fixed << std::setprecision(6) << pos_edge_perc << "_p-" << neg_edge_perc << ".g";
+				"_mw" << std::fixed << std::setprecision(6) << minimum_edge_weight << ".g";
 
 		long max_user_id = 0, max_movie_id = 0;
 		readMovieLensCSVFile(filePath.string(), max_user_id, max_movie_id);
 		// process the dataset file and generate signed graph
 		if(generateSGFromMovieRatings(max_user_id, max_movie_id, file_ss.str(), myRank, numProcessors,
-				pos_edge_perc, neg_edge_perc, number_chunks)) {
+				minimum_edge_weight, number_chunks)) {
 			if(myRank == 0) {
 				BOOST_LOG_TRIVIAL(info) << "\nCreated output signed graph file " << file_ss.str();
 			}
@@ -190,7 +190,7 @@ bool MovieLensSGConverter::readMovieLensCSVFile(const string& filename, long& ma
 
 bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, const long& max_movie_id,
 		const string& outputFileName, const unsigned int &myRank, const unsigned int &numProcessors,
-		const double& pos_edge_perc, const double& neg_edge_perc, int number_chunks) {
+		const double& minimum_edge_weight, int number_chunks) {
 	// the signed graph representing the voting in movie lens dataset
 	int previous_total = -1;
 	int percentage = 0;
@@ -236,9 +236,9 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	// Begin dividing the MPI Chunk into smaller chunks for local processing
 	long chunkSize = long(std::floor(double(MPIChunkSize) / number_chunks));
 	long remainingVertices = MPIChunkSize % number_chunks;
-	std::ostringstream out;
+	std::vector<string> outSG_cosine, outSG_pearson;
 	long edgeCount = 0;
-	std::map<string, long> histogram;
+	std::map<string, long> histogram_cosine, histogram_pearson;
 	if(chunkSize == 0) {
 		number_chunks = 1;
 	}
@@ -250,7 +250,6 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	if(chunkSize == 0) {
 		number_chunks = 1;
 	}
-	edgeCount = 0;
 	for(int i = 0; i < number_chunks; i++) {
 		// will process only the range (initialUserIndex <= user_a <= finalUserIndex)
 		long initialUserIndex = initialProcessorUserIndex + i * chunkSize;
@@ -327,14 +326,14 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 							double vote_b = it->second - avg_user_rating(user_b - initialUserIndex);
 							normalizedVotesFromUserB.push_back(vote_b);
 						}
-						// calculates the cosine similarity of the vector
+						// calculates the cosine similarity and Pearson correlation coefficient of the vector
 						// Warning: this operation can only be executed on non-zero arrays (v != (0, ..., 0)) !!!
 						if(not (is_zero_array(normalizedVotesFromUserA) or is_zero_array(normalizedVotesFromUserB))) {
 							cpp_dec_float_50 cosine_edge_weight = cosine_similarity(normalizedVotesFromUserA, normalizedVotesFromUserB);
-							cpp_dec_float_50 edge_weight = pearson_correlation_coefficient2(normalizedVotesFromUserA, normalizedVotesFromUserB);
-							cpp_dec_float_50 spearman_edge_weight = spearman_correlation_coefficient(votesFromUserA, votesFromUserB);
-							if(edge_weight < -1) {
-								BOOST_LOG_TRIVIAL(error) << "Edge_weight = " << edge_weight.str(20);
+							cpp_dec_float_50 pearson_edge_weight = pearson_correlation_coefficient2(normalizedVotesFromUserA, normalizedVotesFromUserB);
+							// cpp_dec_float_50 spearman_edge_weight = spearman_correlation_coefficient(votesFromUserA, votesFromUserB);
+							if(pearson_edge_weight > 1) {
+								BOOST_LOG_TRIVIAL(error) << "Edge_weight = " << pearson_edge_weight.str(20);
 								stringstream ss, ss2;
 								for(int x = 0; x < normalizedVotesFromUserA.size(); x++) {
 									ss << normalizedVotesFromUserA[x] << " (" << (int)voteList[x].first << "); ";
@@ -344,36 +343,39 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 								BOOST_LOG_TRIVIAL(error) << "Votes from user_b = " << ss2.str();
 							}
 							// converts the weight (floating point number) to a string with 5-digit precision
-							stringstream ss;
-							ss << std::setprecision(5) << std::fixed << edge_weight;
+							stringstream ss, ss2;
+							ss << std::setprecision(3) << std::fixed << cosine_edge_weight;
+							ss2 << std::setprecision(3) << std::fixed << pearson_edge_weight;
 							string key = ss.str();
-							/*
-							if(key.substr(0, 1) != "0" and key.substr(0, 2) != "-0") {
-								BOOST_LOG_TRIVIAL(error) << "Edge_weight_str = " << key;
-							} */
-							if(histogram.find(key) != histogram.end()) {
-								histogram[key]++;
+							if(histogram_cosine.find(key) != histogram_cosine.end()) {
+								histogram_cosine[key]++;
 							} else {
-								histogram[key] = 1;
+								histogram_cosine[key] = 1;
+							}
+							string key2 = ss2.str();
+							if(histogram_pearson.find(key2) != histogram_pearson.end()) {
+								histogram_pearson[key2]++;
+							} else {
+								histogram_pearson[key2] = 1;
+							}
+							// the matrix was sparsified by zeroing each entry smaller than minimum_edge_weight
+							cpp_dec_float_50 eps = std::numeric_limits<cpp_dec_float_50>::epsilon();
+							cpp_dec_float_50 abs_cosine_edge_weight = boost::multiprecision::abs(cosine_edge_weight);
+							std::ostringstream ss_edge;
+							if((abs_cosine_edge_weight - minimum_edge_weight > eps) and (boost::multiprecision::abs(abs_cosine_edge_weight - minimum_edge_weight) > eps)) {
+								// (abs_cosine_edge_weight > minimum_edge_weight)
+								// SG[user_a, user_b] = 1;
+								ss_edge << user_a << " " << user_b << " " << cosine_edge_weight.str(5) << endl;
+								outSG_cosine.push_back(ss_edge.str());
+							}
+							cpp_dec_float_50 abs_pearson_edge_weight = boost::multiprecision::abs(pearson_edge_weight);
+							if((abs_pearson_edge_weight - minimum_edge_weight > eps) and (boost::multiprecision::abs(abs_pearson_edge_weight - minimum_edge_weight) > eps)) {
+								// (abs_pearson_edge_weight > minimum_edge_weight)
+								// SG[user_a, user_b] = 1;
+								ss_edge << user_a << " " << user_b << " " << pearson_edge_weight.str(5) << endl;
+								outSG_pearson.push_back(ss_edge.str());
 							}
 						}
-						/*
-						double common_similar_rating_ratio = double(100 * common_similar_rating_count(user_a - initialUserIndex, user_b)) /
-								common_rating_count(user_a - initialUserIndex, user_b); */
-						cpp_dec_float_50 eps = std::numeric_limits<cpp_dec_float_50>::epsilon();
-						/* TODO uncomment this
-						if(((common_similar_rating_ratio - pos_edge_perc > eps) and (boost::multiprecision::abs(common_similar_rating_ratio - pos_edge_perc) > eps))  // (common_similar_rating_ratio > pos_edge_perc)
-								or (boost::multiprecision::abs(common_similar_rating_ratio - pos_edge_perc) < eps)) {  // (common_similar_rating_ratio == pos_edge_perc)
-							// SG[user_a, user_b] = 1;
-							out << user_a << " " << user_b << " 1\n";
-							edgeCount++;
-						}
-						else if(((common_similar_rating_ratio - neg_edge_perc < eps) and (boost::multiprecision::abs(common_similar_rating_ratio - neg_edge_perc) > eps))  // (common_similar_rating_ratio < neg_edge_perc)
-								or (boost::multiprecision::abs(common_similar_rating_ratio - neg_edge_perc) < eps)) {  // (common_similar_rating_ratio == neg_edge_perc)
-							// SG[user_a, user_b] = -1;
-							out << user_a << " " << user_b << " -1\n";
-							edgeCount++;
-						} */
 					}
 				}
 				// display status of processing done
@@ -392,37 +394,25 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	}
 
 	// process the histogram values and output to text file
-	stringstream ss_histogram;
-	for(map<string,long>::const_iterator it = histogram.begin(); it != histogram.end(); ++it) {
-	    ss_histogram << it->first << " " << it->second << "\n";
+	stringstream ss_histogram_cosine;
+	for(map<string,long>::const_iterator it = histogram_cosine.begin(); it != histogram_cosine.end(); ++it) {
+	    ss_histogram_cosine << it->first << " " << it->second << "\n";
+	}
+	stringstream ss_histogram_pearson;
+	for(map<string,long>::const_iterator it = histogram_pearson.begin(); it != histogram_pearson.end(); ++it) {
+		ss_histogram_pearson << it->first << " " << it->second << "\n";
 	}
 
-	// write the signed graph to output file
-	stringstream partialFilename_ss;
-	partialFilename_ss << outputFileName << ".part" << myRank;
-	ofstream output_file(partialFilename_ss.str().c_str(), ios::out | ios::trunc);
-	if(!output_file) {
-		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << partialFilename_ss.str();
-		return false;
-	}
-	if(myRank == 0) {
-		output_file << max_user_id << "\t" << edgeCount << "\r\n";
-	}
-	output_file << out.str();
-	// Close the SG file
-	output_file.close();
+	// write the signed graphs to output file
+	// 1 - Cosine-similarity-based graph
+	writeSignedGraphToFile("cosine", outputFileName, outSG_cosine, max_user_id, myRank);
+	writeSignedGraphToFile("pearson", outputFileName, outSG_pearson, max_user_id, myRank);
 
 	// write the histogram to a secondary output file
-	stringstream partialFilenameHist_ss, outputFileNameHist_ss;
-	partialFilenameHist_ss << outputFileName << "-histogram.part" << myRank;
+	writeHistogramToFile("cosine", outputFileName, ss_histogram_cosine.str(), myRank);
+	writeHistogramToFile("pearson", outputFileName, ss_histogram_pearson.str(), myRank);
+	stringstream outputFileNameHist_ss;
 	outputFileNameHist_ss << outputFileName << "-histogram.txt";
-	ofstream output_file_hist(partialFilenameHist_ss.str().c_str(), ios::out | ios::trunc);
-	if(!output_file_hist) {
-		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << partialFilenameHist_ss.str();
-		return false;
-	}
-	output_file_hist << ss_histogram.str();
-	output_file_hist.close();
 
 	if(myRank == 0) {
 		// wait for the message 'done' from all workers
@@ -431,58 +421,12 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 			boost::mpi::status msg = world.recv(boost::mpi::any_source, InputMessage::DONE_MSG_TAG, imsg);
 		}
 		// merge all the signed graph output files into a full graph output file
-		ofstream output_full_file_sg(outputFileName.c_str(), ios::out | ios::trunc);
-		ofstream output_full_file_hist(outputFileNameHist_ss.str().c_str(), ios::out | ios::trunc);
-		if(!output_full_file_sg) {
-			BOOST_LOG_TRIVIAL(fatal) << "Cannot open full SG output result file to: " << outputFileName;
-			return false;
-		}
-		if(!output_full_file_hist) {
-			BOOST_LOG_TRIVIAL(fatal) << "Cannot open full histogram output result file to: " << outputFileNameHist_ss.str();
-			return false;
-		}
-		for(int i = 0; i < numProcessors; i++) {
-			stringstream partialSGFilenameN_ss, partialHistFilenameN_ss;
-			partialSGFilenameN_ss << outputFileName << ".part" << i;
-			partialHistFilenameN_ss << outputFileName << "-histogram.part" << i;
-			ifstream inSG(partialSGFilenameN_ss.str().c_str());
-			ifstream inHist(partialHistFilenameN_ss.str().c_str());
-			if (!inSG.is_open() or !inHist.is_open()){
-				BOOST_LOG_TRIVIAL(fatal) << "Error opening output file number " << i;
-				return false;
-			}
-			string SGfileContents = get_file_contents(partialSGFilenameN_ss.str().c_str());
-			output_full_file_sg << SGfileContents;
+		mergeSignedGraphToFile("cosine", outputFileName, outSG_cosine, max_user_id, numProcessors);
+		mergeSignedGraphToFile("pearson", outputFileName, outSG_pearson, max_user_id, numProcessors);
 
-			if(i > 0) {  // the leader's histogram is already in the histogram map
-				// merges the histogram data using a full map
-				string line;
-				getline(inHist, line);  // Get the frist line from the file, if any.
-				while ( inHist ) {  // Continue if the line was sucessfully read.
-					// Process the line.
-					istringstream iss(line);
-					string key;
-					long value;
-					iss >> key >> value;
-					if(histogram.find(key) != histogram.end()) {
-						histogram[key] += value;
-					} else {
-						histogram[key] = value;
-					}
+		mergeHistogramToFile("cosine", outputFileName, numProcessors, histogram_cosine);
+		mergeHistogramToFile("pearson", outputFileName, numProcessors, histogram_pearson);
 
-					getline(inHist, line);   // Try to get another line.
-				}
-			}
-		}
-		// write the consolidated histogram to text file
-		stringstream ss_histogram_full;
-		for(map<string,long>::const_iterator it = histogram.begin(); it != histogram.end(); ++it) {
-			ss_histogram_full << it->first << " " << it->second << "\n";
-		}
-		output_full_file_hist << ss_histogram_full.str();
-
-		output_full_file_sg.close();
-		output_full_file_hist.close();
 	} else {
 		// send a message to the leader process to inform that the task is done
 		BOOST_LOG_TRIVIAL(info) << "Sending done message to leader...";
@@ -562,6 +506,7 @@ cpp_dec_float_50 MovieLensSGConverter::pearson_correlation_coefficient(std::vect
 	return num / den;
 }
 
+// http://projekter.aau.dk/projekter/files/32181941/Report.pdf - pages 24/25
 cpp_dec_float_50 MovieLensSGConverter::pearson_correlation_coefficient2(std::vector<double>& votesFromUserA,
 		std::vector<double>& votesFromUserB)
 {
@@ -615,6 +560,127 @@ bool MovieLensSGConverter::is_zero_array(std::vector<double>& array)
 			return false;
 		}
 	}
+	return true;
+}
+
+bool MovieLensSGConverter::writeSignedGraphToFile(const string& file_prefix, const string& partialFilename,
+		const std::vector<string>& edgeList, const long& max_user_id, const int& myRank) {
+	stringstream ss;
+	ss << partialFilename << "-" << file_prefix << ".part" << myRank;
+	ofstream output_file(ss.str().c_str(), ios::out | ios::trunc);
+	if(!output_file) {
+		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << partialFilename;
+		return false;
+	}
+	if(myRank == 0) {
+		output_file << max_user_id << "\t" << edgeList.size() << "\r\n";
+	}
+	for(std::vector<string>::const_iterator it = edgeList.begin(); it != edgeList.end(); it++) {
+		output_file << (*it);
+	}
+	// Close the SG file
+	output_file.close();
+	return true;
+}
+
+bool MovieLensSGConverter::writeHistogramToFile(const string& file_prefix, const string& partialFilename,
+		string fileContent, const int& myRank) {
+	stringstream ss;
+	ss << partialFilename << "-" << file_prefix << "-histogram.part" << myRank;
+	ofstream output_file_hist(ss.str().c_str(), ios::out | ios::trunc);
+	if(!output_file_hist) {
+		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << ss.str();
+		return false;
+	}
+	output_file_hist << fileContent;
+	output_file_hist.close();
+	return true;
+}
+
+bool MovieLensSGConverter::mergeSignedGraphToFile(const string& file_prefix, const string& partialFilename,
+		const std::vector<string>& edgeList, const long& max_user_id, const int& numProcessors) {
+	stringstream ss;
+	ss << partialFilename << "-" << file_prefix << ".g";
+	ofstream output_full_file_sg(ss.str().c_str(), ios::out | ios::trunc);
+	if(!output_full_file_sg) {
+		BOOST_LOG_TRIVIAL(fatal) << "Cannot open full SG output result file to: " << ss.str();
+		return false;
+	}
+	for(int i = 0; i < numProcessors; i++) {
+		stringstream partialSGFilenameN_ss;
+		partialSGFilenameN_ss << partialFilename << "-" << file_prefix << ".part" << i;
+		ifstream inSG(partialSGFilenameN_ss.str().c_str());
+		if (!inSG.is_open()){
+			BOOST_LOG_TRIVIAL(fatal) << "Error opening output file number " << i;
+			return false;
+		}
+		string SGfileContents = get_file_contents(partialSGFilenameN_ss.str().c_str());
+		output_full_file_sg << SGfileContents;
+	}
+	output_full_file_sg.close();
+	return true;
+}
+
+bool MovieLensSGConverter::mergeHistogramToFile(const string& file_prefix, const string& partialFilename,
+		const int& numProcessors, std::map<string, long>& histogram) {
+	stringstream ss, ss2;
+	ss << partialFilename << "-" << file_prefix << "-histogram.txt";
+	ss2 << partialFilename << "-" << file_prefix << "-abs_histogram.txt";
+	ofstream output_full_file_hist(ss.str().c_str(), ios::out | ios::trunc);
+	ofstream output_full_file_abs_hist(ss2.str().c_str(), ios::out | ios::trunc);
+	if(!output_full_file_hist or !output_full_file_abs_hist) {
+		BOOST_LOG_TRIVIAL(fatal) << "Cannot open full histogram output result file to: " << ss.str();
+		return false;
+	}
+	// histogram with absolute edge weights (unsigned)
+	std::map<string, long> abs_histogram;
+	for(int i = 0; i < numProcessors; i++) {
+		stringstream partialHistFilenameN_ss;
+		partialHistFilenameN_ss << partialFilename << "-" << file_prefix << "-histogram.part" << i;
+		ifstream inHist(partialHistFilenameN_ss.str().c_str());
+		if (!inHist.is_open()){
+			BOOST_LOG_TRIVIAL(fatal) << "Error opening output file number " << i;
+			return false;
+		}
+		// merges the histogram data using a full map
+		string line;
+		getline(inHist, line);  // Get the first line from the file, if any.
+		while ( inHist ) {  // Continue if the line was successfully read.
+			// Process the line.
+			istringstream iss(line);
+			string key;
+			long value;
+			iss >> key >> value;
+			if(histogram.find(key) != histogram.end()) {
+				histogram[key] += value;
+			} else {
+				histogram[key] = value;
+			}
+			string key2 = key;
+			if(key.substr(0, 1) == "-") {  // remove trailing minus from edge weights
+				key2 = key.substr(1);
+			}
+			if(abs_histogram.find(key2) != abs_histogram.end()) {
+				abs_histogram[key2] += value;
+			} else {
+				abs_histogram[key2] = value;
+			}
+
+			getline(inHist, line);   // Try to get another line.
+		}
+	}
+	// write the consolidated histogram to text file
+	stringstream ss_histogram_full, ss_abs_histogram_full;
+	for(map<string,long>::const_iterator it = histogram.begin(); it != histogram.end(); ++it) {
+		ss_histogram_full << it->first << " " << it->second << "\n";
+	}
+	for(map<string,long>::const_iterator it = abs_histogram.begin(); it != abs_histogram.end(); ++it) {
+		output_full_file_abs_hist << it->first << " " << it->second << "\n";
+	}
+	output_full_file_hist << ss_histogram_full.str();
+	output_full_file_hist.close();
+	output_full_file_abs_hist << ss_abs_histogram_full.str();
+	output_full_file_abs_hist.close();
 	return true;
 }
 
