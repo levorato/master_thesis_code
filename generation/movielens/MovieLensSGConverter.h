@@ -20,6 +20,17 @@ using boost::multiprecision::cpp_dec_float_50;
 
 namespace generation {
 
+class CommonVote {
+public:
+	CommonVote(char a, char b, long id) : rating_a(a), rating_b(b), movie_id(id) {
+	}
+	~CommonVote() {  }
+
+	char rating_a, rating_b;
+	long movie_id;
+};
+typedef std::vector<CommonVote> CommonVoteList;
+
 class MovieLensSGConverter {
 public:
 	MovieLensSGConverter();
@@ -54,6 +65,9 @@ private:
 	// http://projekter.aau.dk/projekter/files/32181941/Report.pdf - pages 24/25
 	cpp_dec_float_50 pearson_correlation_coefficient2(std::vector<double>& votesFromUserA,
 				std::vector<double>& votesFromUserB);
+	cpp_dec_float_50 pearson_correlation_coefficient_with_variance(std::vector<double>& votesFromUserA,
+			std::vector<double>& votesFromUserB, std::vector<long>& common_movie_ids, std::vector<double>& movie_rating_variance,
+			const double& avg_rating_variance);
 	cpp_dec_float_50 spearman_correlation_coefficient(std::vector<int>& votesFromUserA,
 			std::vector<int>& votesFromUserB);
 	bool is_zero_array(std::vector<double>& array);

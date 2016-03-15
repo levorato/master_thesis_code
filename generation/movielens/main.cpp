@@ -98,8 +98,7 @@ int main(int argc, char* argv[])
 
         string folder(""), fileFilter = "ratings.dat";
         int number_chunks = 256;
-        double pos_edge_perc = 0.8;
-        double neg_edge_perc = 0.2;
+        double min_weight = 0.1;
         
         options_description desc("Convert MovieLens dataset file (ratings.dat) to unweighted signed graph.");
         desc.add_options()
@@ -111,8 +110,7 @@ int main(int argc, char* argv[])
         ("filefilter", value<string>(&fileFilter)->default_value("ratings.dat"),
          "the filename for MovieLens ratings dataset files (default: ratings.dat)")
 		("number_chunks", value<int>(&number_chunks)->default_value(256), "the number of chunks the matrix will be split for processing (saves memory)")
-		("pos_perc", value<double>(&pos_edge_perc)->default_value(0.8), "edge percentual when comparing 2 users and assuming their relation is positive (e.g. 0.8)")
-		("neg_perc", value<double>(&neg_edge_perc)->default_value(0.2), "edge percentual when comparing 2 users and assuming their relation is negative (e.g. 0.2)")
+		("min_weight", value<double>(&min_weight)->default_value(0.1), "minimum edge weight of generated edges - matrix sparsification (e.g. 0.1)")
         ;
     
         variables_map vm;
@@ -145,16 +143,14 @@ int main(int argc, char* argv[])
 		BOOST_LOG_TRIVIAL(info) << "File filter is '" << fileFilter << "'";
 		cout << "File filter is '" << fileFilter << "'" << endl;
 
-		BOOST_LOG_TRIVIAL(info) << "Positive edge percentage is " << pos_edge_perc;
-		cout << "Positive edge percentage is " << pos_edge_perc << endl;
-		BOOST_LOG_TRIVIAL(info) << "Negative edge percentage is " << neg_edge_perc;
-		cout << "Negative edge percentage is " << neg_edge_perc << endl;
+		BOOST_LOG_TRIVIAL(info) << "Minimum edge weight is " << min_weight;
+		cout << "Minimum edge weight is " << min_weight << endl;
 		BOOST_LOG_TRIVIAL(info) << "The number of chunks is " << number_chunks;
 		cout << "The number of chunks is " << number_chunks << endl;
 		
 		MovieLensSGConverter converter;
 		converter.processMovieLensFolder(folder, fileFilter, world.rank(), world.size(),
-				pos_edge_perc, neg_edge_perc, number_chunks);
+				min_weight, number_chunks);
 
 		// ------------------ M P I    T E R M I N A T I O N ---------------------
 		if(world.size() > 1) {
