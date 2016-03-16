@@ -126,7 +126,7 @@ bool MovieLensSGConverter::processMovieLensFolder(const string& folder, const st
 		string filename = filePath.parent_path().filename().string();
 		stringstream file_ss;
 		file_ss << path_ss.str() << boost::filesystem::path::preferred_separator << filename <<
-				"_mw" << std::fixed << std::setprecision(6) << minimum_edge_weight << ".g";
+				"_mw" << std::fixed << std::setprecision(4) << minimum_edge_weight << ".g";
 
 		long max_user_id = 0, max_movie_id = 0;
 		readMovieLensCSVFile(filePath.string(), max_user_id, max_movie_id);
@@ -269,8 +269,6 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 		}
 	}
 
-	// for each pair of users, stores a list containing the common votes each user gave to a set of movies
-	std::vector< std::map < long, CommonVoteList > > common_rating_list(chunkSize, std::map < long, CommonVoteList >());
 	double avg_rating_variance = double(0.0);
 	for(long x = 0; x < movie_rating_variance.size(); x++) {
 		avg_rating_variance += movie_rating_variance[x];
@@ -298,12 +296,13 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 				common_rating_count(chunkSize, max_user_id);;
 		generalized_vector_of_vector< long, row_major, boost::numeric::ublas::vector<mapped_vector<long> > >
 				common_similar_rating_count(chunkSize, max_user_id);
+		// for each pair of users, stores a list containing the common votes each user gave to a set of movies
+		std::vector< std::map < long, CommonVoteList > > common_rating_list(chunkSize, std::map < long, CommonVoteList >());
 
 		BOOST_LOG_TRIVIAL(info) << "1. Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")...";
 		cout << "\n1. Begin movie list traversal (step " << (i+1) << " of " << number_chunks << ")..." << endl;
 		for(long movie_id = 0; movie_id < max_movie_id; movie_id++) {
 			std::vector< std::pair<long, char> > ratingList = movie_users[movie_id];
-			// cout << movie_id << " with size " << ratingList.size() << endl;
 			for(long x = 0; x < ratingList.size(); x++) {
 				std::pair<long, char> user_rating_x = ratingList[x];
 				long user_a = user_rating_x.first;
@@ -345,7 +344,7 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 				if(user_a < user_b) {
 					if(common_rating_list[user_a - initialUserIndex].count(user_b) > 0) {
 						CommonVoteList& voteList = common_rating_list[user_a - initialUserIndex][user_b];
-						if(voteList.size() == 0)  continue;  // TODO considerar numero de votos em comum > x
+						if(voteList.size() <= 4)  continue;  // TODO considerar numero de votos em comum > x
 						std::vector<double> normalizedVotesFromUserA, normalizedVotesFromUserB;
 						std::vector<int> votesFromUserA, votesFromUserB;
 						std::vector<long> common_movie_ids;
@@ -364,11 +363,11 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 						// calculates the cosine similarity and Pearson correlation coefficient of the vector
 						// Warning: this operation can only be executed on non-zero arrays (v != (0, ..., 0)) !!!
 						if(not (is_zero_array(normalizedVotesFromUserA) or is_zero_array(normalizedVotesFromUserB))) {
-							cpp_dec_float_50 cosine_edge_weight = cosine_similarity(normalizedVotesFromUserA, normalizedVotesFromUserB);
-							// cpp_dec_float_50 pearson_edge_weight = pearson_correlation_coefficient2(normalizedVotesFromUserA, normalizedVotesFromUserB);
-							cpp_dec_float_50 pearson_edge_weight = pearson_correlation_coefficient_with_variance(normalizedVotesFromUserA, normalizedVotesFromUserB,
+							double cosine_edge_weight = cosine_similarity(normalizedVotesFromUserA, normalizedVotesFromUserB);
+							// double pearson_edge_weight = pearson_correlation_coefficient2(normalizedVotesFromUserA, normalizedVotesFromUserB);
+							double pearson_edge_weight = pearson_correlation_coefficient_with_variance(normalizedVotesFromUserA, normalizedVotesFromUserB,
 									common_movie_ids, movie_rating_variance, avg_rating_variance);
-							// cpp_dec_float_50 spearman_edge_weight = spearman_correlation_coefficient(votesFromUserA, votesFromUserB);
+							// double spearman_edge_weight = spearman_correlation_coefficient(votesFromUserA, votesFromUserB);
 							/*
 							if(pearson_edge_weight > 1) {
 								BOOST_LOG_TRIVIAL(error) << "Edge_weight = " << pearson_edge_weight.str(20);
@@ -397,20 +396,20 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 								histogram_pearson[key2] = 1;
 							}
 							// the matrix was sparsified by zeroing each entry smaller than minimum_edge_weight
-							cpp_dec_float_50 eps = std::numeric_limits<cpp_dec_float_50>::epsilon();
-							cpp_dec_float_50 abs_cosine_edge_weight = boost::multiprecision::abs(cosine_edge_weight);
+							double eps = std::numeric_limits<double>::epsilon();
+							double abs_cosine_edge_weight = fabs(cosine_edge_weight);
 							std::ostringstream ss_edge;
-							if((abs_cosine_edge_weight - minimum_edge_weight > eps) and (boost::multiprecision::abs(abs_cosine_edge_weight - minimum_edge_weight) > eps)) {
+							if((abs_cosine_edge_weight - minimum_edge_weight > eps) and (fabs(abs_cosine_edge_weight - minimum_edge_weight) > eps)) {
 								// (abs_cosine_edge_weight > minimum_edge_weight)
 								// SG[user_a, user_b] = 1;
-								ss_edge << user_a << " " << user_b << " " << cosine_edge_weight.str(5) << endl;
+								ss_edge << user_a << " " << user_b << " " << std::setprecision(5) << std::fixed << cosine_edge_weight << endl;
 								outSG_cosine.push_back(ss_edge.str());
 							}
-							cpp_dec_float_50 abs_pearson_edge_weight = boost::multiprecision::abs(pearson_edge_weight);
-							if((abs_pearson_edge_weight - minimum_edge_weight > eps) and (boost::multiprecision::abs(abs_pearson_edge_weight - minimum_edge_weight) > eps)) {
+							double abs_pearson_edge_weight = fabs(pearson_edge_weight);
+							if((abs_pearson_edge_weight - minimum_edge_weight > eps) and (fabs(abs_pearson_edge_weight - minimum_edge_weight) > eps)) {
 								// (abs_pearson_edge_weight > minimum_edge_weight)
 								// SG[user_a, user_b] = 1;
-								ss_edge << user_a << " " << user_b << " " << pearson_edge_weight.str(5) << endl;
+								ss_edge << user_a << " " << user_b << " " << std::setprecision(5) << std::fixed << pearson_edge_weight << endl;
 								outSG_pearson.push_back(ss_edge.str());
 							}
 						}
@@ -497,119 +496,119 @@ void MovieLensSGConverter::find_and_replace(string& source, string const& find, 
     }
 }
 
-cpp_dec_float_50 MovieLensSGConverter::cosine_similarity(std::vector<double>& votesFromUserA,
+double MovieLensSGConverter::cosine_similarity(std::vector<double>& votesFromUserA,
 		std::vector<double>& votesFromUserB)
 {
-	cpp_dec_float_50 dot(0.0);
-	cpp_dec_float_50 denom_a(0.0);
-	cpp_dec_float_50 denom_b(0.0);
+	double dot(0.0);
+	double denom_a(0.0);
+	double denom_b(0.0);
 	unsigned long len = votesFromUserA.size();
 	assert(len == votesFromUserB.size());
-	if(len == 0)  return cpp_dec_float_50(0.0);
+	if(len == 0)  return double(0.0);
 	for(unsigned long i = 0u; i < len; i++) {
-		dot += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserB[i];
-		denom_a += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserA[i];
-		denom_b += cpp_dec_float_50(votesFromUserB[i]) * votesFromUserB[i];
+		dot += double(votesFromUserA[i]) * votesFromUserB[i];
+		denom_a += double(votesFromUserA[i]) * votesFromUserA[i];
+		denom_b += double(votesFromUserB[i]) * votesFromUserB[i];
 	}
-	return dot / (boost::multiprecision::sqrt(denom_a * denom_b));
+	return dot / (sqrt(denom_a * denom_b));
 }
 
 // the following function is not working properly when array values of the same user are equal FIXME
-cpp_dec_float_50 MovieLensSGConverter::pearson_correlation_coefficient(std::vector<double>& votesFromUserA,
+double MovieLensSGConverter::pearson_correlation_coefficient(std::vector<double>& votesFromUserA,
 		std::vector<double>& votesFromUserB)
 {
 	// summing up the product
-	cpp_dec_float_50 prod_sum(0.0);
+	double prod_sum(0.0);
 	// summing the array items
-	cpp_dec_float_50 sum_a(0.0);
-	cpp_dec_float_50 sum_b(0.0);
+	double sum_a(0.0);
+	double sum_b(0.0);
 	// summing up the squares
-	cpp_dec_float_50 sum_a_sq(0.0);
-	cpp_dec_float_50 sum_b_sq(0.0);
+	double sum_a_sq(0.0);
+	double sum_b_sq(0.0);
 	unsigned long len = votesFromUserA.size();
 	assert(len == votesFromUserB.size());
-	if(len == 0)  return cpp_dec_float_50(0.0);
+	if(len == 0)  return double(0.0);
 
 	for(unsigned long i = 0u; i < len; i++) {
-		sum_a += cpp_dec_float_50(votesFromUserA[i]);
-		sum_b += cpp_dec_float_50(votesFromUserB[i]);
-		sum_a_sq += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserA[i];
-		sum_b_sq += cpp_dec_float_50(votesFromUserB[i]) * votesFromUserB[i];
-		prod_sum += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserB[i];
+		sum_a += double(votesFromUserA[i]);
+		sum_b += double(votesFromUserB[i]);
+		sum_a_sq += double(votesFromUserA[i]) * votesFromUserA[i];
+		sum_b_sq += double(votesFromUserB[i]) * votesFromUserB[i];
+		prod_sum += double(votesFromUserA[i]) * votesFromUserB[i];
 	}
-	cpp_dec_float_50 num(0.0), den(0.0);
+	double num(0.0), den(0.0);
 	num = prod_sum - (sum_a * sum_b / len);
-	den = boost::multiprecision::sqrt((sum_a_sq - (sum_a * sum_a) / len) * (sum_b_sq - (sum_b * sum_b) / len));
+	den = sqrt((sum_a_sq - (sum_a * sum_a) / len) * (sum_b_sq - (sum_b * sum_b) / len));
 	if(den == 0)  return 0;
 	return num / den;
 }
 
 // http://projekter.aau.dk/projekter/files/32181941/Report.pdf - pages 24/25
-cpp_dec_float_50 MovieLensSGConverter::pearson_correlation_coefficient2(std::vector<double>& votesFromUserA,
+double MovieLensSGConverter::pearson_correlation_coefficient2(std::vector<double>& votesFromUserA,
 		std::vector<double>& votesFromUserB)
 {
 	// summing up the product
-	cpp_dec_float_50 prod_sum(0.0);
+	double prod_sum(0.0);
 	// summing the array items
-	cpp_dec_float_50 sum_a(0.0);
-	cpp_dec_float_50 sum_b(0.0);
+	double sum_a(0.0);
+	double sum_b(0.0);
 	// summing up the squares
-	cpp_dec_float_50 sum_a_sq(0.0);
-	cpp_dec_float_50 sum_b_sq(0.0);
+	double sum_a_sq(0.0);
+	double sum_b_sq(0.0);
 	unsigned long len = votesFromUserA.size();
 	assert(len == votesFromUserB.size());
-	if(len == 0)  return cpp_dec_float_50(0.0);
+	if(len == 0)  return double(0.0);
 
 	for(unsigned long i = 0u; i < len; i++) {
-		sum_a += cpp_dec_float_50(votesFromUserA[i]);
-		sum_b += cpp_dec_float_50(votesFromUserB[i]);
-		sum_a_sq += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserA[i];
-		sum_b_sq += cpp_dec_float_50(votesFromUserB[i]) * votesFromUserB[i];
-		prod_sum += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserB[i];
+		sum_a += double(votesFromUserA[i]);
+		sum_b += double(votesFromUserB[i]);
+		sum_a_sq += double(votesFromUserA[i]) * votesFromUserA[i];
+		sum_b_sq += double(votesFromUserB[i]) * votesFromUserB[i];
+		prod_sum += double(votesFromUserA[i]) * votesFromUserB[i];
 	}
-	cpp_dec_float_50 num(0.0), den(0.0);
+	double num(0.0), den(0.0);
 	num = prod_sum;
-	den = boost::multiprecision::sqrt((sum_a_sq) * (sum_b_sq));
+	den = sqrt((sum_a_sq) * (sum_b_sq));
 	if(den == 0)  return 0;
 	return num / den;
 }
 
 // http://projekter.aau.dk/projekter/files/32181941/Report.pdf - pages 29/30/31
-cpp_dec_float_50 MovieLensSGConverter::pearson_correlation_coefficient_with_variance(std::vector<double>& votesFromUserA,
+double MovieLensSGConverter::pearson_correlation_coefficient_with_variance(std::vector<double>& votesFromUserA,
 		std::vector<double>& votesFromUserB, std::vector<long>& common_movie_ids, std::vector<double>& movie_rating_variance,
 		const double& avg_rating_variance)
 {
 	// summing up the product
-	cpp_dec_float_50 prod_sum(0.0);
+	double prod_sum(0.0);
 	// summing up the squares
-	cpp_dec_float_50 sum_a_sq(0.0);
-	cpp_dec_float_50 sum_b_sq(0.0);
+	double sum_a_sq(0.0);
+	double sum_b_sq(0.0);
 	// average variance of the ratings between users a and b
-	cpp_dec_float_50 avg_variance(0.0);
+	double avg_variance(0.0);
 	unsigned long len = votesFromUserA.size();
 	assert(len == votesFromUserB.size());
 	assert(len == common_movie_ids.size());
-	if(len == 0)  return cpp_dec_float_50(0.0);
+	if(len == 0)  return double(0.0);
 
 	for(unsigned long i = 0u; i < len; i++) {
 		long movie_id = common_movie_ids[i];
-		cpp_dec_float_50 movie_i_variance(movie_rating_variance[movie_id]);
+		double movie_i_variance(movie_rating_variance[movie_id]);
 		// den
-		sum_a_sq += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserA[i] * movie_i_variance;
-		sum_b_sq += cpp_dec_float_50(votesFromUserB[i]) * votesFromUserB[i] * movie_i_variance;
+		sum_a_sq += double(votesFromUserA[i]) * votesFromUserA[i] * movie_i_variance;
+		sum_b_sq += double(votesFromUserB[i]) * votesFromUserB[i] * movie_i_variance;
 		// num
-		prod_sum += cpp_dec_float_50(votesFromUserA[i]) * votesFromUserB[i] * movie_i_variance;
+		prod_sum += double(votesFromUserA[i]) * votesFromUserB[i] * movie_i_variance;
 	}
-	cpp_dec_float_50 num(0.0), den(0.0);
-	if(avg_rating_variance == 0)  return cpp_dec_float_50(0.0);
+	double num(0.0), den(0.0);
+	if(avg_rating_variance == 0)  return double(0.0);
 	num = prod_sum / avg_rating_variance;
 	sum_a_sq /= avg_rating_variance;
 	sum_b_sq /= avg_rating_variance;
-	den = boost::multiprecision::sqrt((sum_a_sq) * (sum_b_sq));
-	if(den == 0)  return cpp_dec_float_50(0.0);
+	den = sqrt((sum_a_sq) * (sum_b_sq));
+	if(den == 0)  return double(0.0);
 
-	cpp_dec_float_50 result = num / den;
-	if(isnan(result.convert_to<double>())) {
+	double result = num / den;
+	if(isnan(result)) {
 		BOOST_LOG_TRIVIAL(error) << "avg_variance = " << avg_rating_variance;
 		BOOST_LOG_TRIVIAL(error) << "num = " << num;
 		BOOST_LOG_TRIVIAL(error) << "den = " << den;
@@ -617,21 +616,21 @@ cpp_dec_float_50 MovieLensSGConverter::pearson_correlation_coefficient_with_vari
 	return result;
 }
 
-cpp_dec_float_50 MovieLensSGConverter::spearman_correlation_coefficient(std::vector<int>& votesFromUserA,
+double MovieLensSGConverter::spearman_correlation_coefficient(std::vector<int>& votesFromUserA,
 		std::vector<int>& votesFromUserB)
 {
 	unsigned long len = votesFromUserA.size();
 	assert(len == votesFromUserB.size());
-	cpp_dec_float_50 n(len);
-	cpp_dec_float_50 sum(0.0);
-	if(len == 0)  return cpp_dec_float_50(0.0);
+	double n(len);
+	double sum(0.0);
+	if(len == 0)  return double(0.0);
 
 	for(unsigned long i = 0u; i < len; i++) {
 		// computes the sum of squared differences between the pairs of ranks (values)
-		cpp_dec_float_50 dif = cpp_dec_float_50(votesFromUserA[i]) - cpp_dec_float_50(votesFromUserB[i]);
+		double dif = double(votesFromUserA[i]) - double(votesFromUserB[i]);
 		sum += dif * dif;
 	}
-	return cpp_dec_float_50(1) - (cpp_dec_float_50(6) * sum) / (n * (n * n - 1));
+	return double(1) - (double(6) * sum) / (n * (n * n - 1));
 }
 
 bool MovieLensSGConverter::is_zero_array(std::vector<double>& array)

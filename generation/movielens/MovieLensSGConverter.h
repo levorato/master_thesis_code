@@ -58,17 +58,17 @@ private:
 
 	std::string get_file_contents(const char *filename);
 	void find_and_replace(string& source, string const& find, string const& replace);
-	cpp_dec_float_50 cosine_similarity(std::vector<double>& votesFromUserA,
+	double cosine_similarity(std::vector<double>& votesFromUserA,
 			std::vector<double>& votesFromUserB);
-	cpp_dec_float_50 pearson_correlation_coefficient(std::vector<double>& votesFromUserA,
+	double pearson_correlation_coefficient(std::vector<double>& votesFromUserA,
 			std::vector<double>& votesFromUserB);
 	// http://projekter.aau.dk/projekter/files/32181941/Report.pdf - pages 24/25
-	cpp_dec_float_50 pearson_correlation_coefficient2(std::vector<double>& votesFromUserA,
+	double pearson_correlation_coefficient2(std::vector<double>& votesFromUserA,
 				std::vector<double>& votesFromUserB);
-	cpp_dec_float_50 pearson_correlation_coefficient_with_variance(std::vector<double>& votesFromUserA,
+	double pearson_correlation_coefficient_with_variance(std::vector<double>& votesFromUserA,
 			std::vector<double>& votesFromUserB, std::vector<long>& common_movie_ids, std::vector<double>& movie_rating_variance,
 			const double& avg_rating_variance);
-	cpp_dec_float_50 spearman_correlation_coefficient(std::vector<int>& votesFromUserA,
+	double spearman_correlation_coefficient(std::vector<int>& votesFromUserA,
 			std::vector<int>& votesFromUserB);
 	bool is_zero_array(std::vector<double>& array);
 
