@@ -51,7 +51,7 @@
 // Global variables
 #define EPS 0.0000001
 // Be sure to update these numbers as the movielens dataset grows!
-#define MAX_MOVIES 100000
+#define MAX_MOVIES 150000
 #define MAX_USERS 250000
 // BAD_MOVIE -> maximum number of stars so that a rated movie is judged as a bad movie (e.g. 2 stars)
 #define BAD_MOVIE 2
@@ -166,11 +166,15 @@ bool MovieLensSGConverter::readMovieLensCSVFile(const string& filename, long& ma
 	// reads all votes for movies
 	for(std::vector<string>::iterator line_iter = lines.begin(); line_iter != lines.end(); line_iter++) {
 		string line = *line_iter;
+		// BOOST_LOG_TRIVIAL(info) << "Reading line => " << line;
 		find_and_replace(line, "::", "\t");
+		find_and_replace(line, ",", "\t");
         Tokenizer tok(line);
 		std::vector< string > column;
         column.assign(tok.begin(),tok.end());
         if (column.size() < 3)  continue;
+        std::size_t found = column[0].find("user");
+        if (found != std::string::npos)  continue;  // skips header line
 
 		long user_id = boost::lexical_cast< long >( column[0] );
         long movie_id = boost::lexical_cast< long >( column[1] );
@@ -344,7 +348,7 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 				if(user_a < user_b) {
 					if(common_rating_list[user_a - initialUserIndex].count(user_b) > 0) {
 						CommonVoteList& voteList = common_rating_list[user_a - initialUserIndex][user_b];
-						if(voteList.size() <= 4)  continue;  // TODO considerar numero de votos em comum > x
+						if(voteList.size() < 20)  continue;  // TODO considerar numero de votos em comum > x
 						std::vector<double> normalizedVotesFromUserA, normalizedVotesFromUserB;
 						std::vector<int> votesFromUserA, votesFromUserB;
 						std::vector<long> common_movie_ids;
@@ -428,8 +432,17 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 				}
 			}
 		}
+		BOOST_LOG_TRIVIAL(info) << "Writing partial set of edges to text file...";
+		// write the signed graphs to output file
+		bool append = true;
+		if(i == 0)  append = false;
+		writeSignedGraphToFile("cosine", outputFileName, outSG_cosine, max_user_id, myRank, append);
+		writeSignedGraphToFile("pearson", outputFileName, outSG_pearson, max_user_id, myRank, append);
+		outSG_cosine.clear();
+		outSG_pearson.clear();
 	}
 
+	BOOST_LOG_TRIVIAL(info) << "Writing histogram to text file...";
 	// process the histogram values and output to text file
 	stringstream ss_histogram_cosine;
 	for(map<string,long>::const_iterator it = histogram_cosine.begin(); it != histogram_cosine.end(); ++it) {
@@ -439,11 +452,6 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 	for(map<string,long>::const_iterator it = histogram_pearson.begin(); it != histogram_pearson.end(); ++it) {
 		ss_histogram_pearson << it->first << " " << it->second << "\n";
 	}
-
-	// write the signed graphs to output file
-	// 1 - Cosine-similarity-based graph
-	writeSignedGraphToFile("cosine", outputFileName, outSG_cosine, max_user_id, myRank);
-	writeSignedGraphToFile("pearson", outputFileName, outSG_pearson, max_user_id, myRank);
 
 	// write the histogram to a secondary output file
 	writeHistogramToFile("cosine", outputFileName, ss_histogram_cosine.str(), myRank);
@@ -644,10 +652,10 @@ bool MovieLensSGConverter::is_zero_array(std::vector<double>& array)
 }
 
 bool MovieLensSGConverter::writeSignedGraphToFile(const string& file_prefix, const string& partialFilename,
-		const std::vector<string>& edgeList, const long& max_user_id, const int& myRank) {
+		const std::vector<string>& edgeList, const long& max_user_id, const int& myRank, const bool& append) {
 	stringstream ss;
 	ss << partialFilename << "-" << file_prefix << ".part" << myRank;
-	ofstream output_file(ss.str().c_str(), ios::out | ios::trunc);
+	ofstream output_file(ss.str().c_str(), ios::out | (append ? ios::app : ios::trunc));
 	if(!output_file) {
 		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << partialFilename;
 		return false;

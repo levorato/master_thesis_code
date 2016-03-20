@@ -73,7 +73,7 @@ private:
 	bool is_zero_array(std::vector<double>& array);
 
 	bool writeSignedGraphToFile(const string& file_prefix, const string& partialFilename,
-			const std::vector<string>& edgeList, const long& max_user_id, const int& myRank);
+			const std::vector<string>& edgeList, const long& max_user_id, const int& myRank, const bool& append);
 	bool writeHistogramToFile(const string& file_prefix, const string& partialFilename,
 			string fileContent, const int& myRank);
 
