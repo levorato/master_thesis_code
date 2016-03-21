@@ -466,8 +466,8 @@ bool MovieLensSGConverter::generateSGFromMovieRatings(const long& max_user_id, c
 			boost::mpi::status msg = world.recv(boost::mpi::any_source, InputMessage::DONE_MSG_TAG, imsg);
 		}
 		// merge all the signed graph output files into a full graph output file
-		mergeSignedGraphToFile("cosine", outputFileName, outSG_cosine, max_user_id, numProcessors);
-		mergeSignedGraphToFile("pearson", outputFileName, outSG_pearson, max_user_id, numProcessors);
+		mergeSignedGraphToFile("cosine", outputFileName, max_user_id, numProcessors);
+		mergeSignedGraphToFile("pearson", outputFileName, max_user_id, numProcessors);
 
 		mergeHistogramToFile("cosine", outputFileName, numProcessors, histogram_cosine);
 		mergeHistogramToFile("pearson", outputFileName, numProcessors, histogram_pearson);
@@ -660,9 +660,6 @@ bool MovieLensSGConverter::writeSignedGraphToFile(const string& file_prefix, con
 		BOOST_LOG_TRIVIAL(fatal) << "Cannot open output result file to: " << partialFilename;
 		return false;
 	}
-	if(myRank == 0) {
-		output_file << max_user_id << "\t" << edgeList.size() << "\r\n";
-	}
 	for(std::vector<string>::const_iterator it = edgeList.begin(); it != edgeList.end(); it++) {
 		output_file << (*it);
 	}
@@ -686,7 +683,7 @@ bool MovieLensSGConverter::writeHistogramToFile(const string& file_prefix, const
 }
 
 bool MovieLensSGConverter::mergeSignedGraphToFile(const string& file_prefix, const string& partialFilename,
-		const std::vector<string>& edgeList, const long& max_user_id, const int& numProcessors) {
+		const long& max_user_id, const int& numProcessors) {
 	stringstream ss;
 	ss << partialFilename << "-" << file_prefix << ".g";
 	ofstream output_full_file_sg(ss.str().c_str(), ios::out | ios::trunc);
@@ -694,6 +691,13 @@ bool MovieLensSGConverter::mergeSignedGraphToFile(const string& file_prefix, con
 		BOOST_LOG_TRIVIAL(fatal) << "Cannot open full SG output result file to: " << ss.str();
 		return false;
 	}
+	int edgeCount = 0;
+	for(int i = 0; i < numProcessors; i++) {
+		stringstream partialSGFilenameN_ss;
+		partialSGFilenameN_ss << partialFilename << "-" << file_prefix << ".part" << i;
+		edgeCount += countLinesInFile(partialSGFilenameN_ss.str());
+	}
+	output_full_file_sg << max_user_id << "\t" << edgeCount << "\r\n";
 	for(int i = 0; i < numProcessors; i++) {
 		stringstream partialSGFilenameN_ss;
 		partialSGFilenameN_ss << partialFilename << "-" << file_prefix << ".part" << i;
@@ -770,6 +774,33 @@ bool MovieLensSGConverter::mergeHistogramToFile(const string& file_prefix, const
 	output_full_file_abs_hist << ss_abs_histogram_full.str();
 	output_full_file_abs_hist.close();
 	return true;
+}
+
+unsigned int MovieLensSGConverter::FileRead( istream & is, std::vector <char> & buff ) {
+    is.read( &buff[0], buff.size() );
+    return is.gcount();
+}
+
+unsigned int MovieLensSGConverter::CountLines( const std::vector <char> & buff, int sz ) {
+    int newlines = 0;
+    const char * p = &buff[0];
+    for ( int i = 0; i < sz; i++ ) {
+    	if ( p[i] == '\n' ) {
+    		newlines++;
+    	}
+    }
+    return newlines;
+}
+
+unsigned int MovieLensSGConverter::countLinesInFile(const string& filename) {
+	const int SZ = 1024 * 1024;
+	std::vector <char> buff( SZ );
+	ifstream ifs( filename.c_str() );
+	int n = 0;
+	while( int cc = FileRead( ifs, buff ) ) {
+		n += CountLines( buff, cc );
+	}
+	return n;
 }
 
 } /* namespace generation */

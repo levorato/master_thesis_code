@@ -78,9 +78,12 @@ private:
 			string fileContent, const int& myRank);
 
 	bool mergeSignedGraphToFile(const string& file_prefix, const string& partialFilename,
-			const std::vector<string>& edgeList, const long& max_user_id, const int& numProcessors);
+			const long& max_user_id, const int& numProcessors);
 	bool mergeHistogramToFile(const string& file_prefix, const string& partialFilename,
 			const int& numProcessors, std::map<string, long>& histogram);
+	unsigned int FileRead( istream & is, std::vector <char> & buff );
+	unsigned int CountLines( const std::vector <char> & buff, int sz );
+	unsigned int countLinesInFile(const string& filename);
 };
 
 class InputMessage {
