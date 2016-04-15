@@ -49,6 +49,8 @@ using namespace std;
 using namespace util;
 using namespace util::parallel;
 
+#define is_overloaded_process(list) not(list.size() > 2*(long)ceil(g->getN() / (double)numberOfProcesses))
+
 ImbalanceSubgraphParallelILS::ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
 		const bool& split, const bool& cuda) : ILS(),
 		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
@@ -445,11 +447,13 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-							numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, true);
+							numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, false);
 		if(k < 0) {
 			imsg.setClustering(&CCclustering);
 		}
 		imsg.setVertexList(verticesInProcess[i+1]);
+		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
+		imsg.cudaEnabled = is_overloaded_process(verticesInProcess[i+1]);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message sent to process " << slaveList[i];
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
@@ -467,8 +471,19 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
 	for(int i = 0; i < numberOfSlaves; i++) {
 		OutputMessage omsg;
-		mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+		mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+		int tag = stat.tag();
 		int procNum = stat.source();
+		if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+			BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+			i++;
+			while(i < numberOfSlaves) {  // receive the remaining messages to empty the buffer
+				stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source();
+				i++;
+			}
+			throw std::invalid_argument( "Error message received from slave. See error logs." );
+		}
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ". Obj = " <<
 				omsg.clustering.getImbalance().getValue();
 		// process the result of the execution of process i
@@ -641,10 +656,12 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 				// Each process will execute 1 ILS procedure for each subgraph
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, true);
+									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, false);
 				if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				// sends the modified subgraphs that will be solved by ILS
 				imsg.setVertexList(verticesInDestinationProcess);
+				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
+				imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
 				world.send(workerProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << workerProcess;
 				workerProcess++;
@@ -664,8 +681,19 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
 		for(int i = 0; i < numberOfSlaves; i++) {
 			OutputMessage omsg;
-			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+			int tag = stat.tag();
 			int procNum = stat.source();
+			if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+				BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+				i++;
+				while(i < numberOfSlaves) {  // receive the remaining messages to empty the buffer
+					stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source();
+					i++;
+				}
+				throw std::invalid_argument( "Error message received from slave. See error logs." );
+			}
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ". Obj = " <<
 					omsg.clustering.getImbalance().getValue();
 			// process the result of the execution of process i
@@ -1003,12 +1031,15 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 			if(mov >= 1) {  // 2 ILS procedures will be executed by 2 processes through MPI messages
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true);
+									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, false);
 				// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				InputMessageParallelILS imsg2 = imsg;
 				// sends the modified subgraphs that will be solved by ILS
 				imsg.setVertexList(verticesInSourceProcess);
 				imsg2.setVertexList(verticesInDestinationProcess);
+				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
+				imsg.cudaEnabled = is_overloaded_process(verticesInSourceProcess);
+				imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
 				world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 				world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to processes " << workerProcess1 << " and " << workerProcess2;
@@ -1020,9 +1051,11 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				// STEP 3.2: Movements to be executed by workerProcess ranks 0 (leader process) and 1
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true);
+									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, false);
 				// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				imsg.setVertexList(verticesInDestinationProcess);
+				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
+				imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
 				world.send(1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process 1.";
 				numberOfMessagesSent += 1;
@@ -1043,8 +1076,19 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
 		for(int i = 0; i < numberOfMessagesSent; i++) {
 			OutputMessage omsg;
-			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+			int tag = stat.tag();
 			int procNum = stat.source();
+			if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+				BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+				i++;
+				while(i < numberOfSlaves) {  // receive the remaining messages to empty the buffer
+					stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source();
+					i++;
+				}
+				throw std::invalid_argument( "Error message received from slave. See error logs." );
+			}
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ". Obj = " <<
 					omsg.clustering.getImbalance().getValue();
 			// process the result of the execution of process i
@@ -1420,12 +1464,15 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			// 2 ILS procedures will be executed by 2 processes through MPI messages
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true);
+								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, false);
 			// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 			InputMessageParallelILS imsg2 = imsg;
 			// sends the modified subgraphs that will be solved by ILS
 			imsg.setVertexList(verticesInDestinationProcessA);
 			imsg2.setVertexList(verticesInDestinationProcessB);
+			// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
+			imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcessA);
+			imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcessB);
 			world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 			world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to processes " << workerProcess1 << " and " << workerProcess2;
@@ -1447,8 +1494,19 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
 		for(int i = 0; i < numberOfMessagesSent; i++) {
 			OutputMessage omsg;
-			mpi::status stat = world.recv(mpi::any_source, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+			int tag = stat.tag();
 			int procNum = stat.source();
+			if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+				BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+				i++;
+				while(i < numberOfSlaves) {  // receive the remaining messages to empty the buffer
+					stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source();
+					i++;
+				}
+				throw std::invalid_argument( "Error message received from slave. See error logs." );
+			}
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ". Obj = " <<
 					omsg.clustering.getImbalance().getValue();
 			// process the result of the execution of process i
@@ -2184,7 +2242,6 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
 		return OutputMessage(leaderClustering, 0, 0.0, globalVertexId, 0, 0);
 	} else {
-		CUDAILS cudails;
 		SignedGraph sg(g->graph, vertexList);
 		std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
 		for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
@@ -2207,11 +2264,26 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 			}
 		}
 		// Leader processing his own partition
-		Clustering leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+		Clustering leaderClustering;
+		double timeSpent = 0.0;
+		long num_comb = 0;
+		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
+		unsigned int numberOfProcesses = numberOfSlaves + 1;
+		if(is_overloaded_process(vertexList)) {
+			CUDAILS cudails;
+			leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+			timeSpent = cudails.getTotalTimeSpent();
+			num_comb = cudails.getNumberOfTestedCombinations();
+		} else {
+			resolution::ils::ILS resolution;
+			leaderClustering = resolution.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+			timeSpent = resolution.getTotalTimeSpent();
+			num_comb = resolution.getNumberOfTestedCombinations();
+		}
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P0" << ": num_edges = " <<
 								num_edges(sg.graph) << " , num_vertices = " << num_vertices(sg.graph) << ", I(P) = "
 								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
-		return OutputMessage(leaderClustering, cudails.getNumberOfTestedCombinations(), cudails.getTotalTimeSpent(), globalVertexId,
+		return OutputMessage(leaderClustering, num_comb, timeSpent, globalVertexId,
 				num_vertices(sg.graph), num_edges(sg.graph));
 	}
 }

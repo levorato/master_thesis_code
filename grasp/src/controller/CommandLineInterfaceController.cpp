@@ -971,6 +971,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				BOOST_LOG_TRIVIAL(fatal) << stack << endl;
 			}
 			BOOST_LOG_TRIVIAL(fatal) << diagnostic_information(e);
+			OutputMessage omsg;
+			// send an error message to the leader process
+			world.send(MPIMessage::LEADER_ID, MPIMessage::TERMINATE_MSG_TAG, omsg);
+			BOOST_LOG_TRIVIAL(error) << "Process " << myRank << ": Error message sent to master process.";
+			mpi::status stat = world.probe(MPIMessage::LEADER_ID, MPIMessage::TERMINATE_MSG_TAG);
+			BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": terminate message received.";
 			return 1;
 		}
 	}
