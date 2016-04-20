@@ -1,0 +1,6993 @@
+*Vertices 1000
+1 V1
+2 V2
+3 V3
+4 V4
+5 V5
+6 V6
+7 V7
+8 V8
+9 V9
+10 V10
+11 V11
+12 V12
+13 V13
+14 V14
+15 V15
+16 V16
+17 V17
+18 V18
+19 V19
+20 V20
+21 V21
+22 V22
+23 V23
+24 V24
+25 V25
+26 V26
+27 V27
+28 V28
+29 V29
+30 V30
+31 V31
+32 V32
+33 V33
+34 V34
+35 V35
+36 V36
+37 V37
+38 V38
+39 V39
+40 V40
+41 V41
+42 V42
+43 V43
+44 V44
+45 V45
+46 V46
+47 V47
+48 V48
+49 V49
+50 V50
+51 V51
+52 V52
+53 V53
+54 V54
+55 V55
+56 V56
+57 V57
+58 V58
+59 V59
+60 V60
+61 V61
+62 V62
+63 V63
+64 V64
+65 V65
+66 V66
+67 V67
+68 V68
+69 V69
+70 V70
+71 V71
+72 V72
+73 V73
+74 V74
+75 V75
+76 V76
+77 V77
+78 V78
+79 V79
+80 V80
+81 V81
+82 V82
+83 V83
+84 V84
+85 V85
+86 V86
+87 V87
+88 V88
+89 V89
+90 V90
+91 V91
+92 V92
+93 V93
+94 V94
+95 V95
+96 V96
+97 V97
+98 V98
+99 V99
+100 V100
+101 V101
+102 V102
+103 V103
+104 V104
+105 V105
+106 V106
+107 V107
+108 V108
+109 V109
+110 V110
+111 V111
+112 V112
+113 V113
+114 V114
+115 V115
+116 V116
+117 V117
+118 V118
+119 V119
+120 V120
+121 V121
+122 V122
+123 V123
+124 V124
+125 V125
+126 V126
+127 V127
+128 V128
+129 V129
+130 V130
+131 V131
+132 V132
+133 V133
+134 V134
+135 V135
+136 V136
+137 V137
+138 V138
+139 V139
+140 V140
+141 V141
+142 V142
+143 V143
+144 V144
+145 V145
+146 V146
+147 V147
+148 V148
+149 V149
+150 V150
+151 V151
+152 V152
+153 V153
+154 V154
+155 V155
+156 V156
+157 V157
+158 V158
+159 V159
+160 V160
+161 V161
+162 V162
+163 V163
+164 V164
+165 V165
+166 V166
+167 V167
+168 V168
+169 V169
+170 V170
+171 V171
+172 V172
+173 V173
+174 V174
+175 V175
+176 V176
+177 V177
+178 V178
+179 V179
+180 V180
+181 V181
+182 V182
+183 V183
+184 V184
+185 V185
+186 V186
+187 V187
+188 V188
+189 V189
+190 V190
+191 V191
+192 V192
+193 V193
+194 V194
+195 V195
+196 V196
+197 V197
+198 V198
+199 V199
+200 V200
+201 V201
+202 V202
+203 V203
+204 V204
+205 V205
+206 V206
+207 V207
+208 V208
+209 V209
+210 V210
+211 V211
+212 V212
+213 V213
+214 V214
+215 V215
+216 V216
+217 V217
+218 V218
+219 V219
+220 V220
+221 V221
+222 V222
+223 V223
+224 V224
+225 V225
+226 V226
+227 V227
+228 V228
+229 V229
+230 V230
+231 V231
+232 V232
+233 V233
+234 V234
+235 V235
+236 V236
+237 V237
+238 V238
+239 V239
+240 V240
+241 V241
+242 V242
+243 V243
+244 V244
+245 V245
+246 V246
+247 V247
+248 V248
+249 V249
+250 V250
+251 V251
+252 V252
+253 V253
+254 V254
+255 V255
+256 V256
+257 V257
+258 V258
+259 V259
+260 V260
+261 V261
+262 V262
+263 V263
+264 V264
+265 V265
+266 V266
+267 V267
+268 V268
+269 V269
+270 V270
+271 V271
+272 V272
+273 V273
+274 V274
+275 V275
+276 V276
+277 V277
+278 V278
+279 V279
+280 V280
+281 V281
+282 V282
+283 V283
+284 V284
+285 V285
+286 V286
+287 V287
+288 V288
+289 V289
+290 V290
+291 V291
+292 V292
+293 V293
+294 V294
+295 V295
+296 V296
+297 V297
+298 V298
+299 V299
+300 V300
+301 V301
+302 V302
+303 V303
+304 V304
+305 V305
+306 V306
+307 V307
+308 V308
+309 V309
+310 V310
+311 V311
+312 V312
+313 V313
+314 V314
+315 V315
+316 V316
+317 V317
+318 V318
+319 V319
+320 V320
+321 V321
+322 V322
+323 V323
+324 V324
+325 V325
+326 V326
+327 V327
+328 V328
+329 V329
+330 V330
+331 V331
+332 V332
+333 V333
+334 V334
+335 V335
+336 V336
+337 V337
+338 V338
+339 V339
+340 V340
+341 V341
+342 V342
+343 V343
+344 V344
+345 V345
+346 V346
+347 V347
+348 V348
+349 V349
+350 V350
+351 V351
+352 V352
+353 V353
+354 V354
+355 V355
+356 V356
+357 V357
+358 V358
+359 V359
+360 V360
+361 V361
+362 V362
+363 V363
+364 V364
+365 V365
+366 V366
+367 V367
+368 V368
+369 V369
+370 V370
+371 V371
+372 V372
+373 V373
+374 V374
+375 V375
+376 V376
+377 V377
+378 V378
+379 V379
+380 V380
+381 V381
+382 V382
+383 V383
+384 V384
+385 V385
+386 V386
+387 V387
+388 V388
+389 V389
+390 V390
+391 V391
+392 V392
+393 V393
+394 V394
+395 V395
+396 V396
+397 V397
+398 V398
+399 V399
+400 V400
+401 V401
+402 V402
+403 V403
+404 V404
+405 V405
+406 V406
+407 V407
+408 V408
+409 V409
+410 V410
+411 V411
+412 V412
+413 V413
+414 V414
+415 V415
+416 V416
+417 V417
+418 V418
+419 V419
+420 V420
+421 V421
+422 V422
+423 V423
+424 V424
+425 V425
+426 V426
+427 V427
+428 V428
+429 V429
+430 V430
+431 V431
+432 V432
+433 V433
+434 V434
+435 V435
+436 V436
+437 V437
+438 V438
+439 V439
+440 V440
+441 V441
+442 V442
+443 V443
+444 V444
+445 V445
+446 V446
+447 V447
+448 V448
+449 V449
+450 V450
+451 V451
+452 V452
+453 V453
+454 V454
+455 V455
+456 V456
+457 V457
+458 V458
+459 V459
+460 V460
+461 V461
+462 V462
+463 V463
+464 V464
+465 V465
+466 V466
+467 V467
+468 V468
+469 V469
+470 V470
+471 V471
+472 V472
+473 V473
+474 V474
+475 V475
+476 V476
+477 V477
+478 V478
+479 V479
+480 V480
+481 V481
+482 V482
+483 V483
+484 V484
+485 V485
+486 V486
+487 V487
+488 V488
+489 V489
+490 V490
+491 V491
+492 V492
+493 V493
+494 V494
+495 V495
+496 V496
+497 V497
+498 V498
+499 V499
+500 V500
+501 V501
+502 V502
+503 V503
+504 V504
+505 V505
+506 V506
+507 V507
+508 V508
+509 V509
+510 V510
+511 V511
+512 V512
+513 V513
+514 V514
+515 V515
+516 V516
+517 V517
+518 V518
+519 V519
+520 V520
+521 V521
+522 V522
+523 V523
+524 V524
+525 V525
+526 V526
+527 V527
+528 V528
+529 V529
+530 V530
+531 V531
+532 V532
+533 V533
+534 V534
+535 V535
+536 V536
+537 V537
+538 V538
+539 V539
+540 V540
+541 V541
+542 V542
+543 V543
+544 V544
+545 V545
+546 V546
+547 V547
+548 V548
+549 V549
+550 V550
+551 V551
+552 V552
+553 V553
+554 V554
+555 V555
+556 V556
+557 V557
+558 V558
+559 V559
+560 V560
+561 V561
+562 V562
+563 V563
+564 V564
+565 V565
+566 V566
+567 V567
+568 V568
+569 V569
+570 V570
+571 V571
+572 V572
+573 V573
+574 V574
+575 V575
+576 V576
+577 V577
+578 V578
+579 V579
+580 V580
+581 V581
+582 V582
+583 V583
+584 V584
+585 V585
+586 V586
+587 V587
+588 V588
+589 V589
+590 V590
+591 V591
+592 V592
+593 V593
+594 V594
+595 V595
+596 V596
+597 V597
+598 V598
+599 V599
+600 V600
+601 V601
+602 V602
+603 V603
+604 V604
+605 V605
+606 V606
+607 V607
+608 V608
+609 V609
+610 V610
+611 V611
+612 V612
+613 V613
+614 V614
+615 V615
+616 V616
+617 V617
+618 V618
+619 V619
+620 V620
+621 V621
+622 V622
+623 V623
+624 V624
+625 V625
+626 V626
+627 V627
+628 V628
+629 V629
+630 V630
+631 V631
+632 V632
+633 V633
+634 V634
+635 V635
+636 V636
+637 V637
+638 V638
+639 V639
+640 V640
+641 V641
+642 V642
+643 V643
+644 V644
+645 V645
+646 V646
+647 V647
+648 V648
+649 V649
+650 V650
+651 V651
+652 V652
+653 V653
+654 V654
+655 V655
+656 V656
+657 V657
+658 V658
+659 V659
+660 V660
+661 V661
+662 V662
+663 V663
+664 V664
+665 V665
+666 V666
+667 V667
+668 V668
+669 V669
+670 V670
+671 V671
+672 V672
+673 V673
+674 V674
+675 V675
+676 V676
+677 V677
+678 V678
+679 V679
+680 V680
+681 V681
+682 V682
+683 V683
+684 V684
+685 V685
+686 V686
+687 V687
+688 V688
+689 V689
+690 V690
+691 V691
+692 V692
+693 V693
+694 V694
+695 V695
+696 V696
+697 V697
+698 V698
+699 V699
+700 V700
+701 V701
+702 V702
+703 V703
+704 V704
+705 V705
+706 V706
+707 V707
+708 V708
+709 V709
+710 V710
+711 V711
+712 V712
+713 V713
+714 V714
+715 V715
+716 V716
+717 V717
+718 V718
+719 V719
+720 V720
+721 V721
+722 V722
+723 V723
+724 V724
+725 V725
+726 V726
+727 V727
+728 V728
+729 V729
+730 V730
+731 V731
+732 V732
+733 V733
+734 V734
+735 V735
+736 V736
+737 V737
+738 V738
+739 V739
+740 V740
+741 V741
+742 V742
+743 V743
+744 V744
+745 V745
+746 V746
+747 V747
+748 V748
+749 V749
+750 V750
+751 V751
+752 V752
+753 V753
+754 V754
+755 V755
+756 V756
+757 V757
+758 V758
+759 V759
+760 V760
+761 V761
+762 V762
+763 V763
+764 V764
+765 V765
+766 V766
+767 V767
+768 V768
+769 V769
+770 V770
+771 V771
+772 V772
+773 V773
+774 V774
+775 V775
+776 V776
+777 V777
+778 V778
+779 V779
+780 V780
+781 V781
+782 V782
+783 V783
+784 V784
+785 V785
+786 V786
+787 V787
+788 V788
+789 V789
+790 V790
+791 V791
+792 V792
+793 V793
+794 V794
+795 V795
+796 V796
+797 V797
+798 V798
+799 V799
+800 V800
+801 V801
+802 V802
+803 V803
+804 V804
+805 V805
+806 V806
+807 V807
+808 V808
+809 V809
+810 V810
+811 V811
+812 V812
+813 V813
+814 V814
+815 V815
+816 V816
+817 V817
+818 V818
+819 V819
+820 V820
+821 V821
+822 V822
+823 V823
+824 V824
+825 V825
+826 V826
+827 V827
+828 V828
+829 V829
+830 V830
+831 V831
+832 V832
+833 V833
+834 V834
+835 V835
+836 V836
+837 V837
+838 V838
+839 V839
+840 V840
+841 V841
+842 V842
+843 V843
+844 V844
+845 V845
+846 V846
+847 V847
+848 V848
+849 V849
+850 V850
+851 V851
+852 V852
+853 V853
+854 V854
+855 V855
+856 V856
+857 V857
+858 V858
+859 V859
+860 V860
+861 V861
+862 V862
+863 V863
+864 V864
+865 V865
+866 V866
+867 V867
+868 V868
+869 V869
+870 V870
+871 V871
+872 V872
+873 V873
+874 V874
+875 V875
+876 V876
+877 V877
+878 V878
+879 V879
+880 V880
+881 V881
+882 V882
+883 V883
+884 V884
+885 V885
+886 V886
+887 V887
+888 V888
+889 V889
+890 V890
+891 V891
+892 V892
+893 V893
+894 V894
+895 V895
+896 V896
+897 V897
+898 V898
+899 V899
+900 V900
+901 V901
+902 V902
+903 V903
+904 V904
+905 V905
+906 V906
+907 V907
+908 V908
+909 V909
+910 V910
+911 V911
+912 V912
+913 V913
+914 V914
+915 V915
+916 V916
+917 V917
+918 V918
+919 V919
+920 V920
+921 V921
+922 V922
+923 V923
+924 V924
+925 V925
+926 V926
+927 V927
+928 V928
+929 V929
+930 V930
+931 V931
+932 V932
+933 V933
+934 V934
+935 V935
+936 V936
+937 V937
+938 V938
+939 V939
+940 V940
+941 V941
+942 V942
+943 V943
+944 V944
+945 V945
+946 V946
+947 V947
+948 V948
+949 V949
+950 V950
+951 V951
+952 V952
+953 V953
+954 V954
+955 V955
+956 V956
+957 V957
+958 V958
+959 V959
+960 V960
+961 V961
+962 V962
+963 V963
+964 V964
+965 V965
+966 V966
+967 V967
+968 V968
+969 V969
+970 V970
+971 V971
+972 V972
+973 V973
+974 V974
+975 V975
+976 V976
+977 V977
+978 V978
+979 V979
+980 V980
+981 V981
+982 V982
+983 V983
+984 V984
+985 V985
+986 V986
+987 V987
+988 V988
+989 V989
+990 V990
+991 V991
+992 V992
+993 V993
+994 V994
+995 V995
+996 V996
+997 V997
+998 V998
+999 V999
+1000 V1000
+*Arcs
+1 3 1 black
+1 5 1 black
+1 6 1 black
+1 8 1 black
+1 10 1 black
+1 13 1 black
+1 14 1 black
+1 16 1 black
+1 21 1 black
+1 23 1 black
+1 24 1 black
+1 25 1 black
+1 26 -1 red
+1 28 -1 red
+1 29 -1 red
+1 30 -1 red
+2 5 1 black
+2 10 1 black
+2 32 1 black
+2 42 1 black
+2 53 1 black
+2 99 1 black
+2 119 1 black
+2 531 -1 red
+2 618 1 black
+2 620 1 black
+2 621 1 black
+2 622 1 black
+2 624 1 black
+2 627 1 black
+2 629 1 black
+2 630 1 black
+2 631 1 black
+2 632 1 black
+2 633 1 black
+2 634 1 black
+2 635 1 black
+2 637 1 black
+2 638 1 black
+2 639 1 black
+2 640 1 black
+2 641 1 black
+2 642 1 black
+2 644 1 black
+2 645 1 black
+2 646 1 black
+2 647 1 black
+2 648 1 black
+2 650 1 black
+2 652 1 black
+2 653 1 black
+2 654 1 black
+2 657 1 black
+2 658 1 black
+2 659 1 black
+2 660 1 black
+2 661 1 black
+2 662 1 black
+2 663 1 black
+2 664 1 black
+2 666 1 black
+2 667 1 black
+2 671 1 black
+2 675 1 black
+2 677 -1 red
+2 678 -1 red
+2 679 -1 red
+2 680 -1 red
+2 681 -1 red
+2 682 -1 red
+2 683 -1 red
+2 684 -1 red
+2 685 -1 red
+2 686 -1 red
+2 687 -1 red
+2 688 -1 red
+2 689 -1 red
+2 690 -1 red
+2 691 -1 red
+2 692 -1 red
+2 693 -1 red
+2 694 -1 red
+2 695 -1 red
+2 696 -1 red
+2 697 -1 red
+2 698 -1 red
+4 10 1 black
+4 49 1 black
+4 56 1 black
+4 115 1 black
+4 699 1 black
+4 700 1 black
+5 701 1 black
+6 16 1 black
+6 32 1 black
+6 34 1 black
+6 42 1 black
+6 48 1 black
+6 53 1 black
+6 56 1 black
+6 60 1 black
+6 81 1 black
+6 99 1 black
+6 112 1 black
+6 173 1 black
+6 192 1 black
+6 627 1 black
+6 637 1 black
+6 702 1 black
+6 703 1 black
+6 704 1 black
+6 705 1 black
+6 706 1 black
+6 707 1 black
+6 708 1 black
+6 709 1 black
+6 710 1 black
+6 711 1 black
+6 712 1 black
+6 713 1 black
+6 714 1 black
+6 715 1 black
+6 716 1 black
+6 717 1 black
+6 718 1 black
+6 719 1 black
+6 720 1 black
+6 721 1 black
+6 722 1 black
+6 723 1 black
+6 724 1 black
+6 725 1 black
+6 726 1 black
+6 727 1 black
+6 728 1 black
+6 729 1 black
+6 730 1 black
+6 731 1 black
+6 732 1 black
+6 733 1 black
+6 734 1 black
+6 735 1 black
+6 736 1 black
+6 738 1 black
+6 739 1 black
+6 740 1 black
+6 741 1 black
+6 742 1 black
+6 744 1 black
+6 745 1 black
+6 746 1 black
+6 747 1 black
+6 748 1 black
+6 749 1 black
+6 750 1 black
+6 751 1 black
+6 752 1 black
+6 753 1 black
+6 754 1 black
+6 755 1 black
+6 756 1 black
+6 757 1 black
+6 758 1 black
+6 759 1 black
+6 760 -1 red
+6 761 -1 red
+6 762 -1 red
+6 763 -1 red
+6 764 -1 red
+7 32 1 black
+7 45 1 black
+7 81 1 black
+7 173 1 black
+7 192 1 black
+7 637 1 black
+7 650 1 black
+7 755 1 black
+7 765 1 black
+7 766 1 black
+7 767 1 black
+7 768 1 black
+7 769 1 black
+7 771 1 black
+8 177 1 black
+8 245 1 black
+8 543 -1 red
+8 773 1 black
+8 774 1 black
+8 775 1 black
+8 776 1 black
+8 778 1 black
+8 779 1 black
+8 780 1 black
+8 781 1 black
+8 782 1 black
+8 784 1 black
+8 785 1 black
+8 786 1 black
+8 787 1 black
+8 788 1 black
+8 789 1 black
+8 790 1 black
+8 791 1 black
+8 792 -1 red
+8 793 -1 red
+8 794 -1 red
+8 795 -1 red
+8 796 -1 red
+8 797 -1 red
+8 798 -1 red
+9 10 1 black
+9 51 1 black
+9 52 1 black
+9 53 1 black
+9 55 1 black
+9 71 -1 red
+9 86 -1 red
+9 88 -1 red
+9 89 -1 red
+9 126 -1 red
+9 128 1 black
+9 132 1 black
+9 141 1 black
+9 145 1 black
+9 232 -1 red
+9 663 -1 red
+9 700 1 black
+9 799 1 black
+9 802 1 black
+9 803 1 black
+9 805 1 black
+9 809 1 black
+9 811 1 black
+9 813 1 black
+9 816 1 black
+9 818 1 black
+9 819 1 black
+9 822 1 black
+9 824 1 black
+9 826 1 black
+9 827 1 black
+9 830 1 black
+9 834 1 black
+9 836 1 black
+9 840 1 black
+9 845 1 black
+9 853 1 black
+9 855 1 black
+9 858 1 black
+9 862 1 black
+9 865 1 black
+9 866 1 black
+9 871 -1 red
+9 872 -1 red
+9 873 -1 red
+9 874 -1 red
+9 875 -1 red
+9 876 -1 red
+9 877 -1 red
+9 878 -1 red
+9 879 -1 red
+9 881 -1 red
+9 882 -1 red
+9 883 -1 red
+9 884 -1 red
+9 885 -1 red
+9 886 -1 red
+9 887 -1 red
+9 889 -1 red
+9 890 -1 red
+9 891 -1 red
+9 892 -1 red
+9 893 -1 red
+9 894 -1 red
+9 895 -1 red
+9 896 -1 red
+9 898 -1 red
+9 899 -1 red
+9 900 -1 red
+9 901 -1 red
+9 902 -1 red
+9 903 -1 red
+9 905 -1 red
+9 906 -1 red
+9 907 -1 red
+9 908 -1 red
+9 909 -1 red
+9 910 -1 red
+9 911 -1 red
+9 912 -1 red
+9 913 -1 red
+9 916 -1 red
+9 919 -1 red
+9 921 -1 red
+9 922 -1 red
+9 923 -1 red
+9 925 -1 red
+9 929 -1 red
+9 930 -1 red
+9 932 -1 red
+9 935 -1 red
+9 936 -1 red
+9 937 -1 red
+9 938 -1 red
+9 939 -1 red
+9 940 -1 red
+9 941 -1 red
+9 942 -1 red
+10 48 1 black
+10 53 1 black
+10 81 1 black
+10 141 1 black
+10 197 1 black
+10 633 1 black
+10 700 1 black
+10 943 1 black
+10 945 1 black
+10 946 1 black
+10 948 1 black
+10 949 1 black
+10 951 1 black
+10 953 1 black
+10 955 1 black
+10 956 1 black
+10 957 1 black
+10 958 1 black
+10 959 1 black
+11 961 1 black
+11 963 1 black
+11 964 1 black
+11 966 1 black
+11 970 1 black
+11 971 1 black
+11 973 1 black
+12 6 1 black
+12 9 1 black
+12 10 1 black
+12 42 1 black
+12 48 1 black
+12 49 1 black
+12 53 1 black
+12 56 1 black
+12 57 1 black
+12 59 1 black
+12 60 1 black
+12 67 1 black
+12 71 1 black
+12 72 1 black
+12 77 1 black
+12 80 1 black
+12 82 1 black
+12 84 1 black
+12 91 1 black
+12 95 1 black
+12 102 1 black
+12 121 1 black
+12 150 1 black
+12 314 1 black
+12 600 1 black
+12 631 1 black
+12 637 1 black
+12 658 1 black
+12 661 1 black
+12 662 1 black
+12 700 1 black
+12 738 1 black
+12 759 1 black
+12 770 1 black
+12 812 1 black
+12 825 1 black
+12 861 1 black
+12 863 1 black
+12 874 1 black
+12 908 1 black
+12 920 1 black
+12 930 1 black
+12 974 1 black
+12 975 1 black
+12 976 1 black
+12 977 1 black
+12 978 1 black
+12 979 1 black
+12 982 1 black
+12 984 1 black
+12 985 1 black
+12 986 1 black
+12 987 1 black
+12 988 1 black
+12 989 1 black
+12 990 1 black
+12 991 1 black
+12 992 1 black
+12 993 1 black
+12 995 1 black
+12 996 1 black
+12 998 1 black
+12 999 1 black
+12 1000 1 black
+14 532 1 black
+15 9 1 black
+15 18 1 black
+15 30 -1 red
+15 44 1 black
+15 48 1 black
+15 56 1 black
+15 59 1 black
+15 60 1 black
+15 61 1 black
+15 81 1 black
+15 95 1 black
+15 637 1 black
+16 758 1 black
+17 59 1 black
+17 101 1 black
+17 160 1 black
+17 246 1 black
+17 511 1 black
+17 659 1 black
+17 781 1 black
+17 867 1 black
+17 907 -1 red
+17 912 1 black
+17 998 1 black
+18 49 1 black
+18 55 1 black
+18 58 1 black
+18 115 1 black
+19 10 1 black
+19 48 1 black
+19 53 1 black
+19 56 1 black
+19 129 1 black
+19 131 1 black
+19 135 1 black
+19 143 1 black
+19 819 1 black
+20 23 1 black
+20 637 1 black
+20 802 1 black
+20 963 1 black
+20 964 1 black
+20 965 1 black
+20 970 1 black
+20 973 1 black
+22 18 1 black
+22 48 1 black
+22 51 -1 red
+22 53 1 black
+22 56 1 black
+22 59 1 black
+22 60 1 black
+22 61 1 black
+22 91 1 black
+22 95 1 black
+22 759 -1 red
+26 80 -1 red
+26 91 -1 red
+26 95 -1 red
+26 169 1 black
+26 634 1 black
+26 640 1 black
+26 687 -1 red
+26 738 -1 red
+26 761 -1 red
+30 26 1 black
+30 71 1 black
+30 80 1 black
+30 171 1 black
+30 177 1 black
+30 531 1 black
+30 680 1 black
+30 938 1 black
+30 950 1 black
+31 32 1 black
+31 33 1 black
+31 34 1 black
+31 35 1 black
+31 38 1 black
+31 40 1 black
+31 41 1 black
+31 42 1 black
+31 44 1 black
+31 45 1 black
+33 32 1 black
+33 34 1 black
+33 42 1 black
+33 45 1 black
+33 627 1 black
+33 708 1 black
+33 757 1 black
+36 10 1 black
+36 18 1 black
+36 48 1 black
+36 56 1 black
+36 61 1 black
+36 99 1 black
+36 182 1 black
+36 183 1 black
+36 193 1 black
+36 194 1 black
+36 197 1 black
+37 1 1 black
+37 48 1 black
+38 180 -1 red
+38 477 1 black
+39 32 1 black
+39 33 1 black
+39 34 1 black
+39 42 1 black
+39 81 1 black
+39 173 1 black
+39 192 1 black
+39 637 1 black
+39 734 1 black
+39 751 1 black
+39 762 -1 red
+44 1 1 black
+44 4 1 black
+44 9 1 black
+44 18 1 black
+44 48 1 black
+44 49 1 black
+44 52 1 black
+44 56 1 black
+44 59 1 black
+44 141 1 black
+46 35 1 black
+46 41 1 black
+46 42 1 black
+47 32 1 black
+47 33 1 black
+47 39 1 black
+47 42 1 black
+47 43 1 black
+47 45 1 black
+47 173 1 black
+47 637 1 black
+47 751 1 black
+47 771 1 black
+48 51 1 black
+48 52 1 black
+48 55 1 black
+49 115 1 black
+50 18 1 black
+50 42 1 black
+50 49 1 black
+50 81 1 black
+50 809 1 black
+51 30 -1 red
+51 63 -1 red
+51 126 -1 red
+51 169 -1 red
+51 177 -1 red
+51 217 -1 red
+51 527 -1 red
+51 680 -1 red
+51 684 -1 red
+51 698 -1 red
+51 761 -1 red
+51 763 -1 red
+51 875 -1 red
+51 878 -1 red
+51 881 -1 red
+51 890 -1 red
+51 898 -1 red
+51 938 -1 red
+51 939 -1 red
+51 950 -1 red
+51 958 -1 red
+51 975 -1 red
+53 1 1 black
+53 4 1 black
+53 18 1 black
+53 52 1 black
+53 59 1 black
+53 81 1 black
+53 115 1 black
+54 4 1 black
+54 9 1 black
+54 10 1 black
+54 18 1 black
+54 22 -1 red
+54 49 1 black
+54 51 1 black
+54 53 1 black
+54 55 1 black
+54 67 1 black
+54 81 1 black
+54 91 -1 red
+54 145 1 black
+54 502 1 black
+54 637 1 black
+54 680 -1 red
+54 687 -1 red
+54 691 -1 red
+54 753 1 black
+54 758 1 black
+54 771 1 black
+54 830 1 black
+54 875 -1 red
+54 938 -1 red
+54 993 1 black
+56 32 1 black
+56 105 1 black
+56 106 1 black
+56 107 1 black
+56 108 1 black
+56 110 1 black
+56 111 1 black
+56 112 1 black
+56 113 1 black
+56 115 1 black
+56 116 1 black
+56 117 1 black
+56 118 1 black
+56 120 1 black
+56 121 1 black
+56 122 1 black
+56 123 1 black
+56 125 1 black
+56 126 -1 red
+56 127 -1 red
+57 9 1 black
+57 53 1 black
+57 55 1 black
+57 59 1 black
+57 117 1 black
+57 141 1 black
+57 147 1 black
+59 95 1 black
+59 842 1 black
+59 920 1 black
+61 1 1 black
+61 44 1 black
+61 48 1 black
+61 59 1 black
+61 60 1 black
+61 62 1 black
+61 63 1 black
+61 65 1 black
+61 69 1 black
+61 74 1 black
+61 78 1 black
+61 79 1 black
+61 81 1 black
+61 82 1 black
+61 85 1 black
+61 87 1 black
+61 91 1 black
+61 95 1 black
+61 97 1 black
+61 98 1 black
+61 100 1 black
+61 102 1 black
+61 103 1 black
+62 71 1 black
+62 278 1 black
+63 88 -1 red
+63 126 1 black
+63 663 -1 red
+63 732 1 black
+63 733 1 black
+63 740 1 black
+63 814 -1 red
+63 912 -1 red
+63 934 -1 red
+63 939 -1 red
+63 979 1 black
+65 637 1 black
+65 917 -1 red
+65 938 -1 red
+67 48 1 black
+67 63 1 black
+67 71 1 black
+67 77 1 black
+67 81 1 black
+67 89 1 black
+67 641 1 black
+67 658 1 black
+67 861 1 black
+67 959 1 black
+68 4 1 black
+68 6 1 black
+68 9 1 black
+68 10 1 black
+68 18 1 black
+68 44 1 black
+68 48 1 black
+68 53 1 black
+68 56 1 black
+68 59 1 black
+68 74 1 black
+68 77 1 black
+68 81 1 black
+68 95 1 black
+68 96 1 black
+68 145 1 black
+68 157 1 black
+68 176 1 black
+68 267 1 black
+68 418 1 black
+68 466 1 black
+68 627 1 black
+68 637 1 black
+68 661 1 black
+68 702 1 black
+68 704 1 black
+68 743 1 black
+68 748 1 black
+68 759 1 black
+68 814 1 black
+68 923 1 black
+68 990 1 black
+69 31 -1 red
+69 32 1 black
+69 63 -1 red
+69 162 1 black
+69 278 1 black
+69 331 1 black
+69 363 1 black
+69 477 1 black
+69 502 1 black
+69 540 1 black
+69 621 1 black
+69 637 1 black
+69 661 1 black
+69 673 1 black
+70 17 1 black
+70 48 1 black
+70 57 1 black
+70 74 1 black
+70 77 1 black
+70 81 1 black
+70 101 1 black
+70 116 1 black
+70 163 1 black
+70 259 1 black
+70 498 1 black
+70 531 1 black
+70 559 1 black
+70 573 1 black
+70 637 1 black
+70 641 -1 red
+70 658 1 black
+70 666 1 black
+70 759 1 black
+70 807 1 black
+70 810 1 black
+70 814 -1 red
+70 842 1 black
+70 850 -1 red
+70 861 -1 red
+70 885 -1 red
+70 920 1 black
+70 922 1 black
+70 927 1 black
+70 934 1 black
+70 958 1 black
+70 987 1 black
+70 999 1 black
+71 86 1 black
+71 498 1 black
+71 738 1 black
+71 875 1 black
+71 888 1 black
+71 906 1 black
+71 927 1 black
+71 958 1 black
+71 981 1 black
+72 48 1 black
+72 70 1 black
+72 81 1 black
+72 637 1 black
+72 846 1 black
+73 814 1 black
+74 71 1 black
+75 10 1 black
+75 48 1 black
+75 59 1 black
+75 60 -1 red
+75 82 1 black
+75 91 1 black
+75 95 1 black
+75 126 1 black
+75 145 -1 red
+75 171 1 black
+75 180 -1 red
+75 502 -1 red
+75 639 -1 red
+75 684 1 black
+75 718 -1 red
+75 760 1 black
+75 878 1 black
+75 923 1 black
+75 950 1 black
+75 958 1 black
+75 994 -1 red
+76 42 1 black
+76 48 1 black
+76 56 1 black
+76 637 1 black
+76 814 1 black
+76 983 1 black
+77 814 1 black
+77 838 1 black
+80 1 1 black
+80 4 1 black
+80 9 1 black
+80 10 1 black
+80 31 1 black
+80 42 1 black
+80 48 1 black
+80 53 1 black
+80 56 1 black
+80 63 1 black
+80 95 1 black
+80 108 1 black
+80 171 1 black
+80 622 1 black
+80 639 1 black
+80 814 1 black
+80 873 1 black
+80 885 1 black
+80 920 1 black
+80 943 1 black
+80 958 1 black
+80 959 1 black
+81 63 1 black
+83 4 1 black
+83 52 1 black
+83 53 1 black
+83 150 1 black
+83 996 1 black
+84 10 1 black
+84 48 1 black
+84 51 -1 red
+84 59 1 black
+84 77 1 black
+84 81 1 black
+84 95 1 black
+84 108 1 black
+84 246 1 black
+84 639 1 black
+84 652 1 black
+84 680 1 black
+84 691 1 black
+84 738 1 black
+84 759 1 black
+84 875 1 black
+84 938 -1 red
+84 958 1 black
+84 990 1 black
+86 1 1 black
+86 18 1 black
+86 48 1 black
+86 53 1 black
+86 67 1 black
+86 76 1 black
+86 81 1 black
+86 84 1 black
+86 89 1 black
+86 232 1 black
+86 633 1 black
+86 637 1 black
+86 770 1 black
+86 796 1 black
+86 861 1 black
+86 874 1 black
+86 930 1 black
+86 934 1 black
+86 978 1 black
+88 18 1 black
+88 31 1 black
+88 32 1 black
+88 42 1 black
+88 44 1 black
+88 48 1 black
+88 51 1 black
+88 53 1 black
+88 66 1 black
+88 81 1 black
+88 173 1 black
+88 232 1 black
+88 267 1 black
+88 363 1 black
+88 433 1 black
+88 532 1 black
+88 617 1 black
+88 630 1 black
+88 637 1 black
+88 652 1 black
+88 659 1 black
+88 661 1 black
+88 673 1 black
+88 674 1 black
+88 719 1 black
+88 810 1 black
+88 814 1 black
+88 838 1 black
+88 927 1 black
+88 934 1 black
+88 958 1 black
+88 975 1 black
+88 990 1 black
+88 998 1 black
+89 31 1 black
+89 814 1 black
+90 1 1 black
+90 48 1 black
+90 54 1 black
+90 56 1 black
+90 71 1 black
+90 77 1 black
+90 84 1 black
+90 89 1 black
+90 95 1 black
+90 126 -1 red
+90 622 1 black
+90 640 1 black
+90 861 1 black
+90 920 1 black
+90 929 -1 red
+90 990 1 black
+92 18 1 black
+92 48 1 black
+92 50 1 black
+92 85 1 black
+93 95 1 black
+93 641 1 black
+93 755 1 black
+93 814 1 black
+93 830 1 black
+93 869 1 black
+93 885 1 black
+93 934 1 black
+94 81 1 black
+95 48 1 black
+95 51 1 black
+95 81 1 black
+95 661 1 black
+95 680 1 black
+95 941 1 black
+95 950 1 black
+96 48 1 black
+96 56 1 black
+97 183 1 black
+97 264 1 black
+97 325 1 black
+97 543 1 black
+97 912 -1 red
+97 928 1 black
+97 941 1 black
+98 74 1 black
+98 81 1 black
+98 502 1 black
+98 525 1 black
+98 575 1 black
+98 631 1 black
+98 761 1 black
+98 938 1 black
+99 32 1 black
+99 52 1 black
+99 53 1 black
+99 56 1 black
+99 122 1 black
+99 363 1 black
+99 637 1 black
+99 641 1 black
+99 666 1 black
+99 861 1 black
+101 42 1 black
+101 197 1 black
+101 479 1 black
+101 502 1 black
+101 637 1 black
+101 661 1 black
+101 663 1 black
+101 704 1 black
+101 882 1 black
+101 978 1 black
+102 32 1 black
+102 34 1 black
+102 42 1 black
+102 45 1 black
+102 57 1 black
+102 81 1 black
+102 112 1 black
+102 600 1 black
+102 627 1 black
+102 633 1 black
+102 734 1 black
+102 746 1 black
+102 751 1 black
+102 758 1 black
+102 814 1 black
+102 939 1 black
+102 990 1 black
+103 631 1 black
+104 53 1 black
+104 84 1 black
+104 102 1 black
+104 674 1 black
+104 761 1 black
+104 814 1 black
+104 861 1 black
+104 934 1 black
+104 982 1 black
+104 987 1 black
+104 990 1 black
+109 48 1 black
+109 55 -1 red
+110 48 -1 red
+110 579 1 black
+110 679 1 black
+110 816 -1 red
+110 856 -1 red
+113 82 1 black
+113 116 1 black
+113 331 1 black
+113 479 1 black
+113 631 1 black
+113 637 1 black
+113 661 1 black
+113 872 1 black
+113 912 1 black
+114 48 -1 red
+114 53 -1 red
+114 60 -1 red
+114 898 -1 red
+114 938 -1 red
+115 10 1 black
+115 48 1 black
+119 1 1 black
+119 4 1 black
+119 18 1 black
+119 48 1 black
+119 49 1 black
+119 51 1 black
+119 115 1 black
+119 126 1 black
+119 938 -1 red
+120 908 1 black
+121 761 1 black
+124 18 1 black
+124 32 1 black
+124 48 1 black
+124 98 1 black
+124 99 1 black
+124 637 1 black
+124 745 1 black
+124 759 1 black
+129 18 1 black
+129 48 1 black
+129 50 1 black
+129 53 1 black
+129 55 1 black
+129 56 1 black
+129 59 1 black
+129 109 1 black
+129 130 1 black
+129 131 1 black
+129 132 1 black
+129 133 1 black
+129 134 1 black
+129 135 1 black
+129 137 1 black
+129 138 1 black
+129 139 1 black
+129 140 1 black
+129 141 1 black
+129 143 1 black
+135 48 1 black
+135 56 1 black
+135 59 1 black
+136 48 1 black
+141 48 1 black
+141 56 1 black
+143 48 1 black
+143 53 1 black
+143 85 1 black
+145 1 1 black
+145 48 1 black
+145 49 1 black
+145 56 1 black
+145 84 -1 red
+145 95 -1 red
+145 114 -1 red
+145 126 -1 red
+145 143 1 black
+145 169 -1 red
+145 278 -1 red
+145 287 -1 red
+145 938 -1 red
+147 48 1 black
+147 56 1 black
+147 59 1 black
+149 48 1 black
+149 55 1 black
+149 81 1 black
+149 150 1 black
+149 151 1 black
+149 153 1 black
+149 154 1 black
+149 155 1 black
+149 157 1 black
+149 162 1 black
+149 164 1 black
+149 165 1 black
+149 167 1 black
+149 168 1 black
+149 171 1 black
+149 172 1 black
+149 173 1 black
+149 175 1 black
+149 176 1 black
+149 177 -1 red
+149 178 -1 red
+149 179 -1 red
+150 42 1 black
+150 48 1 black
+150 53 1 black
+150 59 1 black
+150 60 1 black
+150 63 1 black
+150 81 1 black
+150 113 1 black
+150 128 1 black
+150 171 1 black
+150 355 1 black
+150 433 1 black
+150 488 1 black
+150 502 1 black
+150 600 1 black
+150 637 1 black
+150 659 1 black
+150 661 1 black
+150 671 1 black
+150 704 1 black
+150 742 1 black
+150 761 1 black
+150 872 1 black
+150 923 1 black
+150 950 1 black
+150 996 1 black
+151 81 1 black
+152 16 1 black
+152 80 -1 red
+152 95 1 black
+152 108 -1 red
+152 171 -1 red
+152 173 1 black
+152 177 -1 red
+152 314 1 black
+152 510 1 black
+152 531 1 black
+152 622 -1 red
+152 637 1 black
+152 642 1 black
+152 673 1 black
+152 674 1 black
+152 679 -1 red
+152 680 -1 red
+152 748 -1 red
+152 753 1 black
+152 758 1 black
+152 930 -1 red
+152 941 1 black
+152 950 1 black
+152 964 1 black
+152 990 1 black
+152 995 1 black
+154 912 -1 red
+158 157 1 black
+159 684 1 black
+159 735 1 black
+159 931 1 black
+159 990 1 black
+160 9 1 black
+160 18 1 black
+160 48 1 black
+160 57 1 black
+160 60 1 black
+160 81 1 black
+160 84 1 black
+160 531 1 black
+160 814 1 black
+160 863 1 black
+160 888 -1 red
+160 923 1 black
+162 32 1 black
+162 42 1 black
+162 173 1 black
+162 177 -1 red
+162 309 1 black
+162 637 1 black
+162 661 1 black
+162 675 1 black
+162 684 -1 red
+162 734 1 black
+162 758 1 black
+162 762 -1 red
+162 939 1 black
+163 48 1 black
+163 63 1 black
+163 666 1 black
+163 702 1 black
+163 735 1 black
+163 931 1 black
+165 60 -1 red
+165 63 1 black
+165 91 -1 red
+169 71 1 black
+169 108 1 black
+169 126 1 black
+169 938 -1 red
+169 950 1 black
+169 958 1 black
+170 32 1 black
+170 42 1 black
+170 162 1 black
+170 309 1 black
+170 368 1 black
+170 532 1 black
+170 551 1 black
+170 630 -1 red
+170 637 1 black
+170 725 1 black
+170 748 1 black
+170 802 1 black
+170 882 1 black
+170 920 1 black
+170 939 -1 red
+170 941 1 black
+171 615 1 black
+171 679 1 black
+174 720 1 black
+176 171 1 black
+176 734 1 black
+176 749 1 black
+176 770 1 black
+177 87 1 black
+177 990 1 black
+178 929 1 black
+179 912 1 black
+181 18 1 black
+181 48 1 black
+181 55 1 black
+181 56 1 black
+181 59 1 black
+181 101 1 black
+181 193 1 black
+181 206 1 black
+181 309 1 black
+181 322 1 black
+181 344 1 black
+181 391 1 black
+181 420 1 black
+181 532 1 black
+181 564 1 black
+181 624 1 black
+181 627 1 black
+181 631 1 black
+181 634 1 black
+181 637 1 black
+181 642 1 black
+181 652 1 black
+181 654 1 black
+181 661 1 black
+181 719 1 black
+181 814 1 black
+181 886 1 black
+181 908 1 black
+181 912 1 black
+181 933 1 black
+183 59 1 black
+183 113 1 black
+183 391 1 black
+183 734 1 black
+183 755 1 black
+184 543 1 black
+184 674 1 black
+184 886 1 black
+185 263 1 black
+185 575 1 black
+186 53 1 black
+186 60 -1 red
+186 171 -1 red
+186 627 1 black
+186 637 1 black
+186 663 1 black
+186 692 1 black
+186 734 1 black
+186 763 -1 red
+186 961 1 black
+186 991 -1 red
+190 540 1 black
+192 5 1 black
+192 31 1 black
+192 113 1 black
+192 183 1 black
+192 221 1 black
+192 222 1 black
+192 226 1 black
+192 227 1 black
+192 228 1 black
+192 229 1 black
+192 230 1 black
+192 231 1 black
+192 232 1 black
+192 234 1 black
+192 236 1 black
+192 237 1 black
+192 238 1 black
+192 240 1 black
+192 241 1 black
+192 243 1 black
+192 244 1 black
+192 247 1 black
+192 249 1 black
+192 251 1 black
+192 253 1 black
+192 254 1 black
+192 255 1 black
+192 258 1 black
+192 259 1 black
+192 260 1 black
+192 261 1 black
+192 263 1 black
+192 265 1 black
+192 268 1 black
+192 269 1 black
+192 270 1 black
+192 271 1 black
+192 272 1 black
+192 273 1 black
+192 274 1 black
+192 275 1 black
+192 277 1 black
+192 279 1 black
+192 281 1 black
+192 282 1 black
+192 283 1 black
+192 284 1 black
+192 285 1 black
+192 286 1 black
+192 288 1 black
+192 290 1 black
+192 291 1 black
+192 292 1 black
+192 293 1 black
+192 294 1 black
+192 295 1 black
+192 296 1 black
+192 298 1 black
+192 299 1 black
+192 300 1 black
+192 301 1 black
+192 303 1 black
+192 305 1 black
+192 306 1 black
+192 307 1 black
+192 308 1 black
+192 309 1 black
+192 311 1 black
+192 313 1 black
+192 316 1 black
+192 317 1 black
+192 320 1 black
+192 321 1 black
+192 323 1 black
+192 324 1 black
+192 327 1 black
+192 329 1 black
+192 333 1 black
+192 334 1 black
+192 335 1 black
+192 338 1 black
+192 339 1 black
+192 342 1 black
+192 344 1 black
+192 347 1 black
+192 350 1 black
+192 351 1 black
+192 353 1 black
+192 355 1 black
+192 356 1 black
+192 357 1 black
+192 358 1 black
+192 360 1 black
+192 361 1 black
+192 363 1 black
+192 364 1 black
+192 365 1 black
+192 366 1 black
+192 367 1 black
+192 368 1 black
+192 369 1 black
+192 371 1 black
+192 372 1 black
+192 373 1 black
+192 374 1 black
+192 375 1 black
+192 376 1 black
+192 377 1 black
+192 378 1 black
+192 381 1 black
+192 382 1 black
+192 383 1 black
+192 384 1 black
+192 386 1 black
+192 387 1 black
+192 388 1 black
+192 389 1 black
+192 390 1 black
+192 392 1 black
+192 393 1 black
+192 396 1 black
+192 397 1 black
+192 399 1 black
+192 400 1 black
+192 401 1 black
+192 407 1 black
+192 408 1 black
+192 409 1 black
+192 410 1 black
+192 411 1 black
+192 412 1 black
+192 413 1 black
+192 414 1 black
+192 417 1 black
+192 418 1 black
+192 419 1 black
+192 421 1 black
+192 422 1 black
+192 423 1 black
+192 424 1 black
+192 425 1 black
+192 426 1 black
+192 429 1 black
+192 430 1 black
+192 431 1 black
+192 433 1 black
+192 434 1 black
+192 435 1 black
+192 436 1 black
+192 437 1 black
+192 440 1 black
+192 442 1 black
+192 444 1 black
+192 447 1 black
+192 448 1 black
+192 450 1 black
+192 451 1 black
+192 453 1 black
+192 455 1 black
+192 458 1 black
+192 460 1 black
+192 461 1 black
+192 464 1 black
+192 465 1 black
+192 466 1 black
+192 467 1 black
+192 468 1 black
+192 470 1 black
+192 471 1 black
+192 472 1 black
+192 473 1 black
+192 475 1 black
+192 476 1 black
+192 480 1 black
+192 481 1 black
+192 483 1 black
+192 484 1 black
+192 486 1 black
+192 487 1 black
+192 488 1 black
+192 489 1 black
+192 490 1 black
+192 491 1 black
+192 492 1 black
+192 493 1 black
+192 495 1 black
+192 499 1 black
+192 500 1 black
+192 501 1 black
+192 503 1 black
+192 504 1 black
+192 505 1 black
+192 506 1 black
+192 507 1 black
+192 508 1 black
+192 509 1 black
+192 510 1 black
+192 512 1 black
+192 513 1 black
+192 514 1 black
+192 517 1 black
+192 518 1 black
+192 519 1 black
+192 520 1 black
+192 521 1 black
+192 522 1 black
+192 524 1 black
+192 525 1 black
+192 527 1 black
+192 528 1 black
+192 531 1 black
+192 532 1 black
+192 533 1 black
+192 534 1 black
+192 536 1 black
+192 537 1 black
+192 539 1 black
+192 540 1 black
+192 541 1 black
+192 542 1 black
+192 543 1 black
+192 544 1 black
+192 545 1 black
+192 546 1 black
+192 547 1 black
+192 548 1 black
+192 549 1 black
+192 550 1 black
+192 551 1 black
+192 552 1 black
+192 553 1 black
+192 554 1 black
+192 555 1 black
+192 556 1 black
+192 557 1 black
+192 560 1 black
+192 561 1 black
+192 564 1 black
+192 565 1 black
+192 567 1 black
+192 569 1 black
+192 571 1 black
+192 572 1 black
+192 574 1 black
+192 575 1 black
+192 578 1 black
+192 580 1 black
+192 582 1 black
+192 583 1 black
+192 584 1 black
+192 585 1 black
+192 586 1 black
+192 587 1 black
+192 588 1 black
+192 590 1 black
+192 591 1 black
+192 592 1 black
+192 593 1 black
+192 594 1 black
+192 595 1 black
+192 597 1 black
+192 599 1 black
+192 602 1 black
+192 603 1 black
+192 604 1 black
+192 605 1 black
+192 609 1 black
+192 610 1 black
+192 611 1 black
+192 612 1 black
+193 82 -1 red
+193 101 -1 red
+193 108 -1 red
+193 177 -1 red
+193 502 1 black
+193 575 -1 red
+193 596 -1 red
+193 637 1 black
+193 771 1 black
+193 802 1 black
+193 872 -1 red
+193 912 -1 red
+193 923 -1 red
+193 924 -1 red
+193 950 -1 red
+193 996 -1 red
+195 80 1 black
+195 113 1 black
+195 177 -1 red
+195 215 -1 red
+195 624 -1 red
+195 636 1 black
+195 637 1 black
+195 638 1 black
+195 679 -1 red
+195 775 -1 red
+195 849 -1 red
+196 113 1 black
+196 389 1 black
+198 23 1 black
+198 42 1 black
+198 641 1 black
+199 200 1 black
+199 201 1 black
+199 202 1 black
+199 203 1 black
+199 204 1 black
+199 205 1 black
+199 206 1 black
+199 207 1 black
+199 211 -1 red
+199 212 -1 red
+199 215 -1 red
+199 218 -1 red
+201 63 1 black
+201 87 1 black
+208 201 1 black
+217 80 1 black
+217 95 1 black
+217 108 1 black
+217 214 1 black
+217 639 1 black
+217 763 -1 red
+217 908 1 black
+217 938 1 black
+222 171 1 black
+223 637 1 black
+223 671 1 black
+223 842 1 black
+224 637 1 black
+224 771 1 black
+225 532 1 black
+225 929 -1 red
+229 267 1 black
+229 433 1 black
+230 412 1 black
+232 113 1 black
+232 331 1 black
+232 431 1 black
+232 907 1 black
+232 923 1 black
+233 198 1 black
+233 297 -1 red
+233 388 1 black
+233 426 1 black
+233 552 1 black
+233 597 1 black
+233 606 1 black
+233 686 -1 red
+233 788 1 black
+233 872 -1 red
+233 900 1 black
+234 104 1 black
+235 36 1 black
+235 59 1 black
+235 113 1 black
+235 165 -1 red
+235 298 -1 red
+235 385 1 black
+235 434 -1 red
+235 453 1 black
+235 532 -1 red
+235 535 -1 red
+235 630 1 black
+235 637 1 black
+235 661 1 black
+235 704 1 black
+235 796 -1 red
+235 928 1 black
+235 929 -1 red
+235 939 1 black
+235 994 1 black
+236 113 1 black
+236 451 1 black
+239 402 1 black
+239 780 -1 red
+242 543 1 black
+245 81 1 black
+246 9 1 black
+246 32 1 black
+246 36 1 black
+246 63 1 black
+246 81 1 black
+246 87 1 black
+246 98 1 black
+246 453 1 black
+246 502 1 black
+246 509 1 black
+246 564 1 black
+246 630 1 black
+246 637 1 black
+246 659 1 black
+246 661 1 black
+246 719 1 black
+246 739 1 black
+246 740 1 black
+246 761 1 black
+246 771 1 black
+246 872 -1 red
+248 36 1 black
+248 467 1 black
+248 850 1 black
+250 591 1 black
+252 872 1 black
+257 36 1 black
+257 264 1 black
+257 265 1 black
+257 434 1 black
+257 461 1 black
+257 467 1 black
+257 513 1 black
+257 525 1 black
+257 532 1 black
+257 535 1 black
+257 597 1 black
+257 607 1 black
+257 630 1 black
+257 661 1 black
+257 679 -1 red
+257 775 -1 red
+257 791 -1 red
+257 861 -1 red
+257 885 -1 red
+257 886 1 black
+257 889 1 black
+257 930 -1 red
+257 941 1 black
+259 263 1 black
+259 278 1 black
+259 363 1 black
+259 451 1 black
+259 600 1 black
+259 728 1 black
+259 814 1 black
+259 833 1 black
+259 863 1 black
+259 907 -1 red
+259 923 1 black
+259 934 1 black
+259 939 1 black
+260 424 1 black
+260 661 1 black
+260 842 1 black
+262 81 1 black
+262 267 1 black
+262 314 1 black
+262 509 1 black
+262 532 -1 red
+262 661 1 black
+262 755 1 black
+265 113 1 black
+266 34 1 black
+266 42 1 black
+266 59 1 black
+266 81 1 black
+266 128 1 black
+266 173 1 black
+266 637 1 black
+267 113 1 black
+270 502 1 black
+271 113 1 black
+274 84 1 black
+276 91 -1 red
+276 426 1 black
+276 451 1 black
+276 667 1 black
+278 314 1 black
+278 439 -1 red
+280 735 1 black
+283 908 1 black
+287 331 1 black
+289 543 1 black
+291 350 1 black
+296 484 1 black
+296 742 1 black
+299 434 -1 red
+299 532 -1 red
+299 535 -1 red
+302 36 1 black
+302 422 1 black
+302 532 1 black
+302 637 1 black
+302 771 1 black
+302 780 -1 red
+302 872 1 black
+304 550 1 black
+310 761 1 black
+312 532 1 black
+314 34 1 black
+314 42 1 black
+314 81 1 black
+315 551 1 black
+315 941 1 black
+317 659 1 black
+319 532 -1 red
+321 32 1 black
+321 42 1 black
+321 81 1 black
+321 113 1 black
+321 173 1 black
+321 479 1 black
+321 531 1 black
+321 603 1 black
+321 637 1 black
+321 662 1 black
+321 671 1 black
+321 673 1 black
+321 735 1 black
+321 748 1 black
+321 912 1 black
+322 32 1 black
+322 53 1 black
+322 636 1 black
+322 735 1 black
+322 745 1 black
+322 755 1 black
+322 761 -1 red
+323 661 1 black
+324 86 -1 red
+324 162 1 black
+324 532 -1 red
+325 312 -1 red
+325 339 -1 red
+325 424 1 black
+325 434 -1 red
+325 453 1 black
+325 532 -1 red
+325 535 -1 red
+325 598 -1 red
+325 774 1 black
+325 886 1 black
+325 912 -1 red
+325 913 -1 red
+325 923 -1 red
+326 8 1 black
+326 18 1 black
+326 48 1 black
+326 56 1 black
+326 59 1 black
+326 193 1 black
+326 316 1 black
+326 338 1 black
+326 350 1 black
+326 656 1 black
+326 782 1 black
+326 851 1 black
+329 933 1 black
+330 63 1 black
+330 71 1 black
+330 363 1 black
+330 661 1 black
+330 663 1 black
+330 719 1 black
+330 761 1 black
+330 982 1 black
+331 219 1 black
+331 631 1 black
+332 31 1 black
+332 36 1 black
+332 48 1 black
+332 53 1 black
+332 99 1 black
+332 173 1 black
+332 177 -1 red
+332 198 1 black
+332 344 1 black
+332 434 -1 red
+332 465 -1 red
+332 532 -1 red
+332 535 -1 red
+332 551 1 black
+332 637 1 black
+332 659 1 black
+332 679 -1 red
+332 696 -1 red
+332 720 1 black
+332 753 1 black
+332 788 -1 red
+332 889 -1 red
+332 896 -1 red
+332 996 -1 red
+337 18 1 black
+337 32 1 black
+337 48 1 black
+337 95 1 black
+337 113 1 black
+337 232 1 black
+337 263 1 black
+337 554 1 black
+337 621 1 black
+337 630 -1 red
+337 662 1 black
+337 663 1 black
+337 703 1 black
+337 740 1 black
+337 781 1 black
+337 889 1 black
+338 540 1 black
+338 642 1 black
+338 662 1 black
+339 788 -1 red
+339 912 1 black
+344 32 1 black
+344 48 1 black
+344 59 1 black
+344 673 1 black
+345 48 1 black
+346 81 1 black
+346 165 -1 red
+346 196 1 black
+346 412 1 black
+346 516 1 black
+346 637 1 black
+346 679 1 black
+346 738 1 black
+346 771 1 black
+346 912 1 black
+348 98 1 black
+348 99 1 black
+348 314 1 black
+348 422 1 black
+348 438 -1 red
+348 453 1 black
+348 491 1 black
+348 516 1 black
+348 594 1 black
+348 602 1 black
+348 661 1 black
+348 664 1 black
+348 788 1 black
+348 791 1 black
+348 798 1 black
+348 886 1 black
+348 901 -1 red
+348 921 -1 red
+352 32 1 black
+352 48 1 black
+352 59 1 black
+352 60 1 black
+352 63 1 black
+352 80 1 black
+352 81 1 black
+352 99 1 black
+352 173 1 black
+352 197 1 black
+352 198 1 black
+352 278 1 black
+352 344 1 black
+352 543 1 black
+352 622 1 black
+352 627 1 black
+352 637 1 black
+352 640 1 black
+352 658 1 black
+352 682 1 black
+352 687 -1 red
+352 720 1 black
+352 726 1 black
+352 738 1 black
+352 749 1 black
+352 920 1 black
+352 923 1 black
+354 650 1 black
+355 265 1 black
+355 509 1 black
+355 513 -1 red
+355 588 1 black
+355 610 -1 red
+355 661 1 black
+355 788 1 black
+355 889 -1 red
+355 923 -1 red
+359 502 1 black
+359 781 1 black
+359 907 -1 red
+359 968 1 black
+362 267 1 black
+363 162 1 black
+363 278 1 black
+363 412 1 black
+363 429 1 black
+363 451 1 black
+363 540 1 black
+363 602 1 black
+363 642 1 black
+363 644 1 black
+363 650 1 black
+363 662 1 black
+363 671 1 black
+363 708 1 black
+363 735 1 black
+363 745 1 black
+363 750 1 black
+363 908 1 black
+365 267 1 black
+367 718 1 black
+368 434 -1 red
+368 532 -1 red
+368 535 -1 red
+370 493 1 black
+370 637 1 black
+370 661 1 black
+370 719 1 black
+370 771 1 black
+370 878 1 black
+370 938 -1 red
+371 422 1 black
+379 42 1 black
+379 111 1 black
+379 690 1 black
+379 761 1 black
+379 929 -1 red
+380 630 -1 red
+380 941 1 black
+385 270 1 black
+385 652 1 black
+385 662 1 black
+385 796 1 black
+387 309 1 black
+388 246 1 black
+388 641 1 black
+388 658 1 black
+394 246 1 black
+394 270 1 black
+394 316 1 black
+394 424 1 black
+394 483 1 black
+394 502 1 black
+394 513 1 black
+394 532 1 black
+394 922 -1 red
+394 990 1 black
+395 637 1 black
+395 661 1 black
+395 938 -1 red
+398 532 1 black
+398 637 1 black
+401 8 -1 red
+401 38 1 black
+401 101 1 black
+401 113 1 black
+401 183 1 black
+401 196 1 black
+401 335 -1 red
+401 402 1 black
+401 412 1 black
+401 424 1 black
+401 451 1 black
+401 513 -1 red
+401 540 1 black
+401 543 1 black
+401 552 -1 red
+401 554 1 black
+401 659 1 black
+401 664 1 black
+401 683 1 black
+401 782 -1 red
+401 789 -1 red
+401 873 1 black
+401 887 -1 red
+401 906 1 black
+401 912 1 black
+401 924 -1 red
+401 931 1 black
+401 982 -1 red
+402 424 1 black
+402 912 -1 red
+403 278 1 black
+403 291 1 black
+403 357 1 black
+403 502 1 black
+403 574 1 black
+403 661 1 black
+403 781 1 black
+403 818 1 black
+403 872 1 black
+403 938 -1 red
+404 232 -1 red
+404 434 -1 red
+404 532 -1 red
+404 535 -1 red
+404 643 1 black
+404 886 1 black
+404 928 1 black
+406 439 -1 red
+409 796 1 black
+415 195 1 black
+415 550 1 black
+415 652 1 black
+415 928 1 black
+415 941 1 black
+415 996 1 black
+416 36 1 black
+416 48 1 black
+416 173 1 black
+416 357 1 black
+416 424 1 black
+416 627 1 black
+416 637 1 black
+416 650 1 black
+416 719 1 black
+416 796 1 black
+416 886 1 black
+416 908 1 black
+418 661 1 black
+419 113 1 black
+419 451 1 black
+419 664 1 black
+419 671 1 black
+419 773 1 black
+427 28 1 black
+427 53 1 black
+427 63 1 black
+427 95 1 black
+427 116 1 black
+427 270 1 black
+427 325 1 black
+427 426 1 black
+427 602 1 black
+427 641 1 black
+427 663 1 black
+427 702 1 black
+427 782 1 black
+427 788 1 black
+427 816 1 black
+427 912 1 black
+427 931 1 black
+428 337 1 black
+434 63 -1 red
+434 198 -1 red
+434 217 -1 red
+434 382 -1 red
+434 531 -1 red
+434 637 1 black
+434 661 -1 red
+434 663 1 black
+434 683 -1 red
+434 738 -1 red
+434 761 -1 red
+434 875 -1 red
+434 882 -1 red
+438 201 1 black
+439 155 -1 red
+439 796 -1 red
+443 81 1 black
+443 761 1 black
+445 32 1 black
+445 63 -1 red
+445 103 1 black
+445 236 1 black
+445 263 1 black
+445 278 1 black
+445 389 1 black
+445 477 1 black
+445 637 1 black
+445 725 1 black
+445 747 1 black
+445 790 -1 red
+445 930 -1 red
+445 938 -1 red
+446 36 1 black
+446 48 1 black
+446 113 1 black
+446 197 1 black
+446 412 1 black
+446 424 1 black
+446 438 1 black
+446 637 1 black
+446 734 1 black
+449 36 1 black
+449 630 1 black
+449 661 1 black
+454 82 1 black
+454 258 1 black
+454 338 1 black
+454 391 1 black
+454 410 1 black
+454 553 1 black
+457 81 1 black
+457 451 1 black
+457 453 1 black
+457 630 1 black
+457 631 1 black
+457 637 1 black
+457 661 1 black
+459 155 -1 red
+459 662 1 black
+459 781 1 black
+459 907 -1 red
+459 912 -1 red
+461 307 1 black
+461 422 1 black
+461 487 1 black
+461 522 1 black
+461 687 -1 red
+461 708 1 black
+461 720 1 black
+461 725 1 black
+461 772 1 black
+461 882 1 black
+462 36 1 black
+462 48 1 black
+462 267 1 black
+462 501 1 black
+462 529 1 black
+462 602 1 black
+462 637 1 black
+462 642 1 black
+462 663 1 black
+462 928 1 black
+462 941 1 black
+475 81 1 black
+475 424 -1 red
+477 30 -1 red
+477 34 1 black
+477 42 1 black
+477 63 -1 red
+477 81 1 black
+477 82 -1 red
+477 173 1 black
+477 246 1 black
+477 264 1 black
+477 502 1 black
+477 627 1 black
+477 637 1 black
+477 680 -1 red
+477 687 -1 red
+477 713 1 black
+477 716 1 black
+477 734 1 black
+477 761 -1 red
+477 771 1 black
+477 788 -1 red
+477 796 1 black
+477 923 1 black
+477 938 -1 red
+478 781 1 black
+479 912 1 black
+484 48 -1 red
+484 606 1 black
+496 424 1 black
+498 510 1 black
+498 588 1 black
+498 684 -1 red
+498 735 1 black
+498 753 1 black
+498 788 -1 red
+498 850 -1 red
+498 886 1 black
+500 338 1 black
+500 396 1 black
+500 662 1 black
+502 451 1 black
+502 637 1 black
+502 771 1 black
+511 32 1 black
+511 42 1 black
+511 48 1 black
+511 53 1 black
+511 59 1 black
+511 81 1 black
+511 101 1 black
+511 173 1 black
+511 363 1 black
+511 451 1 black
+511 637 1 black
+511 644 1 black
+511 662 1 black
+511 727 1 black
+511 734 1 black
+511 738 1 black
+511 818 1 black
+515 306 1 black
+515 439 1 black
+516 9 1 black
+516 402 1 black
+516 553 1 black
+521 265 1 black
+521 309 1 black
+522 531 1 black
+523 48 1 black
+523 600 1 black
+523 735 1 black
+526 913 1 black
+527 48 1 black
+527 53 1 black
+527 113 1 black
+527 171 1 black
+527 246 1 black
+527 263 1 black
+527 391 1 black
+527 424 -1 red
+527 513 -1 red
+527 531 1 black
+527 549 1 black
+527 602 1 black
+527 634 1 black
+527 637 1 black
+527 642 1 black
+527 659 1 black
+527 668 1 black
+527 704 1 black
+527 738 1 black
+527 739 1 black
+527 796 1 black
+527 908 1 black
+527 912 1 black
+528 311 1 black
+528 781 1 black
+528 933 -1 red
+529 1 1 black
+529 48 1 black
+529 53 1 black
+529 59 1 black
+529 81 1 black
+529 135 1 black
+529 173 1 black
+529 191 1 black
+529 194 1 black
+529 197 1 black
+529 540 1 black
+529 627 1 black
+529 650 1 black
+529 673 1 black
+529 700 1 black
+529 719 1 black
+529 724 1 black
+529 734 1 black
+529 753 1 black
+529 755 1 black
+529 756 1 black
+530 652 1 black
+531 108 1 black
+531 169 1 black
+531 176 1 black
+531 177 1 black
+531 183 1 black
+531 267 1 black
+531 270 1 black
+531 337 1 black
+531 479 1 black
+531 484 1 black
+531 491 1 black
+531 509 1 black
+531 514 1 black
+531 547 1 black
+531 552 1 black
+531 553 1 black
+531 556 1 black
+531 630 1 black
+531 662 1 black
+531 802 1 black
+531 872 1 black
+531 908 1 black
+531 912 1 black
+531 929 1 black
+531 938 1 black
+531 950 1 black
+531 996 1 black
+532 2 -1 red
+532 25 1 black
+532 63 -1 red
+532 71 -1 red
+532 95 -1 red
+532 100 1 black
+532 314 -1 red
+532 498 1 black
+532 620 -1 red
+532 637 1 black
+532 661 -1 red
+532 664 -1 red
+532 673 -1 red
+532 748 -1 red
+532 771 1 black
+532 790 -1 red
+532 807 -1 red
+532 931 1 black
+532 941 1 black
+532 987 -1 red
+532 991 -1 red
+540 113 1 black
+540 412 1 black
+540 422 1 black
+540 532 1 black
+540 662 1 black
+543 453 1 black
+546 36 1 black
+546 637 1 black
+546 771 1 black
+546 886 1 black
+546 912 1 black
+548 261 1 black
+548 412 -1 red
+548 451 1 black
+548 650 1 black
+548 704 1 black
+548 734 1 black
+550 263 1 black
+550 451 1 black
+550 652 1 black
+550 912 1 black
+551 451 1 black
+551 619 1 black
+552 807 -1 red
+559 369 1 black
+559 453 1 black
+559 554 1 black
+559 570 1 black
+559 637 1 black
+561 750 1 black
+562 749 1 black
+563 532 -1 red
+563 907 -1 red
+564 70 1 black
+564 82 1 black
+564 113 1 black
+564 309 1 black
+564 390 1 black
+564 719 1 black
+564 912 1 black
+566 150 1 black
+568 48 1 black
+568 60 -1 red
+568 532 -1 red
+568 630 1 black
+568 923 1 black
+573 113 1 black
+573 391 1 black
+573 531 1 black
+573 661 1 black
+573 788 1 black
+573 922 -1 red
+573 923 1 black
+575 531 1 black
+576 36 1 black
+576 912 1 black
+577 278 1 black
+577 339 1 black
+577 388 1 black
+577 391 1 black
+577 435 1 black
+577 438 1 black
+577 522 1 black
+577 540 1 black
+577 630 1 black
+577 648 1 black
+577 704 1 black
+577 778 1 black
+577 908 1 black
+579 991 -1 red
+581 278 1 black
+581 426 1 black
+581 451 1 black
+581 517 1 black
+581 662 1 black
+581 920 1 black
+594 434 -1 red
+594 532 -1 red
+594 535 -1 red
+596 81 1 black
+596 532 -1 red
+599 36 1 black
+600 26 1 black
+600 32 1 black
+600 34 1 black
+600 37 1 black
+600 42 1 black
+600 48 1 black
+600 59 1 black
+600 67 1 black
+600 76 1 black
+600 77 1 black
+600 81 1 black
+600 84 1 black
+600 169 -1 red
+600 633 1 black
+600 720 1 black
+600 732 1 black
+600 734 1 black
+600 735 1 black
+600 738 1 black
+600 740 1 black
+600 755 1 black
+600 802 1 black
+600 807 1 black
+600 814 1 black
+600 838 1 black
+600 858 1 black
+600 863 1 black
+600 929 -1 red
+600 934 1 black
+600 990 1 black
+601 171 1 black
+601 342 1 black
+603 912 1 black
+606 48 1 black
+606 191 1 black
+606 197 1 black
+606 242 1 black
+606 246 1 black
+606 264 1 black
+606 316 1 black
+606 403 1 black
+606 422 1 black
+606 451 1 black
+606 540 1 black
+606 551 1 black
+606 552 1 black
+606 610 1 black
+606 661 1 black
+606 876 1 black
+606 908 1 black
+607 198 1 black
+607 941 -1 red
+610 177 1 black
+610 263 1 black
+610 314 1 black
+610 322 1 black
+610 357 1 black
+615 1 1 black
+615 5 1 black
+615 32 1 black
+615 48 1 black
+615 53 1 black
+615 59 1 black
+615 60 1 black
+615 63 1 black
+615 71 -1 red
+615 81 1 black
+615 99 1 black
+615 112 1 black
+615 162 1 black
+615 173 1 black
+615 177 -1 red
+615 196 1 black
+615 309 1 black
+615 627 1 black
+615 637 1 black
+615 639 1 black
+615 661 1 black
+615 664 1 black
+615 673 1 black
+615 707 1 black
+615 708 1 black
+615 719 1 black
+615 753 1 black
+615 759 1 black
+615 788 -1 red
+615 872 1 black
+615 989 -1 red
+616 622 1 black
+617 4 1 black
+617 53 1 black
+617 54 1 black
+617 60 -1 red
+617 61 1 black
+617 71 1 black
+617 77 1 black
+617 95 1 black
+617 352 1 black
+617 622 1 black
+617 641 1 black
+617 658 1 black
+617 687 1 black
+617 726 1 black
+617 814 1 black
+617 934 1 black
+617 950 1 black
+617 975 1 black
+617 990 1 black
+618 91 -1 red
+618 863 -1 red
+619 37 1 black
+619 42 1 black
+619 81 1 black
+619 192 1 black
+619 322 1 black
+619 637 1 black
+619 939 1 black
+620 91 -1 red
+621 98 1 black
+621 278 1 black
+621 311 1 black
+621 666 1 black
+621 704 -1 red
+623 18 1 black
+623 59 1 black
+623 80 1 black
+623 81 1 black
+623 84 -1 red
+623 126 -1 red
+623 169 -1 red
+623 531 1 black
+623 658 -1 red
+623 680 1 black
+623 734 1 black
+623 763 1 black
+623 883 -1 red
+623 938 1 black
+623 958 1 black
+623 959 1 black
+626 29 1 black
+626 42 1 black
+626 48 1 black
+626 80 1 black
+626 162 -1 red
+626 173 1 black
+626 192 1 black
+626 434 -1 red
+626 532 -1 red
+626 620 -1 red
+626 621 1 black
+626 622 1 black
+626 636 -1 red
+626 637 1 black
+626 659 1 black
+626 673 1 black
+626 679 1 black
+626 704 -1 red
+626 735 1 black
+626 738 1 black
+626 751 -1 red
+626 791 -1 red
+626 923 -1 red
+626 964 -1 red
+627 938 -1 red
+628 31 1 black
+628 42 1 black
+628 48 1 black
+628 177 1 black
+628 278 1 black
+628 331 1 black
+628 434 -1 red
+628 527 1 black
+628 532 -1 red
+628 535 -1 red
+628 621 1 black
+628 630 1 black
+628 637 1 black
+628 659 1 black
+628 673 1 black
+628 772 1 black
+628 905 1 black
+628 978 1 black
+628 990 1 black
+629 34 1 black
+629 42 1 black
+629 734 1 black
+630 9 1 black
+630 81 1 black
+631 31 1 black
+631 42 1 black
+631 48 1 black
+631 173 1 black
+631 369 1 black
+631 438 1 black
+631 637 1 black
+631 982 1 black
+634 755 1 black
+634 950 1 black
+635 355 -1 red
+635 659 1 black
+635 761 -1 red
+635 851 -1 red
+635 938 -1 red
+640 16 1 black
+640 80 1 black
+640 81 1 black
+640 180 -1 red
+640 532 -1 red
+640 644 1 black
+640 674 1 black
+640 684 -1 red
+640 704 1 black
+640 718 1 black
+640 759 1 black
+640 939 1 black
+641 1 1 black
+641 9 1 black
+641 36 1 black
+641 48 1 black
+641 232 1 black
+641 259 1 black
+641 498 1 black
+641 573 1 black
+641 814 1 black
+641 836 1 black
+641 838 1 black
+641 842 1 black
+641 856 1 black
+641 863 1 black
+641 900 -1 red
+641 941 1 black
+641 974 1 black
+641 999 1 black
+643 5 1 black
+643 8 -1 red
+643 258 1 black
+643 439 -1 red
+643 451 1 black
+643 502 1 black
+643 661 1 black
+643 662 1 black
+643 698 -1 red
+643 703 1 black
+643 719 1 black
+643 730 1 black
+643 738 1 black
+643 757 1 black
+643 763 -1 red
+649 633 1 black
+649 637 1 black
+649 749 1 black
+650 10 1 black
+650 735 1 black
+651 77 -1 red
+651 101 1 black
+651 171 1 black
+651 173 -1 red
+651 352 1 black
+651 420 1 black
+651 602 -1 red
+651 637 1 black
+651 687 -1 red
+651 742 1 black
+651 820 1 black
+651 923 1 black
+654 8 -1 red
+654 48 1 black
+654 77 -1 red
+654 102 1 black
+654 114 -1 red
+654 274 -1 red
+654 510 -1 red
+654 581 -1 red
+654 634 1 black
+654 648 1 black
+654 663 1 black
+654 671 1 black
+654 679 -1 red
+654 680 1 black
+654 715 1 black
+654 861 -1 red
+654 926 -1 red
+654 931 -1 red
+654 934 1 black
+655 48 1 black
+655 61 1 black
+655 63 1 black
+655 67 1 black
+655 71 1 black
+655 84 1 black
+655 91 1 black
+655 162 1 black
+655 173 1 black
+655 352 1 black
+655 531 1 black
+655 658 1 black
+655 673 1 black
+655 898 -1 red
+655 929 -1 red
+656 81 1 black
+658 77 1 black
+658 150 1 black
+658 531 1 black
+658 807 1 black
+658 846 1 black
+658 863 1 black
+658 906 1 black
+658 993 1 black
+659 938 -1 red
+663 5 1 black
+663 53 1 black
+663 70 1 black
+663 76 1 black
+663 77 1 black
+663 80 1 black
+663 99 1 black
+663 160 1 black
+663 195 1 black
+663 338 1 black
+663 419 1 black
+663 424 1 black
+663 438 1 black
+663 453 1 black
+663 479 1 black
+663 514 1 black
+663 602 1 black
+663 630 1 black
+663 658 1 black
+663 659 1 black
+663 662 1 black
+663 831 1 black
+663 848 1 black
+663 850 1 black
+663 863 1 black
+663 872 1 black
+663 888 1 black
+663 889 1 black
+663 896 1 black
+663 908 1 black
+663 912 1 black
+663 934 1 black
+663 998 1 black
+664 63 1 black
+664 982 1 black
+665 1 1 black
+665 48 1 black
+665 872 -1 red
+666 80 1 black
+666 91 -1 red
+666 180 -1 red
+666 684 -1 red
+668 10 1 black
+668 16 1 black
+668 32 1 black
+668 39 1 black
+668 45 1 black
+668 102 1 black
+668 157 1 black
+668 162 1 black
+668 168 1 black
+668 173 1 black
+668 246 1 black
+668 252 1 black
+668 263 1 black
+668 267 1 black
+668 278 1 black
+668 309 1 black
+668 344 1 black
+668 351 1 black
+668 502 1 black
+668 510 1 black
+668 552 1 black
+668 597 1 black
+668 600 1 black
+668 624 1 black
+668 627 1 black
+668 633 1 black
+668 634 1 black
+668 636 1 black
+668 659 1 black
+668 661 1 black
+668 673 1 black
+668 675 1 black
+668 679 1 black
+668 700 1 black
+668 703 1 black
+668 704 1 black
+668 728 1 black
+668 733 1 black
+668 738 1 black
+668 740 1 black
+668 755 1 black
+668 770 1 black
+668 781 1 black
+668 882 1 black
+668 912 1 black
+668 923 1 black
+668 931 1 black
+668 982 1 black
+669 4 1 black
+669 10 1 black
+669 18 1 black
+669 32 1 black
+669 48 1 black
+669 49 1 black
+669 53 1 black
+669 55 1 black
+669 56 1 black
+669 57 1 black
+669 59 1 black
+669 61 1 black
+669 77 1 black
+669 81 1 black
+669 143 1 black
+669 145 -1 red
+669 160 1 black
+669 232 1 black
+669 700 1 black
+669 715 1 black
+669 755 1 black
+669 761 1 black
+669 800 1 black
+669 825 1 black
+669 831 1 black
+669 883 -1 red
+669 899 -1 red
+669 911 -1 red
+669 913 1 black
+669 923 1 black
+669 925 -1 red
+669 937 -1 red
+670 388 1 black
+670 502 1 black
+670 923 1 black
+672 540 1 black
+673 87 1 black
+673 635 1 black
+674 23 1 black
+674 177 -1 red
+674 265 1 black
+674 274 1 black
+674 331 1 black
+674 391 1 black
+674 531 1 black
+674 532 1 black
+674 624 -1 red
+674 637 1 black
+674 652 1 black
+674 661 1 black
+674 667 1 black
+674 684 -1 red
+674 771 1 black
+674 874 1 black
+674 912 1 black
+674 929 -1 red
+676 532 -1 red
+676 870 -1 red
+677 48 1 black
+677 314 1 black
+677 702 1 black
+679 29 1 black
+679 121 1 black
+679 222 -1 red
+679 311 -1 red
+679 658 1 black
+679 680 1 black
+679 763 -1 red
+679 923 -1 red
+680 950 1 black
+685 912 1 black
+687 1 -1 red
+687 18 -1 red
+687 22 1 black
+687 28 1 black
+687 32 -1 red
+687 42 -1 red
+687 48 -1 red
+687 49 -1 red
+687 56 -1 red
+687 59 -1 red
+687 60 -1 red
+687 61 -1 red
+687 71 1 black
+687 81 -1 red
+687 91 -1 red
+687 99 -1 red
+687 126 1 black
+687 169 1 black
+687 171 1 black
+687 637 -1 red
+687 760 1 black
+687 975 1 black
+690 34 1 black
+690 42 1 black
+690 48 1 black
+690 53 1 black
+690 81 1 black
+690 173 1 black
+690 192 1 black
+690 637 1 black
+690 753 1 black
+690 761 1 black
+690 771 1 black
+691 67 1 black
+691 923 1 black
+692 71 1 black
+696 24 1 black
+697 192 1 black
+699 48 1 black
+699 56 1 black
+699 80 1 black
+699 95 1 black
+699 126 -1 red
+699 938 -1 red
+704 81 1 black
+704 637 1 black
+704 749 1 black
+704 771 1 black
+712 2 1 black
+712 941 1 black
+715 34 1 black
+715 42 1 black
+715 645 1 black
+715 938 -1 red
+718 23 1 black
+718 63 1 black
+718 67 1 black
+718 192 1 black
+718 355 1 black
+718 428 1 black
+718 451 1 black
+718 552 1 black
+718 639 1 black
+718 643 1 black
+718 661 1 black
+718 700 1 black
+718 704 1 black
+718 707 1 black
+718 746 1 black
+718 818 1 black
+718 821 1 black
+718 930 1 black
+718 931 1 black
+720 10 1 black
+720 16 1 black
+720 48 1 black
+720 59 1 black
+720 62 1 black
+720 173 1 black
+720 357 1 black
+720 637 1 black
+720 758 1 black
+722 637 1 black
+722 771 1 black
+726 938 -1 red
+734 278 1 black
+734 700 1 black
+734 735 1 black
+736 5 1 black
+736 28 -1 red
+736 61 1 black
+736 81 1 black
+736 162 1 black
+736 278 1 black
+736 342 1 black
+736 531 -1 red
+736 602 -1 red
+736 687 -1 red
+736 719 1 black
+736 733 1 black
+736 740 1 black
+736 818 1 black
+736 930 1 black
+736 990 1 black
+738 60 -1 red
+738 735 1 black
+738 950 1 black
+739 761 1 black
+742 162 1 black
+742 531 -1 red
+742 738 1 black
+743 32 1 black
+743 48 1 black
+743 51 1 black
+743 56 1 black
+743 81 1 black
+743 112 1 black
+743 116 1 black
+743 168 1 black
+743 173 1 black
+743 263 1 black
+743 278 1 black
+743 532 1 black
+743 633 1 black
+743 637 1 black
+743 704 1 black
+743 719 1 black
+743 725 1 black
+743 728 1 black
+743 740 1 black
+743 748 1 black
+743 751 1 black
+743 761 -1 red
+743 762 1 black
+743 931 1 black
+743 974 1 black
+743 993 1 black
+745 32 1 black
+745 168 1 black
+745 732 1 black
+745 907 -1 red
+746 637 1 black
+746 771 1 black
+747 23 -1 red
+747 51 1 black
+747 63 -1 red
+747 121 -1 red
+747 532 -1 red
+747 552 -1 red
+747 631 -1 red
+747 661 -1 red
+747 686 -1 red
+747 687 -1 red
+747 698 -1 red
+747 735 1 black
+747 759 -1 red
+747 790 -1 red
+747 882 1 black
+747 930 -1 red
+747 990 -1 red
+748 761 -1 red
+752 32 1 black
+752 34 1 black
+752 42 1 black
+752 56 1 black
+752 81 1 black
+752 637 1 black
+752 724 1 black
+752 735 1 black
+752 749 1 black
+752 907 -1 red
+752 912 1 black
+753 967 1 black
+759 673 1 black
+759 761 -1 red
+759 812 1 black
+759 872 1 black
+761 1 1 black
+761 18 1 black
+761 30 -1 red
+761 42 1 black
+761 48 1 black
+761 53 1 black
+761 55 1 black
+761 56 1 black
+761 59 1 black
+761 77 1 black
+761 80 1 black
+761 81 1 black
+761 637 1 black
+761 658 1 black
+761 939 1 black
+761 950 1 black
+761 990 1 black
+761 993 1 black
+761 994 1 black
+763 898 -1 red
+763 938 -1 red
+764 702 1 black
+770 10 1 black
+770 23 1 black
+770 32 1 black
+770 42 1 black
+770 48 1 black
+770 49 1 black
+770 53 1 black
+770 56 1 black
+770 81 1 black
+770 99 1 black
+770 112 1 black
+770 126 -1 red
+770 173 1 black
+770 440 1 black
+770 451 1 black
+770 622 1 black
+770 627 1 black
+770 633 1 black
+770 637 1 black
+770 659 1 black
+770 671 1 black
+770 680 -1 red
+770 684 -1 red
+770 726 1 black
+770 728 1 black
+770 755 1 black
+770 760 -1 red
+770 875 -1 red
+770 882 1 black
+770 938 -1 red
+773 552 1 black
+773 637 1 black
+773 704 1 black
+773 771 1 black
+777 9 1 black
+777 98 1 black
+777 196 1 black
+777 201 1 black
+777 388 1 black
+777 479 1 black
+777 513 1 black
+777 551 1 black
+777 630 1 black
+777 631 1 black
+777 662 1 black
+777 779 1 black
+777 788 1 black
+777 851 1 black
+777 869 1 black
+779 350 1 black
+779 851 1 black
+780 113 -1 red
+780 155 -1 red
+780 765 1 black
+781 353 1 black
+781 453 1 black
+781 886 1 black
+783 63 1 black
+783 87 1 black
+783 177 1 black
+783 424 -1 red
+783 999 -1 red
+784 81 1 black
+784 630 1 black
+784 923 1 black
+786 192 1 black
+796 98 -1 red
+797 246 -1 red
+800 1 1 black
+800 18 1 black
+800 32 1 black
+800 42 1 black
+800 48 1 black
+800 56 1 black
+800 81 1 black
+800 99 1 black
+800 108 -1 red
+800 112 1 black
+800 122 1 black
+800 199 1 black
+800 267 1 black
+800 316 1 black
+800 385 -1 red
+800 433 1 black
+800 575 -1 red
+800 650 1 black
+800 704 1 black
+800 708 1 black
+800 734 1 black
+800 978 1 black
+800 995 1 black
+800 999 1 black
+801 10 1 black
+801 18 1 black
+801 48 1 black
+801 53 1 black
+801 56 1 black
+801 109 1 black
+801 141 1 black
+802 637 1 black
+802 771 1 black
+802 825 1 black
+802 931 1 black
+803 1 1 black
+803 18 1 black
+803 34 1 black
+803 42 1 black
+803 44 1 black
+803 48 1 black
+803 56 1 black
+803 59 1 black
+803 60 1 black
+803 61 1 black
+803 81 1 black
+803 91 -1 red
+803 99 1 black
+803 115 1 black
+803 761 1 black
+807 53 1 black
+807 60 -1 red
+807 61 1 black
+807 63 1 black
+807 67 1 black
+807 71 1 black
+807 80 1 black
+807 81 1 black
+807 95 1 black
+807 96 1 black
+807 98 1 black
+807 162 -1 red
+807 176 1 black
+807 217 -1 red
+807 232 1 black
+807 403 1 black
+807 637 1 black
+807 659 1 black
+807 661 1 black
+807 743 -1 red
+807 761 1 black
+807 863 1 black
+807 920 1 black
+807 923 1 black
+807 931 1 black
+807 934 1 black
+807 941 1 black
+807 950 1 black
+807 990 1 black
+808 18 1 black
+808 32 1 black
+808 42 1 black
+808 48 1 black
+808 51 1 black
+808 56 1 black
+808 62 -1 red
+808 81 1 black
+808 86 -1 red
+808 91 -1 red
+808 162 -1 red
+808 173 1 black
+808 232 -1 red
+808 278 1 black
+808 600 1 black
+808 621 1 black
+808 627 1 black
+808 637 1 black
+808 641 1 black
+808 663 -1 red
+808 679 -1 red
+808 684 -1 red
+808 734 1 black
+808 738 1 black
+808 788 1 black
+808 814 1 black
+808 838 1 black
+808 850 1 black
+808 851 1 black
+808 858 1 black
+808 872 -1 red
+808 873 -1 red
+808 880 -1 red
+808 893 -1 red
+808 899 -1 red
+808 907 -1 red
+808 937 -1 red
+808 938 -1 red
+808 939 -1 red
+808 958 1 black
+810 814 1 black
+810 833 1 black
+810 850 1 black
+812 61 1 black
+812 63 1 black
+812 77 1 black
+812 80 1 black
+812 81 1 black
+812 84 1 black
+812 87 1 black
+812 102 1 black
+812 600 1 black
+812 641 1 black
+812 761 1 black
+812 838 1 black
+812 856 1 black
+812 927 1 black
+812 934 1 black
+812 983 1 black
+814 86 -1 red
+814 669 -1 red
+814 888 -1 red
+814 892 -1 red
+814 906 -1 red
+814 922 -1 red
+814 927 -1 red
+816 14 -1 red
+816 96 -1 red
+816 177 1 black
+816 278 -1 red
+816 509 -1 red
+816 532 -1 red
+816 602 -1 red
+816 615 -1 red
+816 698 -1 red
+816 702 -1 red
+816 733 -1 red
+816 747 -1 red
+816 807 -1 red
+816 820 -1 red
+816 870 -1 red
+816 882 -1 red
+816 930 1 black
+816 938 -1 red
+816 995 -1 red
+817 10 1 black
+817 48 1 black
+817 56 1 black
+820 63 1 black
+820 160 1 black
+820 531 1 black
+820 630 1 black
+820 658 1 black
+820 749 1 black
+820 761 1 black
+823 941 1 black
+824 81 1 black
+824 113 1 black
+824 195 1 black
+824 353 1 black
+824 630 -1 red
+824 661 1 black
+824 755 1 black
+825 60 -1 red
+825 63 1 black
+825 70 -1 red
+825 86 -1 red
+825 113 -1 red
+825 600 1 black
+825 663 -1 red
+825 664 -1 red
+825 679 -1 red
+825 761 -1 red
+825 814 1 black
+825 816 1 black
+825 842 1 black
+825 863 1 black
+825 900 -1 red
+825 907 -1 red
+825 913 -1 red
+825 923 -1 red
+825 927 -1 red
+825 939 -1 red
+828 67 1 black
+828 102 1 black
+828 192 1 black
+828 232 1 black
+828 314 1 black
+828 631 1 black
+828 807 1 black
+828 999 1 black
+829 82 1 black
+829 192 1 black
+830 32 1 black
+830 42 1 black
+830 48 1 black
+830 60 -1 red
+830 63 1 black
+830 71 1 black
+830 80 1 black
+830 173 1 black
+830 175 1 black
+830 177 1 black
+830 277 1 black
+830 426 1 black
+830 451 1 black
+830 567 1 black
+830 605 1 black
+830 620 1 black
+830 637 1 black
+830 641 1 black
+830 661 1 black
+830 665 1 black
+830 816 1 black
+830 825 1 black
+830 842 1 black
+830 850 1 black
+830 923 1 black
+831 10 1 black
+831 48 1 black
+831 54 1 black
+831 56 1 black
+831 61 1 black
+831 713 1 black
+831 934 1 black
+831 941 1 black
+832 802 1 black
+832 803 1 black
+833 63 1 black
+833 67 1 black
+833 72 1 black
+833 76 1 black
+833 86 1 black
+833 87 1 black
+833 89 1 black
+833 102 1 black
+833 196 1 black
+833 641 1 black
+833 658 1 black
+833 668 1 black
+833 702 1 black
+833 814 1 black
+833 816 1 black
+833 828 1 black
+833 842 1 black
+833 896 1 black
+833 923 1 black
+833 930 1 black
+833 934 1 black
+833 990 1 black
+834 1 1 black
+834 48 1 black
+834 53 1 black
+834 56 1 black
+834 61 1 black
+834 129 1 black
+834 819 1 black
+835 907 -1 red
+835 923 -1 red
+836 36 1 black
+836 77 1 black
+836 97 1 black
+836 246 1 black
+836 278 1 black
+836 344 1 black
+836 512 1 black
+836 659 1 black
+836 662 1 black
+836 795 1 black
+836 851 1 black
+836 863 1 black
+836 906 1 black
+836 923 1 black
+836 982 1 black
+836 998 1 black
+836 999 1 black
+837 32 1 black
+837 45 1 black
+837 48 1 black
+837 59 1 black
+837 61 1 black
+837 81 1 black
+838 232 -1 red
+838 895 -1 red
+838 900 -1 red
+838 913 -1 red
+838 923 -1 red
+838 935 -1 red
+839 1 1 black
+839 36 1 black
+839 55 1 black
+839 56 1 black
+839 99 1 black
+839 102 1 black
+839 129 1 black
+839 173 1 black
+839 259 1 black
+839 314 1 black
+839 316 1 black
+839 391 1 black
+839 451 1 black
+839 606 1 black
+839 636 1 black
+839 661 1 black
+839 719 1 black
+839 738 1 black
+839 755 1 black
+839 781 1 black
+839 788 1 black
+839 796 1 black
+839 818 1 black
+839 851 1 black
+839 896 1 black
+839 913 1 black
+839 924 1 black
+839 941 1 black
+839 981 1 black
+841 42 1 black
+841 48 1 black
+842 63 1 black
+842 87 1 black
+842 263 1 black
+842 278 1 black
+842 344 1 black
+842 451 1 black
+842 510 1 black
+842 531 1 black
+842 532 1 black
+842 549 1 black
+842 605 1 black
+842 635 1 black
+842 637 1 black
+842 678 1 black
+842 727 1 black
+842 753 1 black
+842 755 1 black
+842 757 1 black
+842 782 1 black
+842 799 1 black
+842 814 1 black
+842 934 1 black
+842 989 1 black
+843 48 1 black
+844 4 1 black
+844 18 1 black
+844 48 1 black
+844 49 1 black
+844 51 1 black
+844 52 1 black
+844 61 1 black
+844 143 1 black
+845 81 1 black
+845 101 1 black
+845 265 1 black
+845 278 1 black
+845 782 1 black
+845 850 1 black
+846 81 1 black
+846 177 -1 red
+846 331 1 black
+846 531 -1 red
+846 641 1 black
+846 661 1 black
+846 666 1 black
+846 679 -1 red
+846 680 -1 red
+846 687 -1 red
+846 693 -1 red
+846 698 -1 red
+846 760 -1 red
+846 814 1 black
+846 888 1 black
+846 906 1 black
+846 923 1 black
+846 927 1 black
+847 1 1 black
+847 18 1 black
+847 48 1 black
+847 59 1 black
+847 61 1 black
+847 63 1 black
+847 68 -1 red
+847 70 -1 red
+847 76 1 black
+847 86 -1 red
+847 263 1 black
+847 658 -1 red
+847 661 1 black
+847 668 -1 red
+847 814 1 black
+847 875 -1 red
+847 885 -1 red
+847 907 -1 red
+847 922 -1 red
+847 923 1 black
+847 925 -1 red
+847 939 -1 red
+848 19 1 black
+848 48 1 black
+848 55 1 black
+848 61 1 black
+848 70 1 black
+848 81 1 black
+848 104 1 black
+848 532 1 black
+848 631 1 black
+848 637 1 black
+848 743 1 black
+848 835 1 black
+848 836 1 black
+848 912 1 black
+848 923 1 black
+848 983 1 black
+849 831 1 black
+849 900 -1 red
+850 63 1 black
+850 160 1 black
+851 8 1 black
+851 63 1 black
+851 69 -1 red
+851 70 -1 red
+851 71 1 black
+851 77 1 black
+851 80 1 black
+851 86 -1 red
+851 91 -1 red
+851 113 -1 red
+851 232 -1 red
+851 422 -1 red
+851 502 1 black
+851 532 -1 red
+851 658 1 black
+851 663 -1 red
+851 664 -1 red
+851 668 -1 red
+851 747 -1 red
+851 796 -1 red
+851 814 1 black
+851 872 -1 red
+851 875 -1 red
+851 885 -1 red
+851 892 -1 red
+851 895 -1 red
+851 896 -1 red
+851 912 -1 red
+851 922 -1 red
+851 925 -1 red
+851 939 -1 red
+851 975 -1 red
+852 28 -1 red
+852 30 -1 red
+852 36 -1 red
+852 53 -1 red
+852 63 1 black
+852 80 1 black
+852 81 1 black
+852 126 -1 red
+852 162 1 black
+852 169 -1 red
+852 274 1 black
+852 532 -1 red
+852 619 -1 red
+852 669 -1 red
+852 680 -1 red
+852 693 -1 red
+852 740 1 black
+852 818 1 black
+852 990 1 black
+853 755 1 black
+855 23 1 black
+855 102 1 black
+855 668 1 black
+855 700 1 black
+855 738 1 black
+855 742 1 black
+855 974 1 black
+856 48 1 black
+856 59 1 black
+856 61 1 black
+856 81 1 black
+856 451 1 black
+856 761 -1 red
+856 814 1 black
+856 838 1 black
+856 870 1 black
+856 874 1 black
+856 930 1 black
+856 941 1 black
+856 958 1 black
+857 81 1 black
+857 630 1 black
+857 687 1 black
+859 10 1 black
+859 197 1 black
+859 637 1 black
+859 700 1 black
+859 755 1 black
+859 952 1 black
+859 955 1 black
+859 956 1 black
+860 53 1 black
+860 510 1 black
+860 633 1 black
+860 637 1 black
+860 700 1 black
+860 707 1 black
+860 724 1 black
+860 746 1 black
+860 799 1 black
+860 817 1 black
+861 658 1 black
+861 814 1 black
+863 29 1 black
+863 700 1 black
+863 733 1 black
+863 800 1 black
+863 838 1 black
+863 919 -1 red
+863 925 -1 red
+863 927 -1 red
+863 934 1 black
+863 939 -1 red
+863 941 -1 red
+867 63 1 black
+867 552 1 black
+867 641 1 black
+867 665 1 black
+867 790 1 black
+867 814 1 black
+867 833 1 black
+867 851 1 black
+869 246 1 black
+869 325 1 black
+869 453 1 black
+869 782 1 black
+869 815 1 black
+869 851 1 black
+869 982 1 black
+870 39 1 black
+870 66 -1 red
+870 80 -1 red
+870 98 -1 red
+870 113 -1 red
+870 177 -1 red
+870 267 1 black
+870 268 -1 red
+870 324 -1 red
+870 344 -1 red
+870 350 -1 red
+870 353 -1 red
+870 434 -1 red
+870 454 -1 red
+870 479 -1 red
+870 531 -1 red
+870 532 -1 red
+870 535 -1 red
+870 543 -1 red
+870 549 1 black
+870 552 1 black
+870 637 -1 red
+870 642 -1 red
+870 659 1 black
+870 661 -1 red
+870 664 -1 red
+870 679 -1 red
+870 683 -1 red
+870 686 -1 red
+870 775 -1 red
+870 777 -1 red
+870 788 -1 red
+870 861 -1 red
+870 912 -1 red
+870 920 -1 red
+870 989 -1 red
+870 996 1 black
+872 662 1 black
+873 36 -1 red
+873 53 1 black
+873 719 1 black
+873 872 1 black
+873 886 -1 red
+873 910 1 black
+873 912 1 black
+875 171 1 black
+875 637 1 black
+875 641 1 black
+875 646 1 black
+875 658 1 black
+875 759 1 black
+875 761 1 black
+875 808 1 black
+875 922 1 black
+875 974 1 black
+877 48 1 black
+877 53 1 black
+877 81 1 black
+877 96 1 black
+877 838 1 black
+879 950 1 black
+880 810 1 black
+880 825 1 black
+880 833 1 black
+880 847 1 black
+880 851 1 black
+885 889 1 black
+888 838 -1 red
+888 850 -1 red
+888 869 -1 red
+890 623 -1 red
+891 86 1 black
+891 89 1 black
+891 93 1 black
+891 658 1 black
+891 761 1 black
+891 812 1 black
+891 941 1 black
+891 981 1 black
+892 863 1 black
+894 160 1 black
+894 162 1 black
+894 277 1 black
+894 278 1 black
+894 331 1 black
+894 451 1 black
+894 502 1 black
+894 637 1 black
+894 645 1 black
+894 661 1 black
+894 673 1 black
+894 687 -1 red
+894 761 1 black
+894 781 1 black
+894 908 1 black
+894 912 1 black
+894 996 1 black
+895 663 1 black
+895 901 1 black
+896 91 -1 red
+896 367 1 black
+896 379 1 black
+897 177 1 black
+897 532 -1 red
+897 875 1 black
+897 923 1 black
+900 48 1 black
+900 88 1 black
+900 104 1 black
+900 113 1 black
+900 128 1 black
+900 232 1 black
+900 424 1 black
+900 556 -1 red
+900 719 1 black
+900 895 1 black
+900 896 1 black
+900 901 1 black
+900 908 1 black
+900 912 1 black
+900 913 1 black
+900 920 1 black
+900 923 1 black
+900 994 1 black
+902 53 1 black
+902 198 1 black
+902 259 1 black
+902 810 1 black
+902 833 1 black
+902 842 1 black
+902 847 1 black
+902 856 1 black
+903 162 1 black
+903 278 1 black
+903 331 1 black
+903 451 1 black
+903 477 1 black
+903 661 1 black
+903 703 1 black
+903 796 1 black
+903 910 1 black
+903 990 1 black
+905 331 1 black
+906 81 1 black
+906 232 1 black
+906 975 1 black
+907 48 1 black
+907 53 1 black
+907 70 1 black
+907 76 1 black
+907 77 1 black
+907 84 1 black
+907 86 1 black
+907 87 1 black
+907 120 1 black
+907 420 1 black
+907 438 1 black
+907 498 1 black
+907 521 1 black
+907 532 1 black
+907 788 1 black
+907 800 1 black
+907 828 1 black
+907 838 1 black
+907 850 1 black
+907 851 1 black
+907 863 1 black
+907 875 1 black
+907 896 1 black
+907 934 1 black
+907 993 1 black
+907 998 1 black
+909 31 1 black
+909 48 1 black
+909 53 1 black
+909 77 1 black
+909 173 1 black
+909 177 1 black
+909 196 1 black
+909 522 1 black
+909 564 1 black
+909 637 1 black
+909 659 1 black
+909 668 -1 red
+909 825 1 black
+909 950 1 black
+910 98 1 black
+910 113 1 black
+910 195 1 black
+910 270 1 black
+910 363 1 black
+910 422 1 black
+910 434 1 black
+910 453 -1 red
+910 543 1 black
+910 664 1 black
+910 704 1 black
+910 742 1 black
+910 796 1 black
+910 872 1 black
+910 874 1 black
+910 920 1 black
+910 996 1 black
+913 17 1 black
+913 38 1 black
+913 42 1 black
+913 48 1 black
+913 53 1 black
+913 59 1 black
+913 70 1 black
+913 71 1 black
+913 81 1 black
+913 113 1 black
+913 150 1 black
+913 232 1 black
+913 236 1 black
+913 246 1 black
+913 291 1 black
+913 389 1 black
+913 438 1 black
+913 451 1 black
+913 502 1 black
+913 531 1 black
+913 532 1 black
+913 540 1 black
+913 543 1 black
+913 552 1 black
+913 556 1 black
+913 567 1 black
+913 575 1 black
+913 637 1 black
+913 659 1 black
+913 662 1 black
+913 742 1 black
+913 833 1 black
+913 875 1 black
+913 901 1 black
+913 912 1 black
+913 917 1 black
+913 920 1 black
+913 925 1 black
+913 996 1 black
+913 999 1 black
+914 885 1 black
+915 103 1 black
+915 575 1 black
+917 63 -1 red
+917 81 1 black
+917 547 1 black
+917 637 1 black
+917 912 1 black
+917 934 1 black
+918 113 1 black
+918 192 1 black
+918 229 1 black
+918 230 1 black
+918 325 1 black
+918 338 1 black
+918 424 1 black
+918 479 1 black
+918 516 -1 red
+918 547 1 black
+918 659 1 black
+918 696 1 black
+918 734 1 black
+918 773 -1 red
+918 791 -1 red
+918 792 1 black
+918 872 1 black
+918 874 1 black
+918 996 1 black
+920 4 1 black
+920 18 1 black
+920 29 -1 red
+920 32 1 black
+920 49 1 black
+920 52 1 black
+920 56 1 black
+920 112 1 black
+920 164 -1 red
+920 173 1 black
+920 246 -1 red
+920 412 -1 red
+920 615 -1 red
+920 680 1 black
+920 686 -1 red
+920 702 -1 red
+920 938 -1 red
+920 1000 -1 red
+922 885 1 black
+922 886 1 black
+923 749 1 black
+923 863 1 black
+923 872 1 black
+923 882 1 black
+923 934 1 black
+923 941 1 black
+924 48 1 black
+924 104 -1 red
+924 223 1 black
+924 641 -1 red
+924 825 -1 red
+924 833 -1 red
+924 849 -1 red
+924 869 -1 red
+924 885 1 black
+924 896 1 black
+924 906 1 black
+924 923 1 black
+924 932 1 black
+925 93 1 black
+925 198 1 black
+925 671 1 black
+925 681 1 black
+925 738 1 black
+925 873 1 black
+926 39 1 black
+926 70 1 black
+926 531 1 black
+926 621 1 black
+926 640 1 black
+926 658 1 black
+926 863 1 black
+928 192 1 black
+928 433 1 black
+928 465 1 black
+928 552 1 black
+928 661 1 black
+928 662 1 black
+928 749 1 black
+928 872 1 black
+928 912 1 black
+929 126 1 black
+929 169 1 black
+930 63 1 black
+930 77 1 black
+930 81 1 black
+930 98 1 black
+930 278 1 black
+930 631 1 black
+930 814 1 black
+930 912 1 black
+930 934 1 black
+930 977 1 black
+930 990 1 black
+930 998 1 black
+931 14 -1 red
+931 31 1 black
+931 39 1 black
+931 48 -1 red
+931 51 1 black
+931 60 -1 red
+931 61 1 black
+931 91 -1 red
+931 171 -1 red
+931 426 1 black
+931 453 -1 red
+931 635 1 black
+931 637 1 black
+931 761 -1 red
+931 958 1 black
+933 375 1 black
+933 424 -1 red
+933 563 1 black
+934 814 1 black
+938 10 1 black
+938 48 -1 red
+938 91 -1 red
+938 126 1 black
+938 171 1 black
+938 680 1 black
+938 958 1 black
+939 68 1 black
+939 89 1 black
+939 160 1 black
+939 658 1 black
+939 838 1 black
+939 850 -1 red
+939 930 1 black
+939 934 1 black
+939 950 1 black
+939 958 1 black
+939 974 1 black
+941 16 1 black
+941 31 1 black
+941 32 1 black
+941 39 1 black
+941 42 1 black
+941 48 1 black
+941 53 1 black
+941 56 1 black
+941 59 1 black
+941 60 1 black
+941 81 1 black
+941 84 1 black
+941 86 -1 red
+941 113 1 black
+941 177 -1 red
+941 217 -1 red
+941 246 1 black
+941 252 1 black
+941 309 -1 red
+941 357 -1 red
+941 420 -1 red
+941 484 -1 red
+941 502 -1 red
+941 591 1 black
+941 627 1 black
+941 630 -1 red
+941 637 1 black
+941 659 1 black
+941 673 1 black
+941 679 -1 red
+941 708 1 black
+941 720 1 black
+941 740 1 black
+941 781 1 black
+941 872 -1 red
+941 887 -1 red
+941 907 -1 red
+941 927 1 black
+941 928 -1 red
+941 930 -1 red
+941 934 1 black
+941 981 1 black
+941 990 -1 red
+941 996 1 black
+942 22 1 black
+942 48 -1 red
+942 60 -1 red
+942 75 -1 red
+942 126 1 black
+942 169 1 black
+942 622 1 black
+942 680 1 black
+942 747 -1 red
+942 763 1 black
+942 920 -1 red
+942 929 1 black
+942 938 1 black
+942 950 1 black
+947 9 1 black
+947 48 1 black
+947 49 1 black
+947 53 1 black
+947 56 1 black
+947 948 1 black
+947 949 1 black
+950 48 -1 red
+950 53 -1 red
+950 56 1 black
+950 60 -1 red
+950 91 -1 red
+950 126 1 black
+950 700 1 black
+950 958 1 black
+950 960 1 black
+952 81 1 black
+952 502 1 black
+952 700 1 black
+952 755 1 black
+952 956 1 black
+953 56 1 black
+954 637 1 black
+954 767 -1 red
+954 956 1 black
+959 1 1 black
+959 48 1 black
+959 56 1 black
+959 91 -1 red
+960 80 1 black
+960 126 1 black
+960 532 -1 red
+960 680 1 black
+960 938 -1 red
+962 20 1 black
+962 81 1 black
+962 963 1 black
+962 964 1 black
+962 965 1 black
+962 966 1 black
+962 970 1 black
+962 972 1 black
+962 973 1 black
+964 344 1 black
+964 661 1 black
+964 934 1 black
+965 56 1 black
+967 81 1 black
+967 99 1 black
+967 192 1 black
+967 731 1 black
+967 963 1 black
+967 965 1 black
+967 966 1 black
+968 963 1 black
+968 965 1 black
+968 966 1 black
+968 971 1 black
+968 972 1 black
+969 1 1 black
+969 99 1 black
+969 126 1 black
+969 950 1 black
+969 958 1 black
+969 964 1 black
+972 48 1 black
+972 56 1 black
+972 99 1 black
+974 17 1 black
+974 53 1 black
+974 68 1 black
+974 77 1 black
+974 81 1 black
+974 84 1 black
+974 96 1 black
+974 99 1 black
+974 104 1 black
+974 176 1 black
+974 196 1 black
+974 232 1 black
+974 246 1 black
+974 331 1 black
+974 424 1 black
+974 511 1 black
+974 551 1 black
+974 575 1 black
+974 591 1 black
+974 600 1 black
+974 639 1 black
+974 642 1 black
+974 659 1 black
+974 686 1 black
+974 719 1 black
+974 807 1 black
+974 814 1 black
+974 846 1 black
+974 872 1 black
+974 874 1 black
+974 920 1 black
+974 925 1 black
+974 930 1 black
+974 934 1 black
+974 983 1 black
+975 680 1 black
+976 48 1 black
+976 761 1 black
+977 9 1 black
+977 42 1 black
+977 48 1 black
+977 80 1 black
+977 81 1 black
+977 192 1 black
+977 278 1 black
+977 301 1 black
+977 451 1 black
+977 630 -1 red
+977 637 1 black
+977 640 -1 red
+977 641 1 black
+977 712 1 black
+977 719 1 black
+977 771 1 black
+977 788 1 black
+977 814 1 black
+977 816 1 black
+977 838 1 black
+977 867 1 black
+977 875 -1 red
+977 938 -1 red
+977 978 1 black
+978 34 1 black
+978 42 1 black
+979 81 1 black
+980 389 1 black
+980 451 1 black
+980 453 1 black
+980 527 1 black
+980 532 1 black
+980 642 1 black
+980 742 1 black
+980 923 1 black
+981 31 1 black
+981 42 1 black
+981 48 1 black
+981 51 1 black
+981 53 1 black
+981 67 1 black
+981 76 1 black
+981 177 -1 red
+981 274 1 black
+981 352 1 black
+981 652 1 black
+981 658 1 black
+981 661 1 black
+981 674 1 black
+981 686 -1 red
+981 703 1 black
+981 715 1 black
+981 738 1 black
+981 807 1 black
+981 814 1 black
+981 856 1 black
+981 912 -1 red
+981 934 1 black
+981 998 1 black
+982 113 -1 red
+982 316 1 black
+982 414 1 black
+982 700 -1 red
+982 912 -1 red
+982 931 1 black
+982 949 1 black
+983 48 -1 red
+983 71 1 black
+983 596 1 black
+983 907 -1 red
+985 59 1 black
+985 734 1 black
+986 101 1 black
+987 5 -1 red
+987 82 1 black
+987 177 1 black
+987 490 -1 red
+987 531 1 black
+987 637 -1 red
+987 824 -1 red
+987 931 -1 red
+987 978 1 black
+987 990 -1 red
+990 60 -1 red
+990 63 1 black
+990 71 1 black
+990 77 1 black
+990 89 1 black
+990 91 -1 red
+990 100 1 black
+990 274 1 black
+990 532 -1 red
+991 9 1 black
+991 48 1 black
+991 630 1 black
+991 958 1 black
+992 39 1 black
+993 42 1 black
+993 44 1 black
+993 48 1 black
+993 56 1 black
+993 81 1 black
+993 171 -1 red
+994 274 1 black
+994 658 1 black
+998 9 1 black
+998 42 1 black
+998 48 1 black
+998 67 1 black
+998 77 1 black
+998 81 1 black
+998 86 -1 red
+998 151 1 black
+998 641 1 black
+998 814 1 black
+998 912 1 black
+998 932 -1 red
+998 934 1 black
+998 977 1 black
+998 990 1 black
+999 67 1 black
+999 71 1 black
+999 77 1 black
+999 352 1 black
+999 637 1 black
+999 661 1 black
+999 838 1 black
+999 927 1 black
+999 958 1 black
+999 990 1 black
+1000 26 1 black
+1000 63 1 black
+1000 75 1 black
+1000 77 1 black
+1000 314 1 black
+1000 331 1 black
+1000 635 1 black
+1000 934 1 black
+1000 960 -1 red
+1 2 1 black
+1 4 1 black
+1 7 1 black
+1 9 1 black
+1 11 1 black
+1 12 1 black
+1 15 1 black
+1 17 1 black
+1 18 1 black
+1 19 1 black
+1 20 1 black
+1 22 1 black
+1 27 -1 red
+2 171 1 black
+2 614 1 black
+2 615 1 black
+2 616 1 black
+2 617 1 black
+2 619 1 black
+2 623 1 black
+2 625 1 black
+2 626 1 black
+2 628 1 black
+2 636 1 black
+2 643 1 black
+2 649 1 black
+2 651 1 black
+2 655 1 black
+2 656 1 black
+2 665 1 black
+2 668 1 black
+2 669 1 black
+2 670 1 black
+2 672 1 black
+2 673 1 black
+2 674 1 black
+2 676 -1 red
+4 9 1 black
+4 18 1 black
+4 48 1 black
+4 99 1 black
+6 59 1 black
+6 737 1 black
+6 743 1 black
+7 770 1 black
+7 772 1 black
+8 777 1 black
+8 783 1 black
+9 18 1 black
+9 19 1 black
+9 31 1 black
+9 48 1 black
+9 49 1 black
+9 50 1 black
+9 56 1 black
+9 59 1 black
+9 61 1 black
+9 70 -1 red
+9 84 1 black
+9 96 1 black
+9 99 1 black
+9 104 1 black
+9 119 1 black
+9 129 1 black
+9 131 1 black
+9 135 1 black
+9 143 1 black
+9 198 1 black
+9 623 -1 red
+9 669 -1 red
+9 800 1 black
+9 801 1 black
+9 804 1 black
+9 806 1 black
+9 807 1 black
+9 808 1 black
+9 810 1 black
+9 812 1 black
+9 814 1 black
+9 815 1 black
+9 817 1 black
+9 820 1 black
+9 821 1 black
+9 823 1 black
+9 825 1 black
+9 828 1 black
+9 829 1 black
+9 831 1 black
+9 832 1 black
+9 833 1 black
+9 835 1 black
+9 837 1 black
+9 838 1 black
+9 839 1 black
+9 841 1 black
+9 842 1 black
+9 843 1 black
+9 844 1 black
+9 846 1 black
+9 847 1 black
+9 848 1 black
+9 849 1 black
+9 850 1 black
+9 851 1 black
+9 852 1 black
+9 854 1 black
+9 856 1 black
+9 857 1 black
+9 859 1 black
+9 860 1 black
+9 861 1 black
+9 863 1 black
+9 864 1 black
+9 867 1 black
+9 868 1 black
+9 869 1 black
+9 870 -1 red
+9 888 -1 red
+9 897 -1 red
+9 915 -1 red
+9 917 -1 red
+9 918 -1 red
+9 920 -1 red
+9 924 -1 red
+9 926 -1 red
+9 927 -1 red
+9 928 -1 red
+9 931 -1 red
+9 933 -1 red
+9 934 -1 red
+10 18 1 black
+10 49 1 black
+10 50 1 black
+10 56 1 black
+10 57 1 black
+10 59 1 black
+10 61 1 black
+10 99 1 black
+10 119 1 black
+10 135 1 black
+10 145 1 black
+10 623 1 black
+10 821 1 black
+10 844 1 black
+10 944 1 black
+10 947 1 black
+10 950 1 black
+10 952 1 black
+10 954 1 black
+11 20 1 black
+11 962 1 black
+11 965 1 black
+11 967 1 black
+11 968 1 black
+11 969 1 black
+11 972 1 black
+12 68 1 black
+12 70 1 black
+12 76 1 black
+12 86 1 black
+12 88 1 black
+12 89 1 black
+12 93 1 black
+12 104 1 black
+12 617 1 black
+12 642 1 black
+12 814 1 black
+12 833 1 black
+12 847 1 black
+12 848 1 black
+12 877 1 black
+12 980 1 black
+12 981 1 black
+12 983 1 black
+12 994 1 black
+12 997 1 black
+15 761 1 black
+15 807 -1 red
+17 88 1 black
+17 531 1 black
+17 642 1 black
+18 37 1 black
+18 48 1 black
+18 56 1 black
+18 57 1 black
+18 59 1 black
+18 61 1 black
+18 99 1 black
+18 109 1 black
+18 141 1 black
+18 143 1 black
+18 144 1 black
+18 145 1 black
+18 146 1 black
+18 147 1 black
+18 148 1 black
+19 834 1 black
+20 968 1 black
+20 969 1 black
+30 84 1 black
+31 36 1 black
+31 37 1 black
+31 39 1 black
+31 43 1 black
+31 46 1 black
+31 47 1 black
+36 181 1 black
+36 184 1 black
+36 185 1 black
+36 186 1 black
+36 187 1 black
+36 188 1 black
+36 189 1 black
+36 190 1 black
+36 191 1 black
+36 192 1 black
+36 195 1 black
+36 196 1 black
+36 198 1 black
+37 56 1 black
+37 144 1 black
+37 148 1 black
+37 843 1 black
+38 192 1 black
+39 43 1 black
+39 600 1 black
+48 49 1 black
+48 50 1 black
+48 53 1 black
+48 54 1 black
+48 56 1 black
+48 57 1 black
+48 58 1 black
+48 59 1 black
+50 56 1 black
+50 99 1 black
+50 119 1 black
+50 135 1 black
+50 821 1 black
+51 623 -1 red
+51 669 -1 red
+51 687 -1 red
+51 942 -1 red
+53 56 1 black
+53 61 1 black
+53 145 1 black
+53 844 1 black
+54 75 -1 red
+54 623 -1 red
+54 669 -1 red
+54 720 1 black
+56 57 1 black
+56 59 1 black
+56 61 1 black
+56 109 1 black
+56 114 1 black
+56 119 1 black
+56 124 1 black
+57 58 1 black
+59 81 1 black
+61 64 1 black
+61 66 1 black
+61 67 1 black
+61 68 1 black
+61 70 1 black
+61 71 1 black
+61 72 1 black
+61 73 1 black
+61 75 1 black
+61 76 1 black
+61 77 1 black
+61 80 1 black
+61 83 1 black
+61 84 1 black
+61 86 1 black
+61 88 1 black
+61 89 1 black
+61 90 1 black
+61 92 1 black
+61 93 1 black
+61 94 1 black
+61 96 1 black
+61 99 1 black
+61 101 1 black
+61 104 1 black
+62 100 1 black
+62 831 1 black
+63 177 1 black
+63 674 1 black
+63 679 1 black
+63 816 1 black
+63 977 1 black
+64 654 1 black
+66 184 1 black
+67 68 1 black
+67 70 1 black
+67 72 1 black
+67 74 1 black
+67 76 1 black
+67 80 1 black
+67 84 1 black
+67 88 1 black
+67 93 1 black
+67 102 1 black
+67 104 1 black
+67 163 1 black
+67 198 1 black
+67 617 1 black
+67 625 1 black
+67 812 1 black
+67 814 1 black
+67 875 1 black
+67 990 1 black
+68 70 1 black
+68 71 1 black
+68 72 1 black
+68 73 1 black
+68 76 1 black
+68 80 1 black
+68 84 1 black
+68 88 1 black
+68 89 1 black
+68 90 1 black
+68 93 1 black
+68 101 1 black
+68 102 1 black
+68 104 1 black
+68 149 1 black
+68 160 1 black
+68 163 1 black
+68 198 1 black
+68 617 1 black
+68 625 1 black
+68 658 1 black
+68 668 1 black
+68 761 1 black
+68 807 1 black
+68 812 1 black
+68 820 1 black
+68 831 1 black
+68 833 1 black
+68 861 1 black
+68 877 1 black
+68 930 1 black
+68 980 1 black
+68 981 1 black
+68 983 1 black
+68 993 1 black
+69 184 1 black
+69 847 1 black
+69 870 1 black
+70 71 1 black
+70 76 1 black
+70 80 1 black
+70 84 1 black
+70 86 1 black
+70 88 1 black
+70 89 1 black
+70 90 1 black
+70 93 1 black
+70 104 1 black
+70 600 1 black
+70 625 1 black
+70 668 1 black
+70 812 1 black
+70 846 1 black
+70 863 -1 red
+70 875 1 black
+70 877 1 black
+70 888 1 black
+70 891 1 black
+70 906 1 black
+70 923 1 black
+70 930 1 black
+70 939 1 black
+70 941 1 black
+70 974 1 black
+70 980 1 black
+70 981 1 black
+70 983 1 black
+70 990 1 black
+70 998 1 black
+71 72 1 black
+71 73 1 black
+71 76 1 black
+71 77 1 black
+71 80 1 black
+71 84 1 black
+71 88 1 black
+71 89 1 black
+71 93 1 black
+71 102 1 black
+71 104 1 black
+71 160 1 black
+71 600 1 black
+71 658 1 black
+71 663 1 black
+71 669 1 black
+71 812 1 black
+71 831 1 black
+71 833 1 black
+71 838 1 black
+71 846 1 black
+71 847 1 black
+71 848 1 black
+71 856 1 black
+71 861 1 black
+71 863 1 black
+71 877 1 black
+71 900 1 black
+71 907 1 black
+71 915 1 black
+71 922 1 black
+71 923 1 black
+71 924 1 black
+71 930 1 black
+71 934 1 black
+71 939 1 black
+71 941 1 black
+71 980 1 black
+71 998 1 black
+72 73 1 black
+72 77 1 black
+72 80 1 black
+72 86 1 black
+72 88 1 black
+72 89 1 black
+72 93 1 black
+72 104 1 black
+72 198 1 black
+72 259 1 black
+72 600 1 black
+72 658 1 black
+72 807 1 black
+72 812 1 black
+72 831 1 black
+72 839 1 black
+72 848 1 black
+72 863 1 black
+72 926 1 black
+72 930 1 black
+72 934 1 black
+72 939 1 black
+72 941 1 black
+72 974 1 black
+72 981 1 black
+72 998 1 black
+72 999 1 black
+73 76 1 black
+73 77 1 black
+73 80 1 black
+73 88 1 black
+73 89 1 black
+73 102 1 black
+73 104 1 black
+73 658 1 black
+73 812 1 black
+73 833 1 black
+73 839 1 black
+73 846 1 black
+73 847 1 black
+73 861 1 black
+73 863 1 black
+73 891 1 black
+73 926 1 black
+73 934 1 black
+73 939 1 black
+73 974 1 black
+73 981 1 black
+73 999 1 black
+74 80 1 black
+74 93 1 black
+74 102 1 black
+75 84 1 black
+75 198 1 black
+75 623 1 black
+75 669 1 black
+76 77 1 black
+76 80 1 black
+76 88 1 black
+76 89 1 black
+76 93 1 black
+76 104 1 black
+76 625 1 black
+76 658 1 black
+76 807 1 black
+76 812 1 black
+76 831 1 black
+76 842 1 black
+76 848 1 black
+76 863 1 black
+76 877 1 black
+76 930 1 black
+76 934 1 black
+76 939 1 black
+76 974 1 black
+76 990 1 black
+76 998 1 black
+76 999 1 black
+77 80 1 black
+77 88 1 black
+77 89 1 black
+77 93 1 black
+77 102 1 black
+77 104 1 black
+77 160 1 black
+77 831 1 black
+77 833 1 black
+77 846 1 black
+77 848 1 black
+77 861 1 black
+77 863 1 black
+77 877 1 black
+77 981 1 black
+80 81 1 black
+80 84 1 black
+80 86 1 black
+80 88 1 black
+80 89 1 black
+80 90 1 black
+80 93 1 black
+80 96 1 black
+80 102 1 black
+80 104 1 black
+80 160 1 black
+80 169 1 black
+80 198 1 black
+80 259 1 black
+80 531 1 black
+80 600 1 black
+80 617 1 black
+80 625 1 black
+80 655 1 black
+80 658 1 black
+80 669 1 black
+80 691 1 black
+80 820 1 black
+80 831 1 black
+80 833 1 black
+80 838 1 black
+80 848 1 black
+80 849 1 black
+80 850 1 black
+80 856 1 black
+80 861 1 black
+80 863 1 black
+80 877 1 black
+80 907 1 black
+80 923 1 black
+80 930 1 black
+80 934 1 black
+80 939 1 black
+80 974 1 black
+80 981 1 black
+80 990 1 black
+80 998 1 black
+80 999 1 black
+81 96 1 black
+81 755 1 black
+81 820 1 black
+83 844 1 black
+84 88 1 black
+84 93 1 black
+84 171 1 black
+84 617 1 black
+84 625 1 black
+84 658 1 black
+84 679 1 black
+84 939 1 black
+84 950 1 black
+84 976 1 black
+84 999 1 black
+86 93 1 black
+86 198 1 black
+86 331 1 black
+86 564 1 black
+86 625 1 black
+86 663 1 black
+86 668 1 black
+86 669 1 black
+86 807 1 black
+86 812 1 black
+86 839 1 black
+86 875 1 black
+86 877 1 black
+86 880 1 black
+86 906 1 black
+86 915 1 black
+86 923 1 black
+86 926 1 black
+86 939 1 black
+86 974 1 black
+88 89 1 black
+88 93 1 black
+88 99 1 black
+88 102 1 black
+88 104 1 black
+88 160 1 black
+88 198 1 black
+88 234 1 black
+88 259 1 black
+88 351 1 black
+88 516 1 black
+88 531 1 black
+88 600 1 black
+88 628 1 black
+88 642 1 black
+88 658 1 black
+88 663 1 black
+88 668 1 black
+88 718 1 black
+88 807 1 black
+88 812 1 black
+88 820 1 black
+88 828 1 black
+88 831 1 black
+88 833 1 black
+88 839 1 black
+88 846 1 black
+88 848 1 black
+88 855 1 black
+88 856 1 black
+88 861 1 black
+88 863 1 black
+88 875 1 black
+88 877 1 black
+88 891 1 black
+88 906 1 black
+88 923 1 black
+88 926 1 black
+88 930 1 black
+88 939 1 black
+88 941 1 black
+88 974 1 black
+88 980 1 black
+88 981 1 black
+88 983 1 black
+88 994 1 black
+88 999 1 black
+89 93 1 black
+89 101 1 black
+89 102 1 black
+89 104 1 black
+89 160 1 black
+89 198 1 black
+89 259 1 black
+89 331 1 black
+89 531 1 black
+89 600 1 black
+89 658 1 black
+89 663 1 black
+89 669 1 black
+89 807 1 black
+89 812 1 black
+89 831 1 black
+89 839 1 black
+89 846 1 black
+89 847 1 black
+89 848 1 black
+89 861 1 black
+89 863 1 black
+89 869 1 black
+89 875 1 black
+89 877 1 black
+89 900 1 black
+89 906 1 black
+89 907 1 black
+89 909 1 black
+89 913 1 black
+89 923 1 black
+89 924 1 black
+89 926 1 black
+89 930 1 black
+89 934 1 black
+89 941 1 black
+89 974 1 black
+89 981 1 black
+89 983 1 black
+89 998 1 black
+89 999 1 black
+90 169 1 black
+90 617 1 black
+90 625 1 black
+90 950 1 black
+93 102 1 black
+93 104 1 black
+93 160 1 black
+93 163 1 black
+93 198 1 black
+93 259 1 black
+93 531 1 black
+93 600 1 black
+93 617 1 black
+93 625 1 black
+93 658 1 black
+93 663 1 black
+93 669 1 black
+93 761 1 black
+93 807 1 black
+93 812 1 black
+93 828 1 black
+93 831 1 black
+93 833 1 black
+93 836 1 black
+93 839 1 black
+93 846 1 black
+93 861 1 black
+93 877 1 black
+93 907 1 black
+93 922 1 black
+93 923 1 black
+93 926 1 black
+93 930 1 black
+93 939 1 black
+93 941 1 black
+93 974 1 black
+93 981 1 black
+93 990 1 black
+93 998 1 black
+93 999 1 black
+95 931 1 black
+97 531 1 black
+99 109 1 black
+99 847 1 black
+99 856 1 black
+99 941 1 black
+99 965 1 black
+101 162 1 black
+101 617 1 black
+101 634 1 black
+102 160 1 black
+102 531 1 black
+102 625 1 black
+102 658 1 black
+102 669 1 black
+102 831 1 black
+102 838 1 black
+102 863 1 black
+102 877 1 black
+102 923 1 black
+102 974 1 black
+102 980 1 black
+102 981 1 black
+104 160 1 black
+104 198 1 black
+104 259 1 black
+104 568 1 black
+104 658 1 black
+104 807 1 black
+104 810 1 black
+104 812 1 black
+104 825 1 black
+104 831 1 black
+104 833 1 black
+104 847 1 black
+104 856 1 black
+104 863 1 black
+104 877 1 black
+104 891 1 black
+104 926 1 black
+104 930 1 black
+104 939 1 black
+104 981 1 black
+104 998 1 black
+104 999 1 black
+113 176 1 black
+113 531 1 black
+113 642 1 black
+113 663 1 black
+113 668 1 black
+113 873 1 black
+113 894 1 black
+113 903 1 black
+113 974 1 black
+114 169 1 black
+119 135 1 black
+119 944 1 black
+119 953 1 black
+120 192 1 black
+120 974 1 black
+129 136 1 black
+129 142 1 black
+144 148 1 black
+145 623 -1 red
+145 1000 -1 red
+149 152 1 black
+149 156 1 black
+149 158 1 black
+149 159 1 black
+149 160 1 black
+149 161 1 black
+149 163 1 black
+149 166 1 black
+149 169 1 black
+149 170 1 black
+149 174 1 black
+150 198 1 black
+150 259 1 black
+150 331 1 black
+150 924 1 black
+150 974 1 black
+150 994 1 black
+152 198 1 black
+152 217 -1 red
+152 842 1 black
+152 851 -1 red
+159 820 1 black
+160 198 1 black
+160 259 1 black
+160 641 1 black
+160 658 1 black
+160 808 1 black
+160 812 1 black
+160 847 1 black
+160 861 1 black
+160 909 1 black
+160 974 1 black
+160 977 1 black
+160 983 1 black
+162 461 1 black
+162 673 1 black
+162 875 1 black
+169 617 1 black
+170 907 1 black
+171 617 1 black
+171 712 1 black
+177 679 1 black
+178 642 1 black
+181 352 1 black
+181 457 1 black
+181 511 1 black
+181 974 1 black
+183 184 1 black
+184 192 1 black
+184 348 1 black
+184 449 1 black
+184 462 1 black
+184 551 1 black
+184 573 1 black
+187 188 1 black
+188 189 1 black
+190 198 1 black
+191 233 1 black
+192 223 1 black
+192 224 1 black
+192 225 1 black
+192 233 1 black
+192 235 1 black
+192 239 1 black
+192 242 1 black
+192 245 1 black
+192 246 1 black
+192 248 1 black
+192 250 1 black
+192 252 1 black
+192 256 1 black
+192 257 1 black
+192 262 1 black
+192 264 1 black
+192 266 1 black
+192 267 1 black
+192 276 1 black
+192 278 1 black
+192 280 1 black
+192 287 1 black
+192 289 1 black
+192 297 1 black
+192 302 1 black
+192 304 1 black
+192 310 1 black
+192 312 1 black
+192 314 1 black
+192 315 1 black
+192 318 1 black
+192 319 1 black
+192 322 1 black
+192 325 1 black
+192 326 1 black
+192 328 1 black
+192 330 1 black
+192 331 1 black
+192 332 1 black
+192 336 1 black
+192 337 1 black
+192 340 1 black
+192 341 1 black
+192 343 1 black
+192 345 1 black
+192 346 1 black
+192 348 1 black
+192 349 1 black
+192 352 1 black
+192 354 1 black
+192 359 1 black
+192 362 1 black
+192 370 1 black
+192 379 1 black
+192 380 1 black
+192 385 1 black
+192 391 1 black
+192 394 1 black
+192 395 1 black
+192 398 1 black
+192 402 1 black
+192 403 1 black
+192 404 1 black
+192 405 1 black
+192 406 1 black
+192 415 1 black
+192 416 1 black
+192 420 1 black
+192 427 1 black
+192 428 1 black
+192 432 1 black
+192 438 1 black
+192 439 1 black
+192 441 1 black
+192 443 1 black
+192 445 1 black
+192 446 1 black
+192 449 1 black
+192 452 1 black
+192 454 1 black
+192 456 1 black
+192 457 1 black
+192 459 1 black
+192 462 1 black
+192 463 1 black
+192 469 1 black
+192 474 1 black
+192 477 1 black
+192 478 1 black
+192 479 1 black
+192 482 1 black
+192 485 1 black
+192 494 1 black
+192 496 1 black
+192 497 1 black
+192 498 1 black
+192 502 1 black
+192 511 1 black
+192 515 1 black
+192 516 1 black
+192 523 1 black
+192 526 1 black
+192 529 1 black
+192 530 1 black
+192 535 1 black
+192 538 1 black
+192 558 1 black
+192 559 1 black
+192 562 1 black
+192 563 1 black
+192 566 1 black
+192 568 1 black
+192 570 1 black
+192 573 1 black
+192 576 1 black
+192 577 1 black
+192 579 1 black
+192 581 1 black
+192 589 1 black
+192 596 1 black
+192 598 1 black
+192 600 1 black
+192 601 1 black
+192 606 1 black
+192 607 1 black
+192 608 1 black
+193 540 -1 red
+195 531 1 black
+195 673 1 black
+195 913 1 black
+195 974 1 black
+196 259 1 black
+196 863 1 black
+198 246 1 black
+198 259 1 black
+198 321 1 black
+198 330 1 black
+198 349 1 black
+198 403 1 black
+198 511 1 black
+198 600 1 black
+198 616 1 black
+198 630 1 black
+198 658 1 black
+198 663 1 black
+198 664 1 black
+198 669 1 black
+198 674 1 black
+198 718 1 black
+198 807 1 black
+198 812 1 black
+198 820 1 black
+198 831 1 black
+198 836 1 black
+198 839 1 black
+198 856 1 black
+198 863 1 black
+198 891 1 black
+198 926 1 black
+198 974 1 black
+198 981 1 black
+198 994 1 black
+199 208 1 black
+199 209 -1 red
+199 210 -1 red
+199 213 -1 red
+199 214 -1 red
+199 216 -1 red
+199 217 -1 red
+208 994 1 black
+217 617 1 black
+217 623 1 black
+223 839 1 black
+225 900 1 black
+229 540 1 black
+232 663 1 black
+232 839 1 black
+232 869 1 black
+234 877 1 black
+235 531 1 black
+235 669 1 black
+235 718 1 black
+235 913 1 black
+235 925 1 black
+239 462 1 black
+246 516 1 black
+246 531 1 black
+246 847 1 black
+246 887 1 black
+246 909 1 black
+246 992 1 black
+250 870 -1 red
+257 496 1 black
+257 531 1 black
+257 577 1 black
+257 669 1 black
+259 663 1 black
+259 807 1 black
+259 812 1 black
+259 828 1 black
+259 913 1 black
+259 941 1 black
+259 974 1 black
+259 981 1 black
+259 999 1 black
+271 907 1 black
+302 462 1 black
+312 577 1 black
+315 388 1 black
+315 511 1 black
+322 531 1 black
+323 663 1 black
+325 439 -1 red
+326 913 1 black
+331 502 1 black
+331 511 1 black
+331 581 1 black
+331 621 1 black
+331 641 1 black
+331 642 1 black
+331 663 1 black
+331 669 1 black
+331 800 1 black
+331 812 1 black
+331 836 1 black
+331 839 1 black
+331 852 1 black
+331 869 1 black
+331 900 1 black
+331 907 1 black
+331 910 1 black
+331 913 1 black
+331 941 1 black
+332 915 1 black
+337 540 1 black
+337 885 1 black
+337 907 1 black
+337 924 1 black
+346 663 1 black
+348 924 -1 red
+352 600 1 black
+352 812 1 black
+352 831 1 black
+352 861 1 black
+363 941 1 black
+370 915 1 black
+388 779 1 black
+388 891 1 black
+388 926 1 black
+391 434 1 black
+391 870 1 black
+401 628 1 black
+409 900 1 black
+428 445 1 black
+433 643 1 black
+434 532 1 black
+434 676 -1 red
+434 847 -1 red
+443 777 1 black
+445 577 1 black
+446 839 1 black
+454 515 1 black
+457 543 1 black
+457 918 1 black
+462 559 1 black
+462 577 1 black
+477 516 1 black
+477 907 1 black
+496 824 1 black
+496 913 1 black
+498 652 1 black
+498 838 -1 red
+498 894 1 black
+498 941 1 black
+498 974 1 black
+516 663 1 black
+516 777 1 black
+516 848 1 black
+516 923 1 black
+529 752 1 black
+529 885 1 black
+531 540 1 black
+531 663 1 black
+531 669 1 black
+531 839 1 black
+531 875 1 black
+531 877 1 black
+531 906 1 black
+531 924 1 black
+531 939 1 black
+531 974 1 black
+531 999 1 black
+532 718 1 black
+540 839 1 black
+540 900 1 black
+548 663 1 black
+559 577 1 black
+573 663 1 black
+573 839 1 black
+573 848 1 black
+573 974 1 black
+577 913 1 black
+599 610 1 black
+600 761 1 black
+600 847 1 black
+600 848 1 black
+600 999 1 black
+601 907 1 black
+606 663 1 black
+607 626 -1 red
+615 941 1 black
+617 625 1 black
+617 833 1 black
+617 844 1 black
+617 847 1 black
+617 994 1 black
+621 718 1 black
+621 941 1 black
+623 669 1 black
+623 687 1 black
+623 920 -1 red
+623 942 -1 red
+623 950 -1 red
+625 655 1 black
+625 692 1 black
+625 847 1 black
+625 851 1 black
+625 980 1 black
+625 994 1 black
+628 847 1 black
+632 674 1 black
+634 858 1 black
+635 924 1 black
+641 825 1 black
+641 828 1 black
+641 831 1 black
+641 839 1 black
+641 847 1 black
+641 848 1 black
+641 849 1 black
+641 850 1 black
+641 851 1 black
+641 869 1 black
+641 877 1 black
+642 718 1 black
+642 742 1 black
+642 808 1 black
+642 836 1 black
+642 839 1 black
+642 845 1 black
+642 894 1 black
+642 925 1 black
+654 658 1 black
+654 924 1 black
+655 820 1 black
+656 743 1 black
+657 994 1 black
+658 812 1 black
+658 848 1 black
+658 856 1 black
+658 877 1 black
+658 915 1 black
+658 923 1 black
+658 924 1 black
+658 974 1 black
+658 980 1 black
+658 998 1 black
+658 999 1 black
+663 669 1 black
+663 807 1 black
+663 812 1 black
+663 828 1 black
+663 833 1 black
+663 839 1 black
+663 856 1 black
+663 875 1 black
+663 885 1 black
+663 900 1 black
+663 906 1 black
+663 907 1 black
+663 909 1 black
+663 913 1 black
+663 915 1 black
+663 923 1 black
+663 924 1 black
+663 939 1 black
+663 941 1 black
+663 974 1 black
+664 873 1 black
+664 875 1 black
+666 990 1 black
+668 812 1 black
+668 999 1 black
+669 808 -1 red
+669 810 -1 red
+669 812 1 black
+669 838 1 black
+669 839 1 black
+669 844 1 black
+669 851 -1 red
+669 863 1 black
+669 875 1 black
+669 881 -1 red
+669 890 -1 red
+669 900 1 black
+669 907 1 black
+669 924 1 black
+669 942 -1 red
+669 974 1 black
+673 679 -1 red
+673 839 1 black
+676 842 1 black
+676 983 1 black
+679 816 1 black
+679 990 -1 red
+680 698 1 black
+687 938 1 black
+687 987 1 black
+693 875 1 black
+712 875 1 black
+718 770 1 black
+718 915 1 black
+736 985 1 black
+742 761 1 black
+743 842 1 black
+761 926 1 black
+770 993 1 black
+777 842 1 black
+807 812 1 black
+807 833 1 black
+807 839 1 black
+807 856 1 black
+807 907 1 black
+807 913 1 black
+807 915 1 black
+807 930 1 black
+807 939 1 black
+807 999 1 black
+808 833 1 black
+808 846 -1 red
+808 847 1 black
+808 863 1 black
+808 998 1 black
+810 923 1 black
+812 814 1 black
+812 828 1 black
+812 831 1 black
+812 833 1 black
+812 839 1 black
+812 847 1 black
+812 848 1 black
+812 851 1 black
+812 861 1 black
+812 863 1 black
+812 877 1 black
+812 896 1 black
+812 906 1 black
+812 907 1 black
+812 913 1 black
+812 915 1 black
+812 923 1 black
+812 924 1 black
+812 926 1 black
+812 930 1 black
+812 939 1 black
+812 941 1 black
+812 974 1 black
+812 981 1 black
+812 990 1 black
+812 998 1 black
+812 999 1 black
+814 828 1 black
+814 831 1 black
+814 838 1 black
+814 848 1 black
+814 850 1 black
+814 863 1 black
+814 877 1 black
+814 924 -1 red
+814 999 1 black
+816 851 1 black
+819 862 1 black
+820 842 1 black
+820 907 1 black
+820 941 1 black
+820 974 1 black
+825 828 1 black
+825 833 1 black
+825 838 1 black
+825 847 1 black
+825 849 1 black
+825 850 1 black
+825 851 1 black
+825 856 1 black
+825 869 1 black
+825 930 1 black
+825 977 1 black
+825 998 1 black
+828 835 1 black
+828 838 1 black
+828 839 1 black
+828 848 1 black
+828 849 1 black
+828 850 1 black
+828 851 1 black
+828 856 1 black
+828 861 1 black
+828 863 1 black
+828 869 1 black
+828 923 1 black
+828 930 1 black
+828 974 1 black
+830 847 1 black
+830 851 1 black
+831 838 1 black
+831 856 1 black
+831 863 1 black
+831 877 1 black
+831 939 1 black
+831 974 1 black
+831 981 1 black
+831 998 1 black
+832 868 1 black
+833 838 1 black
+833 847 1 black
+833 848 1 black
+833 850 1 black
+833 851 1 black
+833 861 1 black
+833 863 1 black
+833 869 1 black
+833 877 1 black
+833 891 1 black
+833 907 1 black
+833 926 1 black
+833 974 1 black
+833 977 1 black
+833 983 1 black
+833 998 1 black
+836 838 1 black
+836 849 1 black
+836 907 1 black
+838 839 1 black
+838 842 1 black
+838 847 1 black
+838 848 1 black
+838 850 1 black
+838 851 1 black
+838 861 1 black
+838 869 1 black
+838 896 -1 red
+838 909 1 black
+838 924 -1 red
+838 998 1 black
+839 848 1 black
+839 849 1 black
+839 863 1 black
+839 869 1 black
+839 877 1 black
+839 906 1 black
+839 907 1 black
+839 923 1 black
+839 974 1 black
+842 856 1 black
+842 915 1 black
+842 980 1 black
+846 863 1 black
+846 875 1 black
+846 939 1 black
+847 848 1 black
+847 850 1 black
+847 851 1 black
+847 861 1 black
+847 863 1 black
+847 869 1 black
+847 870 -1 red
+847 877 1 black
+847 924 -1 red
+847 930 -1 red
+847 941 -1 red
+847 983 1 black
+847 998 1 black
+847 1000 1 black
+848 849 1 black
+848 850 1 black
+848 851 1 black
+848 856 1 black
+848 863 1 black
+848 869 1 black
+848 877 1 black
+848 913 1 black
+848 930 1 black
+848 974 1 black
+848 977 1 black
+848 981 1 black
+848 998 1 black
+848 999 1 black
+849 851 1 black
+849 869 1 black
+850 851 1 black
+850 869 1 black
+850 998 1 black
+851 856 1 black
+851 861 1 black
+851 863 1 black
+851 924 -1 red
+851 930 1 black
+851 987 -1 red
+851 998 1 black
+851 1000 -1 red
+852 1000 -1 red
+856 863 1 black
+856 877 1 black
+856 923 1 black
+856 974 1 black
+861 863 1 black
+861 877 1 black
+861 998 1 black
+863 902 1 black
+863 913 1 black
+863 974 1 black
+863 980 1 black
+863 981 1 black
+863 983 1 black
+863 998 1 black
+863 999 1 black
+869 907 1 black
+869 974 1 black
+873 924 1 black
+875 877 1 black
+875 923 1 black
+875 939 1 black
+875 983 1 black
+877 891 1 black
+877 906 1 black
+877 913 1 black
+877 924 1 black
+877 926 1 black
+877 974 1 black
+877 981 1 black
+877 983 1 black
+877 998 1 black
+885 907 1 black
+885 913 1 black
+885 923 1 black
+894 969 1 black
+896 913 1 black
+896 915 1 black
+896 974 1 black
+900 924 1 black
+900 974 1 black
+902 913 1 black
+906 913 1 black
+906 923 1 black
+906 939 1 black
+906 941 1 black
+906 974 1 black
+907 913 1 black
+907 915 1 black
+907 922 1 black
+907 930 1 black
+907 974 1 black
+909 913 1 black
+909 924 1 black
+909 974 1 black
+910 915 1 black
+913 914 1 black
+913 923 1 black
+913 924 1 black
+913 941 1 black
+913 974 1 black
+914 924 1 black
+915 924 1 black
+915 974 1 black
+915 980 1 black
+915 981 1 black
+917 924 1 black
+920 950 -1 red
+922 941 1 black
+923 939 1 black
+923 974 1 black
+923 981 1 black
+923 998 1 black
+924 939 1 black
+924 941 1 black
+926 981 1 black
+929 938 1 black
+934 999 1 black
+939 941 1 black
+939 999 1 black
+941 974 1 black
+941 999 1 black
+952 954 1 black
+962 967 1 black
+962 968 1 black
+962 969 1 black
+965 969 1 black
+965 972 1 black
+967 968 1 black
+967 969 1 black
+968 969 1 black
+969 972 1 black
+974 980 1 black
+974 981 1 black
+974 998 1 black
+974 999 1 black
+980 981 1 black
+981 999 1 black
+987 994 1 black
+998 999 1 black

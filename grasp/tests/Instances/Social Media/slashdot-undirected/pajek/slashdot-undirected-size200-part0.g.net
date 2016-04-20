@@ -1,0 +1,1089 @@
+*Vertices 200
+1 V1
+2 V2
+3 V3
+4 V4
+5 V5
+6 V6
+7 V7
+8 V8
+9 V9
+10 V10
+11 V11
+12 V12
+13 V13
+14 V14
+15 V15
+16 V16
+17 V17
+18 V18
+19 V19
+20 V20
+21 V21
+22 V22
+23 V23
+24 V24
+25 V25
+26 V26
+27 V27
+28 V28
+29 V29
+30 V30
+31 V31
+32 V32
+33 V33
+34 V34
+35 V35
+36 V36
+37 V37
+38 V38
+39 V39
+40 V40
+41 V41
+42 V42
+43 V43
+44 V44
+45 V45
+46 V46
+47 V47
+48 V48
+49 V49
+50 V50
+51 V51
+52 V52
+53 V53
+54 V54
+55 V55
+56 V56
+57 V57
+58 V58
+59 V59
+60 V60
+61 V61
+62 V62
+63 V63
+64 V64
+65 V65
+66 V66
+67 V67
+68 V68
+69 V69
+70 V70
+71 V71
+72 V72
+73 V73
+74 V74
+75 V75
+76 V76
+77 V77
+78 V78
+79 V79
+80 V80
+81 V81
+82 V82
+83 V83
+84 V84
+85 V85
+86 V86
+87 V87
+88 V88
+89 V89
+90 V90
+91 V91
+92 V92
+93 V93
+94 V94
+95 V95
+96 V96
+97 V97
+98 V98
+99 V99
+100 V100
+101 V101
+102 V102
+103 V103
+104 V104
+105 V105
+106 V106
+107 V107
+108 V108
+109 V109
+110 V110
+111 V111
+112 V112
+113 V113
+114 V114
+115 V115
+116 V116
+117 V117
+118 V118
+119 V119
+120 V120
+121 V121
+122 V122
+123 V123
+124 V124
+125 V125
+126 V126
+127 V127
+128 V128
+129 V129
+130 V130
+131 V131
+132 V132
+133 V133
+134 V134
+135 V135
+136 V136
+137 V137
+138 V138
+139 V139
+140 V140
+141 V141
+142 V142
+143 V143
+144 V144
+145 V145
+146 V146
+147 V147
+148 V148
+149 V149
+150 V150
+151 V151
+152 V152
+153 V153
+154 V154
+155 V155
+156 V156
+157 V157
+158 V158
+159 V159
+160 V160
+161 V161
+162 V162
+163 V163
+164 V164
+165 V165
+166 V166
+167 V167
+168 V168
+169 V169
+170 V170
+171 V171
+172 V172
+173 V173
+174 V174
+175 V175
+176 V176
+177 V177
+178 V178
+179 V179
+180 V180
+181 V181
+182 V182
+183 V183
+184 V184
+185 V185
+186 V186
+187 V187
+188 V188
+189 V189
+190 V190
+191 V191
+192 V192
+193 V193
+194 V194
+195 V195
+196 V196
+197 V197
+198 V198
+199 V199
+200 V200
+*Arcs
+1 3 1 black
+1 5 1 black
+1 6 1 black
+1 8 1 black
+1 10 1 black
+1 13 1 black
+1 14 1 black
+1 16 1 black
+1 21 1 black
+1 23 1 black
+1 24 1 black
+1 25 1 black
+1 26 -1 red
+1 28 -1 red
+1 29 -1 red
+1 30 -1 red
+2 5 1 black
+2 10 1 black
+2 32 1 black
+2 42 1 black
+2 53 1 black
+2 99 1 black
+2 119 1 black
+4 10 1 black
+4 49 1 black
+4 56 1 black
+4 115 1 black
+6 16 1 black
+6 32 1 black
+6 34 1 black
+6 42 1 black
+6 48 1 black
+6 53 1 black
+6 56 1 black
+6 60 1 black
+6 81 1 black
+6 99 1 black
+6 112 1 black
+6 173 1 black
+6 192 1 black
+7 32 1 black
+7 45 1 black
+7 81 1 black
+7 173 1 black
+7 192 1 black
+8 177 1 black
+9 10 1 black
+9 51 1 black
+9 52 1 black
+9 53 1 black
+9 55 1 black
+9 71 -1 red
+9 86 -1 red
+9 88 -1 red
+9 89 -1 red
+9 126 -1 red
+9 128 1 black
+9 132 1 black
+9 141 1 black
+9 145 1 black
+10 48 1 black
+10 53 1 black
+10 81 1 black
+10 141 1 black
+10 197 1 black
+12 6 1 black
+12 9 1 black
+12 10 1 black
+12 42 1 black
+12 48 1 black
+12 49 1 black
+12 53 1 black
+12 56 1 black
+12 57 1 black
+12 59 1 black
+12 60 1 black
+12 67 1 black
+12 71 1 black
+12 72 1 black
+12 77 1 black
+12 80 1 black
+12 82 1 black
+12 84 1 black
+12 91 1 black
+12 95 1 black
+12 102 1 black
+12 121 1 black
+12 150 1 black
+15 9 1 black
+15 18 1 black
+15 30 -1 red
+15 44 1 black
+15 48 1 black
+15 56 1 black
+15 59 1 black
+15 60 1 black
+15 61 1 black
+15 81 1 black
+15 95 1 black
+17 59 1 black
+17 101 1 black
+17 160 1 black
+18 49 1 black
+18 55 1 black
+18 58 1 black
+18 115 1 black
+19 10 1 black
+19 48 1 black
+19 53 1 black
+19 56 1 black
+19 129 1 black
+19 131 1 black
+19 135 1 black
+19 143 1 black
+20 23 1 black
+22 18 1 black
+22 48 1 black
+22 51 -1 red
+22 53 1 black
+22 56 1 black
+22 59 1 black
+22 60 1 black
+22 61 1 black
+22 91 1 black
+22 95 1 black
+26 80 -1 red
+26 91 -1 red
+26 95 -1 red
+26 169 1 black
+30 26 1 black
+30 71 1 black
+30 80 1 black
+30 171 1 black
+30 177 1 black
+31 32 1 black
+31 33 1 black
+31 34 1 black
+31 35 1 black
+31 38 1 black
+31 40 1 black
+31 41 1 black
+31 42 1 black
+31 44 1 black
+31 45 1 black
+33 32 1 black
+33 34 1 black
+33 42 1 black
+33 45 1 black
+36 10 1 black
+36 18 1 black
+36 48 1 black
+36 56 1 black
+36 61 1 black
+36 99 1 black
+36 182 1 black
+36 183 1 black
+36 193 1 black
+36 194 1 black
+36 197 1 black
+37 1 1 black
+37 48 1 black
+38 180 -1 red
+39 32 1 black
+39 33 1 black
+39 34 1 black
+39 42 1 black
+39 81 1 black
+39 173 1 black
+39 192 1 black
+44 1 1 black
+44 4 1 black
+44 9 1 black
+44 18 1 black
+44 48 1 black
+44 49 1 black
+44 52 1 black
+44 56 1 black
+44 59 1 black
+44 141 1 black
+46 35 1 black
+46 41 1 black
+46 42 1 black
+47 32 1 black
+47 33 1 black
+47 39 1 black
+47 42 1 black
+47 43 1 black
+47 45 1 black
+47 173 1 black
+48 51 1 black
+48 52 1 black
+48 55 1 black
+49 115 1 black
+50 18 1 black
+50 42 1 black
+50 49 1 black
+50 81 1 black
+51 30 -1 red
+51 63 -1 red
+51 126 -1 red
+51 169 -1 red
+51 177 -1 red
+53 1 1 black
+53 4 1 black
+53 18 1 black
+53 52 1 black
+53 59 1 black
+53 81 1 black
+53 115 1 black
+54 4 1 black
+54 9 1 black
+54 10 1 black
+54 18 1 black
+54 22 -1 red
+54 49 1 black
+54 51 1 black
+54 53 1 black
+54 55 1 black
+54 67 1 black
+54 81 1 black
+54 91 -1 red
+54 145 1 black
+56 32 1 black
+56 105 1 black
+56 106 1 black
+56 107 1 black
+56 108 1 black
+56 110 1 black
+56 111 1 black
+56 112 1 black
+56 113 1 black
+56 115 1 black
+56 116 1 black
+56 117 1 black
+56 118 1 black
+56 120 1 black
+56 121 1 black
+56 122 1 black
+56 123 1 black
+56 125 1 black
+56 126 -1 red
+56 127 -1 red
+57 9 1 black
+57 53 1 black
+57 55 1 black
+57 59 1 black
+57 117 1 black
+57 141 1 black
+57 147 1 black
+59 95 1 black
+61 1 1 black
+61 44 1 black
+61 48 1 black
+61 59 1 black
+61 60 1 black
+61 62 1 black
+61 63 1 black
+61 65 1 black
+61 69 1 black
+61 74 1 black
+61 78 1 black
+61 79 1 black
+61 81 1 black
+61 82 1 black
+61 85 1 black
+61 87 1 black
+61 91 1 black
+61 95 1 black
+61 97 1 black
+61 98 1 black
+61 100 1 black
+61 102 1 black
+61 103 1 black
+62 71 1 black
+63 88 -1 red
+63 126 1 black
+67 48 1 black
+67 63 1 black
+67 71 1 black
+67 77 1 black
+67 81 1 black
+67 89 1 black
+68 4 1 black
+68 6 1 black
+68 9 1 black
+68 10 1 black
+68 18 1 black
+68 44 1 black
+68 48 1 black
+68 53 1 black
+68 56 1 black
+68 59 1 black
+68 74 1 black
+68 77 1 black
+68 81 1 black
+68 95 1 black
+68 96 1 black
+68 145 1 black
+68 157 1 black
+68 176 1 black
+69 31 -1 red
+69 32 1 black
+69 63 -1 red
+69 162 1 black
+70 17 1 black
+70 48 1 black
+70 57 1 black
+70 74 1 black
+70 77 1 black
+70 81 1 black
+70 101 1 black
+70 116 1 black
+70 163 1 black
+71 86 1 black
+72 48 1 black
+72 70 1 black
+72 81 1 black
+74 71 1 black
+75 10 1 black
+75 48 1 black
+75 59 1 black
+75 60 -1 red
+75 82 1 black
+75 91 1 black
+75 95 1 black
+75 126 1 black
+75 145 -1 red
+75 171 1 black
+75 180 -1 red
+76 42 1 black
+76 48 1 black
+76 56 1 black
+80 1 1 black
+80 4 1 black
+80 9 1 black
+80 10 1 black
+80 31 1 black
+80 42 1 black
+80 48 1 black
+80 53 1 black
+80 56 1 black
+80 63 1 black
+80 95 1 black
+80 108 1 black
+80 171 1 black
+81 63 1 black
+83 4 1 black
+83 52 1 black
+83 53 1 black
+83 150 1 black
+84 10 1 black
+84 48 1 black
+84 51 -1 red
+84 59 1 black
+84 77 1 black
+84 81 1 black
+84 95 1 black
+84 108 1 black
+86 1 1 black
+86 18 1 black
+86 48 1 black
+86 53 1 black
+86 67 1 black
+86 76 1 black
+86 81 1 black
+86 84 1 black
+86 89 1 black
+88 18 1 black
+88 31 1 black
+88 32 1 black
+88 42 1 black
+88 44 1 black
+88 48 1 black
+88 51 1 black
+88 53 1 black
+88 66 1 black
+88 81 1 black
+88 173 1 black
+89 31 1 black
+90 1 1 black
+90 48 1 black
+90 54 1 black
+90 56 1 black
+90 71 1 black
+90 77 1 black
+90 84 1 black
+90 89 1 black
+90 95 1 black
+90 126 -1 red
+92 18 1 black
+92 48 1 black
+92 50 1 black
+92 85 1 black
+93 95 1 black
+94 81 1 black
+95 48 1 black
+95 51 1 black
+95 81 1 black
+96 48 1 black
+96 56 1 black
+97 183 1 black
+98 74 1 black
+98 81 1 black
+99 32 1 black
+99 52 1 black
+99 53 1 black
+99 56 1 black
+99 122 1 black
+101 42 1 black
+101 197 1 black
+102 32 1 black
+102 34 1 black
+102 42 1 black
+102 45 1 black
+102 57 1 black
+102 81 1 black
+102 112 1 black
+104 53 1 black
+104 84 1 black
+104 102 1 black
+109 48 1 black
+109 55 -1 red
+110 48 -1 red
+113 82 1 black
+113 116 1 black
+114 48 -1 red
+114 53 -1 red
+114 60 -1 red
+115 10 1 black
+115 48 1 black
+119 1 1 black
+119 4 1 black
+119 18 1 black
+119 48 1 black
+119 49 1 black
+119 51 1 black
+119 115 1 black
+119 126 1 black
+124 18 1 black
+124 32 1 black
+124 48 1 black
+124 98 1 black
+124 99 1 black
+129 18 1 black
+129 48 1 black
+129 50 1 black
+129 53 1 black
+129 55 1 black
+129 56 1 black
+129 59 1 black
+129 109 1 black
+129 130 1 black
+129 131 1 black
+129 132 1 black
+129 133 1 black
+129 134 1 black
+129 135 1 black
+129 137 1 black
+129 138 1 black
+129 139 1 black
+129 140 1 black
+129 141 1 black
+129 143 1 black
+135 48 1 black
+135 56 1 black
+135 59 1 black
+136 48 1 black
+141 48 1 black
+141 56 1 black
+143 48 1 black
+143 53 1 black
+143 85 1 black
+145 1 1 black
+145 48 1 black
+145 49 1 black
+145 56 1 black
+145 84 -1 red
+145 95 -1 red
+145 114 -1 red
+145 126 -1 red
+145 143 1 black
+145 169 -1 red
+147 48 1 black
+147 56 1 black
+147 59 1 black
+149 48 1 black
+149 55 1 black
+149 81 1 black
+149 150 1 black
+149 151 1 black
+149 153 1 black
+149 154 1 black
+149 155 1 black
+149 157 1 black
+149 162 1 black
+149 164 1 black
+149 165 1 black
+149 167 1 black
+149 168 1 black
+149 171 1 black
+149 172 1 black
+149 173 1 black
+149 175 1 black
+149 176 1 black
+149 177 -1 red
+149 178 -1 red
+149 179 -1 red
+150 42 1 black
+150 48 1 black
+150 53 1 black
+150 59 1 black
+150 60 1 black
+150 63 1 black
+150 81 1 black
+150 113 1 black
+150 128 1 black
+150 171 1 black
+151 81 1 black
+152 16 1 black
+152 80 -1 red
+152 95 1 black
+152 108 -1 red
+152 171 -1 red
+152 173 1 black
+152 177 -1 red
+158 157 1 black
+160 9 1 black
+160 18 1 black
+160 48 1 black
+160 57 1 black
+160 60 1 black
+160 81 1 black
+160 84 1 black
+162 32 1 black
+162 42 1 black
+162 173 1 black
+162 177 -1 red
+163 48 1 black
+163 63 1 black
+165 60 -1 red
+165 63 1 black
+165 91 -1 red
+169 71 1 black
+169 108 1 black
+169 126 1 black
+170 32 1 black
+170 42 1 black
+170 162 1 black
+176 171 1 black
+177 87 1 black
+181 18 1 black
+181 48 1 black
+181 55 1 black
+181 56 1 black
+181 59 1 black
+181 101 1 black
+181 193 1 black
+183 59 1 black
+183 113 1 black
+186 53 1 black
+186 60 -1 red
+186 171 -1 red
+192 5 1 black
+192 31 1 black
+192 113 1 black
+192 183 1 black
+193 82 -1 red
+193 101 -1 red
+193 108 -1 red
+193 177 -1 red
+195 80 1 black
+195 113 1 black
+195 177 -1 red
+196 113 1 black
+198 23 1 black
+198 42 1 black
+199 200 1 black
+1 2 1 black
+1 4 1 black
+1 7 1 black
+1 9 1 black
+1 11 1 black
+1 12 1 black
+1 15 1 black
+1 17 1 black
+1 18 1 black
+1 19 1 black
+1 20 1 black
+1 22 1 black
+1 27 -1 red
+2 171 1 black
+4 9 1 black
+4 18 1 black
+4 48 1 black
+4 99 1 black
+6 59 1 black
+9 18 1 black
+9 19 1 black
+9 31 1 black
+9 48 1 black
+9 49 1 black
+9 50 1 black
+9 56 1 black
+9 59 1 black
+9 61 1 black
+9 70 -1 red
+9 84 1 black
+9 96 1 black
+9 99 1 black
+9 104 1 black
+9 119 1 black
+9 129 1 black
+9 131 1 black
+9 135 1 black
+9 143 1 black
+9 198 1 black
+10 18 1 black
+10 49 1 black
+10 50 1 black
+10 56 1 black
+10 57 1 black
+10 59 1 black
+10 61 1 black
+10 99 1 black
+10 119 1 black
+10 135 1 black
+10 145 1 black
+11 20 1 black
+12 68 1 black
+12 70 1 black
+12 76 1 black
+12 86 1 black
+12 88 1 black
+12 89 1 black
+12 93 1 black
+12 104 1 black
+17 88 1 black
+18 37 1 black
+18 48 1 black
+18 56 1 black
+18 57 1 black
+18 59 1 black
+18 61 1 black
+18 99 1 black
+18 109 1 black
+18 141 1 black
+18 143 1 black
+18 144 1 black
+18 145 1 black
+18 146 1 black
+18 147 1 black
+18 148 1 black
+30 84 1 black
+31 36 1 black
+31 37 1 black
+31 39 1 black
+31 43 1 black
+31 46 1 black
+31 47 1 black
+36 181 1 black
+36 184 1 black
+36 185 1 black
+36 186 1 black
+36 187 1 black
+36 188 1 black
+36 189 1 black
+36 190 1 black
+36 191 1 black
+36 192 1 black
+36 195 1 black
+36 196 1 black
+36 198 1 black
+37 56 1 black
+37 144 1 black
+37 148 1 black
+38 192 1 black
+39 43 1 black
+48 49 1 black
+48 50 1 black
+48 53 1 black
+48 54 1 black
+48 56 1 black
+48 57 1 black
+48 58 1 black
+48 59 1 black
+50 56 1 black
+50 99 1 black
+50 119 1 black
+50 135 1 black
+53 56 1 black
+53 61 1 black
+53 145 1 black
+54 75 -1 red
+56 57 1 black
+56 59 1 black
+56 61 1 black
+56 109 1 black
+56 114 1 black
+56 119 1 black
+56 124 1 black
+57 58 1 black
+59 81 1 black
+61 64 1 black
+61 66 1 black
+61 67 1 black
+61 68 1 black
+61 70 1 black
+61 71 1 black
+61 72 1 black
+61 73 1 black
+61 75 1 black
+61 76 1 black
+61 77 1 black
+61 80 1 black
+61 83 1 black
+61 84 1 black
+61 86 1 black
+61 88 1 black
+61 89 1 black
+61 90 1 black
+61 92 1 black
+61 93 1 black
+61 94 1 black
+61 96 1 black
+61 99 1 black
+61 101 1 black
+61 104 1 black
+62 100 1 black
+63 177 1 black
+66 184 1 black
+67 68 1 black
+67 70 1 black
+67 72 1 black
+67 74 1 black
+67 76 1 black
+67 80 1 black
+67 84 1 black
+67 88 1 black
+67 93 1 black
+67 102 1 black
+67 104 1 black
+67 163 1 black
+67 198 1 black
+68 70 1 black
+68 71 1 black
+68 72 1 black
+68 73 1 black
+68 76 1 black
+68 80 1 black
+68 84 1 black
+68 88 1 black
+68 89 1 black
+68 90 1 black
+68 93 1 black
+68 101 1 black
+68 102 1 black
+68 104 1 black
+68 149 1 black
+68 160 1 black
+68 163 1 black
+68 198 1 black
+69 184 1 black
+70 71 1 black
+70 76 1 black
+70 80 1 black
+70 84 1 black
+70 86 1 black
+70 88 1 black
+70 89 1 black
+70 90 1 black
+70 93 1 black
+70 104 1 black
+71 72 1 black
+71 73 1 black
+71 76 1 black
+71 77 1 black
+71 80 1 black
+71 84 1 black
+71 88 1 black
+71 89 1 black
+71 93 1 black
+71 102 1 black
+71 104 1 black
+71 160 1 black
+72 73 1 black
+72 77 1 black
+72 80 1 black
+72 86 1 black
+72 88 1 black
+72 89 1 black
+72 93 1 black
+72 104 1 black
+72 198 1 black
+73 76 1 black
+73 77 1 black
+73 80 1 black
+73 88 1 black
+73 89 1 black
+73 102 1 black
+73 104 1 black
+74 80 1 black
+74 93 1 black
+74 102 1 black
+75 84 1 black
+75 198 1 black
+76 77 1 black
+76 80 1 black
+76 88 1 black
+76 89 1 black
+76 93 1 black
+76 104 1 black
+77 80 1 black
+77 88 1 black
+77 89 1 black
+77 93 1 black
+77 102 1 black
+77 104 1 black
+77 160 1 black
+80 81 1 black
+80 84 1 black
+80 86 1 black
+80 88 1 black
+80 89 1 black
+80 90 1 black
+80 93 1 black
+80 96 1 black
+80 102 1 black
+80 104 1 black
+80 160 1 black
+80 169 1 black
+80 198 1 black
+81 96 1 black
+84 88 1 black
+84 93 1 black
+84 171 1 black
+86 93 1 black
+86 198 1 black
+88 89 1 black
+88 93 1 black
+88 99 1 black
+88 102 1 black
+88 104 1 black
+88 160 1 black
+88 198 1 black
+89 93 1 black
+89 101 1 black
+89 102 1 black
+89 104 1 black
+89 160 1 black
+89 198 1 black
+90 169 1 black
+93 102 1 black
+93 104 1 black
+93 160 1 black
+93 163 1 black
+93 198 1 black
+99 109 1 black
+101 162 1 black
+102 160 1 black
+104 160 1 black
+104 198 1 black
+113 176 1 black
+114 169 1 black
+119 135 1 black
+120 192 1 black
+129 136 1 black
+129 142 1 black
+144 148 1 black
+149 152 1 black
+149 156 1 black
+149 158 1 black
+149 159 1 black
+149 160 1 black
+149 161 1 black
+149 163 1 black
+149 166 1 black
+149 169 1 black
+149 170 1 black
+149 174 1 black
+150 198 1 black
+152 198 1 black
+160 198 1 black
+183 184 1 black
+184 192 1 black
+187 188 1 black
+188 189 1 black
+190 198 1 black
