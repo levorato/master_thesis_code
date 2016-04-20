@@ -876,9 +876,18 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								}
 
 								if(imsgpils.cudaEnabled) {
-									bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
+									try {
+										bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
 											imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 											problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+									} catch(std::exception& e) {  // possibly an exception caused by lack of GPU CUDA memory
+										BOOST_LOG_TRIVIAL(error) << e.what() << "\n";
+										BOOST_LOG_TRIVIAL(error) << "Lack of GPU memory detected: invoking sequential ILS (non CUDA)...";
+										// try to run the standard sequential ILS algorithm => FALLBACK
+										bestClustering = resolution.executeILS(construct, &vnd, &sg, imsgpils.iter,
+                                                                                        imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+                                                                                        problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+									}
 									timeSpent = CUDAILS.getTotalTimeSpent();
 								} else {
 									bestClustering = resolution.executeILS(construct, &vnd, &sg, imsgpils.iter,

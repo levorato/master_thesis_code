@@ -49,7 +49,7 @@ using namespace std;
 using namespace util;
 using namespace util::parallel;
 
-#define is_overloaded_process(list) not(list.size() > 2*(long)ceil(g->getN() / (double)numberOfProcesses))
+#define is_overloaded_process(list) ((list.size() >= 2*(long)ceil(g->getN() / (double)numberOfProcesses)) and (g->getN() <= 110000))
 
 ImbalanceSubgraphParallelILS::ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
 		const bool& split, const bool& cuda) : ILS(),
@@ -2269,13 +2269,24 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 		long num_comb = 0;
 		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
 		unsigned int numberOfProcesses = numberOfSlaves + 1;
+		resolution::ils::ILS resolution;
 		if(is_overloaded_process(vertexList)) {
 			CUDAILS cudails;
-			leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
-			timeSpent = cudails.getTotalTimeSpent();
-			num_comb = cudails.getNumberOfTestedCombinations();
+			try {
+				leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+				num_comb = cudails.getNumberOfTestedCombinations();
+				timeSpent = cudails.getTotalTimeSpent();
+			} catch(std::exception& e) {  // possibly an exception caused by lack of GPU CUDA memory
+                                BOOST_LOG_TRIVIAL(error) << e.what() << "\n";
+                                BOOST_LOG_TRIVIAL(error) << "Lack of GPU memory detected: invoking sequential ILS (non CUDA)...";
+                                // try to run the standard sequential ILS algorithm => FALLBACK
+                                leaderClustering = resolution.executeILS(construct2, vnd, &sg, iter,
+                                            iterMaxILS, perturbationLevelMax,
+                                            problem, info);
+				timeSpent = resolution.getTotalTimeSpent();
+	                        num_comb = resolution.getNumberOfTestedCombinations();
+                        }
 		} else {
-			resolution::ils::ILS resolution;
 			leaderClustering = resolution.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
 			timeSpent = resolution.getTotalTimeSpent();
 			num_comb = resolution.getNumberOfTestedCombinations();
