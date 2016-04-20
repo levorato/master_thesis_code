@@ -64,7 +64,8 @@ def processInstanceFiles(folders, filter):
                     print "\nProcessing file " + filename
 
                     try:
-                        invoke_pajek_solve_dm(filename, directory)
+                        for exec_num in xrange(1, 25):
+                            invoke_pajek_solve_dm(filename, directory, exec_num)
                     except Exception,e:
                         print "Error invoking Pajek for instance file {0}".format(filename)
                         print str(e)
@@ -81,8 +82,9 @@ def processInstanceFiles(folders, filter):
         print "\nDone.\n"
 
 
-def invoke_pajek_solve_dm(instance_file, output_folder):
+def invoke_pajek_solve_dm(instance_file, output_folder, exec_num):
 
+    print 'Execution number ' + str(exec_num)
     pajek_path = 'C:\Users\czt0\Downloads\Pajek4'
     pajek_exe_path = pajek_path + '\Pajek.exe'
     # open the instance_file and retrieves the number of vertices n
@@ -102,8 +104,8 @@ def invoke_pajek_solve_dm(instance_file, output_folder):
     k_dict = {200 : 7, 300 : 9, 400 : 6, 600 : 9, 800 : 14, 1000 : 18, 2000 : 31}
 
     # Single argument: file with gantt data
-    outputfile = os.path.join(output_folder, instance_file + ".rep")
-    solutionfile = os.path.join(output_folder, instance_file + ".txt")
+    outputfile = os.path.join(output_folder, instance_file[:instance_file.rfind('.')] + '-' + str(exec_num) + ".rep")
+    solutionfile = os.path.join(output_folder, instance_file[:instance_file.rfind('.')] + '-' + str(exec_num) + ".txt")
 
     if n in k_dict.keys():
         with open(os.path.join(output_folder, "Pajek.log"), "w") as t_file:
