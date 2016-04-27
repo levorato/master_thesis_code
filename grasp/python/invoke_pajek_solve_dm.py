@@ -26,19 +26,21 @@ def main(argv):
                         help='the folders containing the graph files in Pajek (.net) format')
     parser.add_argument('--filefilter', default='.net', required=False,
                         help='the filename extension for graph files (default: .net)')
+    parser.add_argument('--pajekpath', default='C:\Users\czt0\Downloads\Pajek4', required=False,
+                        help='the installation folder of Pajek')
     args = parser.parse_args()
     folders = args.folders
     filter = args.filefilter
-
-    args = parser.parse_args()
+    pajek_path = args.pajekpath
 
     print 'Graph file folders are ', folders
     print 'File filter is ', filter
+    print 'Pajek installation folder is ', pajek_path
 
-    processInstanceFiles(folders, filter)
+    processInstanceFiles(folders, filter, pajek_path)
 
 
-def processInstanceFiles(folders, filter):
+def processInstanceFiles(folders, filter, pajek_path):
 
     for folder in folders:
         print "Processing folder " + ''.join(folder)
@@ -51,41 +53,41 @@ def processInstanceFiles(folders, filter):
             if len(files):
                 file_list = [f for f in files if filter in f]
 
-                for file in file_list:
-                    directory = os.path.join(root, 'dm_results')
-                    if not os.path.exists(directory):
-                        os.makedirs(directory)
+                for exec_num in xrange(1, 25):
+                    for file in file_list:
+                        directory = os.path.join(root, 'dm_results')
+                        if not os.path.exists(directory):
+                            os.makedirs(directory)
+                        print "Output folder is " + str(directory)
 
-                    # measure elapsed time during instance generation
-                    start = time.time()
+                        # measure elapsed time during instance generation
+                        start = time.time()
 
-                    file = os.path.join(root, file)
-                    filename = file
-                    print "\nProcessing file " + filename
+                        file = os.path.join(root, file)
+                        filename = file
+                        print "\nProcessing file " + filename
 
-                    try:
-                        for exec_num in xrange(1, 25):
-                            invoke_pajek_solve_dm(filename, directory, exec_num)
-                    except Exception,e:
-                        print "Error invoking Pajek for instance file {0}".format(filename)
-                        print str(e)
-                        traceback.print_exc()
-                        continue
+                        try:
+                            invoke_pajek_solve_dm(pajek_path, filename, directory, exec_num)
+                        except Exception,e:
+                            print "Error invoking Pajek for instance file {0}".format(filename)
+                            print str(e)
+                            traceback.print_exc()
+                            continue
 
-                    print "Invoked Pajek for instance file {0}".format(filename)
-                    end = time.time()
-                    elapsed = end - start
-                    print "Execution took {0:.2f} seconds.".format(elapsed)
-                # end loop
-                # process last file
+                        print "Invoked Pajek for instance file {0}".format(filename)
+                        end = time.time()
+                        elapsed = end - start
+                        print "Execution took {0:.2f} seconds.".format(elapsed)
+                    # end loop
+                    # process last file
 
         print "\nDone.\n"
 
 
-def invoke_pajek_solve_dm(instance_file, output_folder, exec_num):
+def invoke_pajek_solve_dm(pajek_path, instance_file, output_folder, exec_num):
 
     print 'Execution number ' + str(exec_num)
-    pajek_path = 'C:\Users\czt0\Downloads\Pajek4'
     pajek_exe_path = pajek_path + '\Pajek.exe'
     # open the instance_file and retrieves the number of vertices n
     n = 0
@@ -103,9 +105,9 @@ def invoke_pajek_solve_dm(instance_file, output_folder, exec_num):
     # Determine the number of clusters for each file, depending on n
     k_dict = {200 : 7, 300 : 9, 400 : 6, 600 : 9, 800 : 14, 1000 : 18, 2000 : 31}
 
-    # Single argument: file with gantt data
-    outputfile = os.path.join(output_folder, instance_file[:instance_file.rfind('.')] + '-' + str(exec_num) + ".rep")
-    solutionfile = os.path.join(output_folder, instance_file[:instance_file.rfind('.')] + '-' + str(exec_num) + ".txt")
+    base_filename = instance_file[instance_file.rfind(os.path.sep)+1:instance_file.rfind('.')]
+    outputfile = os.path.join(output_folder, base_filename + '-' + str(exec_num) + ".rep")
+    solutionfile = os.path.join(output_folder, base_filename + '-' + str(exec_num) + ".txt")
 
     if n in k_dict.keys():
         with open(os.path.join(output_folder, "Pajek.log"), "w") as t_file:
@@ -121,7 +123,7 @@ def invoke_pajek_solve_dm(instance_file, output_folder, exec_num):
                 t_file.write('N 1 RDN "' + instance_file + '" (' + str(n) + ')\n')
                 t_file.write('C 1 RANDOMC ' + str(k_dict[n]) + ' (' + str(n) + ')\n')
                 t_file.write('Msg Partitioning Signed Networks according to Structural Balance\n')
-                t_file.write('C 2 BALANCE 1 1 [1000 0.500 0 1 0 0] (' + str(n) + ')\n')
+                t_file.write('C 2 BALANCE 1 1 [100 0.500 0 1 0 0] (' + str(n) + ')\n')
                 t_file.write('SAVEREPORT "' + outputfile + '"\n')
                 t_file.write('Msg Saving partition to file   ---    ' + solutionfile + '\n')
                 t_file.write('C 2 WC "' + solutionfile + '" (' + str(n) + ')\n')
