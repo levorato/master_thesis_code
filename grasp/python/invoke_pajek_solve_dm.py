@@ -21,7 +21,7 @@ import StringIO
 
 
 def main(argv):
-    parser = argparse.ArgumentParser(description='Invoke Pajek via command-line to solve .net files.')
+    parser = argparse.ArgumentParser(description='Invoke Pajek via command-line to solve .net files via Doreian Mrvar Method.')
     parser.add_argument('folders', nargs='+',
                         help='the folders containing the graph files in Pajek (.net) format')
     parser.add_argument('--filefilter', default='.net', required=False,
@@ -53,7 +53,7 @@ def processInstanceFiles(folders, filter, pajek_path):
             if len(files):
                 file_list = [f for f in files if filter in f]
 
-                for exec_num in xrange(1, 25):
+                for exec_num in xrange(0, 25):
                     for file in file_list:
                         directory = os.path.join(root, 'dm_results')
                         if not os.path.exists(directory):
@@ -68,7 +68,7 @@ def processInstanceFiles(folders, filter, pajek_path):
                         print "\nProcessing file " + filename
 
                         try:
-                            invoke_pajek_solve_dm(pajek_path, filename, directory, exec_num)
+                            invoke_pajek_solve_dm(pajek_path, filename, directory, exec_num+1)
                         except Exception,e:
                             print "Error invoking Pajek for instance file {0}".format(filename)
                             print str(e)
