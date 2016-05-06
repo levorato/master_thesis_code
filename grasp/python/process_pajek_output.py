@@ -254,6 +254,7 @@ def process_result_files(instance_path, folders):
                 avg_results = grouped_results.agg([np.mean, np.median, np.max, lambda x: (np.std(x, ddof=1)/np.sqrt(x.count())) * 1.96])  # , np.std
                 print "Aggregated results:\n"
                 print avg_results
+                avg_results.to_csv('aggregated.csv')
 
         print "\nDone.\n"
 
