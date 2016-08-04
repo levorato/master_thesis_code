@@ -59,6 +59,8 @@ def configure(conf):
 	
 	# check that we have 'cp'
 	conf.find_program('cp', VAR='CP')
+
+	conf.env.append_value('CXXFLAGS', '-DBOOST_ALL_DYN_LINK -DMPIBULL_IGNORE_CXX_SEEK -m64 -O3 -fPIC -pthread -Wl,-rpath=/scratch/ilscc/boost/lib -Wl,-rpath=/scratch/ilscc/libuuid/usr/lib64')
 	
 	pass
 
@@ -66,18 +68,19 @@ def build(bld):
 	
 	t = bld.stlib(
 				features='cxx cxxprogram',
-				cxxflags  = ['-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-m64', '-O3', '-fPIC', '-pthread'],
+				cppflags  = ['-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-m64', '-O3', '-fPIC', '-pthread', '-Wl,-rpath=/scratch/ilscc/boost/lib', '-Wl,-rpath=/scratch/ilscc/libuuid/usr/lib64'],
+				
+				linkflags = ['-Wl,-rpath=/scratch/ilscc/boost/lib', '-Wl,-rpath=/scratch/ilscc/libuuid/usr/lib64', '-DBOOST_ALL_DYN_LINK', '-DMPIBULL_IGNORE_CXX_SEEK', '-m64', '-O3', '-fPIC', '-pthread'],
 				cudaflags = ["--ptxas-options=-v --compiler-options -arch sm_20 -use_fast_math -DBOOST_NOINLINE='__attribute__ ((noinline))'"], 
         		#rule='${NVCC} ${CXXFLAGS} ${SRC} ${CXXLNK_TGT_F} ${TGT}',
         		#includes=['build'],
         		source   = bld.path.ant_glob("src/**/*.cu src/**/*.cpp"),
-        		includes = '. /home_nfs/mlevorato/include /home/mario/include /usr/local/boost/include /home/levorato/include /usr/include /usr/include/mpi /opt/mpich2_p1/include /opt/mpi/mpibull2-1.3.9-18.s/include /usr/include/openmpi-x86_64 /usr/lib/openmpi/include/openmpi /usr/lib/openmpi/include ../graph-common/src /usr/local/cuda/include',
+        		includes = '. /prj/ilscc/boost/include /home_nfs/mlevorato/include /home/mario/include /usr/local/boost/include /home/levorato/include /usr/include /usr/include/mpi /opt/mpich2_p1/include /opt/mpi/mpibull2-1.3.9-18.s/include /usr/include/openmpi-x86_64 /usr/lib/openmpi/include/openmpi /usr/lib/openmpi/include ../graph-common/src /usr/local/cuda/include /opt/mpi/bullxmpi_gnu/1.2.8.4/include /prj/ilscc/mario.junior/libuuid/usr/include',
         		include = ['/usr/local/cuda/include'],
         		target='graspcc',
-        		#cxxflags=['-dc'],
-        		uselib='BSERIAL dl opa rt boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_date_time boost_log boost_log_setup cuda cudart curand',
-                lib = ['dl', 'pthread', 'rt', 'uuid', 'mpi', 'mpi_cxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_chrono', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log_setup', 'boost_log', 'open-rte', 'open-pal', 'nsl', 'util', 'm', 'cuda', 'cudart', 'curand'],
-                libpath = ['/home_nfs/mlevorato/lib', '/home/mario/lib', '/home/levorato/lib', '/usr/local/boost/lib', '/usr/lib', '/lib64', '/usr/lib64', '/usr/lib', '/usr/lib64/openmpi/lib', '/usr/lib/openmpi/lib', '/usr/lib64/mpich2/lib', '/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi', '/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock', '/opt/mpi/mpibull2-1.3.9-18.s/lib', '/home_nfs/3.2.2.006/lib64', 'build', '/usr/local/cuda/lib64'],
+        		uselib='BSERIAL dl opa rt boost_serialization boost_system boost_filesystem boost_timer boost_program_options boost_random boost_mpi boost_thread boost_regex boost_atomic boost_date_time boost_log boost_log_setup cuda cudart curand',
+                lib = ['dl', 'pthread', 'rt', 'uuid', 'mpi', 'mpi_cxx', 'boost_serialization', 'boost_system', 'boost_filesystem', 'boost_chrono', 'boost_timer', 'boost_program_options', 'boost_random', 'boost_mpi', 'boost_thread', 'boost_date_time', 'boost_log_setup', 'boost_regex', 'boost_atomic', 'boost_log', 'open-rte', 'open-pal', 'nsl', 'util', 'm', 'cuda', 'cudart', 'curand'],
+                libpath = ['/prj/ilscc/boost/lib', '/home_nfs/mlevorato/lib', '/home/mario/lib', '/home/levorato/lib', '/usr/local/boost/lib', '/usr/lib', '/lib64', '/usr/lib64', '/usr/lib', '/usr/lib64/openmpi/lib', '/usr/lib/openmpi/lib', '/usr/lib64/mpich2/lib', '/opt/mpi/mpibull2-1.3.9-18.s/lib/pmi', '/opt/mpi/mpibull2-1.3.9-18.s/lib/drivers/osock', '/opt/mpi/mpibull2-1.3.9-18.s/lib', '/home_nfs/3.2.2.006/lib64', 'build', '/usr/local/cuda/lib64', '/opt/mpi/bullxmpi_gnu/1.2.8.4/lib', '/prj/ilscc/mario.junior/libuuid/usr/lib64'],
 				stlib=['graph-common', 'cudadevrt'],
 				stlibpath=[os.path.join(os.getcwd(), '../graph-common/build')],
         		use = 'CUDA CUDART') # -lcudadevrt

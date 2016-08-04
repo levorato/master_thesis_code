@@ -13,58 +13,59 @@ using namespace problem;
 using namespace resolution::construction;
 using namespace clusteringgraph;
 
-	typedef unsigned char ubyte;
-	typedef unsigned short ushort;
-	typedef unsigned int uint;
-	typedef unsigned long ulong;
+
 
 
 	bool run1optSearchKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 				thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
-				ulong n, ulong m, ushort threadsCount, ulong& nc, ulong numberOfChunks, bool firstImprovement,
-				thrust::host_vector<uint>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
-				thrust::host_vector<float>& h_VertexClusterNegSum, uint& bestSrcVertex, uint& destcluster,
+				unsigned long n, unsigned long m, unsigned short threadsCount, unsigned long& nc, 
+				unsigned long numberOfChunks, bool firstImprovement,
+				thrust::host_vector<unsigned int>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
+				thrust::host_vector<float>& h_VertexClusterNegSum, unsigned int& bestSrcVertex, unsigned int& destcluster,
 				float& destFunctionValue, const long& timeSpentSoFar, const unsigned int& l);
 
 	bool runVNDKernel(thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 				thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
-				ulong n, ulong m, ushort threadsCount, ulong& nc, ulong numberOfChunks, bool firstImprovement,
-				thrust::host_vector<uint>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
-				thrust::host_vector<float>& h_VertexClusterNegSum, thrust::host_vector<uint> &h_neighbor_cluster,
-				std::vector<uint>& sourceVertexList, std::vector<uint>& destinationClusterList,
+				unsigned long n, unsigned long m, unsigned short threadsCount, unsigned long& nc, 
+				unsigned long numberOfChunks, bool firstImprovement,
+				thrust::host_vector<unsigned int>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
+				thrust::host_vector<float>& h_VertexClusterNegSum, thrust::host_vector<unsigned int> &h_neighbor_cluster,
+				std::vector<unsigned int>& sourceVertexList, std::vector<unsigned int>& destinationClusterList,
 				float& destPositiveImbalance, float& destNegativeImbalance, const long& timeSpentSoFar, const unsigned int& l);
 
 	extern "C" bool run2optSearchKernel(thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
-				ulong n, ulong m, thrust::host_vector<unsigned long>& h_destcluster1,
+				unsigned long n, unsigned long m, thrust::host_vector<unsigned long>& h_destcluster1,
 				thrust::host_vector<unsigned long>& h_destcluster2,
-				thrust::host_vector<float>& h_destFunctionValue, ushort threadsCount, ulong nc, ulong numberOfChunks,
+				thrust::host_vector<float>& h_destFunctionValue, unsigned short threadsCount, 
+				unsigned long nc, unsigned long numberOfChunks,
 				bool firstImprovement,
-				thrust::host_vector<uint>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
+				thrust::host_vector<unsigned int>& h_randomIndex, thrust::host_vector<float>& h_VertexClusterPosSum,
 				thrust::host_vector<float>& h_VertexClusterNegSum);
 
 	bool runGRASPKernel(ClusteringProblem& problem, ConstructClustering &construct,
-				SignedGraph *g, int processRank, ulong timeLimit, int iter,
+				SignedGraph *g, int processRank, unsigned long timeLimit, int iter,
 				thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
-				ulong n, ulong m, ushort threadsCount, bool firstImprovement,
+				unsigned long n, unsigned long m, unsigned short threadsCount, bool firstImprovement,
 				Clustering& result, int &totalIterations, double& timeSpentConstruct, double& timeSpentGRASP,
 				stringstream &constructivePhaseResults, stringstream &iterationResults);
 
 	bool runILSKernel(ClusteringProblem& problem, ConstructClustering &construct,
-				SignedGraph *g, int processRank, ulong timeLimit,
+				SignedGraph *g, int processRank, unsigned long timeLimit,
 				const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
 				thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
-				ulong n, ulong m, ushort threadsCount, bool firstImprovement,
+				unsigned long n, unsigned long m, unsigned short threadsCount, bool firstImprovement,
 				Clustering& result, int &totalIterations, double& timeSpentConstruct, double& timeSpentILS,
 				stringstream &constructivePhaseResults, stringstream &iterationResults);
 
-	bool runConstructKernel(ulong randomSeed, thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
+	bool runConstructKernel(unsigned long randomSeed, thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
 				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
 				thrust::host_vector<unsigned long>& h_mycluster, thrust::host_vector<float>& h_functionValue,
-				ulong n, ulong m, ulong nc, ushort threadsCount, thrust::host_vector<unsigned long>& h_newcluster,
+				unsigned long n, unsigned long m, unsigned long nc, unsigned short threadsCount, 
+				thrust::host_vector<unsigned long>& h_newcluster,
 				double& imbalance);
 
 }
