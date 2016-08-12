@@ -268,8 +268,7 @@ def main(argv):
                                             line += 1
 
                         cluster_df = pd.DataFrame(vertex_cluster_tuples, columns=['id_vertex', 'id_cluster'])
-                        result = pd.merge(dcode_df, cluster_df, on='id_vertex')
-                        print result
+                        result_df = pd.merge(dcode_df, cluster_df, on='id_vertex')
 
                         # from this point on, makes calculations based on the graph (imbalance)
                         if (result_file_name.startswith('rcc')):  # process mediation info from rcc result
@@ -410,8 +409,15 @@ def main(argv):
                         # for line in clustering_numbers:
                         #     result_file.write(line)
 
+                        deputies_in_cluster = []
+                        result_df['party'] = result_df['party'].str.strip()
+                        result_df['state'] = result_df['state'].str.strip()
+                        result_df['nome_e_partido'] = result_df['name'] + ' (' + result_df['party']  + '-' + result_df['state'] + ')'
+                        deputies_in_cluster_df = result_df[['id_cluster', 'nome_e_partido']].groupby(['id_cluster'])['nome_e_partido'].apply(list)
+                        print deputies_in_cluster_df
+
                         if (result_file_name.startswith('cc')):
-                            cc_result_summary[graphfile] = vertices_in_cluster
+                            cc_result_summary[graphfile] = deputies_in_cluster_df.tolist()
                             cc_imbalance_summary[graphfile] = [str(imbalance), str(pos_edge_sum + neg_edge_sum), str(
                                 round(100 * imbalance / (pos_edge_sum + neg_edge_sum), 2)), str(pos_imbalance),
                                                                str(pos_edge_sum),
@@ -419,7 +425,7 @@ def main(argv):
                                                                str(neg_imbalance), str(neg_edge_sum),
                                                                str(round(100 * neg_imbalance / neg_edge_sum, 2))]
                         else:  # rcc
-                            rcc_result_summary[graphfile] = vertices_in_cluster
+                            rcc_result_summary[graphfile] = deputies_in_cluster_df.tolist()
                             rcc_imbalance_summary[graphfile] = [str(imbalance), str(pos_edge_sum + neg_edge_sum), str(
                                 round(100 * imbalance / (pos_edge_sum + neg_edge_sum), 2)), str(pos_imbalance),
                                                                 str(pos_edge_sum),
