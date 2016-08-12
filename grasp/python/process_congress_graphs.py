@@ -409,15 +409,20 @@ def main(argv):
                         # for line in clustering_numbers:
                         #     result_file.write(line)
 
+                        # Codigo de criacao das tabelas de deputados por ano
                         deputies_in_cluster = []
                         result_df['party'] = result_df['party'].str.strip()
                         result_df['state'] = result_df['state'].str.strip()
                         result_df['nome_e_partido'] = result_df['name'] + ' (' + result_df['party']  + '-' + result_df['state'] + ')'
-                        deputies_in_cluster_df = result_df[['id_cluster', 'nome_e_partido']].groupby(['id_cluster'])['nome_e_partido'].apply(list)
+                        deputies_in_cluster_series = result_df[['id_cluster', 'nome_e_partido']].groupby(['id_cluster'])['nome_e_partido'].apply(lambda x: u', '.join(x).encode('utf-8').strip())
+                        deputies_in_cluster_df = deputies_in_cluster_series.to_frame()
+                        deputies_in_cluster_df['#'] = result_df[['id_cluster', 'nome_e_partido']].groupby(['id_cluster'])['nome_e_partido'].apply(lambda x: len(x))
                         print deputies_in_cluster_df
 
                         if (result_file_name.startswith('cc')):
-                            cc_result_summary[graphfile] = deputies_in_cluster_df.tolist()
+                            pd.set_option('display.max_colwidth', -1)
+                            cc_result_summary[graphfile] = deputies_in_cluster_df.to_html(columns = [1, 0],
+                                                                                          formatters = {'nome_e_partido': (lambda x: u', '.join(x).encode('utf-8').strip())})
                             cc_imbalance_summary[graphfile] = [str(imbalance), str(pos_edge_sum + neg_edge_sum), str(
                                 round(100 * imbalance / (pos_edge_sum + neg_edge_sum), 2)), str(pos_imbalance),
                                                                str(pos_edge_sum),
@@ -425,7 +430,7 @@ def main(argv):
                                                                str(neg_imbalance), str(neg_edge_sum),
                                                                str(round(100 * neg_imbalance / neg_edge_sum, 2))]
                         else:  # rcc
-                            rcc_result_summary[graphfile] = deputies_in_cluster_df.tolist()
+                            rcc_result_summary[graphfile] = deputies_in_cluster_df.to_html()
                             rcc_imbalance_summary[graphfile] = [str(imbalance), str(pos_edge_sum + neg_edge_sum), str(
                                 round(100 * imbalance / (pos_edge_sum + neg_edge_sum), 2)), str(pos_imbalance),
                                                                 str(pos_edge_sum),
@@ -464,17 +469,17 @@ def main(argv):
         t.rows.append(imbalance_array)
         html += str(t) + '</p><p>'
 
-        t = HTML.Table(header_row=['Partition', '#', 'Deputies'])
-        count = 0
-        partition_tuples = []
-        for item in value:
-            partition_tuples.append([str(count + 1), len(item), str(item)])
-            count += 1
-        # sort partitions by partition size
-        for item in sorted(partition_tuples, key=lambda partition: partition[1]):
-            t.rows.append(item)
+        # t = HTML.Table(header_row=['Partition', '#', 'Deputies'])
+        # count = 0
+        # partition_tuples = []
+        # for item in value:
+        #     partition_tuples.append([str(count + 1), len(item), str(item)])
+        #     count += 1
+        # # sort partitions by partition size
+        # for item in sorted(partition_tuples, key=lambda partition: partition[1]):
+        #     t.rows.append(item)
 
-        html += str(t)
+        html += u''.join(value).encode('utf-8').strip()
         html += '</p><br/>Cluster to cluster imbalance contribution matrix'
         # append imbalance matrix
         html += cc_cluster_imb_matrix[key] + '<br/>'
@@ -508,17 +513,18 @@ def main(argv):
         t.rows.append(imbalance_array)
         html += str(t) + '</p><p>'
 
-        t = HTML.Table(header_row=['Partition', '#', 'Deputies'])
-        count = 0
-        partition_tuples = []
-        for item in value:
-            partition_tuples.append([str(count + 1), len(item), str(item)])
-            count += 1
+        # t = HTML.Table(header_row=['Partition', '#', 'Deputies'])
+        # count = 0
+        # partition_tuples = []
+        # for item in value:
+        #     partition_tuples.append([str(count + 1), len(item), str(item)])
+        #     count += 1
+        #
+        # for item in sorted(partition_tuples, key=lambda partition: partition[1]):
+        #     t.rows.append(item)
 
-        for item in sorted(partition_tuples, key=lambda partition: partition[1]):
-            t.rows.append(item)
-
-        html += str(t)
+        #html += str(t)
+        html += u''.join(value).encode('utf-8').strip()
         html += '</p><br/><h4>Mediation analysis</h4>'
 
         html += "\n<br>Clusters with plus mediators (internal positive edges + external positive edges): <br>"
