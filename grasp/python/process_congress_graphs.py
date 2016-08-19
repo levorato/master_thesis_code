@@ -4,8 +4,7 @@
 # to run this script, please install:
 # sudo apt-get install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose python-tk
 
-# .dcode files location
-dcode_dir = 'C:\\Users\\czt0\\Downloads\\git\\houseofcunha\\instances'
+# .dcode files location is the same folder where the instance files are located
 
 import sys, getopt
 import csv
@@ -79,7 +78,6 @@ def main(argv):
 
     csv.field_size_limit(1000000000)
 
-    global dcode_dir
     folder = ''
     filter = ''
     instances_path = ''
@@ -128,6 +126,8 @@ def main(argv):
     PlusMediators = dict()
     PlusMutuallyHostileMediators = dict()
     InternalSubgroupHostility = dict()
+    all_cc_results_df = pd.DataFrame({'A': []})
+    all_srcc_results_df = pd.DataFrame({'A': []})
 
     previous_filename = ''
     for root, subFolders, files in os.walk(folder):
@@ -156,8 +156,11 @@ def main(argv):
                 # graphfile is the graph file currently being processed
                 graphfile = graphfile[graphfile.rfind(os.path.sep) + 1:]
                 file_prefix = graphfile[0:graphfile.rfind('-v')]
-                dcode_filename = os.path.join(dcode_dir, file_prefix + '-dcode.csv')
+                graph_version = graphfile[graphfile.rfind('-')+1:graphfile.rfind('.')]
+                dcode_filename = os.path.join(instances_path, file_prefix + '-dcode.csv')
                 print file_prefix
+                current_year = file_prefix[file_prefix.find('-')+1:]
+                print current_year
                 dcode_df = pd.read_csv(dcode_filename, encoding="utf-8-sig", sep=';', header=0,
                                        names=['id_dep', 'id_vertex', 'name', 'party', 'state'])
 
@@ -269,6 +272,24 @@ def main(argv):
 
                         cluster_df = pd.DataFrame(vertex_cluster_tuples, columns=['id_vertex', 'id_cluster'])
                         result_df = pd.merge(dcode_df, cluster_df, on='id_vertex')
+                        result_df['year'] = current_year
+                        result_df['version'] = graph_version
+                        result_df = result_df.set_index(['id_vertex', 'year', 'version'])
+                        print len(result_df.index)
+                        # agrega todos os resultados (por ano e por versao do grafo) em um dataframe para o CC e outro para o SRCC
+                        if (result_file_name.startswith('cc')):
+                            if all_cc_results_df.empty:
+                                all_cc_results_df = result_df
+                            else:
+                                all_cc_results_df = all_cc_results_df.append(result_df)
+                            print len(all_cc_results_df.index)
+                        else:
+                            if all_srcc_results_df.empty:
+                                all_srcc_results_df = result_df
+                            else:
+                                all_srcc_results_df = all_srcc_results_df.append(result_df)
+                            print len(all_srcc_results_df.index)
+                        #print all_cc_results_df
 
                         # from this point on, makes calculations based on the graph (imbalance)
                         if (result_file_name.startswith('rcc')):  # process mediation info from rcc result
@@ -417,7 +438,7 @@ def main(argv):
                         deputies_in_cluster_series = result_df[['id_cluster', 'nome_e_partido']].groupby(['id_cluster'])['nome_e_partido'].apply(lambda x: u', '.join(x).encode('utf-8').strip())
                         deputies_in_cluster_df = deputies_in_cluster_series.to_frame()
                         deputies_in_cluster_df['#'] = result_df[['id_cluster', 'nome_e_partido']].groupby(['id_cluster'])['nome_e_partido'].apply(lambda x: len(x))
-                        print deputies_in_cluster_df
+                        #print deputies_in_cluster_df
 
                         if (result_file_name.startswith('cc')):
                             pd.set_option('display.max_colwidth', -1)
@@ -450,6 +471,17 @@ def main(argv):
                 # end process results  # TODO implementar tabela com os valores de contribuicao pos/neg entre clusters
 
     print "\nSuccessfully processed all graph files.\n"
+
+    # Create a Pandas Excel writer using XlsxWriter as the engine.
+    writer = pd.ExcelWriter(os.path.join(folder, 'congress-all_results.xlsx'), engine='xlsxwriter')
+
+    # Convert the dataframe to an XlsxWriter Excel object.
+    all_cc_results_df.to_excel(writer, sheet_name='CC')
+    all_srcc_results_df.to_excel(writer, sheet_name='SRCC')
+
+    # Close the Pandas Excel writer and output the Excel file.
+    writer.save()
+    print "\nExported all results to Excel file.\n"
 
     # exports summary to HTML file
     # Exporting CC and RCC results
@@ -563,7 +595,7 @@ def main(argv):
     html += '</p>'
     partial_html_rcc.append(html)
 
-    with open(folder + '/congress-cc-rcc-summary.html', 'w') as rccfile:
+    with open(os.path.join(folder, 'congress-cc-rcc-summary.html'), 'w') as rccfile:
         rccfile.write(mhtml)
         for i in range(0, len(partial_html_cc)):
             rccfile.write(partial_html_cc[i])
