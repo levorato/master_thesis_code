@@ -903,7 +903,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								}
 							}
 						} else {
-							if(imsgpils.cudaEnabled) {
+							// CUDA ILS is only available to the CC problem
+							if(imsgpils.cudaEnabled and imsgpils.problemType == ClusteringProblem::CC_PROBLEM) {
 								bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
 														imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 														problemFactory.build(imsgpils.problemType, imsgpils.k), info);

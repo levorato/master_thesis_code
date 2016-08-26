@@ -94,9 +94,15 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 		}
 		// the leader does its part of the work
-		CUDAILS cudails;
-		Clustering bestClustering = cudails.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
-
+		resolution::ils::ILS resolution;
+		resolution::ils::CUDAILS CUDAILS;
+		Clustering bestClustering;
+		if(cudaEnabled and problem.getType() == problem.CC_PROBLEM) {  // CUDA ILS is only available to the CC problem
+			bestClustering = CUDAILS.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+		} else {
+			bestClustering = resolution.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+		}
+		
 		// the leader receives the processing results
 		OutputMessage omsg;
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Waiting for slaves return messages.";
