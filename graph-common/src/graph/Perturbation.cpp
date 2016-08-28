@@ -12,6 +12,7 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <cassert>
 
 namespace clusteringgraph {
 
@@ -28,6 +29,7 @@ Clustering Perturbation::randomMove(SignedGraph* g, Clustering clustering, Clust
 
 	// BOOST_LOG_TRIVIAL(debug)<< "Generating perturbation of level " << numberOfMoves;
 	Clustering c = clustering;
+	ClusterArray cluster = clustering.getClusterArray();
 	RandomUtil randomUtil;
 	randomUtil.setSeed(this->_randomSeed);
 
@@ -38,13 +40,37 @@ Clustering Perturbation::randomMove(SignedGraph* g, Clustering clustering, Clust
 	for(int i = 0; i < n; i++) {
 		nodeList[i] = i;
 	}
+	// shuffles the vertices in the graph and chooses vertices from this list (draw) to be moved
 	std::random_shuffle(nodeList.begin(), nodeList.end());
-	for(int i = 0; i < numberOfMoves; i++) {
+	for(int i = 0, moveCount = 0; (i < n) and (moveCount < numberOfMoves); i++) {
 		nc = c.getNumberOfClusters();
-		int k2 = randomUtil.next(0, nc - 1);
+		// vertex idx is the random vertex to be moved
 		int idx = randomUtil.next(0, n - 1);
+		// k1 is vertex idx's current cluster
+		int k1 = cluster[idx];
+		// Avoid removing a unitary cluster if RCCProblem
+		if((p.getType() == ClusteringProblem::RCC_PROBLEM) and (clustering.getClusterSize(k1) == 1)) {
+			// if RCCProblem, gets the next random vertex whose cluster size is bigger than one (to avoid removing a cluster)
+			continue;
+		}
+		// k2 is the destination cluster
+		int k2 = randomUtil.next(0, nc - 1);
+		if(k2 == k1) {  // k2 == k1 is used to symbolize the move to a new cluster in a perturbation
+			if(p.getType() == ClusteringProblem::RCC_PROBLEM) {
+				RCCProblem& rp = static_cast<RCCProblem&>(p);
+				long k = rp.getK();
+				if(k > 0) {  // SRCC problem with k > 0 (fixed number of clusters) MUST not allow new clusters!
+					// repeat the draw until k2 != k1
+					while(k2 == k1) {
+						k2 = randomUtil.next(0, nc - 1);
+					}
+				}
+			}
+		}
 		// cout << "k2 = " << k2 << endl;
 		c = move1optCCProblem(g, c, p, idx, k2);
+		// move was successful -> increments the move count
+		moveCount++;
 	}
 	return c;
 }
@@ -59,7 +85,7 @@ Clustering Perturbation::move1optCCProblem(SignedGraph* g, Clustering clustering
 	// (B) ==== Random cluster k2 ====
 	ClusterArray cluster = clustering.getClusterArray();
 	int k1 = cluster[node];
-	if(k2 == k1) {
+	if(k1 == k2) {
 		k2 = Clustering::NEW_CLUSTER;
 	}
 	// removes node from cluster k1 and inserts in cluster k2

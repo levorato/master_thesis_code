@@ -12,6 +12,8 @@
 #include "include/NeighborhoodSearch.h"
 #include "../util/include/MPIMessage.h"
 #include "../util/include/RandomUtil.h"
+#include "../problem/include/RCCProblem.h"
+#include "../problem/include/CCProblem.h"
 #include <boost/numeric/ublas/matrix.hpp>
 using namespace boost::numeric::ublas;
 
