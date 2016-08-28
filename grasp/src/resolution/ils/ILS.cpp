@@ -65,6 +65,16 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 	timer.resume();
 	start_time = timer.elapsed();
 
+	// max number of clusters (RCC Problem Only)
+	long k = 0;
+	if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
+		RCCProblem& rp = static_cast<RCCProblem&>(problem);
+		k = rp.getK();
+		if(k > 0) {
+			BOOST_LOG_TRIVIAL(info) << "ILS SRCC: Using number of clusters (CLI parameter) for RCC k value: " << k << ".";
+		}
+	}
+
 	Clustering previousCc = CStar;
 	CBest = CStar;
 	Clustering Cc = CStar;
@@ -207,7 +217,8 @@ Clustering ILS::executeILS(ConstructClustering *construct, VariableNeighborhoodD
 	constructivePhaseResults << "Average initial I(P)," << fixed << setprecision(4) << (initialImbalanceSum / iterMax)
 			<< endl;
 
-	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue();
+	BOOST_LOG_TRIVIAL(info) << "ILS procedure done. Obj = " << fixed << setprecision(2) << bestValue.getValue()
+			<< "; k = " << CBest.getNumberOfClusters();;
 	BOOST_LOG_TRIVIAL(info) << "Time spent on construction phase: " << fixed << setprecision(2) << totalTimeSpentOnConstruction << "s, " << (100 * totalTimeSpentOnConstruction / timeSpentInILS) << "%.";
 	BOOST_LOG_TRIVIAL(info) << "Time spent on local search: " << fixed << setprecision(2) << timeSpentOnLocalSearch << "s, " << (100 * timeSpentOnLocalSearch / timeSpentInILS) << "%.";
 	// CStar.printClustering();

@@ -9,6 +9,9 @@
 #include "problem/include/ClusteringProblem.h"
 #include "graph/include/Imbalance.h"
 
+#include "problem/include/RCCProblem.h"
+#include "problem/include/CCProblem.h"
+
 #include <algorithm>
 #include <iostream>
 #include <iomanip>

@@ -253,6 +253,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
  				BOOST_LOG_TRIVIAL(info) << "RCC Problem: Using CC solution number of clusters as RCC k value: " << k << ".";
  			} else if(k < 0) {  // if k < 0, skips the construct clustering phase in the metaheuristic and uses the best solution from CC alg.
                 RCCConstruct = &NoConstruct;
+ 			} else {
+ 				BOOST_LOG_TRIVIAL(info) << "RCC Problem: Using number of clusters (CLI parameter) for RCC k value: " << k << ".";
  			}
 
  			// medicao de tempo do RCC
@@ -323,7 +325,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			out << analysis << endl;
 			// Closes the file
 			out.close();
-			BOOST_LOG_TRIVIAL(info) << "RCC Solve done. Obj = " << RCCimb.getValue();
+			BOOST_LOG_TRIVIAL(info) << "RCC Solve done. Obj = " << RCCimb.getValue() << "; k = " << RCCCluster.getNumberOfClusters();
  		}
 
 	} else {
@@ -910,6 +912,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 														problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 								timeSpent = CUDAILS.getTotalTimeSpent();
 							} else {
+								BOOST_LOG_TRIVIAL(info) << "Parallel ILS SRCC: Using number of clusters (CLI parameter) for RCC k value: " << imsgpils.k << ".";
 								bestClustering = resolution.executeILS(construct, &vnd, g.get(), imsgpils.iter,
 														imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
 														problemFactory.build(imsgpils.problemType, imsgpils.k), info);

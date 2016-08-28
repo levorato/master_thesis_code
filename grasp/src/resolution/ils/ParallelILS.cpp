@@ -75,6 +75,8 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		k = rp.getK();
 		if(k < 0) {  // reuses CC problem's best solution in the constructive phase
 			CCclustering = *(construct->getCCclustering());
+		} else if(k > 0) {
+			BOOST_LOG_TRIVIAL(info) << "ILS SRCC: Using number of clusters (CLI parameter) for RCC k value: " << k << ".";
 		}
 	}
 	// the leader distributes the work across the processors

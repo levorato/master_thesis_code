@@ -114,6 +114,8 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		int n = g->getN();
 		// Repartitions the clustering so that initial clustering has exactly k clusters
 		while (Cc.getNumberOfClusters() < k) {
+			BOOST_LOG_TRIVIAL(info)<< "RCC post-processing: initial cluster has " << Cc.getNumberOfClusters()
+					<< ", should have " << k << "clusters.";
 			ClusterArray myCluster = Cc.getClusterArray();
 			// BOOST_LOG_TRIVIAL(debug)<< "Cc less than k clusters detected.";
 			// Splits a cluster in two new clusters
@@ -141,18 +143,18 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 				Cc.addNodeToCluster(*g, problem, v.vertex, new_c, false);
 			}
 		}
-		BOOST_LOG_TRIVIAL(debug)<< "RCC post-processing completed.";
+		BOOST_LOG_TRIVIAL(info)<< "RCC post-processing completed.";
 		// Cc.printClustering();
 	}
 	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
-	BOOST_LOG_TRIVIAL(info)<< "Initial clustering completed. Obj = " << Cc.getImbalance().getValue();
+	BOOST_LOG_TRIVIAL(info)<< "Initial clustering completed. Obj = " << Cc.getImbalance().getValue()
+				 << "; k = " << Cc.getNumberOfClusters();
 	timer.stop();
-        end_time = timer.elapsed();
-        timeSpent = (end_time.wall - start_time.wall)
-                         / double(1000000000);
-        if(timeSpent >= 3600) {
-                BOOST_LOG_TRIVIAL(info)<< "Construct clustering done and post-processing done. Total time: " << timeSpent;
-        }
+	end_time = timer.elapsed();
+	timeSpent = (end_time.wall - start_time.wall) / double(1000000000);
+	if(timeSpent >= 3600) {
+			BOOST_LOG_TRIVIAL(info)<< "Construct clustering done and post-processing done. Total time: " << timeSpent;
+	}
 
 	// Cc.printClustering();
 	return Cc;
