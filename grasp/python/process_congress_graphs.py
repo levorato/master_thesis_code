@@ -276,20 +276,7 @@ def main(argv):
                         result_df['version'] = graph_version
                         result_df = result_df.set_index(['id_vertex', 'year', 'version'])
                         print len(result_df.index)
-                        # agrega todos os resultados (por ano e por versao do grafo) em um dataframe para o CC e outro para o SRCC
-                        if (result_file_name.startswith('cc')):
-                            if all_cc_results_df.empty:
-                                all_cc_results_df = result_df
-                            else:
-                                all_cc_results_df = all_cc_results_df.append(result_df)
-                            print len(all_cc_results_df.index)
-                        else:
-                            if all_srcc_results_df.empty:
-                                all_srcc_results_df = result_df
-                            else:
-                                all_srcc_results_df = all_srcc_results_df.append(result_df)
-                            print len(all_srcc_results_df.index)
-                        #print all_cc_results_df
+
 
                         # from this point on, makes calculations based on the graph (imbalance)
                         if (result_file_name.startswith('rcc')):  # process mediation info from rcc result
@@ -432,13 +419,28 @@ def main(argv):
 
                         # Codigo de criacao das tabelas de deputados por ano
                         deputies_in_cluster = []
-                        result_df['party'] = result_df['party'].str.strip()
-                        result_df['state'] = result_df['state'].str.strip()
+                        result_df['party'] = result_df['party'].map(lambda x: x.strip())
+                        result_df['state'] = result_df['state'].map(lambda x: x.strip())
+                        result_df['name'] = result_df['name'].map(lambda x: x.strip())
                         result_df['nome_e_partido'] = result_df['name'] + ' (' + result_df['party']  + '-' + result_df['state'] + ')'
                         deputies_in_cluster_series = result_df[['id_cluster', 'nome_e_partido']].groupby(['id_cluster'])['nome_e_partido'].apply(lambda x: u', '.join(x).encode('utf-8').strip())
                         deputies_in_cluster_df = deputies_in_cluster_series.to_frame()
                         deputies_in_cluster_df['#'] = result_df[['id_cluster', 'nome_e_partido']].groupby(['id_cluster'])['nome_e_partido'].apply(lambda x: len(x))
                         #print deputies_in_cluster_df
+                        # agrega todos os resultados (por ano e por versao do grafo) em um dataframe para o CC e outro para o SRCC
+                        if (result_file_name.startswith('cc')):
+                            if all_cc_results_df.empty:
+                                all_cc_results_df = result_df
+                            else:
+                                all_cc_results_df = all_cc_results_df.append(result_df)
+                            print len(all_cc_results_df.index)
+                        else:
+                            if all_srcc_results_df.empty:
+                                all_srcc_results_df = result_df
+                            else:
+                                all_srcc_results_df = all_srcc_results_df.append(result_df)
+                            print len(all_srcc_results_df.index)
+                            # print all_cc_results_df
 
                         if (result_file_name.startswith('cc')):
                             pd.set_option('display.max_colwidth', -1)
@@ -474,6 +476,10 @@ def main(argv):
 
     # Create a Pandas Excel writer using XlsxWriter as the engine.
     writer = pd.ExcelWriter(os.path.join(folder, 'congress-all_results.xlsx'), engine='xlsxwriter')
+
+    all_cc_results_df['party'] = all_cc_results_df['party'].map(lambda x: x.strip())
+    all_cc_results_df['state'] = all_cc_results_df['state'].map(lambda x: x.strip())
+    all_cc_results_df['name'] = all_cc_results_df['name'].map(lambda x: x.strip())
 
     # Convert the dataframe to an XlsxWriter Excel object.
     all_cc_results_df.to_excel(writer, sheet_name='CC')
