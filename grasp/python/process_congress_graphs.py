@@ -126,6 +126,7 @@ def main(argv):
     PlusMediators = dict()
     PlusMutuallyHostileMediators = dict()
     InternalSubgroupHostility = dict()
+    MediatorsClusterIndices = []
     all_cc_results_df = pd.DataFrame({'A': []})
     all_srcc_results_df = pd.DataFrame({'A': []})
 
@@ -324,15 +325,22 @@ def main(argv):
                                     PlusMediators[graphfile] = (
                                     "Cluster " + str(c + 1) + str(" (%%IntPosEdges = %.2f" % (PIntPosEdges)) + str(
                                         " and %%ExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
+                                    MediatorsClusterIndices.append((current_year, graph_version, c, 'Plus mediators',
+                                                                        str("%%IntPosEdges = %.2f" % (PIntPosEdges)) + str(
+                                                                        " and %%ExtPosEdges = %.2f" % (PExtPosEdges))) )
                                 if (PIntNegEdges > threshold and PExtPosEdges > threshold):
                                     PlusMutuallyHostileMediators[graphfile] = (
                                     "Cluster " + str(c + 1) + str(" (%%IntNegEdges = %.2f" % (PIntNegEdges)) + str(
                                         " and %%ExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
+                                    MediatorsClusterIndices.append((current_year, graph_version, c, 'Plus mutually hostile mediators',
+                                                                        str("%%IntNegEdges = %.2f" % (" and %%ExtPosEdges = %.2f" % (PExtPosEdges))) ))
                                 if (PIntNegEdges > threshold and PExtNegEdges > threshold):
                                     InternalSubgroupHostility[graphfile] = (
                                     "Cluster " + str(c + 1) + str(" (%%IntNegEdges = %.2f" % (PIntNegEdges)) + str(
                                         " and %%ExtNegEdges = %.2f" % (PExtNegEdges)) + ")")
-
+                                    MediatorsClusterIndices.append((current_year, graph_version, c, 'Internal subgroup hostility',
+                                                                        str("%%IntNegEdges = %.2f" % (PIntNegEdges)) + str(" and %%ExtNegEdges = %.2f" % (PExtNegEdges))) )
+                            # end for c in clusters
                         # export cluster imb matrix to html
                         matrixline = ['Cluster']
                         for line in xrange(1, numberOfClusters + 1):
@@ -474,8 +482,9 @@ def main(argv):
 
     print "\nSuccessfully processed all graph files.\n"
 
+    # Writes the clustering results to Excel
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    writer = pd.ExcelWriter(os.path.join(folder, 'congress-all_results.xlsx'), engine='xlsxwriter')
+    writer = pd.ExcelWriter(os.path.join(folder, 'congress-all_clustering_results.xlsx'), engine='xlsxwriter')
 
     all_cc_results_df['party'] = all_cc_results_df['party'].map(lambda x: x.strip())
     all_cc_results_df['state'] = all_cc_results_df['state'].map(lambda x: x.strip())
@@ -487,6 +496,13 @@ def main(argv):
 
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
+
+    # Writes the mediation group analysis to Excel
+    mediation_df = pd.DataFrame(MediatorsClusterIndices, columns=['Year', 'Version', 'ClusterID', 'Mediator Type', 'Percentages'])
+    writer = pd.ExcelWriter(os.path.join(folder, 'congress-all_mediation_results.xlsx'), engine='xlsxwriter')
+    mediation_df.to_excel(writer, sheet_name='SRCC-Mediation')
+    writer.save()
+
     print "\nExported all results to Excel file.\n"
 
     # exports summary to HTML file
