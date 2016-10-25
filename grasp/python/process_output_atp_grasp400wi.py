@@ -147,6 +147,7 @@ def processCCResult(folder):
                         reader = csv.reader(StringIO.StringIO(content), delimiter=',')
                         linecount = 0
                         best_value = sys.float_info.max
+                        iter_without_improvement = 0
                         iter_bestsol = 0
                         time_bestsol = float(0.0)
 
@@ -166,8 +167,11 @@ def processCCResult(folder):
                                 best_value = value
                                 iter_bestsol = linecount
                                 time_bestsol = float(column[5])
+                                iter_without_improvement = 0
+                            else:
+                                iter_without_improvement += 1
 
-                            if column[0].find('Best value') >= 0:
+                            if iter_without_improvement == 400:
                                 filepath = ''.join(file_list[count])
                                 # obtains the best result found by a specific execution of a specific node (can be parallel)
                                 value = float(column[1])
@@ -175,13 +179,12 @@ def processCCResult(folder):
                                 neg_value = float(column[3])
                                 K = long(column[4])
                                 iteration = long(iter_bestsol)
-                                #best_time = time_bestsol
-                                best_time = float(column[6])
-                                total_iter = long(column[5])
+                                best_time = time_bestsol
+                                global_time = float(column[5])
+                                total_iter = long(column[0])
                                 # totalizes the number of visited solutions of all nodes running in parallel
-                                total_comb = long(column[8])
+                                total_comb = 0
                                 break
-
                             linecount += 1
                             # next line
                         count = count - 1
@@ -232,7 +235,7 @@ def processCCResult(folder):
     # http://pandas.pydata.org/pandas-docs/version/0.15.1/generated/pandas.DataFrame.to_latex.html
     # print avg_results.to_latex()
     # http://pandas.pydata.org/pandas-docs/version/0.15.1/generated/pandas.DataFrame.to_csv.html?highlight=to_csv#pandas.DataFrame.to_csv
-    avg_results.to_csv(folder + '/' + str(experiment_name) + '-400wi.csv')
+    avg_results.to_csv(str(experiment_name) + '-400wi.csv')
 
     #print best_results.agg([np.sum, np.mean, np.std])
 
