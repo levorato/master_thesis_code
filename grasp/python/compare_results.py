@@ -18,7 +18,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 def main(argv):
 
-    csv.field_size_limit(sys.maxsize)
+    csv.field_size_limit(100000)
 
     parser = argparse.ArgumentParser(description='Compare GRASP / ILS - CC result files.')
     parser.add_argument('folders', nargs='+',
@@ -31,16 +31,18 @@ def main(argv):
     folders = args.folders
     filter = args.filefilter
     labels = args.labels
+    #sol_multiplier = 1.001
+    sol_multiplier = 1.0016#18123
 
     args = parser.parse_args()
 
     print 'Input folders are ', folders
     print 'File filter is ', filter
 
-    processCCResult(folders, labels)
+    processCCResult(folders, labels, sol_multiplier)
 
 
-def processCCResult(folders, labels):
+def processCCResult(folders, labels, sol_multiplier):
 
     # for each folder (algorithm), determines the best solution value
     # compares the solution values of each folder and uses the worst solution value as Target I(P)
@@ -64,20 +66,20 @@ def processCCResult(folders, labels):
 
             print "Processing folder " + ''.join(root1)
             if (''.join(root1) != folder):  # process only subfolders
-                current_folder = (root1[root1.rfind("/") + 1 :])
+                current_folder = (root1[root1.rfind(os.path.sep) + 1 :])
                 if '.g' in current_folder:
                     filename = current_folder
 
                     for root, subFolders, files in os.walk(root1):
                         # Process CC results
-                        if os.path.isfile(root + "/cc-result.txt"):
-                            filename = (root[:root.rfind("/")])
-                            filename = filename[filename.rfind("/")+1:]
-                            datetime = root[root.rfind("/") + 1:]
+                        if os.path.isfile(root + os.path.sep + "cc-result.txt"):
+                            filename = (root[:root.rfind(os.path.sep)])
+                            filename = filename[filename.rfind(os.path.sep)+1:]
+                            datetime = root[root.rfind(os.path.sep) + 1:]
 
                             best_value = float(100000000)
 
-                            content_file = open(root + "/cc-result.txt", 'r')
+                            content_file = open(root + os.path.sep + "cc-result.txt", 'r')
                             try:
                                 content = content_file.read()
 
@@ -116,7 +118,7 @@ def processCCResult(folders, labels):
         worstSolValues.append(worst_file_summary)
 
         # Save CC results of all executions of all instances to csv file: Time to reach best solution and total time spent
-        #result_file = open(folder + "/summary.csv", "w")
+        #result_file = open(folder + os.path.sep + "summary.csv", "w")
         #print "Instance, I(P), I(P)+, I(P)-, k, Iter, Local time(s), Global time(s), Params, Total Iter, Total Comb"
         #result_file.write("ExecutionID; I(P); I(P)+; I(P)-; k; IterBestSol; TimeToBestSol; Global time(s); Params; Total Iter; NumVisitedSolutions\n")
         #for key in sorted(all_files_summary.iterkeys()):
@@ -163,7 +165,7 @@ def processCCResult(folders, labels):
     # for each instance in worse_sol, discover the time each algorithm took to reach that solution
     chsol = dict()
     for key in best_sol.iterkeys():
-        chsol[key] = (float(best_sol[key])*(1.001))
+        chsol[key] = (float(best_sol[key])*(sol_multiplier))
     ttt_for_algorithm = dict()  # contains the ttt dict for a specific algorithm / folder
     for folder in folders:
         ttt_for_algorithm[folder] = processTimeToTarget(folder, chsol)  # worse_sol, best_sol
@@ -308,22 +310,22 @@ def processTimeToTarget(folder, worse_sol):
         #print "Processing folder " + ''.join(root)
         if (len(files) and ''.join(root) != folder):
             file_list = []
-            file_list.extend(glob.glob(root + "/CC*-iterations.csv"))
-            file_list.extend(glob.glob(root + "/Node*-iterations.csv"))
+            file_list.extend(glob.glob(root + os.path.sep + "CC*-iterations.csv"))
+            file_list.extend(glob.glob(root + os.path.sep + "Node*-iterations.csv"))
             count = len(file_list) - 1
 
             # Process CC results
-            if os.path.isfile(root + "/cc-result.txt"):
-                filename = (root[:root.rfind("/")])
-                datetime = root[root.rfind("/") + 1:]
-                filename = filename[filename.rfind("/") + 1:]
-                myfolder = root[:root.rfind("/")]
+            if os.path.isfile(root + os.path.sep + "cc-result.txt"):
+                filename = (root[:root.rfind(os.path.sep)])
+                datetime = root[root.rfind(os.path.sep) + 1:]
+                filename = filename[filename.rfind(os.path.sep) + 1:]
+                myfolder = root[:root.rfind(os.path.sep)]
                 #print "Processing instance " + myfolder + ", " + filename
                 if instance_dict.has_key(filename):
                     if instance_dict[filename] <> myfolder:
                         print "WARN: problem with result folder structure!\n"
                 else:
-                    instance_dict[filename] = root[:root.rfind("/")]
+                    instance_dict[filename] = root[:root.rfind(os.path.sep)]
     # end result folder scan
     tttdict = dict()  # tttdict contains the time-to-target list for each instance for this algorithm
     for key in sorted(instance_dict.iterkeys()):
@@ -342,6 +344,8 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
 
     print "\n\nTime-to-target for instance " + str(filename)
     target_value = float(worse_sol[filename])
+    if filename.find("-size8000-part0.g") > 0:
+        target_value = float(16068.0)
     print "\nDesired target I(P) = " + str(target_value)
 
     previous_filename = ""
@@ -353,15 +357,15 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
         #print "Processing folder " + ''.join(root)
         if (len(files) and ''.join(root) != folder):
             file_list = []
-            file_list.extend(glob.glob(root + "/CC*-iterations.csv"))
-            file_list.extend(glob.glob(root + "/Node*-iterations.csv"))
+            file_list.extend(glob.glob(root + os.path.sep + "CC*-iterations.csv"))
+            file_list.extend(glob.glob(root + os.path.sep + "Node*-iterations.csv"))
             count = len(file_list) - 1
 
             # Process CC results
-            if os.path.isfile(root + "/cc-result.txt"):
-                filename = (root[:root.rfind("/")])
-                datetime = root[root.rfind("/") + 1:]
-                filename = filename[filename.rfind("/") + 1:]
+            if os.path.isfile(root + os.path.sep + "cc-result.txt"):
+                filename = (root[:root.rfind(os.path.sep)])
+                datetime = root[root.rfind(os.path.sep) + 1:]
+                filename = filename[filename.rfind(os.path.sep) + 1:]
                 # print "Processing instance " + filename
 
                 value = 0
