@@ -59,7 +59,7 @@ def processCCResult(folders, labels, sol_multiplier):
     worstSolValues = []
 
     for folder in folders:
-        print "Processing folder " + ''.join(folder)
+        #print "Processing folder " + ''.join(folder)
         # CC results
         worst_file_summary = dict()
         best_file_summary = dict()
@@ -70,7 +70,7 @@ def processCCResult(folders, labels, sol_multiplier):
             subFolders1.sort()
             files1.sort()
 
-            print "Processing folder " + ''.join(root1)
+            #print "Processing folder " + ''.join(root1)
             if (''.join(root1) != folder):  # process only subfolders
                 current_folder = (root1[root1.rfind(os.path.sep) + 1 :])
                 if '.g' in current_folder:
@@ -269,11 +269,13 @@ def processCCResult(folders, labels, sol_multiplier):
 
     # TODO export TTT series to be used in TTT-plot-latex
     print '\nTTT data for use with TTT-Latex\n'
-    data_to_plot = []
+    data_to_plot = {}
     instance_names = []
     for instance_name in best_file_summary.iterkeys():
         print str(instance_name) + ':\n'
         folder_count = 0
+        data_to_plot[instance_name] = []
+        instance_names.append(instance_name)
         for folder in folders:
             tttdict = dict(ttt_for_algorithm[folder])
             tttlist = tttdict[instance_name]
@@ -284,8 +286,7 @@ def processCCResult(folders, labels, sol_multiplier):
             # Remove the outliers from the list of TTT
             tttarray = np.array(tttlist)
             filtered = tttarray[~is_outlier(tttarray)]
-            data_to_plot.append(filtered)
-            instance_names.append(instance_name + "/" + labels[folder_count])
+            data_to_plot[instance_name].append(filtered)
             folder_count += 1
 
     print "Generating box plot graph for time-to-target series for each instance..."
@@ -485,59 +486,65 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
 
 
 def generate_box_plot(data_to_plot, instance_names, labels):
-    print data_to_plot
-    print instance_names
-
-    #df = pd.DataFrame(data_to_plot, index=instance_names)
-    #f.T.boxplot()
-    #plt.subplots_adjust(bottom=0.25)
-    #plt.xticks(rotation=25)
-    #plt.show()
+    # group boxplots - http://stackoverflow.com/questions/20365122/how-to-make-a-grouped-boxplot-graph-in-matplotlib
+    fig = plt.figure(1, figsize=(40, 30))
+    fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(15, 60)) #ncols=len(labels)) #, sharex=True, sharey=True)
+    #fig.subplots_adjust(wspace=0)
 
     # Create a figure instance
-    fig = plt.figure(1, figsize=(30, 20))
+    #fig = plt.figure(1, figsize=(30, 20))
 
     # Create an axes instance
-    ax = fig.add_subplot(111)
+    #ax = fig.add_subplot(111)
 
     # Create the boxplot
     ## add patch_artist=True option to ax.boxplot()
     ## to get fill color
-    bp = ax.boxplot(data_to_plot, patch_artist=True, vert=False) #, showfliers=False)
+    #bp = ax.boxplot(data_to_plot, patch_artist=True, vert=False) #, showfliers=False)
 
-    ## change outline color, fill color and linewidth of the boxes
-    for box in bp['boxes']:
-        # change outline color
-        box.set(color='#7570b3', linewidth=2)
-        # change fill color
-        box.set(facecolor='#1b9e77')
+    for ax, name in zip(axes, instance_names):
+        print "Processing instance " + name
 
-    ## change color and linewidth of the whiskers
-    for whisker in bp['whiskers']:
-        whisker.set(color='#7570b3', linewidth=2)
+        bp = ax.boxplot([data_to_plot[name][item] for item in xrange(0, len(labels))], patch_artist=True, vert=False) #, showfliers=False)
+        ax.set(yticklabels=labels) #, ylabel=name)
+        ax.set_ylabel(name, rotation = 0)
 
-    ## change color and linewidth of the caps
-    for cap in bp['caps']:
-        cap.set(color='#7570b3', linewidth=2)
+        #ax.margins(0.05)  # Optional
 
-    ## change color and linewidth of the medians
-    for median in bp['medians']:
-        median.set(color='#b2df8a', linewidth=2)
+        ## change outline color, fill color and linewidth of the boxes
+        for box in bp['boxes']:
+            # change outline color
+            box.set(color='#7570b3', linewidth=2)
+            # change fill color
+            box.set(facecolor='#1b9e77')
 
-    ## change the style of fliers and their fill
-    for flier in bp['fliers']:
-        flier.set(marker='o', color='#e7298a', alpha=0.5)
+        ## change color and linewidth of the whiskers
+        for whisker in bp['whiskers']:
+            whisker.set(color='#7570b3', linewidth=2)
 
-    ## Remove top axes and right axes ticks
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
+        ## change color and linewidth of the caps
+        for cap in bp['caps']:
+            cap.set(color='#7570b3', linewidth=2)
+
+        ## change color and linewidth of the medians
+        for median in bp['medians']:
+            median.set(color='#b2df8a', linewidth=2)
+
+        ## change the style of fliers and their fill
+        for flier in bp['fliers']:
+            flier.set(marker='o', color='#e7298a', alpha=0.5)
+
+        ## Remove top axes and right axes ticks
+        ax.get_xaxis().tick_bottom()
+        ax.get_yaxis().tick_left()
 
     ## Custom y-axis labels
-    ax.set_yticklabels(instance_names)
+    #ax.set_yticklabels(instance_names)
 
     # Save the figure
+    plt.tight_layout()
     fig.show()
-    fig.savefig('box_plot.png', bbox_inches='tight')
+    fig.savefig('box_plot.png') #, bbox_inches='tight')
 
 
 # Originally in http://stackoverflow.com/questions/11882393/matplotlib-disregard-outliers-when-plotting
