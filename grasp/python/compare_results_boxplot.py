@@ -15,6 +15,7 @@ import numpy as np
 import random
 import matplotlib as mpl
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
+from matplotlib.backends.backend_pdf import PdfPages
 
 ## agg backend is used to create plot as a .png file
 mpl.use('agg')
@@ -289,8 +290,16 @@ def processCCResult(folders, labels, sol_multiplier):
             data_to_plot[instance_name].append(filtered)
             folder_count += 1
 
+    experiment_name = ''
+    for folder in folders:
+        experiment_name = experiment_name + folder[folder.rfind('/') + 1:] + '-vs-'
+    tdir = './compare_results'
+    if not os.path.exists(tdir):
+        os.makedirs(tdir)
+    result_file_prefix = tdir + '/' + str(experiment_name)
+
     print "Generating box plot graph for time-to-target series for each instance..."
-    generate_box_plot(data_to_plot, instance_names, labels)
+    generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix)
     print "Box plots successfully generated."
 
     cols = ['Instance', 'Target I(P)']  # 'AvgTimeToTarget', 'Stddev-TTT', 'Speedup'
@@ -312,14 +321,8 @@ def processCCResult(folders, labels, sol_multiplier):
     df = pd.DataFrame(CompleteInstanceDataSet)
     print df[cols]
 
-    experiment_name = ''
-    for folder in folders:
-        experiment_name = experiment_name + folder[folder.rfind('/') + 1:] + '-vs-'
 
-    tdir = './compare_results'
-    if not os.path.exists(tdir):
-        os.makedirs(tdir)
-    df.to_csv(tdir + '/' + str(experiment_name) + '.csv')
+    df.to_csv(result_file_prefix + '.csv')
 
 
 def processTimeToTarget(folder, worse_sol):
@@ -485,11 +488,11 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
     return tttlist
 
 
-def generate_box_plot(data_to_plot, instance_names, labels):
+def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     # group boxplots - http://stackoverflow.com/questions/20365122/how-to-make-a-grouped-boxplot-graph-in-matplotlib
-    fig = plt.figure(1, figsize=(40, 30))
-    fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(15, 60)) #ncols=len(labels)) #, sharex=True, sharey=True)
-    #fig.subplots_adjust(wspace=0)
+    fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(15, 27)) #ncols=len(labels)) #, sharex=True, sharey=True)
+    fig.subplots_adjust(wspace=0)
+    fig.subplots_adjust(hspace=0)
 
     # Create a figure instance
     #fig = plt.figure(1, figsize=(30, 20))
@@ -542,9 +545,14 @@ def generate_box_plot(data_to_plot, instance_names, labels):
     #ax.set_yticklabels(instance_names)
 
     # Save the figure
-    plt.tight_layout()
+    #plt.tight_layout()
+    plt.subplots_adjust(hspace=.001)
     fig.show()
-    fig.savefig('box_plot.png') #, bbox_inches='tight')
+    print "Saving box plot png file to " + result_file_prefix + '-box_plot.png'
+    fig.savefig(result_file_prefix + '-box_plot.png') #, bbox_inches='tight')
+    pp = PdfPages(result_file_prefix + '-box_plot.pdf')
+    pp.savefig(plt.gcf())
+    pp.close()
 
 
 # Originally in http://stackoverflow.com/questions/11882393/matplotlib-disregard-outliers-when-plotting
