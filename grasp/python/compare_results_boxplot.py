@@ -1,6 +1,26 @@
 # to run this script, please install:
 # sudo apt-get install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose python-tk
 
+# <editor-fold desc="Command-line arguments to calculate chinese box plot graph.">
+# /home/mlevorato/Downloads/mestrado-output-temp/output/ils-seq-SetParA/agents-seq-l1-ils10s-a0.4-fi-imb-2h
+# /home/mlevorato/Downloads/mestrado-output-temp/output/grasp-bullmpi/agents-seq-l1-grasp400s-a1.0-fi-imb-2h
+# --labels
+# SeqILS
+# SeqGRASP
+# --excludefiles
+# c4n16k16pin0.7p-0.0p+0.0.g
+# c4n32k20pin0.7p-0.6p+0.6.g
+# c4n64k32pin0.8p-0.0p+0.1.g
+# c4n64k32pin0.8p-0.0p+0.4.g
+# c4n64k32pin0.8p-0.0p+0.6.g
+# c4n64k32pin0.8p-0.0p+0.8.g
+# c4n64k32pin0.8p-0.0p+1.0.g
+# c4n64k32pin0.8p-0.2p+1.0.g
+# c4n64k32pin0.8p-0.6p+0.0.g
+# c4n64k32pin0.8p-0.8p+0.0.g
+# c4n64k32pin0.8p-1.0p+0.0.g
+# </editor-fold>
+
 import sys, getopt
 import csv
 import StringIO
@@ -33,10 +53,13 @@ def main(argv):
                         help='the file extension for result files (default: *.csv)')
     parser.add_argument('--labels', nargs='+',
                         help='the experiment labels (one for each experiment / MH)')
+    parser.add_argument('--excludefiles', nargs='+',
+                        help='instance file name(s) to exlude from boxplot graphs')
     args = parser.parse_args()
     folders = args.folders
     filter = args.filefilter
     labels = args.labels
+    exclude = args.excludefiles
     #sol_multiplier = 1.001
     #sol_multiplier = 1.0016#18123
     sol_multiplier = 1.0
@@ -45,11 +68,12 @@ def main(argv):
 
     print 'Input folders are ', folders
     print 'File filter is ', filter
+    print 'Instance files to be excluded are ', exclude
 
-    processCCResult(folders, labels, sol_multiplier)
+    processCCResult(folders, labels, sol_multiplier, exclude)
 
 
-def processCCResult(folders, labels, sol_multiplier):
+def processCCResult(folders, labels, sol_multiplier, exclude):
 
     # for each folder (algorithm), determines the best solution value
     # compares the solution values of each folder and uses the worst solution value as Target I(P)
@@ -273,6 +297,10 @@ def processCCResult(folders, labels, sol_multiplier):
     data_to_plot = {}
     instance_names = []
     for instance_name in best_file_summary.iterkeys():
+        if exclude != None:
+            if instance_name in exclude:
+                print "Skipping file " + str(instance_name) + ':\n'
+                continue
         print str(instance_name) + ':\n'
         folder_count = 0
         data_to_plot[instance_name] = []
@@ -490,7 +518,7 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
 
 def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     # group boxplots - http://stackoverflow.com/questions/20365122/how-to-make-a-grouped-boxplot-graph-in-matplotlib
-    fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(15, 27)) #ncols=len(labels)) #, sharex=True, sharey=True)
+    fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(20, 27)) #ncols=len(labels)) #, sharex=True, sharey=True)
     fig.subplots_adjust(wspace=0)
     fig.subplots_adjust(hspace=0)
 
@@ -505,21 +533,53 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     ## to get fill color
     #bp = ax.boxplot(data_to_plot, patch_artist=True, vert=False) #, showfliers=False)
 
-    for ax, name in zip(axes, instance_names):
+    for ax, name in zip(axes, sorted(instance_names)):
         print "Processing instance " + name
 
         bp = ax.boxplot([data_to_plot[name][item] for item in xrange(0, len(labels))], patch_artist=True, vert=False) #, showfliers=False)
         ax.set(yticklabels=labels) #, ylabel=name)
-        ax.set_ylabel(name, rotation = 0)
+        # remove the .g file extension from instance name
+        if '.g' in name:
+            name = name[:name.rfind('.g')]
+        if name.find('file_') >= 0:  # remove file_ prefix from graph files and replace it with 'n='
+            name = name[5:]
+            n = name[:name.find('_')]
+            d = name[name.find('_')+1:name.rfind('_')]
+            d_minus = name[name.rfind('_')+1:]
+            label_name_1 = 'n = ' + n
+            label_name_2 = 'd = ' + d
+            label_name_3 = 'd- = ' + d_minus
+        else:  # chinese instance files
+            c = name[name.find('c')+1:name.find('n')]
+            n = name[name.find('n')+1:name.find('k')]
+            k = name[name.find('k')+1:name.find('pin')]
+            pin = name[name.find('pin')+3:name.find('p-')]
+            p_minus = name[name.find('p-')+2:name.find('p+')]
+            p_plus = name[name.find('p+')+2:]
+            label_name_1 = 'c = ' + c + ', n = ' + n + '            '
+            label_name_2 = 'k = ' + k + ', pin = ' + pin + '          '
+            label_name_3 = 'p- = ' + p_minus + ', p+ = ' + p_plus + '        '
+        ax.set_ylabel(label_name_1 + '\n' + label_name_2 + '\n' + label_name_3 + '\n\n', rotation = 0, labelpad = 70)
+        ax.set_xlabel("Execution time (s)", labelpad=20)
+        ax.tick_params(axis='y', which='major', pad=5)
 
         #ax.margins(0.05)  # Optional
 
         ## change outline color, fill color and linewidth of the boxes
+        count = 0
         for box in bp['boxes']:
             # change outline color
-            box.set(color='#7570b3', linewidth=2)
+            if count % 2 == 0:
+                box.set(color='#DAA520', linewidth=2)
+            else:
+                box.set(color='#7570b3', linewidth=2)
             # change fill color
-            box.set(facecolor='#1b9e77')
+            if count % 2 == 0:
+                #box.set(facecolor='#1b9e77')
+                box.set(facecolor='#FFFF66')
+            else:
+                box.set(facecolor='#800080')
+            count += 1
 
         ## change color and linewidth of the whiskers
         for whisker in bp['whiskers']:
@@ -530,8 +590,13 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
             cap.set(color='#7570b3', linewidth=2)
 
         ## change color and linewidth of the medians
+        count = 0
         for median in bp['medians']:
-            median.set(color='#b2df8a', linewidth=2)
+            if count % 2 == 0:
+                median.set(color='#654321', linewidth=2)
+            else:
+                median.set(color='#b2df8a', linewidth=2)
+            count += 1
 
         ## change the style of fliers and their fill
         for flier in bp['fliers']:
@@ -545,8 +610,9 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     #ax.set_yticklabels(instance_names)
 
     # Save the figure
-    #plt.tight_layout()
-    plt.subplots_adjust(hspace=.001)
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=.01)
+
     fig.show()
     print "Saving box plot png file to " + result_file_prefix + '-box_plot.png'
     fig.savefig(result_file_prefix + '-box_plot.png') #, bbox_inches='tight')
