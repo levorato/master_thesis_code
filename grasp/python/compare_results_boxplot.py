@@ -570,7 +570,10 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     data_to_plot[dummy_instance].append([])
 
     # group boxplots - http://stackoverflow.com/questions/20365122/how-to-make-a-grouped-boxplot-graph-in-matplotlib
-    fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(20, 27)) #ncols=len(labels)) #, sharex=True, sharey=True)
+    height = 27
+    if instance_names[0].rfind('file_') >= 0:
+        height = 20
+    fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(12, height)) #ncols=len(labels)) #, sharex=True, sharey=True)
     fig.subplots_adjust(wspace=0)
     fig.subplots_adjust(hspace=0)
 
@@ -597,9 +600,9 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
         if '.g' in name:
             name = name[:name.rfind('.g')]
         if name.find('dummy') >= 0:
-            label_name_1 = 'Instance    '
+            label_name_1 = '\nInstance    '
             label_name_2 = ''
-            label_name_3 = ''
+            label_name_3 = '\n'
         elif name.find('file_') >= 0:  # remove file_ prefix from graph files and replace it with 'n='
             name = name[5:]
             n = name[:name.find('_')]
@@ -608,7 +611,7 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
             label_name_1 = 'n = ' + n
             label_name_2 = 'd = ' + d
             label_name_3 = 'd- = ' + d_minus
-            additional_line = '\n\n'
+            additional_line = '\n'
         else:  # chinese instance files
             c = name[name.find('c')+1:name.find('n')]
             n = name[name.find('n')+1:name.find('k')]
