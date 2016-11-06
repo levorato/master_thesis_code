@@ -21,6 +21,33 @@
 # c4n64k32pin0.8p-1.0p+0.0.g
 # </editor-fold>
 
+# <editor-fold desc="Command-line arguments to calculate randombig box plot graph.">
+# /home/mlevorato/Downloads/mestrado-output-temp/output/ils-seq/rbig-l1-ils10s-1x8-a1.0-8-2h
+# /home/mlevorato/Downloads/mestrado-output-temp/output/grasp-bullmpi/rbig-seq-l1-grasp400s-a1.0-fi-imb-2h
+# --labels
+# SeqILS
+# SeqGRASP
+# --excludefiles
+# file_100
+# file_150
+# file_300
+# file_800
+# file_1000
+# file_2000
+# file_200_0.1_0.2.g
+# file_200_0.2_0.2.g
+# file_200_0.5_0.2.g
+# file_200_0.8_0.2.g
+# file_400_0.1_0.2.g
+# file_400_0.2_0.2.g
+# file_400_0.5_0.2.g
+# file_400_0.8_0.2.g
+# file_600_0.1_0.2.g
+# file_600_0.2_0.2.g
+# file_600_0.5_0.2.g
+# file_600_0.8_0.2.g
+# </editor-fold>
+
 import sys, getopt
 import csv
 import StringIO
@@ -107,7 +134,17 @@ def processCCResult(folders, labels, sol_multiplier, exclude):
                             filename = (root[:root.rfind(os.path.sep)])
                             filename = filename[filename.rfind(os.path.sep)+1:]
                             datetime = root[root.rfind(os.path.sep) + 1:]
-
+                            skip = False
+                            if exclude != None:
+                                if filename in exclude:
+                                    print "Skipping file " + str(filename)
+                                    skip = True
+                                for pattern in exclude:
+                                    if pattern in filename:
+                                        print "Skipping file " + str(filename) + ' due to exclude file pattern'
+                                        skip = True
+                            if skip:
+                                continue
                             best_value = float(100000000)
 
                             content_file = open(root + os.path.sep + "cc-result.txt", 'r')
@@ -199,7 +236,7 @@ def processCCResult(folders, labels, sol_multiplier, exclude):
         chsol[key] = (float(worse_sol[key])*(sol_multiplier))
     ttt_for_algorithm = dict()  # contains the ttt dict for a specific algorithm / folder
     for folder in folders:
-        ttt_for_algorithm[folder] = processTimeToTarget(folder, chsol)  # worse_sol, best_sol
+        ttt_for_algorithm[folder] = processTimeToTarget(folder, chsol, exclude)  # worse_sol, best_sol
 
     # now, for each instance, we need to calculate the columns: AvgTimeToTarget, Stddev(TTT), Speedup.
     # and also the Standard Error of the Mean (SEM)
@@ -297,10 +334,6 @@ def processCCResult(folders, labels, sol_multiplier, exclude):
     data_to_plot = {}
     instance_names = []
     for instance_name in best_file_summary.iterkeys():
-        if exclude != None:
-            if instance_name in exclude:
-                print "Skipping file " + str(instance_name) + ':\n'
-                continue
         print str(instance_name) + ':\n'
         folder_count = 0
         data_to_plot[instance_name] = []
@@ -353,7 +386,7 @@ def processCCResult(folders, labels, sol_multiplier, exclude):
     df.to_csv(result_file_prefix + '.csv')
 
 
-def processTimeToTarget(folder, worse_sol):
+def processTimeToTarget(folder, worse_sol, exclude):
 
     print "\nProcessing time-to-target for result folder = " + str(folder) + "\n"
     instance_dict = dict()
@@ -376,6 +409,18 @@ def processTimeToTarget(folder, worse_sol):
                 filename = filename[filename.rfind(os.path.sep) + 1:]
                 myfolder = root[:root.rfind(os.path.sep)]
                 #print "Processing instance " + myfolder + ", " + filename
+                skip = False
+                if exclude != None:
+                    if filename in exclude:
+                        print "Skipping file " + str(filename)
+                        skip = True
+                    for pattern in exclude:
+                        if pattern in filename:
+                            print "Skipping file " + str(filename) + ' due to exclude file pattern'
+                            skip = True
+                if skip:
+                    continue
+
                 if instance_dict.has_key(filename):
                     if instance_dict[filename] <> myfolder:
                         print "WARN: problem with result folder structure!\n"
@@ -517,6 +562,13 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
 
 
 def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
+    # Add a dummy subplot as first subplot to help correcting ylabel spacing issues (1)
+    dummy_instance = "dummy"
+    instance_names = sorted(instance_names) + [dummy_instance]
+    data_to_plot[dummy_instance] = []
+    data_to_plot[dummy_instance].append([])
+    data_to_plot[dummy_instance].append([])
+
     # group boxplots - http://stackoverflow.com/questions/20365122/how-to-make-a-grouped-boxplot-graph-in-matplotlib
     fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(20, 27)) #ncols=len(labels)) #, sharex=True, sharey=True)
     fig.subplots_adjust(wspace=0)
@@ -528,20 +580,27 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     # Create an axes instance
     #ax = fig.add_subplot(111)
 
-    # Create the boxplot
-    ## add patch_artist=True option to ax.boxplot()
-    ## to get fill color
-    #bp = ax.boxplot(data_to_plot, patch_artist=True, vert=False) #, showfliers=False)
-
-    for ax, name in zip(axes, sorted(instance_names)):
+    ylabels = instance_names
+    print ylabels
+    #for ax, name in zip(axes, instance_names):
+    axis_count = -1
+    for name in instance_names:
         print "Processing instance " + name
+        axis_count += 1
+        ax = axes[axis_count]
 
         bp = ax.boxplot([data_to_plot[name][item] for item in xrange(0, len(labels))], patch_artist=True, vert=False) #, showfliers=False)
         ax.set(yticklabels=labels) #, ylabel=name)
         # remove the .g file extension from instance name
+        name = ylabels[axis_count - 1]
+        additional_line = ''
         if '.g' in name:
             name = name[:name.rfind('.g')]
-        if name.find('file_') >= 0:  # remove file_ prefix from graph files and replace it with 'n='
+        if name.find('dummy') >= 0:
+            label_name_1 = 'Instance    '
+            label_name_2 = ''
+            label_name_3 = ''
+        elif name.find('file_') >= 0:  # remove file_ prefix from graph files and replace it with 'n='
             name = name[5:]
             n = name[:name.find('_')]
             d = name[name.find('_')+1:name.rfind('_')]
@@ -549,6 +608,7 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
             label_name_1 = 'n = ' + n
             label_name_2 = 'd = ' + d
             label_name_3 = 'd- = ' + d_minus
+            additional_line = '\n\n'
         else:  # chinese instance files
             c = name[name.find('c')+1:name.find('n')]
             n = name[name.find('n')+1:name.find('k')]
@@ -559,8 +619,11 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
             label_name_1 = 'c = ' + c + ', n = ' + n + '            '
             label_name_2 = 'k = ' + k + ', pin = ' + pin + '          '
             label_name_3 = 'p- = ' + p_minus + ', p+ = ' + p_plus + '        '
-        ax.set_ylabel(label_name_1 + '\n' + label_name_2 + '\n' + label_name_3 + '\n\n', rotation = 0, labelpad = 70)
-        ax.set_xlabel("Execution time (s)", labelpad=20)
+        ax.set_ylabel('\n\n\n' + label_name_1 + '\n' + label_name_2 + '\n' + label_name_3 + '\n\n' + additional_line, rotation = 0,
+                      labelpad = 60)
+        if axis_count == 0:
+            ax.set_xlabel("Execution time (s)", labelpad=20)
+            ax.xaxis.set_label_position('top')
         ax.tick_params(axis='y', which='major', pad=5)
 
         #ax.margins(0.05)  # Optional
@@ -603,7 +666,9 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
             flier.set(marker='o', color='#e7298a', alpha=0.5)
 
         ## Remove top axes and right axes ticks
-        ax.get_xaxis().tick_bottom()
+        #ax.get_xaxis().tick_bottom()
+        if axis_count == 0:
+            ax.get_xaxis().tick_top()
         ax.get_yaxis().tick_left()
 
     ## Custom y-axis labels
