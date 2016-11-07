@@ -571,8 +571,12 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
 
     # group boxplots - http://stackoverflow.com/questions/20365122/how-to-make-a-grouped-boxplot-graph-in-matplotlib
     height = 27
+    padding = 60
+    bbox_to_anchor = (0.98, 0.965)
     if instance_names[0].rfind('file_') >= 0:
         height = 20
+        padding = 40
+        bbox_to_anchor = (0.98, 0.955)
     fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(12, height)) #ncols=len(labels)) #, sharex=True, sharey=True)
     fig.subplots_adjust(wspace=0)
     fig.subplots_adjust(hspace=0)
@@ -580,20 +584,27 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     # Create a figure instance
     #fig = plt.figure(1, figsize=(30, 20))
 
+    # draw temporary colored lines and use them to create a legend
+    hB, = plt.plot([1, 1], '#800080')
+    hR, = plt.plot([1, 1], '#DAA520')
+    fig.legend((hB, hR), ('(1) SeqGRASP', '(2) SeqILS'), loc='upper right', shadow=True,
+               bbox_to_anchor=bbox_to_anchor, ncol=2, borderaxespad=0.)
+    # bbox_to_anchor=(0., 1.02, 1., .102))  # bbox_to_anchor=(0, 1))
+    hB.set_visible(False)
+    hR.set_visible(False)
     # Create an axes instance
     #ax = fig.add_subplot(111)
 
     ylabels = instance_names
     print ylabels
-    #for ax, name in zip(axes, instance_names):
     axis_count = -1
-    for name in instance_names:
+    for ax, name in zip(axes, instance_names):
         print "Processing instance " + name
         axis_count += 1
-        ax = axes[axis_count]
 
         bp = ax.boxplot([data_to_plot[name][item] for item in xrange(0, len(labels))], patch_artist=True, vert=False) #, showfliers=False)
-        ax.set(yticklabels=labels) #, ylabel=name)
+        #ax.set(yticklabels=labels) #, ylabel=name)
+        ax.set(yticklabels=['(2)', '(1)'])  # , ylabel=name)
         # remove the .g file extension from instance name
         name = ylabels[axis_count - 1]
         additional_line = ''
@@ -623,9 +634,9 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
             label_name_2 = 'k = ' + k + ', pin = ' + pin + '          '
             label_name_3 = 'p- = ' + p_minus + ', p+ = ' + p_plus + '        '
         ax.set_ylabel('\n\n\n' + label_name_1 + '\n' + label_name_2 + '\n' + label_name_3 + '\n\n' + additional_line, rotation = 0,
-                      labelpad = 60)
+                      labelpad = padding)
         if axis_count == 0:
-            ax.set_xlabel("Execution time (s)", labelpad=20)
+            ax.set_xlabel("Execution time (s)                      \n", labelpad=20)
             ax.xaxis.set_label_position('top')
         ax.tick_params(axis='y', which='major', pad=5)
 
@@ -672,6 +683,9 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
         #ax.get_xaxis().tick_bottom()
         if axis_count == 0:
             ax.get_xaxis().tick_top()
+        #if axis_count == 1:
+
+
         ax.get_yaxis().tick_left()
 
     ## Custom y-axis labels
