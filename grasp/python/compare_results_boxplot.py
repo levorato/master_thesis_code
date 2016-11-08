@@ -46,6 +46,22 @@
 # file_600_0.2_0.2.g
 # file_600_0.5_0.2.g
 # file_600_0.8_0.2.g
+
+# file_200_0.1_0.5.g
+# file_200_0.1_0.8.g
+# file_200_0.2_0.5.g
+# file_200_0.2_0.8.g
+# file_200_0.5_0.5.g
+# file_200_0.5_0.8.g
+# file_200_0.8_0.5.g
+# file_400_0.1_0.5.g
+# file_400_0.1_0.8.g
+# file_400_0.2_0.5.g
+# file_400_0.2_0.8.g
+# file_400_0.5_0.5.g
+# file_400_0.8_0.5.g
+# file_600_0.1_0.5.g
+# file_400_0.8_0.5.g
 # </editor-fold>
 
 import sys, getopt
@@ -561,7 +577,7 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
     return tttlist
 
 
-def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
+def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_file_prefix):
     # Add a dummy subplot as first subplot to help correcting ylabel spacing issues (1)
     dummy_instance = "dummy"
     instance_names = sorted(instance_names) + [dummy_instance]
@@ -574,7 +590,7 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     padding = 60
     bbox_to_anchor = (0.98, 0.965)
     if instance_names[0].rfind('file_') >= 0:
-        height = 20
+        height = 6 #20
         padding = 40
         bbox_to_anchor = (0.98, 0.955)
     fig, axes = plt.subplots(nrows=len(instance_names), sharex=True, figsize=(12, height)) #ncols=len(labels)) #, sharex=True, sharey=True)
@@ -701,6 +717,140 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     pp = PdfPages(result_file_prefix + '-box_plot.pdf')
     pp.savefig(plt.gcf())
     pp.close()
+
+
+# Vertical box plots
+def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
+
+    instance_names = sorted(instance_names)
+    # group boxplots - http://stackoverflow.com/questions/20365122/how-to-make-a-grouped-boxplot-graph-in-matplotlib
+    width = 12
+    height = 6
+    padding = 5
+    bbox_to_anchor = (0.98, 0.965)
+    rotation = 90
+    if instance_names[0].rfind('file_') >= 0:
+        width = 9
+        height = 6 #20
+        padding = 5
+        bbox_to_anchor = (0.98, 0.955)
+        rotation = 60
+    fig, axes = plt.subplots(ncols=len(instance_names), sharey=True, figsize=(width, height)) #ncols=len(labels)) #, sharex=True, sharey=True)
+    fig.subplots_adjust(wspace=0)
+    fig.subplots_adjust(hspace=0)
+
+    # Create a figure instance
+    #fig = plt.figure(1, figsize=(30, 20))
+
+    # draw temporary colored lines and use them to create a legend
+    hB, = plt.plot([1, 1], '#800080')
+    hR, = plt.plot([1, 1], '#DAA520')
+    fig.legend((hR, hB), ('(1) SeqILS', '(2) SeqGRASP'), loc='upper right', shadow=True,
+               bbox_to_anchor=bbox_to_anchor, ncol=2, borderaxespad=0.)
+    # bbox_to_anchor=(0., 1.02, 1., .102))  # bbox_to_anchor=(0, 1))
+    hB.set_visible(False)
+    hR.set_visible(False)
+    # Create an axes instance
+    #ax = fig.add_subplot(111)
+
+    ylabels = instance_names
+    print ylabels
+    axis_count = -1
+    for ax, name in zip(axes, instance_names):
+        print "Processing instance " + name
+        axis_count += 1
+
+        bp = ax.boxplot([data_to_plot[name][item] for item in xrange(0, len(labels))], patch_artist=True, vert=True) #, showfliers=False)
+        #ax.set(yticklabels=labels) #, ylabel=name)
+        ax.set(xticklabels=['(1)', '(2)'])  # , ylabel=name)
+        # remove the .g file extension from instance name
+        name = ylabels[axis_count]
+        additional_line = ''
+        if '.g' in name:
+            name = name[:name.rfind('.g')]
+        if name.find('dummy') >= 0:
+            label_name = 'Instance'
+        elif name.find('file_') >= 0:  # remove file_ prefix from graph files and replace it with 'n='
+            name = name[5:]
+            n = name[:name.find('_')]
+            d = name[name.find('_')+1:name.rfind('_')]
+            d_minus = name[name.rfind('_')+1:]
+            label_name = n + '/' + d + '/' + d_minus
+        else:  # chinese instance files
+            c = name[name.find('c')+1:name.find('n')]
+            n = name[name.find('n')+1:name.find('k')]
+            k = name[name.find('k')+1:name.find('pin')]
+            pin = name[name.find('pin')+3:name.find('p-')]
+            p_minus = name[name.find('p-')+2:name.find('p+')]
+            p_plus = name[name.find('p+')+2:]
+            label_name = c + '/' + n + '/' + k + '/' + pin + '/' + p_minus + '/' + p_plus
+        ax.set_xlabel(label_name, rotation = rotation, labelpad = padding)
+        if axis_count == 0:
+            ax.set_ylabel("Execution time (s)", labelpad=5)
+            #ax.yaxis.set_label_position('top')
+        ax.tick_params(axis='y', which='major', pad=1)
+
+        #ax.margins(0.05)  # Optional
+
+        ## change outline color, fill color and linewidth of the boxes
+        count = 0
+        for box in bp['boxes']:
+            # change outline color
+            if count % 2 == 0:
+                box.set(color='#DAA520', linewidth=2)
+            else:
+                box.set(color='#7570b3', linewidth=2)
+            # change fill color
+            if count % 2 == 0:
+                #box.set(facecolor='#1b9e77')
+                box.set(facecolor='#FFFF66')
+            else:
+                box.set(facecolor='#800080')
+            count += 1
+
+        ## change color and linewidth of the whiskers
+        for whisker in bp['whiskers']:
+            whisker.set(color='#7570b3', linewidth=2)
+
+        ## change color and linewidth of the caps
+        for cap in bp['caps']:
+            cap.set(color='#7570b3', linewidth=2)
+
+        ## change color and linewidth of the medians
+        count = 0
+        for median in bp['medians']:
+            if count % 2 == 0:
+                median.set(color='#654321', linewidth=2)
+            else:
+                median.set(color='#b2df8a', linewidth=2)
+            count += 1
+
+        ## change the style of fliers and their fill
+        for flier in bp['fliers']:
+            flier.set(marker='o', color='#e7298a', alpha=0.5)
+
+        ## Remove top axes and right axes ticks
+        #ax.get_xaxis().tick_bottom()
+        #if axis_count == 0:
+        #    ax.get_xaxis().tick_top()
+        #if axis_count == 1:
+
+        ax.get_xaxis().tick_bottom()
+
+    ## Custom y-axis labels
+    #ax.set_yticklabels(instance_names)
+
+    # Save the figure
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=.01)
+
+    fig.show()
+    print "Saving box plot png file to " + result_file_prefix + '-box_plot.png'
+    fig.savefig(result_file_prefix + '-box_plot.png') #, bbox_inches='tight')
+    pp = PdfPages(result_file_prefix + '-box_plot.pdf')
+    pp.savefig(plt.gcf())
+    pp.close()
+
 
 
 # Originally in http://stackoverflow.com/questions/11882393/matplotlib-disregard-outliers-when-plotting
