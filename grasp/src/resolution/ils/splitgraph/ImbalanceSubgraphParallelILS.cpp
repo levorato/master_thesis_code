@@ -49,7 +49,8 @@ using namespace std;
 using namespace util;
 using namespace util::parallel;
 
-#define is_overloaded_process(list) ((list.size() >= 2*(long)ceil(g->getN() / (double)numberOfProcesses)) and (g->getN() <= 110000))
+//#define is_overloaded_process(list) ((list.size() >= 2*(long)ceil(g->getN() / (double)numberOfProcesses)) and (g->getN() <= 110000))
+#define is_overloaded_process(list) (true)
 
 ImbalanceSubgraphParallelILS::ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
 		const bool& split, const bool& cuda) : ILS(),
