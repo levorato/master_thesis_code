@@ -240,7 +240,9 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			Imbalance CCimb = c.getImbalance();
 
 			// if the CC result is already zero, no need to execute RCC at all
-			if(CCimb.getValue() > 0.0) {
+			if(CCEnabled and CCimb.getValue() == 0.0) {
+				RCCCluster = c;  // RCC equals CC solution ( I(P) = RI(P) = 0 )
+			} else {
 				if(resolutionStrategy == GRASP) {
 					//   G R A S P
 					if(numberOfMasters == 0) {	// sequential version of GRASP
@@ -266,8 +268,6 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}
 				}
-			} else {  // RCC equals CC solution ( I(P) = RI(P) = 0 )
-				RCCCluster = c;
 			}
 			// Stops the timer and stores the elapsed time
 			timer.stop();
@@ -283,12 +283,14 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 
 			BOOST_LOG_TRIVIAL(info) << "Global time spent: " << timeSpent << " s";
 			out << "RCC Global time spent: " << timeSpent << endl;
-			// If the RCC solution value is WORSE than the CC Solution, discard the RCC solution and
-			// present the CC solution
 			Imbalance RCCimb = RCCCluster.getImbalance();
-			if(CCimb.getValue() < RCCimb.getValue()) {
-				RCCCluster = c;
-				RCCimb = CCimb;
+			if(CCEnabled) {
+				// If the RCC solution value is WORSE than the CC Solution, discard the RCC solution and
+				// present the CC solution
+				if(CCimb.getValue() < RCCimb.getValue()) {
+					RCCCluster = c;
+					RCCimb = CCimb;
+				}
 			}
 			out << "SRI(P) = " << RCCimb.getValue() << endl;
 			stringstream ss;
