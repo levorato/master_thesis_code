@@ -119,7 +119,18 @@ public:
 	 */
 	unsigned long getClusterSize(unsigned long k);
 
-	void setClusterSize(unsigned long k, unsigned long size);
+
+	///////////////////////////////////////////////////////////////////
+  // New
+
+  /**
+   *  Construct the variable "clusterSize", which is a vector, based on 
+   *  clustering information given by the initial partition file.
+   *  This initial partition file is specified by the parameter "init-partition-file"
+   */
+	void constructClusterSize(unsigned long numberOfClusters, std::vector< std::vector<long> >& clusters);
+
+	///////////////////////////////////////////////////////////////////
 
 	Imbalance getObjectiveFunctionValue();
 
@@ -147,6 +158,16 @@ public:
 	const ClusterArray& getClusterArray() {
 		return clusterArray;
 	}
+
+	///////////////////////////////////////////////////////////////////
+  // New
+
+  /*
+   * Set the class variable 'clusterArray' based on another ClusterArray object
+   */
+	void setClusterArray(ClusterArray& a, unsigned long n);
+
+	///////////////////////////////////////////////////////////////////
 
 private:
 	/** the cluster array, with dimension n */

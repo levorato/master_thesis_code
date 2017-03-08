@@ -18,15 +18,89 @@ namespace construction {
 
 using namespace problem;
 
-ConstructClustering::ConstructClustering(GainFunction* f,
+ConstructClustering::ConstructClustering(string& initPartitionFile, const bool& initPartitionsFromFileForAllItersEnabled, GainFunction* f,
 		const unsigned long& seed, const double& alpha, Clustering* cl) :
-		gainFunction(f), randomSeed(seed), _alpha(alpha), CCclustering(cl) {
+		_initPartitionFileName(initPartitionFile), _initPartitionsFromFileForAllItersEnabled(initPartitionsFromFileForAllItersEnabled), gainFunction(f), randomSeed(seed), _alpha(alpha), CCclustering(cl) {
 
 }
 
 ConstructClustering::~ConstructClustering() {
 
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// New
+
+Clustering ConstructClustering::constructInitialClusteringFromFile(SignedGraph *g,
+		ClusteringProblem& problem, const int& myRank) {
+
+	long n = g->getN(); // graph size
+	Clustering Cc(*g); // Cc = empty
+	ClusterArray clArray = Cc.getClusterArray();
+
+///////////////////////////
+
+	//Read initial partition file to fill in the initial partitions
+	char line[256]; // Each line in the file represents a cluster id. size of 256 may be too much
+	ifstream initFileStream;
+	initFileStream.open(_initPartitionFileName.c_str());
+
+	if(initFileStream.is_open()){
+		long indx=0;
+	   	while ( initFileStream.getline(line, sizeof line) ){
+	     	  //cout << line << '\n';
+		  long clId = atol(line);
+		  clArray[indx]=clId-1; // minus 1: cluster id starts at 1 in membership file
+		  indx++;
+	    	}	
+	        initFileStream.close();
+		
+    // here "indx" is supposed to be equal to the number of lines in the file
+		long nbLineInInitPartitionFile = indx;
+		assert(nbLineInInitPartitionFile == n); // if not, quit
+
+	} else {
+		cout << "can not open the initial partition file:" << _initPartitionFileName << endl;
+	}
+
+  /////////////////////////
+	// construct a clustering object from ClusterArray
+
+	/*
+  clArray[0] = 1;
+	clArray[1] = 0;
+	clArray[2] = 0;
+  */
+
+	Cc.setClusterArray(clArray, n);
+
+	long maxClusterId = 0;
+	for(long i=0; i<n;i++){
+    if(clArray[i]>maxClusterId){
+      maxClusterId = clArray[i];
+	  }
+	}
+	long numberOfClusters = maxClusterId+1; // Plus 1: cluster ids start at 0
+	
+  std::vector< std::vector<long> > clusters(numberOfClusters, std::vector<long>());
+	for(long i = 0; i < n; i++) {
+    // fill in the vector of vector based on clustering information given by initial partition file
+	  clusters[clArray[i]].push_back(i); 
+	}
+
+	// compute clusters' size. These clusters' size are stored in the variable 'clusterSize'
+  // of the class 'Clustering'
+	Cc.constructClusterSize(numberOfClusters, clusters);
+
+  // compute the imbalance value based on the new partition information and store it
+	Cc.setImbalance(problem.objectiveFunction(*g, Cc));
+	//cout << "Imbalance=" << problem.objectiveFunction(*g, Cc).getValue() << endl;
+
+	return Cc;
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		ClusteringProblem& problem, const int& myRank) {

@@ -137,10 +137,26 @@ unsigned long Clustering::getClusterSize(unsigned long k) {
 	return this->clusterSize[k];
 }
 
-void Clustering::setClusterSize(unsigned long k, unsigned long size) {
-	assert(k < clusterSize.size());
-	this->clusterSize[k] = size;
+
+//////////////////////////////////////////////////////////////////
+// New
+
+/*
+ * The variable 'clusters' contains cluster information for all nodes in the graph
+ * 'clusters' is type of "vector of vector". First dimension is used for cluster ids.
+ * 2nd dimension is used for storing node ids belonging to the 'cluster id' specified by the first dimension
+ *
+ * The variable 'numberOfClusters' is the total number of clusters in 'clusters'.
+ * TODO 'numberOfClusters' is actually not necessary as we can directly get this information from 'clusters'
+ */
+void Clustering::constructClusterSize(unsigned long numberOfClusters, std::vector< std::vector<long> >& clusters) {
+	for(long k = 0; k < numberOfClusters; k++) {
+		clusterSize.push_back(clusters[k].size());
+	}
 }
+
+//////////////////////////////////////////////////////////////////
+
 
 void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, 
 		const unsigned long& k, bool updateImbalance) {
@@ -207,5 +223,22 @@ bool Clustering::equals(Clustering& c) {
 	else
 		return false;
 }
+
+
+
+/////////////////////////////////////////////////////////
+// New
+
+/*
+ * n: graph size
+ */
+void Clustering::setClusterArray(ClusterArray& a, unsigned long n) {
+	for(long i = 0; i < n; i++){
+	  clusterArray[i]=a[i];
+	}
+}
+
+/////////////////////////////////////////////////////////
+
 
 } /* namespace clusteringgraph */

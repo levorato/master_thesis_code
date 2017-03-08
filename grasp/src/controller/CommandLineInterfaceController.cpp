@@ -130,12 +130,14 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 	// TODO Auto-generated destructor stub
 }
 
-void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder,
-		string& executionId, const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
-		const int& numberOfIterations, const long& timeLimit, const int& machineProcessAllocationStrategy,
-		const int& numberOfMasters, const int& numberOfSearchSlaves,
+void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder, string& initPartitionFile, 
+    const bool& initPartitionsFromFileForAllItersEnabled, string& executionId, const bool& debug, const double& alpha, 
+    const int& l, const bool& firstImprovementOnOneNeig, const int& numberOfIterations, const long& timeLimit, 
+    const int& machineProcessAllocationStrategy, const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
 		long k, const StategyName& resolutionStrategy, const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax) {
+
+
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -149,7 +151,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		double timeSpent = 0.0;
 		string filename;
 		// Construct clustering module
-		ConstructClustering construct(functionFactory.build(functionType), seed, alpha);
+		ConstructClustering construct(initPartitionFile, initPartitionsFromFileForAllItersEnabled, functionFactory.build(functionType), seed, alpha); // Changed
 		// Chooses between the sequential or parallel search algorithm
 		NeighborhoodSearch* neigborhoodSearch;
 		NeighborhoodSearchFactory nsFactory(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
@@ -224,7 +226,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
  		// -------------------  R C C     P R O C E S S I N G -------------------------
  		if(RCCEnabled) {
  			ConstructClustering* RCCConstruct = &construct;
- 			ConstructClustering NoConstruct(functionFactory.build(functionType), seed, alpha, &c);
+ 			ConstructClustering NoConstruct(initPartitionFile, initPartitionsFromFileForAllItersEnabled, functionFactory.build(functionType), seed, alpha, &c); // changed
  			// 	If k = 0 (not specified), uses CC best result (cluster c) number of clusters as input (k)
  			if(k == 0) {
  				k = c.getNumberOfClusters();
@@ -353,8 +355,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	string s_alpha;
 	int numberOfIterations = 500, l = 1;
 	long k = 0;
-	bool debug = false, profile = false, firstImprovementOnOneNeig = true, CCEnabled = true, RCCEnabled = true;
-	string inputFileDir, outputFolder;
+	bool debug = false, profile = false, firstImprovementOnOneNeig = true, CCEnabled = true, RCCEnabled = true, initPartitionsFromFileForAllItersEnabled = false;
+	string inputFileDir, outputFolder, initPartitionFile;
 	int timeLimit = 1800;
 	int functionType = GainFunction::IMBALANCE;
 	int numberOfMasters = np - 1;
@@ -396,6 +398,10 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 					 "Resolution strategy to be used. Accepted values: GRASP (default), ILS.")
 		("search", po::value<CommandLineInterfaceController::SearchName>(&searchType),
                                          "Local search to be used. Accepted values: SEQUENTIAL (default), PARALLEL.")
+		("init-partition-file", po::value<string>(&initPartitionFile), "initial partition file (the file given by a community detection algorithm)") // New
+		("initPartitionsFromFileForAllIters", po::value<bool>(&initPartitionsFromFileForAllItersEnabled)->default_value(false), "Initialize partitions from file provided by the 'init-partition-file' argument for all iters") // New
+// const int& bInitPartitionFromFileForAllIters
+
 		//("ils,i", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
 		//("perturb,p", po::value<int>(&perturbationLevelMax)->default_value(30), "maximum perturbation level in ILS")
 	;
@@ -447,6 +453,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				cout << "Please specify the output folder." << endl;
 				return 1;
 			}
+
 
 			float alpha = 0.0;
 			if(vm.count("alpha")) {
@@ -568,14 +575,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					BOOST_LOG_TRIVIAL(info) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
+					processInputFile(filePath, outputFolder, initPartitionFile, initPartitionsFromFileForAllItersEnabled, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 							numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
 							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
+						processInputFile(filePath, outputFolder, initPartitionFile, initPartitionsFromFileForAllItersEnabled, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
 								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
 					}
@@ -666,8 +673,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 						}
 						GainFunctionFactory functionFactory(g.get());
-						ConstructClustering defaultConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
-						ConstructClustering noConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha, &imsgpg.CCclustering);
+						ConstructClustering defaultConstruct(initPartitionFile, initPartitionsFromFileForAllItersEnabled, functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha); // changed
+						ConstructClustering noConstruct(initPartitionFile, initPartitionsFromFileForAllItersEnabled, functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha, &imsgpg.CCclustering); // changed
 						ConstructClustering* construct = &defaultConstruct;
 						if((imsgpg.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpg.k < 0)) {
 								construct = &noConstruct;
@@ -715,8 +722,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
 						}
 						GainFunctionFactory functionFactory(g.get());
-						ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
-						ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering);
+						ConstructClustering defaultConstruct(initPartitionFile, initPartitionsFromFileForAllItersEnabled, functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha); // changed
+						ConstructClustering noConstruct(initPartitionFile, initPartitionsFromFileForAllItersEnabled, functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering); // changed
 						ConstructClustering* construct = &defaultConstruct;
 						if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
 								construct = &noConstruct;

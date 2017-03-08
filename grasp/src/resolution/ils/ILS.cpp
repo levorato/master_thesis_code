@@ -55,9 +55,25 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 	boost::timer::cpu_timer timer;
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
+	
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//New
+
 	// 1. Initial clustering (construct)
-	Clustering CStar = construct.constructClustering(g, problem, info.processRank);
+	Clustering CStar;
+	if(construct.getInitPartitionFileName().empty()){ // if the filename is not provided by the command parameter
+	  CStar = construct.constructClustering(g, problem, info.processRank); // 'greedy randomized fashion'
+	} else{ // if provided
+	  CStar = construct.constructInitialClusteringFromFile(g, problem, info.processRank);
+	  //cout << "CStar_init: " << CStar.toString(g->getN()) << endl;
+	  //cout << "CStar_init: " << CStar.getImbalance().getValue() << endl;
+	}
 	timer.stop();
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 	boost::timer::cpu_times end_time = timer.elapsed();
 	double timeSpentInConstruction = (end_time.wall - start_time.wall) / double(1000000000);
 	timeSpentInILS += timeSpentInConstruction;
@@ -181,8 +197,23 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 			// 0. Triggers local processing time calculation
 			start_time = timer.elapsed();
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// New
+
 			// 1. Construct the next clustering
-			Cc = construct.constructClustering(g, problem, info.processRank);
+			bool initPartitionsFromFileForAllItersEnabled = construct.getInitPartitionsFromFileForAllItersEnabled();
+			if(initPartitionsFromFileForAllItersEnabled == 1){ // if true, initialize partitions for another iteration from the file given by a community detection algo. 
+				//Keep in mind that the same partition file is always used when it is true
+				// cout << "initPartitionsFromFileForAllItersEnabled:True" << endl;
+				Cc = construct.constructInitialClusteringFromFile(g, problem, info.processRank);
+			} else { // otherwise, the other method is used: 'greedy randomized fashion'
+				// cout << "initPartitionsFromFileForAllItersEnabled:False" << endl;
+				Cc = construct.constructClustering(g, problem, info.processRank);
+			}
+
+////////////////////////////////////////////////////////////////////////////////////////////////	
+
 
 			timer.stop();
 			end_time = timer.elapsed();

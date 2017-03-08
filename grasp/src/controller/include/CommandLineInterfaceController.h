@@ -33,14 +33,13 @@ public:
 			const unsigned int &myRank, const int &np);
 
 private:
-	void processInputFile(fs::path filePath, string& outputFolder, string& timestamp,
-			const bool& debug, const double& alpha, const int& l, const bool& firstImprovementOnOneNeig,
-			const int& numberOfIterations, const long& timeLimit, const int& machineProcessAllocationStrategy,
-			const int& numberOfSlaves, const int& numberOfSearchSlaves, const int& myRank,
-			const int& functionType, const unsigned long& seed,	const bool& CCEnabled,
-			const bool& RCCEnabled, long k, const StategyName& resolutionStrategy,
-			const SearchName& searchType,
-			const int& iterMaxILS, const int& perturbationLevelMax);
+	void processInputFile(fs::path filePath, string& outputFolder, string& initPartitionFile, 
+      const bool& initPartitionsFromFileForAllItersEnabled, string& timestamp, const bool& debug, 
+      const double& alpha, const int& l, const bool& firstImprovementOnOneNeig, const int& numberOfIterations, 
+      const long& timeLimit, const int& machineProcessAllocationStrategy, const int& numberOfSlaves, 
+      const int& numberOfSearchSlaves, const int& myRank, const int& functionType, const unsigned long& seed,	
+      const bool& CCEnabled, const bool& RCCEnabled, long k, const StategyName& resolutionStrategy,
+			const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax);
 
 	void readPropertiesFile();
 
