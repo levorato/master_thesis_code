@@ -1,14 +1,15 @@
 /*
  * ImbalanceSubgraphParallelILS.h
  *
- *  Created on: Jun 18, 2015
+ *  Created on: Mar 10, 2017
  *      Author: mlevorato
  */
 
-#ifndef SRC_RESOLUTION_ILS_SPLITGRAPH_IMBALANCESUBGRAPHPARALLELILS_H_
-#define SRC_RESOLUTION_ILS_SPLITGRAPH_IMBALANCESUBGRAPHPARALLELILS_H_
+#ifndef SRC_RESOLUTION_ILS_SPLITGRAPH_PARALLELGRAPHDISTRIBUTEDILS_H_
+#define SRC_RESOLUTION_ILS_SPLITGRAPH_PARALLELGRAPHDISTRIBUTEDILS_H_
 
 #include "../../include/ParallelILS.h"
+#include "ImbalanceSubgraphParallelILS.h"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <list>
@@ -36,16 +37,17 @@ namespace ils {
 
 /**
  * This class is responsible for all logic related to the SplitGraph Distributed ILS algorithm,
- * which splits a large graph into smaller subgraphs, distributes them among several processes,
+ * based on Boost Parallel BGL.
+ * Splits a large graph into smaller subgraphs, distributes them among several processes,
  * invokes a local ILS procedure for each one, and then merges all partial solutions into a global one.
  * After that, the algorithm iteratively tries to improve the global solution by moving clusters
  * between processes, using 4 different neighborhood structures.
  */
-class ImbalanceSubgraphParallelILS: public ILS {
+class ParallelGraphDistributedILS: public ImbalanceSubgraphParallelILS {
 public:
-	ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
-			const bool& split = true, const bool& cuda = true, const bool& parallelgraph = false);
-	virtual ~ImbalanceSubgraphParallelILS();
+	ParallelGraphDistributedILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
+			const bool& split = true, const bool& cuda = true, const bool& parallelgraph = true);
+	virtual ~ParallelGraphDistributedILS();
 
 	/**
 	 * Triggers the parallel execution of the ILS algorithm using Imbalance ratio / SplitGraph.
@@ -54,7 +56,8 @@ public:
 			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
-	ProcessClustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem, bool partitionByVertex);
+	ProcessClustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem,
+			bool partitionByVertex);
 
 	/**
 	 * Triggers the distributed ILS (split graph) resolution, invoking the local ILS
@@ -150,7 +153,6 @@ protected:
 	Clustering CCclustering;
 	bool splitGraph;
 	bool cudaEnabled;
-	bool parallelgraph;
 	// counts the number of times the local ILS found solutions worse than the current solution (worse than zero-cost move).
 	long numberOfFrustratedSolutions;
 
@@ -176,4 +178,4 @@ protected:
 } /* namespace ils */
 } /* namespace resolution */
 
-#endif /* SRC_RESOLUTION_ILS_SPLITGRAPH_IMBALANCESUBGRAPHPARALLELILS_H_ */
+#endif /* SRC_RESOLUTION_ILS_SPLITGRAPH_PARALLELGRAPHDISTRIBUTEDILS_H_ */

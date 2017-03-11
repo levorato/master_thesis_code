@@ -23,7 +23,8 @@ public:
 	 * @param numberOfSlaves number of slaves used for parallel ILS processing
 	 * @param numberOfSearchSlaves number of slaves used for parallel VND processing
 	 */
-	ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves, const bool& split = false, const bool& cuda = true);
+	ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
+			const bool& split = false, const bool& cuda = true, const bool& parallelgraph = false);
 	ParallelILS(ParallelILS &parILS);
 	virtual ~ParallelILS();
 
@@ -41,7 +42,7 @@ protected:
 	Clustering CCclustering;
 	bool splitGraph;
 	bool cudaEnabled;
-
+	bool parallelgraph;
 };
 
 } /* namespace ils */

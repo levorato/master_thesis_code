@@ -142,7 +142,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
 		long k, const StategyName& resolutionStrategy, const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax,
-		const bool& splitGraph, const bool& cuda) {
+		const bool& splitGraph, const bool& cuda, const bool& parallelgraph) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
@@ -211,7 +211,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 					}
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
-					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph, cuda);
+					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters,
+							numberOfSearchSlaves, splitGraph, cuda, parallelgraph);
 					c = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
@@ -391,6 +392,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	bool cuda = true;
 	bool test = false;
 	bool exportDOT = false;
+	bool parallelgraph = false;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
@@ -427,6 +429,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("search", po::value<CommandLineInterfaceController::SearchName>(&searchType),
                                          "Local search to be used. Accepted values: SEQUENTIAL (default), PARALLEL.")
 		("exportDOT", po::value<bool>(&exportDOT)->default_value(false), "Export graph file to GraphViz DOT format.")
+		("parallelgraph", po::value<bool>(&parallelgraph)->default_value(false), "Enable parallel graph feature")
 		//("ils,i", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
 		//("perturb,p", po::value<int>(&perturbationLevelMax)->default_value(30), "maximum perturbation level in ILS")
 	;
@@ -570,6 +573,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				totalNumberOfVNDSlaves = np - numberOfMasters - 1;
 			}
 
+			BOOST_LOG_TRIVIAL(info) << "Parallel graph library is " << (parallelgraph ? "enabled." : "disabled.");
+
 			BOOST_LOG_TRIVIAL(info) << "Total number of processes is " << np << endl;
             //cout << "Total number of processes is " << np << endl;
 			BOOST_LOG_TRIVIAL(info) << "Number of master processes in parallel is " << (numberOfMasters + 1);
@@ -640,14 +645,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 						processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda);
+								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda, parallelgraph);
 					} else {
 						BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 						for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 							BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
 							processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 									numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-									myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda);
+									myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda, parallelgraph);
 						}
 					}
 				}

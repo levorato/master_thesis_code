@@ -1,11 +1,11 @@
 /*
- * ImbalanceSubgraphParallelILS.cpp
+ * ParallelGraphDistributedILS.cpp
  *
  *  Created on: Jun 18, 2015
  *      Author: mlevorato
  */
 
-#include "./include/ImbalanceSubgraphParallelILS.h"
+#include "./include/ParallelGraphDistributedILS.h"
 #include "util/include/ProcessUtil.h"
 #include "util/parallel/include/MPIUtil.h"
 #include "../include/CUDAILS.h"
@@ -38,6 +38,15 @@
 #include <algorithm>
 #include <boost/math/special_functions/round.hpp>
 
+// includes da parallel BGL
+#include <boost/mpi.hpp>
+#include <boost/graph/use_mpi.hpp>
+#include <boost/graph/distributed/mpi_process_group.hpp>
+#include <boost/graph/distributed/adjacency_list.hpp>
+#include <boost/graph/erdos_renyi_generator.hpp>
+#include <boost/random/linear_congruential.hpp>
+
+
 namespace ublas = boost::numeric::ublas::detail;
 
 namespace resolution {
@@ -52,19 +61,18 @@ using namespace util::parallel;
 //#define is_overloaded_process(list) ((list.size() >= 2*(long)ceil(g->getN() / (double)numberOfProcesses)) and (g->getN() <= 110000))
 #define is_overloaded_process(list) (true)
 
-ImbalanceSubgraphParallelILS::ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
-		const bool& split, const bool& cuda, const bool& pgraph) : ILS(),
-		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
-		splitGraph(split), cudaEnabled(cuda), parallelgraph(pgraph), vertexImbalance(), timeSpentAtIteration(), util(),
+ParallelGraphDistributedILS::ParallelGraphDistributedILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
+		const bool& split, const bool& cuda, const bool& pgraph) : ImbalanceSubgraphParallelILS(allocationStrategy, slaves,
+				searchSlaves, split, cuda, pgraph), vertexImbalance(), timeSpentAtIteration(), util(),
 		numberOfFrustratedSolutions(0) {
 
 }
 
-ImbalanceSubgraphParallelILS::~ImbalanceSubgraphParallelILS() {
+ParallelGraphDistributedILS::~ParallelGraphDistributedILS() {
 	// TODO Auto-generated destructor stub
 }
 
-Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
+Clustering ParallelGraphDistributedILS::executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 		ClusteringProblem& problem, ExecutionInfo& info) {
 
@@ -72,6 +80,22 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	stringstream iterationResults;
 	stringstream iterationTimeSpent;
 	unsigned int numberOfProcesses = numberOfSlaves + 1;
+
+
+
+	// codigo de teste da parallel bgl
+	boost::mpi::environment  env;
+	boost::mpi::communicator comm;
+
+	typedef boost::adjacency_list<boost::vecS, boost::distributedS<boost::graph::distributed::mpi_process_group, boost::vecS>, boost::directedS> graph;
+	typedef boost::erdos_renyi_iterator<boost::minstd_rand, graph> generator;
+
+	boost::minstd_rand gen;
+
+	graph gr(generator(gen, 100, 0.05), generator(), 100);
+	BOOST_LOG_TRIVIAL(info) << "Successfully generated random graph for PBGL with " << num_vertices(gr) << " vertices.";
+
+
 
 	BOOST_LOG_TRIVIAL(info) << "Starting split graph ILS (local ILS time limit = " << LOCAL_ILS_TIME_LIMIT << " s)...";
 
@@ -216,7 +240,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	return bestClustering;
 }
 
-ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(SignedGraph *g,
+ProcessClustering ParallelGraphDistributedILS::preProcessSplitgraphPartitioning(SignedGraph *g,
 		ClusteringProblem& problem, bool partitionByVertex) {
 	// 1. Divide the graph into (numberOfSlaves + 1) non-overlapping parts
 
@@ -383,7 +407,7 @@ ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning
 	return Cc;
 }
 
-Clustering ImbalanceSubgraphParallelILS::runDistributedILS(ConstructClustering *construct,
+Clustering ParallelGraphDistributedILS::runDistributedILS(ConstructClustering *construct,
 		VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 		const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
 		ProcessClustering& splitgraphClustering, Clustering& currentSolution) {
@@ -404,7 +428,7 @@ Clustering ImbalanceSubgraphParallelILS::runDistributedILS(ConstructClustering *
 	return c;
 }
 
-Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
+Clustering ParallelGraphDistributedILS::distributeSubgraphsBetweenProcessesAndRunILS(ConstructClustering *construct,
 		VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 		const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info,
 		ProcessClustering& splitgraphClustering) {
@@ -552,7 +576,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	return globalClustering;
 }
 
-bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
+bool ParallelGraphDistributedILS::moveCluster1opt(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 		Clustering& bestClustering, const int& numberOfProcesses,
 		ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
@@ -870,7 +894,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 	return foundBetterSolution;
 }
 
-bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
+bool ParallelGraphDistributedILS::swapCluster1opt(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 		Clustering& bestClustering, const int& numberOfProcesses,
 		ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
@@ -1292,7 +1316,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 	return foundBetterSolution;
 }
 
-bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
+bool ParallelGraphDistributedILS::twoMoveCluster(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 		Clustering& bestClustering, const int& numberOfProcesses,
 		ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
@@ -1729,7 +1753,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 	return foundBetterSolution;
 }
 
-long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
+long ParallelGraphDistributedILS::variableNeighborhoodDescent(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 		Clustering& bestClustering, const int& numberOfProcesses,
 		ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
@@ -1934,7 +1958,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
   *  Identifies a pseudo clique C+ inside an overloaded cluster, and tries to
   *  move this clique to another (not overloaded) process as a new cluster.
 */
-bool ImbalanceSubgraphParallelILS::splitClusterMove(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
+bool ParallelGraphDistributedILS::splitClusterMove(SignedGraph* g, ProcessClustering& bestSplitgraphClustering,
 		Clustering& bestClustering, const int& numberOfProcesses,
 		ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
@@ -2105,7 +2129,7 @@ bool ImbalanceSubgraphParallelILS::splitClusterMove(SignedGraph* g, ProcessClust
 	return foundBetterSolution;
 }
 
-void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, ClusteringProblem& problem,
+void ParallelGraphDistributedILS::rebalanceClustersBetweenProcessesWithZeroCost(SignedGraph* g, ClusteringProblem& problem,
 		ProcessClustering& bestSplitgraphClustering, Clustering& bestClustering, const int& numberOfProcesses) {
 
 	ClusterArray globalClusterArray = bestClustering.getClusterArray();
@@ -2227,7 +2251,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 	}
 }
 
-OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClustering *construct,
+OutputMessage ParallelGraphDistributedILS::runILSLocallyOnSubgraph(ConstructClustering *construct,
 		VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
 		const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& vertexList) {
 
@@ -2301,7 +2325,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 	}
 }
 
-void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
+void ParallelGraphDistributedILS::moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
 		ProcessClustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess) {
 	// Simply moves the cluster to the destination process, with zero-cost imbalance change
 	bestClustering.setProcessOrigin(clusterToMove, destinationProcess);

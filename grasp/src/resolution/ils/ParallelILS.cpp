@@ -18,6 +18,7 @@
 #include "graph/include/SequentialNeighborhoodSearch.h"
 #include "./splitgraph/include/GraclusParallelILS.h"
 #include "splitgraph/include/ImbalanceSubgraphParallelILS.h"
+#include "splitgraph/include/ParallelGraphDistributedILS.h"
 
 #include <iomanip>
 #include <cstring>
@@ -47,15 +48,15 @@ namespace mpi = boost::mpi;
 
 
 ParallelILS::ParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
-		const bool& split, const bool& cuda) : ILS(),
+		const bool& split, const bool& cuda, const bool& pgraph) : ILS(),
 		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
-		splitGraph(split), cudaEnabled(cuda) {
+		splitGraph(split), cudaEnabled(cuda), parallelgraph(pgraph) {
 
 }
 
 ParallelILS::ParallelILS(ParallelILS &parILS) : machineProcessAllocationStrategy(parILS.machineProcessAllocationStrategy),
 		numberOfSlaves(parILS.numberOfSlaves), numberOfSearchSlaves(parILS.numberOfSearchSlaves),
-		splitGraph(parILS.splitGraph), cudaEnabled(parILS.cudaEnabled) {
+		splitGraph(parILS.splitGraph), cudaEnabled(parILS.cudaEnabled), parallelgraph(parILS.parallelgraph) {
 
 }
 
@@ -128,9 +129,15 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		return bestClustering;
 	} else {
 		// GraclusParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled);
-		ImbalanceSubgraphParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled);
-		Clustering Gc = gpils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
-		return Gc;
+		if(parallelgraph) {  // use boost parallel graph library
+			ParallelGraphDistributedILS pgdils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled, parallelgraph);
+			Clustering Gc = pgdils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+			return Gc;
+		} else {  // conventional boost graph library (BGL)
+			ImbalanceSubgraphParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled, parallelgraph);
+			Clustering Gc = gpils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+			return Gc;
+		}
 	}
 }
 
