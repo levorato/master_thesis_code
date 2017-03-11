@@ -43,7 +43,7 @@ namespace ils {
  * After that, the algorithm iteratively tries to improve the global solution by moving clusters
  * between processes, using 4 different neighborhood structures.
  */
-class ParallelGraphDistributedILS: public ImbalanceSubgraphParallelILS {
+class ParallelGraphDistributedILS: public ILS {
 public:
 	ParallelGraphDistributedILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
 			const bool& split = true, const bool& cuda = true, const bool& parallelgraph = true);
@@ -153,6 +153,7 @@ protected:
 	Clustering CCclustering;
 	bool splitGraph;
 	bool cudaEnabled;
+	bool parallelgraph;
 	// counts the number of times the local ILS found solutions worse than the current solution (worse than zero-cost move).
 	long numberOfFrustratedSolutions;
 

@@ -287,7 +287,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes ILS processing among numberOfMasters processes and summarizes the result
-						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves, splitGraph, cuda);
+						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters,
+								numberOfSearchSlaves, splitGraph, cuda);
 						RCCCluster = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}

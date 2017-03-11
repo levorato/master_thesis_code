@@ -62,9 +62,10 @@ using namespace util::parallel;
 #define is_overloaded_process(list) (true)
 
 ParallelGraphDistributedILS::ParallelGraphDistributedILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
-		const bool& split, const bool& cuda, const bool& pgraph) : ImbalanceSubgraphParallelILS(allocationStrategy, slaves,
-				searchSlaves, split, cuda, pgraph), vertexImbalance(), timeSpentAtIteration(), util(),
-		numberOfFrustratedSolutions(0) {
+		const bool& split, const bool& cuda, const bool& pgraph) : ILS(),
+				machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
+				splitGraph(split), cudaEnabled(cuda), parallelgraph(pgraph), vertexImbalance(), timeSpentAtIteration(), util(),
+				numberOfFrustratedSolutions(0)  {
 
 }
 
@@ -81,7 +82,7 @@ Clustering ParallelGraphDistributedILS::executeILS(ConstructClustering *construc
 	stringstream iterationTimeSpent;
 	unsigned int numberOfProcesses = numberOfSlaves + 1;
 
-
+	BOOST_LOG_TRIVIAL(info) << "PBGL running. Invoking random graph gen...";
 
 	// codigo de teste da parallel bgl
 	boost::mpi::environment  env;
@@ -89,6 +90,7 @@ Clustering ParallelGraphDistributedILS::executeILS(ConstructClustering *construc
 
 	typedef boost::adjacency_list<boost::vecS, boost::distributedS<boost::graph::distributed::mpi_process_group, boost::vecS>, boost::directedS> graph;
 	typedef boost::erdos_renyi_iterator<boost::minstd_rand, graph> generator;
+
 
 	boost::minstd_rand gen;
 

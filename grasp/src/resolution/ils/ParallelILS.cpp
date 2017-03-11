@@ -84,6 +84,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 	// the leader itself (i = 0) does part of the work too
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] List of masters populated.";
 
 	if(not splitGraph) {  // traditional parallel ILS approach, dividing the number of multistart iterations
 		for(int i = 0; i < numberOfSlaves; i++) {
