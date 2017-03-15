@@ -7,6 +7,7 @@
 
 #include "include/Imbalance.h"
 #include <iomanip>
+#include "../util/include/Precision.h"
 
 namespace clusteringgraph {
 
@@ -37,20 +38,26 @@ Imbalance& Imbalance::operator-=(const Imbalance &i) {
 	return *this;
 }
 
+bool Imbalance::operator==(const Imbalance &other) {
+    double lhs = this->getValue();
+    double rhs = other.getValue();
+    return Precision::nearlyEqual(lhs, rhs);
+}
+
 bool operator> (Imbalance &i1, Imbalance &i2) {
-	return i1.getValue() > i2.getValue();
+	return Precision::rough_gt(i1.getValue(), i2.getValue());
 }
 
 bool operator<= (Imbalance &i1, Imbalance &i2) {
-	return i1.getValue() <= i2.getValue();
+	return Precision::rough_lte(i1.getValue(), i2.getValue());
 }
 
 bool operator< (Imbalance &i1, Imbalance &i2) {
-	return i1.getValue() < i2.getValue();
+	return Precision::rough_lt(i1.getValue(), i2.getValue());
 }
 
 bool operator>= (Imbalance &i1, Imbalance &i2) {
-	return i1.getValue() >= i2.getValue();
+	return Precision::rough_gte(i1.getValue(), i2.getValue());
 }
 
 ostream& Imbalance::operator<<(ostream &out) {     //output

@@ -26,6 +26,7 @@ public:
 
 	Imbalance& operator+=(const Imbalance &i);
 	Imbalance& operator-=(const Imbalance &i);
+	bool operator==(const Imbalance &other);
 
     friend bool operator> (Imbalance &i1, Imbalance &i2);
     friend bool operator<= (Imbalance &i1, Imbalance &i2);
