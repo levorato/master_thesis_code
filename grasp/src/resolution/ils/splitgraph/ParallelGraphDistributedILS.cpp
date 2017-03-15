@@ -88,14 +88,31 @@ Clustering ParallelGraphDistributedILS::executeILS(ConstructClustering *construc
 	boost::mpi::environment  env;
 	boost::mpi::communicator comm;
 
-	typedef boost::adjacency_list<boost::vecS, boost::distributedS<boost::graph::distributed::mpi_process_group, boost::vecS>, boost::directedS> graph;
-	typedef boost::erdos_renyi_iterator<boost::minstd_rand, graph> generator;
+	// typedef boost::erdos_renyi_iterator<boost::minstd_rand, graph> generator;
+	// boost::minstd_rand gen;
+	// graph gr(generator(gen, 100, 0.05), generator(), 100);
+	// BOOST_LOG_TRIVIAL(info) << "Successfully generated random graph for PBGL with " << num_vertices(gr) << " vertices.";
 
+	// All processes synchronize at this point, then the graph is complete
+	synchronize(g->graph.process_group());
 
-	boost::minstd_rand gen;
+	// codigo de teste da parallel bgl
+	boost::mpi::environment  env;
+	boost::mpi::communicator comm;
 
-	graph gr(generator(gen, 100, 0.05), generator(), 100);
-	BOOST_LOG_TRIVIAL(info) << "Successfully generated random graph for PBGL with " << num_vertices(gr) << " vertices.";
+	 // https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
+	 BGL_FORALL_VERTICES(v, g->graph, ParallelGraph)
+	 {
+		 std::cout << "V @ " << comm.rank() << " " << g->graph[v] << std::endl;
+	 }
+
+	 BGL_FORALL_EDGES(e, g->graph, ParallelGraph)
+	 {
+		std::cout << "E @ " << comm.rank() << " " << boost::source(e,g->graph).local
+				<< " -> " << boost::target(e, g->graph).local << " srccpu " <<
+			e.source_processor << " dstcpu " << e.target_processor << std::endl;
+	 }
+
 
 
 

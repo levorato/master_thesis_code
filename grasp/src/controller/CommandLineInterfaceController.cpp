@@ -43,6 +43,9 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi.hpp>
+#include <boost/graph/use_mpi.hpp>
+#include <boost/graph/distributed/mpi_process_group.hpp>
+#include <boost/graph/distributed/adjacency_list.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/timer/timer.hpp>
 #include <boost/random/mersenne_twister.hpp>
@@ -146,7 +149,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-		SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
+		SignedGraphPtr g;
+		g = reader.readGraphFromFile(filePath.string(), parallelgraph);
 		Clustering c;
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
@@ -855,6 +859,31 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// If split graph is enabled, creates a subgraph induced by the vertex set
 						if(imsgpils.isSplitGraph) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
+
+							if(imsgpils.isParallelGraph) {
+								BOOST_LOG_TRIVIAL(info) << "Split graph with boost parallel graph enabled.";
+
+								// All processes synchronize at this point, then the graph is complete
+								synchronize(g->graph.process_group());
+
+								// codigo de teste da parallel bgl
+								boost::mpi::environment  env;
+								boost::mpi::communicator comm;
+
+								 // https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
+								 BGL_FORALL_VERTICES(v, g->graph, ParallelGraph)
+								 {
+									 std::cout << "V @ " << comm.rank() << " " << g->graph[v] << std::endl;
+								 }
+
+								 BGL_FORALL_EDGES(e, g->graph, ParallelGraph)
+								 {
+									std::cout << "E @ " << comm.rank() << " " << boost::source(e,g->graph).local
+											<< " -> " << boost::target(e, g->graph).local << " srccpu " <<
+										e.source_processor << " dstcpu " << e.target_processor << std::endl;
+								 }
+							}
+
 							if(imsgpils.vertexList.size() == 0) {
 								BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
 								std::vector<unsigned int> clusterProcessOrigin;

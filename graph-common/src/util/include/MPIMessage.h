@@ -164,24 +164,25 @@ public:
 	Clustering CCclustering;  // best solution found by CC problem (for use on RCC problem solve)
 	bool isSplitGraph;
 	std::vector<long> vertexList;  // list of vertices of the subgraph (used on split graph feature)
+	bool isParallelGraph;  // indicates that parallel graph from boost parallel bgl is being used
 
 	InputMessageParallelILS() : InputMessage(),
 			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
-			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(false), vertexList() {
+			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(false), vertexList(), isParallelGraph(false) {
 
 	}
 
 	InputMessageParallelILS(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
 			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel,
-			long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL) :
+			long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL, bool parallelgraph = false) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves, cuda),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
 					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering(),
-					isSplitGraph(false), vertexList() {
+					isSplitGraph(false), vertexList(), isParallelGraph(parallelgraph) {
 			if(cl != NULL) {
 				CCclustering = *cl;
 			}
@@ -235,6 +236,7 @@ public:
 		ar & CCclustering;
 		ar & isSplitGraph;
 		ar & vertexList;
+		ar & isParallelGraph;
 	}
 };
 
