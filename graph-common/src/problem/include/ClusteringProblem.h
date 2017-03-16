@@ -9,6 +9,7 @@
 #define CLUSTERINGPROBLEM_H_
 
 #include "../../graph/include/Graph.h"
+#include "../../graph/include/ParallelBGLSignedGraph.h"
 #include "../../graph/include/Imbalance.h"
 
 using namespace clusteringgraph;

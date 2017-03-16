@@ -6,7 +6,8 @@
  */
 
 #include "include/SimpleTextGraphFileReader.h"
-#include "include/Graph.h"
+#include "include/BGLSignedGraph.h"
+#include "include/ParallelBGLSignedGraph.h"
 #include <iostream>     // cout, endl
 #include <fstream>      // fstream
 #include <vector>
@@ -50,190 +51,178 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 	int n = 0, e = 0;
 	// defines the format of the input file
 	int formatType = 0;
-	vector< string > lines;
+	std::ifstream infile(filepath.c_str(), std::ios::in | std::ios::binary);
+	SignedGraphPtr g;
+	if (infile) {
+		// captura a primeira linha do arquivo contendo as informacoes
+		// de numero de vertices e arestas do grafo
+		string line;
+		std::getline(infile, line);
+		char_separator<char> sep2(" \t");
 
-
-	// TODO PASSAR A USAR ESTE CODIGO PARA CRIAR O GRAFO PARALELO
-	// ------------------------------------------------------------
-	Graph g(n); // initialize with the total number of vertices, n
-	if (process_id(g.process_group()) == 0) {
-	  // Only process 0 loads the graph, which is distributed automatically
-	  int source, target;
-	  for (std::cin >> source >> target)
-		add_edge(vertex(source, g), vertex(target, g), g);
-	}
-	// ------------------------------------------------------------
-
-
-	// captura a primeira linha do arquivo contendo as informacoes
-	// de numero de vertices e arestas do grafo
-	char_separator<char> sep("\r\n");
-	char_separator<char> sep2(" \t");
-	tokenizer< char_separator<char> > tokens(graphContents, sep);
-	lines.assign(tokens.begin(),tokens.end());
-
-	try {
-		string line = lines.at(0);
-		lines.erase(lines.begin());
-		trim(line);
-		BOOST_LOG_TRIVIAL(trace) << "Line: " << line << endl;
-
-		if(line.find("people") != string::npos) {  // xpress files
-			BOOST_LOG_TRIVIAL(trace) << "Format type is 0" << endl;
-			string firstLine = lines.at(0);
-			string number = line.substr(line.find("people:") + 7);
-			trim(number);
-			n = boost::lexical_cast<int>(number);
-			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
-			formatType = 0;
-		} else if(line.find("Vertices") != string::npos) {
-			BOOST_LOG_TRIVIAL(trace) << "Format type is 1" << endl;
-			string number = line.substr(line.find("Vertices") + 8);
-			trim(number);
-			n = boost::lexical_cast<int>(number);
-			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
-			while(lines.at(0).find("Arcs") == string::npos && lines.at(0).find("Edges") == string::npos) {
-				lines.erase(lines.begin());
-			}
-			lines.erase(lines.begin());
-			formatType = 1;
-		} else {
-			tokenizer< char_separator<char> > tokens2(line, sep2);
-			vector<string> vec;
-			vec.assign(tokens2.begin(),tokens2.end());
-			n = boost::lexical_cast<int>(vec.at(0));
-			if(vec.size() == 1) { // .dat files
-				BOOST_LOG_TRIVIAL(trace) << "Format type is 3" << endl;
-				formatType = 3;
+		try {
+			if(line.find("people") != string::npos) {  // xpress files
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 0" << endl;
+				string number = line.substr(line.find("people:") + 7);
+				trim(number);
+				n = boost::lexical_cast<int>(number);
+				BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
+				formatType = 0;
+			} else if(line.find("Vertices") != string::npos) {
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 1" << endl;
+				string number = line.substr(line.find("Vertices") + 8);
+				trim(number);
+				n = boost::lexical_cast<int>(number);
+				BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
+				formatType = 1;
 			} else {
-				BOOST_LOG_TRIVIAL(trace) << "Format type is 2" << endl;
-				e = boost::lexical_cast<int>(vec.at(1));
-				formatType = 2;
+				tokenizer< char_separator<char> > tokens2(line, sep2);
+				vector<string> vec;
+				vec.assign(tokens2.begin(),tokens2.end());
+				n = boost::lexical_cast<int>(vec.at(0));
+				if(vec.size() == 1) { // .dat files
+					BOOST_LOG_TRIVIAL(trace) << "Format type is 3" << endl;
+					formatType = 3;
+				} else {
+					BOOST_LOG_TRIVIAL(trace) << "Format type is 2" << endl;
+					e = boost::lexical_cast<int>(vec.at(1));
+					formatType = 2;
+				}
+			}
+		} catch( boost::bad_lexical_cast const& e ) {
+			std::cerr << "Error: input string was not valid" << std::endl;
+			cerr << e.what() << "\n";
+			BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+		}
+
+		// if(parallelgraph) {  // Only process 0 loads the graph, which is distributed automatically
+			g = boost::make_shared<ParallelBGLSignedGraph>(n);
+		// } else {
+		// 	g = boost::make_shared<BGLSignedGraph>(n);
+		// }
+		BOOST_LOG_TRIVIAL(trace) << "Successfully created signed graph with " << n << " vertices." << std::endl;
+
+		if(formatType == 1) {
+			std::getline(infile, line);
+			while(line.find("Arcs") == string::npos && line.find("Edges") == string::npos) {
+				std::getline(infile, line);
 			}
 		}
-	} catch( boost::bad_lexical_cast const& e ) {
-	    std::cerr << "Error: input string was not valid" << std::endl;
-	    cerr << e.what() << "\n";
-	    BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
-	}
 
-	SignedGraphPtr g = boost::make_shared<SignedGraph>(n);
-	BOOST_LOG_TRIVIAL(trace) << "Successfully created signed graph with " << n << " vertices." << std::endl;
+		// captura as arestas do grafo com seus valores
+		if(formatType == 2 || formatType == 1) {
+			long imbalance = 0;
+			while (std::getline(infile, line)) {
+				trim(line);
+				tokenizer< char_separator<char> > tokens2(line, sep2);
+				vector<string> vec;
+				vec.assign(tokens2.begin(),tokens2.end());
 
-	// captura as arestas do grafo com seus valores
-	if(formatType == 2 || formatType == 1) {
-		long imbalance = 0;
-		while (not lines.empty()) {
-			string line = lines.back();
-			trim(line);
-			lines.pop_back();
-			tokenizer< char_separator<char> > tokens2(line, sep2);
-			vector<string> vec;
-			vec.assign(tokens2.begin(),tokens2.end());
+				if (vec.size() < 3) continue;
+				//if(vec.at(2).rfind('\n') != string::npos)
+				// BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
-			if (vec.size() < 3) continue;
-			//if(vec.at(2).rfind('\n') != string::npos)
-			// BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
-
-			try {
-				int a = boost::lexical_cast<int>(vec.at(0));
-				int b = boost::lexical_cast<int>(vec.at(1));
-				double value = 0.0;
-				if(vec.at(2) != "*") {
-					sscanf(vec.at(2).c_str(), "%lf", &value);
-					if(formatType == 2) {
-						// vertex number must be in the interval 0 <= i < n
-						if(a >= n or b >= n) {
-							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
-							cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+				try {
+					int a = boost::lexical_cast<int>(vec.at(0));
+					int b = boost::lexical_cast<int>(vec.at(1));
+					double value = 0.0;
+					if(vec.at(2) != "*") {
+						sscanf(vec.at(2).c_str(), "%lf", &value);
+						if(formatType == 2) {
+							// vertex number must be in the interval 0 <= i < n
+							if(a >= n or b >= n) {
+								BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+								cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+							}
+							g->addEdge(a, b, value);
+							// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
+						} else {
+							if(a > n or b > n) {
+								BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+								cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+							}
+							g->addEdge(a - 1, b - 1, value);
+							// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 						}
-						g->addEdge(a, b, value);
-						// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
-					} else {
+					} else {  // special notation for directed edges (add 1 to imbalance)
+						imbalance++;
+					}
+				} catch( boost::bad_lexical_cast const& ) {
+					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+				}
+
+			}
+		} else if(formatType == 0) {  // xpress files
+			char_separator<char> sep3(" (),\t[]");
+			while(std::getline(infile, line)) {
+				if(line.find("Mrel:") != string::npos) {
+					line = line.substr(line.find("Mrel:") + 5);
+				}
+				trim(line);
+				if(line.length() == 0) {
+					continue;
+				}
+				tokenizer< char_separator<char> > tokens2(line, sep3);
+				vector<string> vec2;
+				vec2.assign(tokens2.begin(),tokens2.end());
+
+				int size = vec2.size();
+				if (size % 3 != 0) {
+					BOOST_LOG_TRIVIAL(fatal) << "Error: invalid XPRESS file format!" << std::endl;
+				}
+				for(int i = 0; i + 2 < size; i = i + 3) {
+					try {
+						// std::cout << "Processing line " << vec2.at(i) << " " << vec2.at(i+1) << " " << vec2.at(i+2) << std::endl;
+						int a = boost::lexical_cast<int>(vec2.at(i));
+						int b = boost::lexical_cast<int>(vec2.at(i + 1));
+						double value = 0.0;
+						sscanf(vec2.at(i + 2).c_str(), "%lf", &value);
+						// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+
 						if(a > n or b > n) {
 							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
 							cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
 						}
 						g->addEdge(a - 1, b - 1, value);
+						// g->addEdge(b - 1, a - 1, value);
+					} catch( boost::bad_lexical_cast const& ) {
+						BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+					}
+				}
+			}
+		} else {  // formatType == 3, .dat files
+			char_separator<char> sep3(" \t");
+			unsigned int a = 0;
+			while (std::getline(infile, line)) {
+				trim(line);
+				tokenizer< char_separator<char> > tokens2(line, sep3);
+				vector<string> vec;
+				vec.assign(tokens2.begin(),tokens2.end());
+				// cout << "Line is: " << line << " vec.size = " << vec.size() << endl;
+
+				for(unsigned int b = 0; b < vec.size(); b++) {
+					try {
+						double value = 0.0;
+						sscanf(vec.at(b).c_str(), "%lf", &value);
 						// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+						// the following is to avoid duplicate couting of arcs in the objective function
+						if(a >= n or b >= n) {
+							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+							cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+						}
+						g->addEdge(a, b, value);
+					} catch( boost::bad_lexical_cast const& ) {
+						BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 					}
-				} else {  // special notation for directed edges (add 1 to imbalance)
-					imbalance++;
 				}
-			} catch( boost::bad_lexical_cast const& ) {
-				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
-			}
-
-		}
-	} else if(formatType == 0) {  // xpress files
-		char_separator<char> sep3(" (),\t\r\n[]");
-		string temp = graphContents.substr(graphContents.find("Mrel:") + 5);
-		tokenizer< char_separator<char> > tokens2(temp, sep3);
-		vector<string> vec2;
-		vec2.assign(tokens2.begin(),tokens2.end());
-		while(vec2.at(0).length() == 0) {
-			vec2.erase(vec2.begin());
-		}
-		while(vec2.back().length() == 0) {
-			vec2.pop_back();
-		}
-
-		int size = vec2.size();
-		if (size % 3 != 0) {
-			BOOST_LOG_TRIVIAL(fatal) << "Error: invalid XPRESS file format!" << std::endl;
-		}
-		for(int i = 0; i + 2 < size; i = i + 3) {
-			try {
-				// std::cout << "Processing line " << vec2.at(i) << " " << vec2.at(i+1) << " " << vec2.at(i+2) << std::endl;
-				int a = boost::lexical_cast<int>(vec2.at(i));
-				int b = boost::lexical_cast<int>(vec2.at(i + 1));
-				double value = 0.0;
-				sscanf(vec2.at(i + 2).c_str(), "%lf", &value);
-				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
-
-				if(a > n or b > n) {
-					BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
-					cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
-				}
-				g->addEdge(a - 1, b - 1, value);
-				// g->addEdge(b - 1, a - 1, value);
-			} catch( boost::bad_lexical_cast const& ) {
-				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+				a++;
 			}
 		}
-	} else {  // formatType == 3, .dat files
-		char_separator<char> sep3(" \t");
-		unsigned int a = 0;
-		while (not lines.empty()) {
-			string line = lines.back();
-			trim(line);
-			lines.pop_back();
-			tokenizer< char_separator<char> > tokens2(line, sep3);
-			vector<string> vec;
-			vec.assign(tokens2.begin(),tokens2.end());
-			// cout << "Line is: " << line << " vec.size = " << vec.size() << endl;
-
-			for(unsigned int b = 0; b < vec.size(); b++) {
-				try {
-					double value = 0.0;
-	                sscanf(vec.at(b).c_str(), "%lf", &value);
-					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
-					// the following is to avoid duplicate couting of arcs in the objective function
-	                if(a >= n or b >= n) {
-						BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
-						cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
-					}
-					g->addEdge(a, b, value);
-				} catch( boost::bad_lexical_cast const& ) {
-					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
-				}
-			}
-			a++;
-		}
+		infile.close();
+		BOOST_LOG_TRIVIAL(info) << "Successfully read graph file.";
+	} else {
+		BOOST_LOG_TRIVIAL(error) << "Failed to read graph file.";
 	}
-	// g->printGraph();
-	BOOST_LOG_TRIVIAL(info) << "Successfully read graph file.";
-
 	return g;
 }
 
@@ -418,18 +407,18 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(const string& filepath, const bool& parallelgraph) {
 	BOOST_LOG_TRIVIAL(info) << "Reading input file: '" << filepath << "' ..." << endl;
+	SignedGraphPtr g;
 	if(not parallelgraph) {
-		SignedGraphPtr g = readGraphFromString(get_file_contents(filepath.c_str()));
-		g->setGraphFileLocation(filepath);
-		boost::hash<std::string> string_hash;
-		g->setId(string_hash(filepath));
-		return g;
+		g = readGraphFromString(get_file_contents(filepath.c_str()));
 	} else {
-		SignedGraphPtr g = readGraphFromFilepath(filepath, parallelgraph);
-
+		g = readGraphFromFilepath(filepath, parallelgraph);
 		// All processes synchronize at this point, then the graph is complete
 		synchronize(g->graph.process_group());  // this is the synchronization from master process (id 0)
 	}
+	g->setGraphFileLocation(filepath);
+	boost::hash<std::string> string_hash;
+	g->setId(string_hash(filepath));
+	return g;
 }
 
 std::string SimpleTextGraphFileReader::get_file_contents(const char *filename)
@@ -462,18 +451,18 @@ bool SimpleTextGraphFileReader::exportGraphToGraphVizFile(SignedGraph &g, const 
 	}
 
 	long n = g.getN();
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
-	UndirectedGraph::edge_descriptor e;
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	ParallelGraph::edge_descriptor e;
 
 	os << "graph graphname {\n";
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
-		UndirectedGraph::out_edge_iterator f, l;
+		ParallelGraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			long j = target(*f, g.graph);
+			long j = target(*f, g.graph).local;
 			if(i < j) {
 				os << i << " -- " << j << "[ weight = " << weight << " ];\n";
 			}

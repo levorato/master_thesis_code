@@ -19,11 +19,10 @@
 
 namespace clusteringgraph {
 
-typedef boost::adjacency_list<boost::setS, boost::distributedS<boost::graph::distributed::mpi_process_group, boost::vecS>, boost::undirectedS,
+typedef boost::adjacency_list<boost::vecS, boost::distributedS<boost::graph::distributed::mpi_process_group, boost::vecS>, boost::undirectedS,
 		VertexProperty, EdgeProperty, no_property, vecS > ParallelGraph;
 
-
-class ParallelBGLSignedGraph: public SignedGraph {
+class ParallelBGLSignedGraph: public Graph {
 public:
 	ParallelBGLSignedGraph(const unsigned long &numberOfNodes);
 	virtual ~ParallelBGLSignedGraph();
@@ -49,7 +48,7 @@ public:
 	 * Add an edge to the graph. Accepts only edges whose weight is
 	 * equal to -1, 0 or 1.
 	 */
-	virtual void addEdge(unsigned long a, unsigned long b, Edge edge);
+	virtual void addEdge(unsigned long source, unsigned long target, Edge edge);
 
 	/**
 	 * Returns the degree of vertex a.
@@ -106,6 +105,9 @@ private:
 	 */
 	string graphFileLocation;
 };
+
+typedef ParallelBGLSignedGraph SignedGraph;
+typedef boost::shared_ptr<SignedGraph> SignedGraphPtr;
 
 } /* namespace clusteringgraph */
 

@@ -18,6 +18,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 
 #include "Graph.h"
+#include "ParallelBGLSignedGraph.h"
 #include "Imbalance.h"
 #include "../../problem/include/ClusteringProblem.h"
 

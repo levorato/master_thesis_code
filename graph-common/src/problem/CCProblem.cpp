@@ -43,20 +43,20 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
-	UndirectedGraph::edge_descriptor e;
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	ParallelGraph::edge_descriptor e;
 
 	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Starting obj function calculation.";
 
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = myCluster[i];
-		UndirectedGraph::out_edge_iterator f, l;
+		ParallelGraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			long j = target(*f, g.graph);
+			long j = target(*f, g.graph).local;
 			long kj = myCluster[j];
 			bool sameCluster = (ki == kj);
 			if(weight < 0 and sameCluster) {  // negative edge
@@ -88,18 +88,18 @@ Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering&
 	double negativeSum = 0, positiveSum = 0;
 	ClusterArray myCluster = c.getClusterArray();
 	long ki = myCluster[i];
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 	// unsigned long n = g.getN();
 
 	// iterates over out-edges of vertex i
 	//typedef graph_traits<Graph> GraphTraits;
-	UndirectedGraph::out_edge_iterator out_i, out_end;
-	UndirectedGraph::edge_descriptor e;
+	ParallelGraph::out_edge_iterator out_i, out_end;
+	ParallelGraph::edge_descriptor e;
 
 	// std::cout << "out-edges of " << i << ": ";
-	for (tie(out_i, out_end) = out_edges(i, g.graph); out_i != out_end; ++out_i) {
+	for (tie(out_i, out_end) = out_edges(vertex(i, g.graph), g.graph); out_i != out_end; ++out_i) {
 		e = *out_i;
-		Vertex src = source(e, g.graph), targ = target(e, g.graph);
+		Vertex src = source(e, g.graph).local, targ = target(e, g.graph).local;
 		double weight = ew[e].weight;
 		if(myCluster[targ.id] == ki) {
 			if(weight < 0) {
@@ -126,10 +126,10 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
 	stringstream ss1, ss2, ss3;
-	UndirectedGraph::edge_descriptor e;
+	ParallelGraph::edge_descriptor e;
 	// Cluster to cluster matrix containing positive / negative contribution to imbalance
 	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 
 	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Starting imbalance analysis.";
 	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
@@ -140,12 +140,12 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = myCluster[i];
-		UndirectedGraph::out_edge_iterator f, l;
+		ParallelGraph::out_edge_iterator f, l;
 		double positiveSum = 0, negativeSum = 0;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
 			e = *f;
-			Vertex src = source(e, g.graph), targ = target(e, g.graph);
+			Vertex src = source(e, g.graph).local, targ = target(e, g.graph).local;
 			double weight = ew[e].weight;
 			bool sameCluster = (myCluster[targ.id] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
@@ -178,19 +178,19 @@ matrix<double> CCProblem::calculateClusterToClusterImbalanceMatrix(SignedGraph& 
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
-	UndirectedGraph::edge_descriptor e;
+	ParallelGraph::edge_descriptor e;
 	// Cluster to cluster matrix containing positive / negative contribution to imbalance
 	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
 
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = myCluster[i];
-		UndirectedGraph::out_edge_iterator f, l;
+		ParallelGraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
 			e = *f;
-			Vertex src = source(e, g.graph), targ = target(e, g.graph);
+			Vertex src = source(e, g.graph).local, targ = target(e, g.graph).local;
 			double weight = ew[e].weight;
 			bool sameCluster = (myCluster[targ.id] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge

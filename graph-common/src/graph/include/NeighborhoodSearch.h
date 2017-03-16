@@ -16,6 +16,7 @@
 #include <cassert>
 
 #include "Graph.h"
+#include "ParallelBGLSignedGraph.h"
 #include "Clustering.h"
 #include "../../problem/include/ClusteringProblem.h"
 

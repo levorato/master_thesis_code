@@ -9,6 +9,7 @@
 #define SIMPLETEXTGRAPHFILEREADER_H_
 
 #include "Graph.h"
+#include "ParallelBGLSignedGraph.h"
 #include <string>
 
 using namespace clusteringgraph;

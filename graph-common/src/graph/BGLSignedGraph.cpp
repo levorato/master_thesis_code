@@ -35,8 +35,7 @@ BGLSignedGraph::BGLSignedGraph(const unsigned long &numberOfNodes) :
 }
 
 BGLSignedGraph::BGLSignedGraph(UndirectedGraph &g, std::vector<long> subGraphNodeList) :
-		graph(),
-		n(subGraphNodeList.size()), id(0) {
+		graph(), n(subGraphNodeList.size()), id(0) {
 
 	graph = g.create_subgraph(subGraphNodeList.begin(), subGraphNodeList.end());
 }

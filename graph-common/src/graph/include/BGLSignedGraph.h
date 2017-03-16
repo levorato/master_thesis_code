@@ -21,7 +21,7 @@ typedef subgraph< UDGraph > SubGraph;
 typedef subgraph< UDGraph > UndirectedGraph;
 
 
-class BGLSignedGraph: public SignedGraph {
+class BGLSignedGraph: public Graph {
 public:
 	BGLSignedGraph(const unsigned long &numberOfNodes);
 	/**
@@ -119,7 +119,6 @@ public:
 	 *
 	 */
 	string convertToGraclusInputFormat();
-
 
 	UndirectedGraph graph;
 

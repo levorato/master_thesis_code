@@ -472,6 +472,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	unsigned int numberOfSearchSlavesPerMaster = 0;
 	int machineProcessAllocationStrategy = 0;
 	// Leader process code (rank 0)
+	// TODO if (process_id(g.process_group()) == 0) {
 	if(myRank == 0) {
 		//cout << "Correlation clustering problem solver" << endl;
 		// id used for output folders

@@ -25,14 +25,32 @@ using namespace std;
 struct Edge {
     double weight;
     std::size_t vertex_index_t;
-    Edge() : weight(0) { }
-    Edge(double w) : weight(w) { }
+    Edge() : weight(0), vertex_index_t(0) { }
+    Edge(double w) : weight(w), vertex_index_t(0) { }
+
+    friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, unsigned int file_version)
+	{
+		ar & weight;
+		ar & vertex_index_t;
+	}
 };
 struct Vertex {
     int id;
     std::size_t edge_index_t;
-    Vertex() : id(0) { }
-    Vertex(int w) : id(w) { }
+    Vertex() : id(0), edge_index_t(0) { }
+    Vertex(int w) : id(w), edge_index_t(0)  { }
+
+    friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, unsigned int file_version)
+	{
+		ar & id;
+		ar & edge_index_t;
+	}
 };
 
 
@@ -72,16 +90,11 @@ typedef property< edge_properties_t, Edge, property< edge_index_t, std::size_t >
 
 typedef std::vector<long> ClusterArray;
 
-class SignedGraph {
+class Graph {
 public:
-	virtual SignedGraph(const unsigned long &numberOfNodes);
-
-	/**
-	 * Builds a subgraph based on the graph g provided as parameter, induced by the
-	 * vertex node list subGraphNodeList.
-	 */
-	SignedGraph(UndirectedGraph &g, std::vector<long> subGraphNodeList);
-	virtual ~SignedGraph();
+	Graph(const unsigned long &numberOfNodes);
+	Graph();
+	virtual ~Graph();
 
 	/**
 	 * Returns the numbers of vertices of the graph.
@@ -146,8 +159,6 @@ public:
 	virtual void setGraphFileLocation(string txt);
 
 };
-
-typedef boost::shared_ptr<SignedGraph> SignedGraphPtr;
 
 } /* namespace clusteringgraph */
 #endif /* GRAPH_H_ */

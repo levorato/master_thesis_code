@@ -662,11 +662,11 @@ void NeighborhoodSearch::updateVertexClusterSumArrays(SignedGraph* g, std::vecto
         }
         // in/out-edges of vertex i
         int ki = clusterArray[i];
-        UndirectedGraph::out_edge_iterator f, l;
+        ParallelGraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
-			int j = target(*f, g->graph);
-			double weight = ((Edge*)f->get_property())->weight;
+		for (boost::tie(f, l) = out_edges(vertex(i, g->graph), g->graph); f != l; ++f) {
+			int j = target(*f, g->graph).local;
+			double weight = ((Edge*)f->local.get_property())->weight;
 			int kj = clusterArray[j];
 
 			if(kj >= 0) {
@@ -714,11 +714,11 @@ void NeighborhoodSearch::updateVertexClusterSumArraysDelta(SignedGraph* g, std::
 	/* for(ulong k = 0; k < nc; k++) {
 	 	isNeighborClusterArray[i + k * n] = 0;
 	} */
-	UndirectedGraph::out_edge_iterator f, l;
+	ParallelGraph::out_edge_iterator f, l;
 	// For each out edge of i
-	for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
-		int j = target(*f, g->graph);
-		double weight = ((Edge*)f->get_property())->weight;
+	for (boost::tie(f, l) = out_edges(vertex(i, g->graph), g->graph); f != l; ++f) {
+		int j = target(*f, g->graph).local;
+		double weight = ((Edge*)f->local.get_property())->weight;
 		int kj = clusterArray[j];
 
 		isNeighborClusterArray[j + k1 * n] -= 2;
