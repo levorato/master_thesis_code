@@ -68,6 +68,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/log/support/date_time.hpp>
+#include <boost/graph/distributed/local_subgraph.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -482,7 +483,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 			cout << "Exporting the graph to DOT format." << endl;
 			SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
 			fs::path filePath (vm["input-file"].as< std::vector<string> >().at(0));
-			SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
+			SignedGraphPtr g = reader.readGraphFromFile(filePath.string(), parallelgraph);
 			string loc = g->getGraphFileLocation();
 			string filename(loc.substr(loc.find_last_of("/\\")));
 			reader.exportGraphToGraphVizFile(*g, outputFolder, filename);
@@ -724,7 +725,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						if(previousId != imsgpg.id) {
 							g.reset();
 							// Reads the graph from the specified text file
-							g = reader.readGraphFromFile(imsgpg.graphInputFilePath);
+							g = reader.readGraphFromFile(imsgpg.graphInputFilePath, false);
 							previousId = imsgpg.id;
 						}
 
@@ -760,18 +761,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpg.vertexList.size() > 0) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
-							// SubGraph subg = (g->graph).create_subgraph();
-							SignedGraph sg(g->graph, imsgpg.vertexList);
-							/*
-							for(std::vector<long>::iterator it = imsgpg.vertexList.begin(); it != imsgpg.vertexList.end(); it++) {
-								add_vertex(*it, subg);
-							}
-							sg.graph = subg; */
-							n = num_vertices(sg.graph);
-							m = num_edges(sg.graph);
+							n = num_vertices(g->graph);
+							m = num_edges(g->graph);
 							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << m;
 
-							GainFunctionFactory functionFactory(&sg);
+							GainFunctionFactory functionFactory(g.get());
 							ConstructClustering defaultConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha);
 							ConstructClustering noConstruct(functionFactory.build(imsgpg.gainFunctionType), seed, imsgpg.alpha, &imsgpg.CCclustering);
 							ConstructClustering* construct = &defaultConstruct;
@@ -780,11 +774,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							}
 
 							if(imsgpg.cudaEnabled) {
-								bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, &sg, imsgpg.iter,
+								bestClustering = CUDAgrasp.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
 													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
 								timeSpent = CUDAgrasp.getTotalTimeSpent();
 							} else {
-								bestClustering = resolution.executeGRASP(construct, &vnd, &sg, imsgpg.iter,
+								bestClustering = resolution.executeGRASP(construct, &vnd, g.get(), imsgpg.iter,
 													problemFactory.build(imsgpg.problemType, imsgpg.k), info);
 								timeSpent = resolution.getTotalTimeSpent();
 							}
@@ -818,12 +812,19 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							BOOST_LOG_TRIVIAL(fatal) << "ERROR: Empty ILS message received. Terminating.\n";
 							return 1;
 						}
-						// builds a new graph object only if it has changed (saves time)
-						if(previousId != imsgpils.id) {
-							g.reset();
-							// Reads the graph from the specified text file
-							g = reader.readGraphFromFile(imsgpils.graphInputFilePath);
-							previousId = imsgpils.id;
+
+						if(not imsgpils.isParallelGraph) {
+							// builds a new graph object only if it has changed (saves time)
+							if(previousId != imsgpils.id) {
+								g.reset();
+								// Reads the graph from the specified text file
+								g = reader.readGraphFromFile(imsgpils.graphInputFilePath, false);
+								previousId = imsgpils.id;
+							}
+						} else {
+							// All processes synchronize at this point, then the graph is complete
+							g = boost::make_shared<ParallelBGLSignedGraph>(0);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
+							synchronize(g->graph);
 						}
 
 						// triggers the local ILS routine
@@ -864,9 +865,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							if(imsgpils.isParallelGraph) {
 								BOOST_LOG_TRIVIAL(info) << "Split graph with boost parallel graph enabled.";
 
-								// All processes synchronize at this point, then the graph is complete
-								synchronize(g->graph.process_group());
-
 								// codigo de teste da parallel bgl
 								boost::mpi::environment  env;
 								boost::mpi::communicator comm;
@@ -874,7 +872,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								 // https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
 								 BGL_FORALL_VERTICES(v, g->graph, ParallelGraph)
 								 {
-									 std::cout << "V @ " << comm.rank() << " " << g->graph[v] << std::endl;
+									 std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
 								 }
 
 								 BGL_FORALL_EDGES(e, g->graph, ParallelGraph)
@@ -883,63 +881,70 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 											<< " -> " << boost::target(e, g->graph).local << " srccpu " <<
 										e.source_processor << " dstcpu " << e.target_processor << std::endl;
 								 }
-							}
-
-							if(imsgpils.vertexList.size() == 0) {
-								BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
-								std::vector<unsigned int> clusterProcessOrigin;
-								std::vector<Imbalance> internalImbalance;
-								ClusterArray cArray(g->getN(), Clustering::NO_CLUSTER);
-								bestClustering = Clustering(cArray, *g, problemFactory.build(imsgpils.problemType, imsgpils.k),
-										0.0, 0.0, clusterProcessOrigin, internalImbalance);
-								n = 0;
-								e = 0;
 							} else {
-								SignedGraph sg(g->graph, imsgpils.vertexList);
-								/*
-								sg.graph = (g->graph).create_subgraph(); // imsgpils.vertexList.begin(), imsgpils.vertexList.end());
-								for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
-									add_vertex(*it, sg.graph);
-								} */
-								n = num_vertices(sg.graph);
-								e = num_edges(sg.graph);
-								BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;
+								if(imsgpils.vertexList.size() == 0) {
+									BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
+									std::vector<unsigned int> clusterProcessOrigin;
+									std::vector<Imbalance> internalImbalance;
+									ClusterArray cArray(g->getN(), Clustering::NO_CLUSTER);
+									bestClustering = Clustering(cArray, *g, problemFactory.build(imsgpils.problemType, imsgpils.k),
+											0.0, 0.0, clusterProcessOrigin, internalImbalance);
+									n = 0;
+									e = 0;
 
-								GainFunctionFactory functionFactory(&sg);
-								ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
-								ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering);
-								ConstructClustering* construct = &defaultConstruct;
-								if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
-										construct = &noConstruct;
-								}
-
-								if(imsgpils.cudaEnabled) {
-									try {
-										bestClustering = CUDAILS.executeILS(construct, &vnd, &sg, imsgpils.iter,
-											imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-											problemFactory.build(imsgpils.problemType, imsgpils.k), info);
-									} catch(std::exception& e) {  // possibly an exception caused by lack of GPU CUDA memory
-										BOOST_LOG_TRIVIAL(error) << e.what() << "\n";
-										BOOST_LOG_TRIVIAL(error) << "Lack of GPU memory detected: invoking sequential ILS (non CUDA)...";
-										// try to run the standard sequential ILS algorithm => FALLBACK
-										bestClustering = resolution.executeILS(construct, &vnd, &sg, imsgpils.iter,
-                                                                                        imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-                                                                                        problemFactory.build(imsgpils.problemType, imsgpils.k), info);
-									}
-									timeSpent = CUDAILS.getTotalTimeSpent();
-								} else {
-									bestClustering = resolution.executeILS(construct, &vnd, &sg, imsgpils.iter,
-											imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-											problemFactory.build(imsgpils.problemType, imsgpils.k), info);
-									timeSpent = resolution.getTotalTimeSpent();
-								}
-
-								// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
-								std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
-								for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-									globalVertexId.push_back(sg.graph.local_to_global(*it));
 								}
 							}
+							// SignedGraph sg(g->graph, imsgpils.vertexList);
+							/*
+							sg.graph = (g->graph).create_subgraph(); // imsgpils.vertexList.begin(), imsgpils.vertexList.end());
+							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
+								add_vertex(*it, sg.graph);
+							} */
+							n = num_vertices(g->graph);
+							e = num_edges(g->graph);
+							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;
+
+							GainFunctionFactory functionFactory(g.get());
+							ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
+							ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering);
+							ConstructClustering* construct = &defaultConstruct;
+							if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
+									construct = &noConstruct;
+							}
+
+							if(imsgpils.cudaEnabled) {
+								try {
+									bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
+										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+								} catch(std::exception& e) {  // possibly an exception caused by lack of GPU CUDA memory
+									BOOST_LOG_TRIVIAL(error) << e.what() << "\n";
+									BOOST_LOG_TRIVIAL(error) << "Lack of GPU memory detected: invoking sequential ILS (non CUDA)...";
+									// try to run the standard sequential ILS algorithm => FALLBACK
+									bestClustering = resolution.executeILS(construct, &vnd, g.get(), imsgpils.iter,
+																					imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+																					problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+								}
+								timeSpent = CUDAILS.getTotalTimeSpent();
+							} else {
+								bestClustering = resolution.executeILS(construct, &vnd, g.get(), imsgpils.iter,
+										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+								timeSpent = resolution.getTotalTimeSpent();
+							}
+
+							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
+							/* TODO reimplementar essa parte
+							BGL_FORALL_VERTICES(v, g->graph, ParallelGraph)
+							 {
+								 std::cout << "V @ " << comm.rank() << " " << v.global_descriptor() << std::endl;
+								 globalVertexId.push_back(
+							 }
+							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
+							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+								globalVertexId.push_back(sg.graph.local_to_global(*it));
+							} */
+
 						} else {
 							// CUDA ILS is only available to the CC problem
 							if(imsgpils.cudaEnabled and imsgpils.problemType == ClusteringProblem::CC_PROBLEM) {
@@ -990,7 +995,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// builds a new graph object only if it has changed (saves time)
 						if(previousId != imsgvns.id) {
 							g.reset();
-							g = reader.readGraphFromFile(imsgvns.graphInputFilePath);
+							g = reader.readGraphFromFile(imsgvns.graphInputFilePath, false);
 							previousId = imsgvns.id;
 						}
 						// global vertex id array used in split graph

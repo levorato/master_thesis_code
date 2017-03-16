@@ -16,9 +16,7 @@
 #include "graph/include/NeighborhoodSearchFactory.h"
 #include "graph/include/ParallelNeighborhoodSearch.h"
 #include "graph/include/SequentialNeighborhoodSearch.h"
-#include "./splitgraph/include/GraclusParallelILS.h"
 #include "splitgraph/include/ImbalanceSubgraphParallelILS.h"
-#include "splitgraph/include/ParallelGraphDistributedILS.h"
 
 #include <iomanip>
 #include <cstring>
@@ -129,16 +127,10 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 		bestClustering.printClustering(g->getN());
 		return bestClustering;
 	} else {
-		// GraclusParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled);
-		if(parallelgraph) {  // use boost parallel graph library
-			ParallelGraphDistributedILS pgdils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled, parallelgraph);
-			Clustering Gc = pgdils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
-			return Gc;
-		} else {  // conventional boost graph library (BGL)
-			ImbalanceSubgraphParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled, parallelgraph);
-			Clustering Gc = gpils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
-			return Gc;
-		}
+		// use boost parallel graph library
+		ImbalanceSubgraphParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled, parallelgraph);
+		Clustering Gc = gpils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+		return Gc;
 	}
 }
 

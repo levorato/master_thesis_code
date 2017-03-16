@@ -52,7 +52,7 @@ def configure(conf):
 
 	# the tests will fail if the libraries cannot be found
 	# try pre_setting some variables, like this
-	conf.env.LIBPATH_CUDA = ['/usr/local/cuda/lib64']
+	conf.env.LIBPATH_CUDA = ['/usr/local/cuda/lib64/stubs']
 	conf.env.INCLUDES_CUDA = ['/usr/local/cuda/include']	
 	# cuda config
 	conf.load('cuda', tooldir='.')

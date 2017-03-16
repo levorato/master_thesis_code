@@ -17,6 +17,7 @@
 #include "graph/include/ParallelNeighborhoodSearch.h"
 #include "graph/include/SequentialNeighborhoodSearch.h"
 #include "util/include/RandomUtil.h"
+#include "graph/include/BGLSignedGraph.h"
 
 #include <iomanip>
 #include <cstring>
@@ -326,14 +327,14 @@ ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning
 			timer.start();
 			boost::timer::cpu_times start_time = timer.elapsed();
 
-			boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
-			UndirectedGraph::edge_descriptor e;
-			UndirectedGraph::out_edge_iterator f2, l2;
+			boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+			ParallelGraph::edge_descriptor e;
+			ParallelGraph::out_edge_iterator f2, l2;
 			std::vector<double> deltaPosDegree(n, (double)0);
 			// keeps an array containing every positive edge between ni_max and every other vertex -> O(n)
-			for (boost::tie(f2, l2) = out_edges(max_ni, g->graph); f2 != l2; ++f2) {
+			for (boost::tie(f2, l2) = out_edges(vertex(max_ni, g->graph), g->graph); f2 != l2; ++f2) {
 				e = *f2;
-				long j = target(*f2, g->graph);
+				long j = target(*f2, g->graph).local;
 				if(ew[e].weight > 0) {
 					deltaPosDegree[j] = ew[e].weight;
 				}
@@ -1852,12 +1853,13 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	}
 	splitgraphVNDResults << "Subgraph, n, m, k \n";
 	for(int p = 0; p < numberOfProcesses; p++) {
-		SignedGraph sg(g->graph, verticesInProcess[p]);
+		// BGLSignedGraph sg(g->graph, verticesInProcess[p]);
+		// TODO TROCAR PELO ParallelBGLSignedGraph ou equivalente contendo as informacoes da divisao de vertices entre os processos
 		std::vector<Coordinate> clusterList = util.obtainListOfClustersFromProcess(*g, bestClusteringVND, p);
 
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_vertices = " << sg.getN() <<
-				"; num_edges = " <<	sg.getM() << "; k = " << clusterList.size();
-		splitgraphVNDResults << p << ", " << sg.getN() << ", " << sg.getM() << ", " << clusterList.size() << "\n";
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_vertices = " << num_vertices(g->graph) <<
+				"; num_edges = " <<	num_edges(g->graph) << "; k = " << clusterList.size();
+		splitgraphVNDResults << p << ", " << num_vertices(g->graph) << ", " << num_edges(g->graph) << ", " << clusterList.size() << "\n";
 	}
 	splitgraphVNDResults << "I(P), " << bestClusteringVND.getImbalance().getValue() << "\n";
 	splitgraphVNDResults << "Time spent, " << timeSpentOnLocalSearch << "\n";
@@ -1889,9 +1891,10 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 			verticesInProcess[k].push_back(i);
 		}
 		for(int p = 0; p < numberOfProcesses; p++) {
-			SignedGraph sg(g->graph, verticesInProcess[p]);
+			// SignedGraph sg(g->graph, verticesInProcess[p]);
+			// TODO TROCAR POR FUNCAO EQUIVALENTE DA PARALLEL BGL QUE FORNECA ESSES DADOS: NUMERO DE VERTICES E ARESTAS
 			std::vector<Coordinate> clusterList = util.obtainListOfClustersFromProcess(*g, globalClustering, p);
-			sshistory << ", " << sg.getM() << ", " << sg.getN() << ", " << clusterList.size();
+			sshistory << ", " << num_edges(g->graph) << ", " << num_vertices(g->graph) << ", " << clusterList.size();
 		}
 		sshistory << "\n";
 	}
@@ -1903,10 +1906,11 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	}
 	sshistory << "\n";
 	for(int p = 0; p < numberOfProcesses; p++) {
-		SignedGraph sg(g->graph, verticesInProcess[p]);
+		// BGLSignedGraph sg(g->graph, verticesInProcess[p]);
+		// TODO TROCAR PELO ParallelBGLSignedGraph ou equivalente contendo as informacoes da divisao de vertices entre os processos
 		std::vector<Coordinate> bigClustersList = util.obtainListOfClustersFromProcess(*g, globalClustering, p);
 		std::vector<Coordinate>::iterator biggestCluster = std::max_element(bigClustersList.begin(), bigClustersList.end(), coordinate_ordering_asc());
-		sshistory << sg.getN() << ", " << boost::math::lround(biggestCluster->value) << ", ";
+		sshistory << num_vertices(g->graph) << ", " << boost::math::lround(biggestCluster->value) << ", ";
 	}
 	sshistory << "\n";
 	// includes the number of frustrated solutions
@@ -2244,15 +2248,17 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
 		return OutputMessage(leaderClustering, 0, 0.0, globalVertexId, 0, 0);
 	} else {
-		SignedGraph sg(g->graph, vertexList);
-		std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
-		for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-			globalVertexId.push_back(sg.graph.local_to_global(*it));
-		}
-		BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
+		// TODO TROCAR POR METODO EQUIVALENTE DA PARALLEL BGL
+		// SignedGraph sg(g->graph, vertexList);
+		// std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(g->graph);
+		// for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
+			// TODO TROCAR POR METODO EQUIVALENTE DA PARALLEL BGL
+			// globalVertexId.push_back(sg.graph.local_to_global(*it));
+		// }
+		BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(g->graph) << ", " << "e =  " << num_edges(g->graph);
 
 		// rebuilds construct clustering objects based on partial graph 'sg'
-		GainFunctionFactory functionFactory(&sg);
+		GainFunctionFactory functionFactory(g);
 		ConstructClustering defaultConstruct(functionFactory.build(construct->getGainFunctionType()),
 				construct->getRandomSeed(), construct->getAlpha());
 		ConstructClustering noConstruct(functionFactory.build(construct->getGainFunctionType()),
@@ -2275,29 +2281,29 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 		if(is_overloaded_process(vertexList)) {
 			CUDAILS cudails;
 			try {
-				leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+				leaderClustering = cudails.executeILS(construct2, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
 				num_comb = cudails.getNumberOfTestedCombinations();
 				timeSpent = cudails.getTotalTimeSpent();
 			} catch(std::exception& e) {  // possibly an exception caused by lack of GPU CUDA memory
                                 BOOST_LOG_TRIVIAL(error) << e.what() << "\n";
                                 BOOST_LOG_TRIVIAL(error) << "Lack of GPU memory detected: invoking sequential ILS (non CUDA)...";
                                 // try to run the standard sequential ILS algorithm => FALLBACK
-                                leaderClustering = resolution.executeILS(construct2, vnd, &sg, iter,
+                                leaderClustering = resolution.executeILS(construct2, vnd, g, iter,
                                             iterMaxILS, perturbationLevelMax,
                                             problem, info);
 				timeSpent = resolution.getTotalTimeSpent();
 	                        num_comb = resolution.getNumberOfTestedCombinations();
                         }
 		} else {
-			leaderClustering = resolution.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
+			leaderClustering = resolution.executeILS(construct2, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
 			timeSpent = resolution.getTotalTimeSpent();
 			num_comb = resolution.getNumberOfTestedCombinations();
 		}
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P0" << ": num_edges = " <<
-								num_edges(sg.graph) << " , num_vertices = " << num_vertices(sg.graph) << ", I(P) = "
+								num_edges(g->graph) << " , num_vertices = " << num_vertices(g->graph) << ", I(P) = "
 								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
 		return OutputMessage(leaderClustering, num_comb, timeSpent, globalVertexId,
-				num_vertices(sg.graph), num_edges(sg.graph));
+				num_vertices(g->graph), num_edges(g->graph));
 	}
 }
 

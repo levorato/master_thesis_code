@@ -46,6 +46,7 @@ def find_cuda_libs(self):
 	for x in ('lib64', 'lib'):
 		try:
 			_libpath.append(d.find_node(x).abspath())
+			_libpath.append(d.find_node(x).abspath() + '/stubs')
 		except:
 			pass
 
