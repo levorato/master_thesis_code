@@ -16,7 +16,7 @@ ParallelBGLSignedGraph::~ParallelBGLSignedGraph() {
 
 // TODO implementar
 ParallelBGLSignedGraph::ParallelBGLSignedGraph(const unsigned long &numberOfNodes) :
-		graph(numberOfNodes), n(numberOfNodes), id(0) {
+		n(numberOfNodes), id(0) {
 
 }
 

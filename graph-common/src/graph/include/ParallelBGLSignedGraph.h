@@ -25,7 +25,7 @@ typedef boost::adjacency_list<boost::vecS, boost::distributedS<boost::graph::dis
 class ParallelBGLSignedGraph: public Graph {
 public:
 	ParallelBGLSignedGraph(const unsigned long &numberOfNodes);
-	virtual ~ParallelBGLSignedGraph();
+	~ParallelBGLSignedGraph();
 
 	/**
 	 * Returns the numbers of vertices of the graph.

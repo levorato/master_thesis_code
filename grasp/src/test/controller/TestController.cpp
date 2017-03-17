@@ -250,7 +250,7 @@ void TestController::testSubgraphCreationPerformance(string executionId, unsigne
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-		SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
+		SignedGraphPtr g = reader.readGraphFromFile(filePath.string(), false);
 		Clustering c;
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
@@ -304,8 +304,8 @@ void TestController::testSubgraphCreationPerformance(string executionId, unsigne
 			timer.start();
 			start_time = timer.elapsed();
 
-			SignedGraph sg(g->graph, verticesInCluster[k]);
-			BOOST_LOG_TRIVIAL(info) << "Created subgraph " << k << " with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
+			// SignedGraph sg(g->graph, verticesInCluster[k]);
+			// BOOST_LOG_TRIVIAL(info) << "Created subgraph " << k << " with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
 
 			// Stops the timer and stores the elapsed time
 			timer.stop();
@@ -351,7 +351,7 @@ void TestController::testSplitGraphParallelILS(string executionId, unsigned long
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-		SignedGraphPtr g = reader.readGraphFromFile(filePath.string());
+		SignedGraphPtr g = reader.readGraphFromFile(filePath.string(), false);
 		Clustering c;
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;

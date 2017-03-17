@@ -30,7 +30,7 @@ namespace clusteringgraph {
 
 
 BGLSignedGraph::BGLSignedGraph(const unsigned long &numberOfNodes) :
-		graph(numberOfNodes), n(numberOfNodes), id(0) {
+		n(numberOfNodes), id(0) {
 
 }
 

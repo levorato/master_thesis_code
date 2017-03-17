@@ -92,71 +92,70 @@ typedef std::vector<long> ClusterArray;
 
 class Graph {
 public:
-	Graph(const unsigned long &numberOfNodes);
-	Graph();
-	virtual ~Graph();
+	Graph() {  }
+	virtual ~Graph() {  }
 
 	/**
 	 * Returns the numbers of vertices of the graph.
 	 */
-	virtual unsigned long getN();
+	virtual unsigned long getN() = 0;
 
 	/**
 	 * Returns the number of edges of the graph
 	 */
-	virtual unsigned long getM();
+	virtual unsigned long getM() = 0;
 
 	/**
 	 * Return the id of the graph.
 	 */
-	virtual unsigned int getId();
+	virtual unsigned int getId() = 0;
 
-	virtual void setId(const unsigned int& i);
+	virtual void setId(const unsigned int& i) = 0;
 
 	/**
 	 * Add an edge to the graph. Accepts only edges whose weight is
 	 * equal to -1, 0 or 1.
 	 */
-	virtual void addEdge(unsigned long a, unsigned long b, Edge edge);
+	virtual void addEdge(unsigned long a, unsigned long b, Edge edge) = 0;
 
 	/**
 	 * Returns the degree of vertex a.
 	 */
-	virtual unsigned long getDegree(const unsigned long &a);
+	virtual unsigned long getDegree(const unsigned long &a) = 0;
 
 	/**
 	 * Returns the out-degree of vertex a.
 	 */
-	virtual unsigned long getOutDegree(const unsigned long &a);
+	virtual unsigned long getOutDegree(const unsigned long &a) = 0;
 
 	/**
 	 * Returns the negative degree of vertex a, that is, the sum of
 	 * negative incoming edges.
 	 */
-	virtual unsigned long getNegativeDegree(const unsigned long &a);
+	virtual unsigned long getNegativeDegree(const unsigned long &a) = 0;
 
-	virtual unsigned long getPositiveDegree(const unsigned long &a);
+	virtual unsigned long getPositiveDegree(const unsigned long &a) = 0;
 
 	/**
 	 * Returns the negative edge cardinality between a vertex ni and a vertex set Si.
 	 * Counts incoming and outcoming edges.
 	 */
-	virtual double getNegativeEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray& cluster);
+	virtual double getNegativeEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray& cluster) = 0;
 
 	/**
 	 * Returns the positive edge cardinality between a vertex ni and a vertex set Si.
 	 * Counts incoming and outcoming edges.
 	 */
-	virtual double getPositiveEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray& cluster);
+	virtual double getPositiveEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray& cluster) = 0;
 
 	/**
 	 * Returns the number of edges crossing a specific cluster and also internal to the same cluster.
 	 */
-	virtual long getNumberOfEdgesInClustering(const ClusterArray& cluster, const long& clusterNumber);
+	virtual long getNumberOfEdgesInClustering(const ClusterArray& cluster, const long& clusterNumber) = 0;
 
-	virtual string getGraphFileLocation();
+	virtual string getGraphFileLocation() = 0;
 
-	virtual void setGraphFileLocation(string txt);
+	virtual void setGraphFileLocation(string txt) = 0;
 
 };
 
