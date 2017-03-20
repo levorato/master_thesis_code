@@ -18,20 +18,23 @@ namespace controller {
 
 class SimpleTextGraphFileReader {
 public:
-	SimpleTextGraphFileReader();
+	SimpleTextGraphFileReader(clusteringgraph::ParallelGraph *pgraph) :
+		graph(pgraph) {
+	}
 	virtual ~SimpleTextGraphFileReader();
 
 	SignedGraphPtr readGraphFromFile(const std::string &filepath, const bool& parallelgraph);
 
 	SignedGraphPtr readGraphFromString(const std::string &graphContents);
 
-	SignedGraphPtr readGraphFromFilepath(const string& filepath, const bool& parallelgraph);
-
 	bool exportGraphToGraphVizFile(SignedGraph &g, const std::string outputFolder,
 			const std::string &filename);
 
-private:
+protected:
 	std::string get_file_contents(const char *filename);
+	SignedGraphPtr readGraphFromFilepath(const string& filepath, const bool& parallelgraph);
+
+	clusteringgraph::ParallelGraph *graph;
 };
 
 } /* namespace controller */

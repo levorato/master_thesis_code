@@ -6,7 +6,6 @@
  */
 
 #include "include/SimpleTextGraphFileReader.h"
-#include "include/BGLSignedGraph.h"
 #include "include/ParallelBGLSignedGraph.h"
 #include <iostream>     // cout, endl
 #include <fstream>      // fstream
@@ -29,6 +28,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/graph/iteration_macros.hpp>
+#include <boost/graph/properties.hpp>
 
 using namespace std;
 using namespace boost;
@@ -36,16 +36,10 @@ using namespace boost::algorithm;
 
 namespace controller {
 
-SimpleTextGraphFileReader::SimpleTextGraphFileReader() {
-	// TODO Auto-generated constructor stub
-
-}
-
 SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 	// TODO Auto-generated destructor stub
 }
 
-// TODO ADAPTAR ESTE METODO PARA GERAR O GRAFO A PARTIR DA LEITURA DO ARQUIVO `.G`, LINHA POR LINHA (PARA EVITAR ESTOURO DE MEMORIA)
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& filepath, const bool& parallelgraph) {
 	typedef tokenizer< escaped_list_separator<char> > Tokenizer;
 	int n = 0, e = 0;
@@ -54,22 +48,24 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 	std::ifstream infile(filepath.c_str(), std::ios::in | std::ios::binary);
 	SignedGraphPtr g;
 	if (infile) {
+		BOOST_LOG_TRIVIAL(info) << "Reading input file line by line, avoiding full file reading.";
 		// captura a primeira linha do arquivo contendo as informacoes
 		// de numero de vertices e arestas do grafo
 		string line;
 		std::getline(infile, line);
-		char_separator<char> sep2(" \t");
 
+		char_separator<char> sep2(" \t");
+		BOOST_LOG_TRIVIAL(trace) << "Line read: " << line;
 		try {
 			if(line.find("people") != string::npos) {  // xpress files
-				BOOST_LOG_TRIVIAL(trace) << "Format type is 0" << endl;
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 0 (xpress)" << endl;
 				string number = line.substr(line.find("people:") + 7);
 				trim(number);
 				n = boost::lexical_cast<int>(number);
 				BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
 				formatType = 0;
 			} else if(line.find("Vertices") != string::npos) {
-				BOOST_LOG_TRIVIAL(trace) << "Format type is 1" << endl;
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 1 (pajek)" << endl;
 				string number = line.substr(line.find("Vertices") + 8);
 				trim(number);
 				n = boost::lexical_cast<int>(number);
@@ -81,12 +77,13 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 				vec.assign(tokens2.begin(),tokens2.end());
 				n = boost::lexical_cast<int>(vec.at(0));
 				if(vec.size() == 1) { // .dat files
-					BOOST_LOG_TRIVIAL(trace) << "Format type is 3" << endl;
+					BOOST_LOG_TRIVIAL(trace) << "Format type is 3 (dat)" << endl;
 					formatType = 3;
 				} else {
-					BOOST_LOG_TRIVIAL(trace) << "Format type is 2" << endl;
+					BOOST_LOG_TRIVIAL(trace) << "Format type is 2 (.g)" << endl;
 					e = boost::lexical_cast<int>(vec.at(1));
 					formatType = 2;
+					BOOST_LOG_TRIVIAL(trace) << "Num of edges is e = " << e;
 				}
 			}
 		} catch( boost::bad_lexical_cast const& e ) {
@@ -95,16 +92,29 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 			BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 		}
 
+		BOOST_LOG_TRIVIAL(trace) << "Creating graph with size n = " << n;
+
+		// if (process_id(g.process_group()) == 0) {
+		  // Only process 0 loads the graph, which is distributed automatically
+		  int source = 1, target = 2;
+		  //add_edge(vertex(source, *graph), vertex(target, *graph), *graph);
+		  BOOST_LOG_TRIVIAL(trace) << "2";
+		// }
+
+		// All processes synchronize at this point, then the graph is complete
+		// synchronize(grf.process_group());
+		BOOST_LOG_TRIVIAL(trace) << "DEBUG! Successfully created signed graph with " << n << " vertices.";
+
 		// if(parallelgraph) {  // Only process 0 loads the graph, which is distributed automatically
-			g = boost::make_shared<ParallelBGLSignedGraph>(n);
+			g = boost::make_shared<ParallelBGLSignedGraph>(n, graph);
 		// } else {
 		// 	g = boost::make_shared<BGLSignedGraph>(n);
 		// }
-		BOOST_LOG_TRIVIAL(trace) << "Successfully created signed graph with " << n << " vertices." << std::endl;
+		BOOST_LOG_TRIVIAL(trace) << "Successfully created signed graph with " << n << " vertices.";
 
 		if(formatType == 1) {
 			std::getline(infile, line);
-			while(line.find("Arcs") == string::npos && line.find("Edges") == string::npos) {
+			while(line.find("Arcs") == string::npos and line.find("Edges") == string::npos) {
 				std::getline(infile, line);
 			}
 		}
@@ -120,7 +130,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 
 				if (vec.size() < 3) continue;
 				//if(vec.at(2).rfind('\n') != string::npos)
-				// BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
+				BOOST_LOG_TRIVIAL(trace) << vec.at(0) << "; " << vec.at(1) << "; " << vec.at(2) << "/" << std::endl;
 
 				try {
 					int a = boost::lexical_cast<int>(vec.at(0));
@@ -285,7 +295,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	    BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 	}
 
-	SignedGraphPtr g = boost::make_shared<SignedGraph>(n);
+	SignedGraphPtr g = boost::make_shared<SignedGraph>(n, this->graph);
 	BOOST_LOG_TRIVIAL(trace) << "Successfully created signed graph with " << n << " vertices." << std::endl;
 
 	// captura as arestas do grafo com seus valores
@@ -413,7 +423,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFile(const string& filepa
 	} else {
 		g = readGraphFromFilepath(filepath, parallelgraph);
 		// All processes synchronize at this point, then the graph is complete
-		synchronize(g->graph.process_group());  // this is the synchronization from master process (id 0)
+		BOOST_LOG_TRIVIAL(info) << "Synchronizing process for global graph creation...";
+		synchronize(g->graph->process_group());  // this is the synchronization from master process (id 0)
 	}
 	g->setGraphFileLocation(filepath);
 	boost::hash<std::string> string_hash;
@@ -451,7 +462,7 @@ bool SimpleTextGraphFileReader::exportGraphToGraphVizFile(SignedGraph &g, const 
 	}
 
 	long n = g.getN();
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	ParallelGraph::edge_descriptor e;
 
 	os << "graph graphname {\n";
@@ -459,10 +470,10 @@ bool SimpleTextGraphFileReader::exportGraphToGraphVizFile(SignedGraph &g, const 
 	for(long i = 0; i < n; i++) {
 		ParallelGraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			long j = target(*f, g.graph).local;
+			long j = target(*f, *(g.graph)).local;
 			if(i < j) {
 				os << i << " -- " << j << "[ weight = " << weight << " ];\n";
 			}

@@ -63,7 +63,7 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 
 	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation.";
 	// c.printClustering();
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 
 	// For each vertex i
 	for (int i = 0; i < n; i++) {
@@ -72,10 +72,10 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 		ParallelGraph::out_edge_iterator f, l;
 		ParallelGraph::edge_descriptor e;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			Vertex dest = target(e, g.graph).local;
+			Vertex dest = target(e, *(g.graph)).local;
 			int j = dest.id;
 			long kj = myCluster[j];
 			// ignores edge loops
@@ -161,14 +161,14 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g,
 	assert(ki < nc);
 	// gets vertex i's new cluster is k
 
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	ParallelGraph::out_edge_iterator f, l;
 	ParallelGraph::edge_descriptor e;
 	// For each out edge of i => edge (i, j)
-	for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
+	for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 		e = *f;
 		double weight = ew[e].weight;
-		Vertex dest = target(e, g.graph).local;
+		Vertex dest = target(e, *(g.graph)).local;
 		int j = dest.id;
 		long kj = myCluster[j];
 		// ignores edge loops
@@ -230,14 +230,14 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g,
 	unsigned long ki = myCluster[i];
 	assert(ki < nc);
 
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	ParallelGraph::out_edge_iterator f, l;
 	ParallelGraph::edge_descriptor e;
 	// For each out edge of i => edge (i, j)
-	for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
+	for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 		e = *f;
 		double weight = ew[e].weight;
-		Vertex dest = target(e, g.graph).local;
+		Vertex dest = target(e, *(g.graph)).local;
 		int j = dest.id;
 		long kj = myCluster[j];
 		// ignores edge loops
@@ -339,7 +339,7 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	c.negativeSum.assign(zero_matrix<double>(nc, nc));
 	// Cluster to cluster matrix containing positive / negative contribution to imbalance
 	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 
 	BOOST_LOG_TRIVIAL(info) << "[RCCProblem] Starting imbalance analysis.";
 	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
@@ -354,10 +354,10 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 		ParallelGraph::out_edge_iterator f, l;
 		ParallelGraph::edge_descriptor e;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			Vertex dest = target(e, g.graph).local;
+			Vertex dest = target(e, *(g.graph)).local;
 			int j = dest.id;
 			// ignores edge loops
 			if (i == j)
@@ -482,7 +482,7 @@ list<EdgeContribution> RCCProblem::computeEdges(SignedGraph& g, Clustering& c, i
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
 	list<EdgeContribution> edgeList;
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g.graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 
 	// For each vertex i in cluster c1
 	for (int i = 0; i < n; i++) {
@@ -490,11 +490,11 @@ list<EdgeContribution> RCCProblem::computeEdges(SignedGraph& g, Clustering& c, i
 			ParallelGraph::out_edge_iterator f, l;
 			ParallelGraph::edge_descriptor e;
 			// For each out edge of i
-			for (boost::tie(f, l) = out_edges(vertex(i, g.graph), g.graph); f != l; ++f) {
+			for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 				e = *f;
 				double weight = ew[e].weight;
 				e = *f;
-				Vertex dest = target(e, g.graph).local;
+				Vertex dest = target(e, *(g.graph)).local;
 				int j = dest.id;
 				// ignores edge loops
 				if (i == j)

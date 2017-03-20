@@ -11,19 +11,34 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 
-namespace mpi = boost::mpi;
+#include <boost/graph/use_mpi.hpp>
+#include <boost/graph/distributed/mpi_process_group.hpp>
+#include <boost/graph/distributed/adjacency_list.hpp>
+
+#include "graph/include/ParallelBGLSignedGraph.h"
+
 using namespace controller;
+using namespace boost;
+using boost::graph::distributed::mpi_process_group;
+
 
 int main(int ac, char* av[])
 {
 	// Inicializacao do MPI
-	mpi::environment env(ac, av);
-	mpi::communicator world;
+	boost::mpi::environment env(ac, av);
+	boost::mpi::communicator world;
+
+	int rank = process_id(mpi_process_group());
+	bool i_am_root = rank == 0;
+
+	std::cout << "Creating distributed graph...\n";
+	clusteringgraph::ParallelGraph pgraph(5000);
+	std::cout << "Build successfully.\n";
 
 	// cout << "I am rank " << world.rank() << " of " << (world.size()-1) << " running on machine " << env.processor_name() << endl;
 
 	CommandLineInterfaceController controller;
-	int return_value = controller.processArgumentsAndExecute(ac, av, world.rank(), world.size());
+	int return_value = controller.processArgumentsAndExecute(ac, av, world.rank(), world.size(), &pgraph);
 
 	return return_value;
 }

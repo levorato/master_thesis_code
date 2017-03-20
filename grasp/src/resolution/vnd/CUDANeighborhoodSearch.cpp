@@ -160,16 +160,16 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	thrust::host_vector<uint> h_neighbor_cluster(n * (nc+1), 0);
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g->graph));
 	ParallelGraph::edge_descriptor e;
 	for(int edge = 0; i < n; i++) {  // For each vertex i
 		ParallelGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
 		h_offset[i] = offset;
-		for (boost::tie(f, l) = out_edges(vertex(i, g->graph), g->graph); f != l; ++f) {  // out edges of i
+		for (boost::tie(f, l) = out_edges(vertex(i, *(g->graph)), *(g->graph)); f != l; ++f) {  // out edges of i
 			e = *f;
 			double weight = ew[e].weight;
-			int j = target(*f, g->graph).local;
+			int j = target(*f, *(g->graph)).local;
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
@@ -229,14 +229,14 @@ Clustering CUDANeighborhoodSearch::search1opt(SignedGraph* g,
 	}
 	i = 0, offset = 0;
 	// ParallelGraph::edge_descriptor e;
-	//boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	//boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g->graph));
 	for(int edge = 0; i < n; i++) {  // For each vertex i
 		ParallelGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
-		for (boost::tie(f, l) = out_edges(vertex(i, g->graph), g->graph); f != l; ++f) {  // out edges of i
+		for (boost::tie(f, l) = out_edges(vertex(i, *(g->graph)), *(g->graph)); f != l; ++f) {  // out edges of i
 			e = *f;
 			double weight = ew[e].weight;
-			int j = target(*f, g->graph).local;
+			int j = target(*f, *(g->graph)).local;
 			count++; edge++;
 			if(weight > 0) {
 				h_VertexClusterPosSum2[i * (nc+1) + h_mycluster[j]] += fabs(weight);
@@ -355,14 +355,14 @@ Clustering CUDANeighborhoodSearch::search2opt(SignedGraph* g,
 	// For each vertex, creates a list of in and out edges
 	int i = 0, offset = 0;
 	ParallelGraph::edge_descriptor e;
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g->graph));
 	for(int edge = 0; i < n; i++) {  // For each vertex i
 		ParallelGraph::out_edge_iterator f, l;  // For each out edge of i
 		int count = 0;
-		for (boost::tie(f, l) = out_edges(vertex(i, g->graph), g->graph); f != l; ++f) {  // out edges of i
+		for (boost::tie(f, l) = out_edges(vertex(i, *(g->graph)), *(g->graph)); f != l; ++f) {  // out edges of i
 			e = *f;
 			double weight = ew[e].weight;
-			int j = target(*f, g->graph).local;
+			int j = target(*f, *(g->graph)).local;
 			count++; edge++;
 			if(weight > 0) {
 				h_VertexClusterPosSum[i * (nc+1) + myCluster[j]] += fabs(weight);

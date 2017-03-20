@@ -34,7 +34,6 @@
 #include "../resolution/construction/include/CUDAConstructClustering.h"
 #include "../resolution/construction/include/CUDAImbalanceGainFunction.h"
 #include "../resolution/ils/include/CUDAILS.h"
-#include "../test/controller/include/TestController.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -99,6 +98,10 @@ using namespace util::parallel;
 
 namespace controller {
 
+
+
+
+
 // A helper function to simplify the main part.
 template<class T>
 ostream& operator<<(ostream& os, const std::vector<T>& v)
@@ -146,10 +149,10 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
 		long k, const StategyName& resolutionStrategy, const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax,
-		const bool& splitGraph, const bool& cuda, const bool& parallelgraph) {
+		const bool& splitGraph, const bool& cuda, const bool& parallelgraph, clusteringgraph::ParallelGraph *pgraph) {
 	if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
 		// Reads the graph from the specified text file
-		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
+		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader(pgraph);
 		SignedGraphPtr g;
 		g = reader.readGraphFromFile(filePath.string(), parallelgraph);
 		Clustering c;
@@ -356,7 +359,7 @@ unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
 }
 
 int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *argv[],
-		const unsigned int &myRank, const int &np) {
+		const unsigned int &myRank, const int &np, clusteringgraph::ParallelGraph *pgraph) {
 
 	// used for debugging purpose
 	std::set_terminate( handler );
@@ -473,23 +476,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	unsigned int numberOfSearchSlavesPerMaster = 0;
 	int machineProcessAllocationStrategy = 0;
 	// Leader process code (rank 0)
-	// TODO if (process_id(g.process_group()) == 0) {
-	if(myRank == 0) {
+	clusteringgraph::ParallelGraph grf; // initialize with the total number of vertices, n
+	std::cout << "myRank = " << myRank << "; process_id(g.process_group()) = " << process_id(grf.process_group()) << "\n";
+
+	// myRank = process_id(grf.process_group());
+	if (process_id(grf.process_group()) == 0) {
+	// if(myRank == 0) {
 		//cout << "Correlation clustering problem solver" << endl;
 		// id used for output folders
 		string executionId = jobid;
 
-		if(exportDOT) {
-			cout << "Exporting the graph to DOT format." << endl;
-			SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
-			fs::path filePath (vm["input-file"].as< std::vector<string> >().at(0));
-			SignedGraphPtr g = reader.readGraphFromFile(filePath.string(), parallelgraph);
-			string loc = g->getGraphFileLocation();
-			string filename(loc.substr(loc.find_last_of("/\\")));
-			reader.exportGraphToGraphVizFile(*g, outputFolder, filename);
-
-			return 0;
-		}
 
 		try {
 			if (vm.count("help")) {
@@ -617,7 +613,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				return 1;
 			}
 
-			MPIInitParams mpiparams(numberOfMasters, numberOfSearchSlavesPerMaster, MPIUtil::ALL_MASTERS_FIRST, searchType);
+			MPIInitParams mpiparams(numberOfMasters, numberOfSearchSlavesPerMaster, MPIUtil::ALL_MASTERS_FIRST, searchType, parallelgraph);
 			if(totalNumberOfVNDSlaves > 0) {
 				numberOfSearchSlavesPerMaster = MPIUtil::calculateNumberOfSearchSlaves(np, numberOfMasters);
 				mpiparams.numberOfSearchSlavesPerMaster = numberOfSearchSlavesPerMaster;
@@ -636,12 +632,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 			if(test) {
 				BOOST_LOG_TRIVIAL(info) << "TEST SUITE EXECUTION IS ENABLED.";
-				TestController testCtl;
-				if(testCtl.runTestSuite()) {
-					BOOST_LOG_TRIVIAL(info) << "TEST SUITE EXECUTION SUCCESSFUL.";
-				} else {
-					BOOST_LOG_TRIVIAL(info) << "TEST SUITE EXECUTION FAILED!";
-				}
+
 			} else {
 				// -------------------  G R A P H     F I L E S     P R O C E S S I N G -------------------------
 				for(unsigned int i = 0; i < fileList.size(); i++) {
@@ -652,14 +643,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
 						processInputFile(filePath, outputFolder, executionId, debug, alpha, l, firstImprovementOnOneNeig,
 								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda, parallelgraph);
+								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda, parallelgraph, pgraph);
 					} else {
 						BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 						for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 							BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
 							processInputFile(filePath, outputFolder, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
 									numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-									myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda, parallelgraph);
+									myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax, splitGraph, cuda, parallelgraph, pgraph);
 						}
 					}
 				}
@@ -697,9 +688,17 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		unsigned int messageCount = 0;
 		// common slave variables
 		ClusteringProblemFactory problemFactory;
-		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader();
+		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader(NULL);
 		SignedGraphPtr g;
 		unsigned int previousId = 0;
+
+		if(mpiparams.isParallelGraph) {
+			// All processes synchronize at this point, then the graph is complete
+			g = boost::make_shared<ParallelBGLSignedGraph>(5000, pgraph);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
+			BOOST_LOG_TRIVIAL(info) << "Synchronizing process for global graph creation...";
+			synchronize(*(g->graph));
+			BOOST_LOG_TRIVIAL(info) << "Done.";
+		}
 
 		try {
 			if(MPIUtil::isMaster(mpiparams.machineProcessAllocationStrategy, myRank, mpiparams.numberOfMasters, mpiparams.numberOfSearchSlavesPerMaster)) {  // master process
@@ -761,8 +760,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpg.vertexList.size() > 0) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
-							n = num_vertices(g->graph);
-							m = num_edges(g->graph);
+							n = num_vertices(*(g->graph));
+							m = num_edges(*(g->graph));
 							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << m;
 
 							GainFunctionFactory functionFactory(g.get());
@@ -823,8 +822,9 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							}
 						} else {
 							// All processes synchronize at this point, then the graph is complete
-							g = boost::make_shared<ParallelBGLSignedGraph>(0);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
-							synchronize(g->graph);
+							g = boost::make_shared<ParallelBGLSignedGraph>(0, pgraph);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
+							BOOST_LOG_TRIVIAL(info) << "Synchronizing process for global graph creation...";
+							synchronize(*(g->graph));
 						}
 
 						// triggers the local ILS routine
@@ -856,7 +856,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// time spent on processing
 						double timeSpent = 0.0;
 						// info about the processed graph
-						long n = num_vertices(g->graph), e = num_edges(g->graph);
+						long n = num_vertices(*(g->graph)), e = num_edges(*(g->graph));
 
 						// If split graph is enabled, creates a subgraph induced by the vertex set
 						if(imsgpils.isSplitGraph) {
@@ -870,15 +870,15 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								boost::mpi::communicator comm;
 
 								 // https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
-								 BGL_FORALL_VERTICES(v, g->graph, ParallelGraph)
+								 BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
 								 {
 									 std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
 								 }
 
-								 BGL_FORALL_EDGES(e, g->graph, ParallelGraph)
+								 BGL_FORALL_EDGES(e, *(g->graph), ParallelGraph)
 								 {
-									std::cout << "E @ " << comm.rank() << " " << boost::source(e,g->graph).local
-											<< " -> " << boost::target(e, g->graph).local << " srccpu " <<
+									std::cout << "E @ " << comm.rank() << " " << boost::source(e,*(g->graph)).local
+											<< " -> " << boost::target(e, *(g->graph)).local << " srccpu " <<
 										e.source_processor << " dstcpu " << e.target_processor << std::endl;
 								 }
 							} else {
@@ -900,8 +900,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
 								add_vertex(*it, sg.graph);
 							} */
-							n = num_vertices(g->graph);
-							e = num_edges(g->graph);
+							n = num_vertices(*(g->graph));
+							e = num_edges(*(g->graph));
 							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;
 
 							GainFunctionFactory functionFactory(g.get());
@@ -935,7 +935,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
 							/* TODO reimplementar essa parte
-							BGL_FORALL_VERTICES(v, g->graph, ParallelGraph)
+							BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
 							 {
 								 std::cout << "V @ " << comm.rank() << " " << v.global_descriptor() << std::endl;
 								 globalVertexId.push_back(

@@ -19,12 +19,15 @@
 
 namespace clusteringgraph {
 
-typedef boost::adjacency_list<boost::vecS, boost::distributedS<boost::graph::distributed::mpi_process_group, boost::vecS>, boost::undirectedS,
+using namespace boost;
+using boost::graph::distributed::mpi_process_group;
+
+typedef boost::adjacency_list<vecS, distributedS<mpi_process_group, vecS>, boost::undirectedS,
 		VertexProperty, EdgeProperty, no_property, vecS > ParallelGraph;
 
 class ParallelBGLSignedGraph: public Graph {
 public:
-	ParallelBGLSignedGraph(const unsigned long &numberOfNodes);
+	ParallelBGLSignedGraph(const unsigned long &numberOfNodes, ParallelGraph *pgraph);
 	~ParallelBGLSignedGraph();
 
 	/**
@@ -89,7 +92,11 @@ public:
 
 	virtual void setGraphFileLocation(string txt);
 
-	ParallelGraph graph;
+	ParallelGraph *graph;
+
+	ParallelGraph& getGraph() {
+		return *graph;
+	}
 
 private:
 

@@ -13,6 +13,7 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include "graph/include/ParallelBGLSignedGraph.h"
 
 using namespace std;
 namespace fs = boost::filesystem;
@@ -30,7 +31,7 @@ public:
 	enum SearchName {SEQUENTIAL_SEARCH, PARALLEL_SEARCH};
 	string getTimeAndDateAsString();
 	int processArgumentsAndExecute(int argc, char *argv[],
-			const unsigned int &myRank, const int &np);
+			const unsigned int &myRank, const int &np, clusteringgraph::ParallelGraph *pgraph);
 
 	static void terminateMPIProcessesIfAny(int np, int machineProcessAllocationStrategy,
 				int numberOfMasters, int numberOfSearchSlavesPerMaster);
@@ -43,7 +44,7 @@ private:
 			const int& functionType, const unsigned long& seed,	const bool& CCEnabled,
 			const bool& RCCEnabled, long k, const StategyName& resolutionStrategy,
 			const SearchName& searchType, const int& iterMaxILS, const int& perturbationLevelMax,
-			const bool& splitGraph, const bool& cuda, const bool& parallelgraph);
+			const bool& splitGraph, const bool& cuda, const bool& parallelgraph, clusteringgraph::ParallelGraph *pgraph);
 
 	void readPropertiesFile();
 

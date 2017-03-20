@@ -107,19 +107,20 @@ class MPIInitParams {
 public:
 	MPIInitParams() : numberOfMasters(0), numberOfSearchSlavesPerMaster(0),
 			machineProcessAllocationStrategy(MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER),
-			searchType(0)  { }
+			searchType(0), isParallelGraph(false)  { }
 
-	MPIInitParams(int masters, int slavesPerMaster, int machineAllocationStrategy, int searchTp) : 
+	MPIInitParams(int masters, int slavesPerMaster, int machineAllocationStrategy, int searchTp, bool pgraph) :
 			numberOfMasters(masters),
 			numberOfSearchSlavesPerMaster(slavesPerMaster),
 			machineProcessAllocationStrategy(machineAllocationStrategy),
-			searchType(searchTp)  { }
+			searchType(searchTp), isParallelGraph(pgraph)  { }
 
 	int numberOfMasters;
 	int numberOfSearchSlavesPerMaster;
 	// The following variable defines the strategy for machine x process allocation
 	int machineProcessAllocationStrategy;
 	int searchType;
+	bool isParallelGraph;
 private:
 
 	// serialization-specific code
@@ -131,6 +132,7 @@ private:
 		ar & numberOfSearchSlavesPerMaster;
 		ar & machineProcessAllocationStrategy;
 		ar & searchType;
+		ar & isParallelGraph;
 	}
 };
 
