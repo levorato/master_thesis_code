@@ -32,7 +32,7 @@ int main(int ac, char* av[])
 	bool i_am_root = rank == 0;
 
 	std::cout << "Creating distributed graph...\n";
-	clusteringgraph::ParallelGraph pgraph(5000);
+	clusteringgraph::ParallelGraph pgraph;
 	std::cout << "Build successfully.\n";
 
 	// cout << "I am rank " << world.rank() << " of " << (world.size()-1) << " running on machine " << env.processor_name() << endl;

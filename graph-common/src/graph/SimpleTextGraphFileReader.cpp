@@ -106,7 +106,12 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 		BOOST_LOG_TRIVIAL(trace) << "DEBUG! Successfully created signed graph with " << n << " vertices.";
 
 		// if(parallelgraph) {  // Only process 0 loads the graph, which is distributed automatically
-			g = boost::make_shared<ParallelBGLSignedGraph>(n, graph);
+		g = boost::make_shared<ParallelBGLSignedGraph>(n, graph);
+
+		for(int v = 0; v < n; v++) {
+			add_vertex(Vertex(v), *graph);
+		}
+
 		// } else {
 		// 	g = boost::make_shared<BGLSignedGraph>(n);
 		// }

@@ -694,7 +694,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 		if(mpiparams.isParallelGraph) {
 			// All processes synchronize at this point, then the graph is complete
-			g = boost::make_shared<ParallelBGLSignedGraph>(5000, pgraph);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
+			g = boost::make_shared<ParallelBGLSignedGraph>(num_vertices(*pgraph), pgraph);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
 			BOOST_LOG_TRIVIAL(info) << "Synchronizing process for global graph creation...";
 			synchronize(*(g->graph));
 			BOOST_LOG_TRIVIAL(info) << "Done.";
@@ -820,11 +820,6 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								g = reader.readGraphFromFile(imsgpils.graphInputFilePath, false);
 								previousId = imsgpils.id;
 							}
-						} else {
-							// All processes synchronize at this point, then the graph is complete
-							g = boost::make_shared<ParallelBGLSignedGraph>(0, pgraph);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
-							BOOST_LOG_TRIVIAL(info) << "Synchronizing process for global graph creation...";
-							synchronize(*(g->graph));
 						}
 
 						// triggers the local ILS routine
@@ -872,12 +867,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								 // https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
 								 BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
 								 {
-									 std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
+									 BOOST_LOG_TRIVIAL(debug) << "V @ " << comm.rank() << " " << v.local << std::endl;
 								 }
 
 								 BGL_FORALL_EDGES(e, *(g->graph), ParallelGraph)
 								 {
-									std::cout << "E @ " << comm.rank() << " " << boost::source(e,*(g->graph)).local
+									 BOOST_LOG_TRIVIAL(debug) << "E @ " << comm.rank() << " " << boost::source(e,*(g->graph)).local
 											<< " -> " << boost::target(e, *(g->graph)).local << " srccpu " <<
 										e.source_processor << " dstcpu " << e.target_processor << std::endl;
 								 }
