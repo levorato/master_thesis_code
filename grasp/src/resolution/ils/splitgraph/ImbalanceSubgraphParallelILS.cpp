@@ -273,6 +273,7 @@ ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning
 	ftimer.start();
 	boost::timer::cpu_times fstart_time = ftimer.elapsed();
 
+	// TODO estudar como usar o grafo distribuido por inteiro: http://www.boost.org/doc/libs/1_60_0/libs/graph_parallel/doc/html/vertex_list_adaptor.html
 	// For each process pi
 	for(int pi = 0; pi < numberOfProcesses; pi++) {
 		BOOST_LOG_TRIVIAL(debug) << "Processing partition for processor " << pi;
@@ -2254,7 +2255,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 			// TODO TROCAR POR METODO EQUIVALENTE DA PARALLEL BGL
 			// globalVertexId.push_back(sg.graph.local_to_global(*it));
 		// }
-		BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(*(g->graph)) << ", " << "e =  " << num_edges(*(g->graph));
+		// BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(*(g->graph)) << ", " << "e =  " << num_edges(*(g->graph));
 
 		// rebuilds construct clustering objects based on partial graph 'sg'
 		GainFunctionFactory functionFactory(g);

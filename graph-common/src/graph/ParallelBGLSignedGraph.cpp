@@ -89,13 +89,21 @@ double ParallelBGLSignedGraph::getNegativeEdgeSumBetweenVertexAndClustering(cons
 
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(this->graph));
 	ParallelGraph::edge_descriptor e;
+
 	// O(n)
 	ParallelGraph::out_edge_iterator f2, l2;
 	for (boost::tie(f2, l2) = out_edges(vertex(ni, *graph), *graph); f2 != l2; ++f2) {
 		e = *f2;
-		long j = target(*f2, *(this->graph)).local;
-		if((ew[e].weight < 0) and (cluster[j] >= 0)) {
-			sum += ew[e].weight;
+		bool sameProcessor = target(*f2, *(this->graph)).owner == vertex(ni, *graph).owner;
+		if(sameProcessor) {
+			long j = target(*f2, *(this->graph)).local;
+			if((ew[e].weight < 0) and (cluster[j] >= 0)) {
+				sum += ew[e].weight;
+			}
+		} else {  // TODO REVER ESSA DECISAO DE CONSIDERAR TODOS OS VERTICES DE OUTRO PROCESSO COM LINK NEGATIVO
+			if(ew[e].weight < 0) {
+				sum += ew[e].weight;
+			}
 		}
 	}
 	return sum;
@@ -111,9 +119,16 @@ double ParallelBGLSignedGraph::getPositiveEdgeSumBetweenVertexAndClustering(cons
 	ParallelGraph::out_edge_iterator f2, l2;
 	for (boost::tie(f2, l2) = out_edges(vertex(ni, *graph), *graph); f2 != l2; ++f2) {
 		e = *f2;
-		long j = target(*f2, *(this->graph)).local;
-		if((ew[e].weight > 0) and (cluster[j] >= 0)) {
-			sum += ew[e].weight;
+		bool sameProcessor = target(*f2, *(this->graph)).owner == vertex(ni, *graph).owner;
+		if(sameProcessor) {
+			long j = target(*f2, *(this->graph)).local;
+			if((ew[e].weight > 0) and (cluster[j] >= 0)) {
+				sum += ew[e].weight;
+			}
+		} else {  // TODO REVER ESSA DECISAO DE CONSIDERAR TODOS OS VERTICES DE OUTRO PROCESSO COM LINK NEGATIVO
+			if(ew[e].weight > 0) {
+				sum += ew[e].weight;
+			}
 		}
 	}
 	return sum;
