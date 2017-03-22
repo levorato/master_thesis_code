@@ -22,23 +22,42 @@ using namespace boost;
 using boost::graph::distributed::mpi_process_group;
 
 
-int main(int ac, char* av[])
+int main(int argc, char* argv[])
 {
 	// Inicializacao do MPI
-	boost::mpi::environment env(ac, av);
+	boost::mpi::environment env(argc, argv);
 	boost::mpi::communicator world;
 
-	int rank = process_id(mpi_process_group());
-	bool i_am_root = rank == 0;
+	// captures the number of vertices as command line argument
+    std::string destination;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if ((arg == "-v") || (arg == "--vertices")) {
+            if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+                destination = argv[i+1]; // Increment 'i' so we don't get the argument as the next argv[i].
+            } else { // Uh-oh, there was no argument to the destination option.
+                std::cerr << "--vertices option requires one argument." << std::endl;
+                return 1;
+            }
+            break;
+        }
+    }
+    istringstream ss(destination);
+    int num_vertices = 0;
+    if (!(ss >> num_vertices)) {
+        cerr << "Invalid number: " << argv[1] << '\n';
+        std::cerr << "--vertices option requires one argument." << std::endl;
+        return 1;
+    }
 
-	std::cout << "Creating distributed graph...\n";
-	clusteringgraph::ParallelGraph pgraph;
-	std::cout << "Build successfully.\n";
+	std::cout << "Creating distributed graph with " << num_vertices << " vertices...\n";
+	clusteringgraph::ParallelGraph pgraph(num_vertices);
+	std::cout << "Graph built successfully.\n";
 
 	// cout << "I am rank " << world.rank() << " of " << (world.size()-1) << " running on machine " << env.processor_name() << endl;
 
 	CommandLineInterfaceController controller;
-	int return_value = controller.processArgumentsAndExecute(ac, av, world.rank(), world.size(), &pgraph);
+	int return_value = controller.processArgumentsAndExecute(argc, argv, world.rank(), world.size(), &pgraph);
 
 	return return_value;
 }

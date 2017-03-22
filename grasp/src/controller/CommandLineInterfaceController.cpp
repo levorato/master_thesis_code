@@ -402,6 +402,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	bool test = false;
 	bool exportDOT = false;
 	bool parallelgraph = false;
+	long v = 0;
 
 	po::options_description desc("Available options:");
 	desc.add_options()
@@ -439,6 +440,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
                                          "Local search to be used. Accepted values: SEQUENTIAL (default), PARALLEL.")
 		("exportDOT", po::value<bool>(&exportDOT)->default_value(false), "Export graph file to GraphViz DOT format.")
 		("parallelgraph", po::value<bool>(&parallelgraph)->default_value(false), "Enable parallel graph feature")
+		("vertices,v", po::value<long>(&v)->default_value(0), "number of vertices of the graph")
 		//("ils,i", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
 		//("perturb,p", po::value<int>(&perturbationLevelMax)->default_value(30), "maximum perturbation level in ILS")
 	;
@@ -476,12 +478,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	unsigned int numberOfSearchSlavesPerMaster = 0;
 	int machineProcessAllocationStrategy = 0;
 	// Leader process code (rank 0)
-	clusteringgraph::ParallelGraph grf; // initialize with the total number of vertices, n
-	std::cout << "myRank = " << myRank << "; process_id(g.process_group()) = " << process_id(grf.process_group()) << "\n";
-
-	// myRank = process_id(grf.process_group());
-	if (process_id(grf.process_group()) == 0) {
-	// if(myRank == 0) {
+	if(myRank == 0) {
 		//cout << "Correlation clustering problem solver" << endl;
 		// id used for output folders
 		string executionId = jobid;
