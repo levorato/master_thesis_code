@@ -40,8 +40,10 @@ struct Edge {
 struct Vertex {
     int id;
     std::size_t edge_index_t;
+    std::size_t vertex_rank_t;
+
     Vertex() : id(0), edge_index_t(0) { }
-    Vertex(int w) : id(w), edge_index_t(0)  { }
+    Vertex(int w) : id(w), edge_index_t(0), vertex_rank_t(0)  { }
 
     friend class boost::serialization::access;
 
@@ -50,6 +52,7 @@ struct Vertex {
 	{
 		ar & id;
 		ar & edge_index_t;
+		ar & vertex_rank_t;
 	}
 };
 

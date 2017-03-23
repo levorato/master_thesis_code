@@ -37,6 +37,21 @@
 #include <cfloat>
 #include <algorithm>
 #include <boost/math/special_functions/round.hpp>
+// Enable PBGL interfaces to BGL algorithms
+#include <boost/graph/use_mpi.hpp>
+// Communicate via MPI
+#include <boost/graph/distributed/mpi_process_group.hpp>
+
+#include <boost/property_map/property_map_iterator.hpp>
+// Distributed adjacency list
+#include <boost/graph/distributed/adjacency_list.hpp>
+#include <boost/graph/distributed/mpi_process_group.hpp>
+#include <boost/property_map/property_map_iterator.hpp>
+#include <boost/graph/distributed/vertex_list_adaptor.hpp>
+#include <boost/graph/named_function_params.hpp>
+#include <boost/graph/distributed/distributed_graph_utility.hpp>
+// #include <boost/graph/distributed/adjlist/redistribute.hpp>
+
 
 namespace ublas = boost::numeric::ublas::detail;
 
@@ -81,14 +96,15 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	timer.start();
 	boost::timer::cpu_times start_time = timer.elapsed();
 
-	// TODO PARAMETRIZAR DIVISAR POR VERTICE OU POR SOMA DE ARESTAS
-	ProcessClustering splitgraphClustering = preProcessSplitgraphPartitioning(g, problem, true);
+	// TODO IMPLEMENTAR PARTICIONAMENTO INICIAL PARA A PARALLEL BGL
+	ClusterArray splitgraphClusterArray(g->getN());
+	ProcessClustering splitgraphClustering(g, problem, splitgraphClusterArray); // = preProcessSplitgraphPartitioning(g, problem, true);
 
 	// *** STEP B => Calls the individual ILS processing for each subgraph, invoking Parallel ILS with MPI
 	// WARNING: THE SPLITGRAPHCLUSTERARRAY IS A SEPARATE DATA STRUCTURE, DIFFERENT THAN THE CURRENT CLUSTERING
 	// IT CONTROLS THE PARTITIONING BETWEEN PROCESSORS (SPLIT GRAPH)
 	ClusterArray initialSplitgraphClusterArray = splitgraphClustering.getClusterArray();
-	Clustering Cc(initialSplitgraphClusterArray, *g, problem);
+	Clustering Cc(initialSplitgraphClusterArray, *g, problem, 0.0, 0.0);
 	Cc = runDistributedILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info,
 			splitgraphClustering, Cc);
 
@@ -428,9 +444,23 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 			CCclustering = *(construct->getCCclustering());
 		}
 	}
-	std::vector< std::vector< long > > verticesInProcess = splitgraphClustering.getListOfVerticesInEachProcess(g);
+	// obtain the current distribution of vertices between processes
+	// OLD CODE: std::vector< std::vector< long > > verticesInProcess = splitgraphClustering.getListOfVerticesInEachProcess(g);
+	// typedef graph_traits<ParallelGraph>::vertex_descriptor Key;
+	// VertexProcessorMap to_processor_map = get(vertex_rank, *g->graph);
+	// TODO obter a propriedade certa da PBGL que retorna o processador a que o vertice pertence
+	property_map<ParallelGraph, vertex_owner_t>::type to_processor_map = get(vertex_owner, *(g->graph));
+	std::vector< std::vector< long > > verticesInProcess(numberOfProcesses, std::vector< long >());
+	// Randomly assign a new distribution
+	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
+	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
+		int rank = get(to_processor_map, *vi);
+		verticesInProcess[rank].push_back(vi->local);
+		BOOST_LOG_TRIVIAL(info) << "Vertex " << (vi->local) << " is in process number " << (vi->owner);
+	}
 
-	// Creates numberOfProcesses subgraphs
+
+	// There are numberOfProcesses subgraphs
 	/*
 	std::vector<SubGraph> subgraphList;
 	// each subgraph will have a subset of the main graph's nodes and edges, based on the previous clustering
