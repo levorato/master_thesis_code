@@ -652,8 +652,11 @@ void NeighborhoodSearch::updateVertexClusterSumArrays(SignedGraph* g, std::vecto
 	long n = g->getN();
 	ClusterArray clusterArray = clustering->getClusterArray();
 	long nc = clustering->getNumberOfClusters();
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g->graph));
 
-    for(int i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
         // For each vertex i, stores the sum of edge weights between vertex i and all clusters
         for(int k = 0; k <= nc; k++) {
         	vertexClusterPosSumArray[k * n + i] = double(0);
@@ -662,10 +665,10 @@ void NeighborhoodSearch::updateVertexClusterSumArrays(SignedGraph* g, std::vecto
         }
         // in/out-edges of vertex i
         int ki = clusterArray[i];
-        ParallelGraph::out_edge_iterator f, l;
+        LocalSubgraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g->graph)), *(g->graph)); f != l; ++f) {
-			int j = target(*f, *(g->graph)).local;
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
+			int j = target(*f, lsg).local;
 			double weight = ((Edge*)f->local.get_property())->weight;
 			int kj = clusterArray[j];
 
@@ -714,10 +717,12 @@ void NeighborhoodSearch::updateVertexClusterSumArraysDelta(SignedGraph* g, std::
 	/* for(ulong k = 0; k < nc; k++) {
 	 	isNeighborClusterArray[i + k * n] = 0;
 	} */
-	ParallelGraph::out_edge_iterator f, l;
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g->graph));
+	LocalSubgraph::out_edge_iterator f, l;
 	// For each out edge of i
-	for (boost::tie(f, l) = out_edges(vertex(i, *(g->graph)), *(g->graph)); f != l; ++f) {
-		int j = target(*f, *(g->graph)).local;
+	for (boost::tie(f, l) = out_edges(vertex(i, *(g->graph)), lsg); f != l; ++f) {
+		int j = target(*f, lsg).local;
 		double weight = ((Edge*)f->local.get_property())->weight;
 		int kj = clusterArray[j];
 

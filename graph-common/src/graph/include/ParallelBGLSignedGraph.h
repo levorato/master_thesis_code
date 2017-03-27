@@ -15,7 +15,7 @@
 #include <boost/graph/use_mpi.hpp>
 #include <boost/graph/distributed/mpi_process_group.hpp>
 #include <boost/graph/distributed/adjacency_list.hpp>
-
+#include <boost/graph/distributed/local_subgraph.hpp>
 
 namespace clusteringgraph {
 
@@ -115,6 +115,7 @@ private:
 
 typedef ParallelBGLSignedGraph SignedGraph;
 typedef boost::shared_ptr<SignedGraph> SignedGraphPtr;
+typedef local_subgraph<ParallelGraph> LocalSubgraph;
 
 } /* namespace clusteringgraph */
 

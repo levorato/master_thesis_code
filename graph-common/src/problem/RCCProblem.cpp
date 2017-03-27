@@ -69,8 +69,8 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	for (int i = 0; i < n; i++) {
 		long ki = myCluster[i];
 		assert(ki < nc);
-		ParallelGraph::out_edge_iterator f, l;
-		ParallelGraph::edge_descriptor e;
+		LocalSubgraph::out_edge_iterator f, l;
+		LocalSubgraph::edge_descriptor e;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 			e = *f;
@@ -162,8 +162,8 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g,
 	// gets vertex i's new cluster is k
 
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
-	ParallelGraph::out_edge_iterator f, l;
-	ParallelGraph::edge_descriptor e;
+	LocalSubgraph::out_edge_iterator f, l;
+	LocalSubgraph::edge_descriptor e;
 	// For each out edge of i => edge (i, j)
 	for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 		e = *f;
@@ -231,8 +231,8 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g,
 	assert(ki < nc);
 
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
-	ParallelGraph::out_edge_iterator f, l;
-	ParallelGraph::edge_descriptor e;
+	LocalSubgraph::out_edge_iterator f, l;
+	LocalSubgraph::edge_descriptor e;
 	// For each out edge of i => edge (i, j)
 	for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 		e = *f;
@@ -351,8 +351,8 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	for (int i = 0; i < n; i++) {
 		long ki = myCluster[i];
 		assert(ki < nc);
-		ParallelGraph::out_edge_iterator f, l;
-		ParallelGraph::edge_descriptor e;
+		LocalSubgraph::out_edge_iterator f, l;
+		LocalSubgraph::edge_descriptor e;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 			e = *f;
@@ -487,8 +487,8 @@ list<EdgeContribution> RCCProblem::computeEdges(SignedGraph& g, Clustering& c, i
 	// For each vertex i in cluster c1
 	for (int i = 0; i < n; i++) {
 		if(myCluster[i] == c1) {
-			ParallelGraph::out_edge_iterator f, l;
-			ParallelGraph::edge_descriptor e;
+			LocalSubgraph::out_edge_iterator f, l;
+			LocalSubgraph::edge_descriptor e;
 			// For each out edge of i
 			for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 				e = *f;

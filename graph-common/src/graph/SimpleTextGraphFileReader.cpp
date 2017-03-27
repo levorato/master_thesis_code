@@ -94,23 +94,12 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 
 		BOOST_LOG_TRIVIAL(trace) << "Creating graph with size n = " << n;
 
-		// if (process_id(g.process_group()) == 0) {
-		  // Only process 0 loads the graph, which is distributed automatically
-		  int source = 1, target = 2;
-		  //add_edge(vertex(source, *graph), vertex(target, *graph), *graph);
-		  BOOST_LOG_TRIVIAL(trace) << "2";
-		// }
-
 		// All processes synchronize at this point, then the graph is complete
 		// synchronize(grf.process_group());
 		BOOST_LOG_TRIVIAL(trace) << "DEBUG! Successfully created signed graph with " << n << " vertices.";
 
 		// if(parallelgraph) {  // Only process 0 loads the graph, which is distributed automatically
 		g = boost::make_shared<ParallelBGLSignedGraph>(n, graph);
-
-		for(int v = 0; v < n; v++) {
-			add_vertex(Vertex(v), *graph);
-		}
 
 		// } else {
 		// 	g = boost::make_shared<BGLSignedGraph>(n);

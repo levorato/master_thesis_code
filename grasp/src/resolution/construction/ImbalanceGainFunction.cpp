@@ -93,6 +93,9 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 			myCluster[e] = nc;
 		}
 	}
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(graph->graph));
+	ParallelGraph::vertex_descriptor vx_v;
 	// Array that stores the sum of edge weights between vertex i and all clusters
 	if( (h_VertexClusterPosSum.size1() == 0) or (nc == 0) ) {
 		BOOST_LOG_TRIVIAL(info)<< "Initializing sum arrays for the first time in construction phase...";
@@ -100,13 +103,17 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		h_VertexClusterPosSum = zero_matrix<double>(n, (nc + 1));
 		h_VertexClusterNegSum = zero_matrix<double>(n, (nc + 1));
 		boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(graph->graph));
-		ParallelGraph::edge_descriptor e;
+		LocalSubgraph::edge_descriptor e;
 
-		for(int i = 0; i < n; i++) {  // for each vertex i
-			ParallelGraph::out_edge_iterator f, l;
+		BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex v
+			int i = vx.local;
+			if(i == v) {
+				vx_v = vx;
+			}
+			LocalSubgraph::out_edge_iterator f, l;
 			// For each out edge of i
-			for (boost::tie(f, l) = out_edges(vertex(i, *(graph->graph)), *(graph->graph)); f != l; ++f) {
-				int j = target(*f, *(graph->graph)).local;
+			for (boost::tie(f, l) = out_edges(vx, lsg); f != l; ++f) {
+				int j = target(*f, lsg).local;
 				e = *f;
 				double weight = ew[e].weight;
 				if(weight > 0) {
@@ -155,6 +162,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 	newCalc.gainValue = min_val;
 
 	// Updates the vertex-cluster sum arrays
+	BOOST_LOG_TRIVIAL(trace)<< "Updating the vertex-cluster sum arrays...";
 	int k1 = nc;
 	int k2 = position;
 	if(newCalc.clusterNumber == Clustering::NEW_CLUSTER) {
@@ -175,12 +183,13 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		}
 		k1 = new_nc;
 	}
-	ParallelGraph::out_edge_iterator f, l;
+	LocalSubgraph::out_edge_iterator f, l;
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(graph->graph));
-	ParallelGraph::edge_descriptor e;
+	LocalSubgraph::edge_descriptor e;
+	BOOST_LOG_TRIVIAL(trace)<< "Sweeping out-edges of vertex v...";
 	// For each out edge of v
-	for (boost::tie(f, l) = out_edges(vertex(v, *(graph->graph)), *(graph->graph)); f != l; ++f) {
-		int j = target(*f, *(graph->graph)).local;
+	for (boost::tie(f, l) = out_edges(vx_v, lsg); f != l; ++f) {
+		int j = target(*f, lsg).local;
 		e = *f;
 		double weight = ew[e].weight;
 		if(weight > 0) {
@@ -191,6 +200,7 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 			h_VertexClusterNegSum(j, k2) += fabs(weight);
 		}
 	}
+	BOOST_LOG_TRIVIAL(trace) << "Individual gain function done.";
 	return newCalc;
 }
 

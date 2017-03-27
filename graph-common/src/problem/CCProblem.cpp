@@ -44,16 +44,19 @@ Imbalance CCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
-	ParallelGraph::edge_descriptor e;
+	LocalSubgraph::edge_descriptor e;
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
 	BOOST_LOG_TRIVIAL(trace) << "[CCProblem] Starting obj function calculation.";
 
 	// For each vertex i
-	for(long i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
 		long ki = myCluster[i];
-		ParallelGraph::out_edge_iterator f, l;
+		LocalSubgraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
 			long j = target(*f, *(g.graph)).local;
@@ -90,16 +93,26 @@ Imbalance CCProblem::calculateDeltaObjectiveFunction(SignedGraph& g, Clustering&
 	long ki = myCluster[i];
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	// unsigned long n = g.getN();
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
 	// iterates over out-edges of vertex i
 	//typedef graph_traits<Graph> GraphTraits;
-	ParallelGraph::out_edge_iterator out_i, out_end;
-	ParallelGraph::edge_descriptor e;
+	LocalSubgraph::out_edge_iterator out_i, out_end;
+	LocalSubgraph::edge_descriptor e;
+
+	ParallelGraph::vertex_descriptor vx_v;
+	BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex v
+		if(vx.local == i) {
+			vx_v = vx;
+			break;
+		}
+	}
 
 	// std::cout << "out-edges of " << i << ": ";
-	for (tie(out_i, out_end) = out_edges(vertex(i, *(g.graph)), *(g.graph)); out_i != out_end; ++out_i) {
+	for (tie(out_i, out_end) = out_edges(vx_v, lsg); out_i != out_end; ++out_i) {
 		e = *out_i;
-		Vertex src = source(e, *(g.graph)).local, targ = target(e, *(g.graph)).local;
+		Vertex src = source(e, lsg).local, targ = target(e, lsg).local;
 		double weight = ew[e].weight;
 		if(myCluster[targ.id] == ki) {
 			if(weight < 0) {
@@ -126,10 +139,12 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
 	stringstream ss1, ss2, ss3;
-	ParallelGraph::edge_descriptor e;
+	LocalSubgraph::edge_descriptor e;
 	// Cluster to cluster matrix containing positive / negative contribution to imbalance
 	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
 	BOOST_LOG_TRIVIAL(info) << "[CCProblem] Starting imbalance analysis.";
 	ss1 << endl << "Imbalance analysis (out edges contribution):" << endl;
@@ -138,14 +153,15 @@ string CCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	ss2 << "Vertex,PositiveSum,NegativeSum" << endl;
 
 	// For each vertex i
-	for(long i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
 		long ki = myCluster[i];
-		ParallelGraph::out_edge_iterator f, l;
+		LocalSubgraph::out_edge_iterator f, l;
 		double positiveSum = 0, negativeSum = 0;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 			e = *f;
-			Vertex src = source(e, *(g.graph)).local, targ = target(e, *(g.graph)).local;
+			Vertex src = source(e, lsg).local, targ = target(e, lsg).local;
 			double weight = ew[e].weight;
 			bool sameCluster = (myCluster[targ.id] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
@@ -178,19 +194,22 @@ matrix<double> CCProblem::calculateClusterToClusterImbalanceMatrix(SignedGraph& 
 	int nc = c.getNumberOfClusters();
 	int n = g.getN();
 	ClusterArray myCluster = c.getClusterArray();
-	ParallelGraph::edge_descriptor e;
+	LocalSubgraph::edge_descriptor e;
 	// Cluster to cluster matrix containing positive / negative contribution to imbalance
 	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
 	// For each vertex i
-	for(long i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
 		long ki = myCluster[i];
-		ParallelGraph::out_edge_iterator f, l;
+		LocalSubgraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 			e = *f;
-			Vertex src = source(e, *(g.graph)).local, targ = target(e, *(g.graph)).local;
+			Vertex src = source(e, lsg).local, targ = target(e, lsg).local;
 			double weight = ew[e].weight;
 			bool sameCluster = (myCluster[targ.id] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge

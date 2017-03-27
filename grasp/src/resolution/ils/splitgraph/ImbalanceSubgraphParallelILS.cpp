@@ -2285,7 +2285,27 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 			// TODO TROCAR POR METODO EQUIVALENTE DA PARALLEL BGL
 			// globalVertexId.push_back(sg.graph.local_to_global(*it));
 		// }
-		// BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(*(g->graph)) << ", " << "e =  " << num_edges(*(g->graph));
+
+		// codigo de teste da parallel bgl
+		 // https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
+		 boost::mpi::environment  env;
+		 boost::mpi::communicator comm;
+		 BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+		 {
+			 BOOST_LOG_TRIVIAL(debug) << "V @ P" << comm.rank() << ": " << v.local;
+		 }
+		 int edgecount = 0;
+		 BGL_FORALL_EDGES(e, *(g->graph), ParallelGraph)
+		 {
+			 BOOST_LOG_TRIVIAL(debug) << "E @ P" << comm.rank() << " v_src: " << boost::source(e,*(g->graph)).local
+					<< " -> v_dst: " << boost::target(e, *(g->graph)).local << "; srccpu = " <<
+				e.source_processor << " dstcpu = " << e.target_processor;
+			 edgecount++;
+		 }
+		 BOOST_LOG_TRIVIAL(debug) << "Edgecount is " << edgecount;
+
+
+		BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(*(g->graph)) << ", " << "e =  " << num_edges(*(g->graph));
 
 		// rebuilds construct clustering objects based on partial graph 'sg'
 		GainFunctionFactory functionFactory(g);

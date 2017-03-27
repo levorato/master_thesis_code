@@ -849,6 +849,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						double timeSpent = 0.0;
 						// info about the processed graph
 						long n = num_vertices(*(g->graph)), e = num_edges(*(g->graph));
+						boost::mpi::environment  env;
+						boost::mpi::communicator comm;
 
 						// If split graph is enabled, creates a subgraph induced by the vertex set
 						if(imsgpils.isSplitGraph) {
@@ -858,21 +860,37 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								BOOST_LOG_TRIVIAL(info) << "Split graph with boost parallel graph enabled.";
 
 								// codigo de teste da parallel bgl
-								boost::mpi::environment  env;
-								boost::mpi::communicator comm;
+								// https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
+								BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+								{
+								 BOOST_LOG_TRIVIAL(debug) << "V @ P" << comm.rank() << ": " << v.local << std::endl;
+								}
+								int edgecount = 0;
+								BGL_FORALL_EDGES(e, *(g->graph), ParallelGraph)
+								{
+								 BOOST_LOG_TRIVIAL(debug) << "E @ P" << comm.rank() << " v_src: " << boost::source(e,*(g->graph)).local
+										<< " -> v_dst: " << boost::target(e, *(g->graph)).local << "; srccpu = " <<
+									e.source_processor << " dstcpu = " << e.target_processor << std::endl;
+								 edgecount++;
+								}
+								BOOST_LOG_TRIVIAL(debug) << "Edgecount is " << edgecount;
 
-								 // https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
-								 BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-								 {
-									 BOOST_LOG_TRIVIAL(debug) << "V @ " << comm.rank() << " " << v.local << std::endl;
-								 }
+								BOOST_LOG_TRIVIAL(debug) << "\nLocal vertices and edges:";
+								// local subgraph creation
+								LocalSubgraph lsg = make_local_subgraph(*(g->graph));
+								BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+									BOOST_LOG_TRIVIAL(debug) << "V @ P" << comm.rank() << ": " << v.local << std::endl;
+								}
+								edgecount = 0;
+								BGL_FORALL_EDGES(e, lsg, LocalSubgraph)
+								{
+								 BOOST_LOG_TRIVIAL(debug) << "E @ P" << comm.rank() << " v_src: " << boost::source(e,lsg).local
+										<< " -> v_dst: " << boost::target(e, lsg).local << "; srccpu = " <<
+									e.source_processor << " dstcpu = " << e.target_processor << std::endl;
+								 edgecount++;
+								}
+								BOOST_LOG_TRIVIAL(debug) << "Local edgecount is " << edgecount;
 
-								 BGL_FORALL_EDGES(e, *(g->graph), ParallelGraph)
-								 {
-									 BOOST_LOG_TRIVIAL(debug) << "E @ " << comm.rank() << " " << boost::source(e,*(g->graph)).local
-											<< " -> " << boost::target(e, *(g->graph)).local << " srccpu " <<
-										e.source_processor << " dstcpu " << e.target_processor << std::endl;
-								 }
 							} else {
 								if(imsgpils.vertexList.size() == 0) {
 									BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
@@ -926,12 +944,12 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							}
 
 							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
-							/* TODO reimplementar essa parte
 							BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
 							 {
-								 std::cout << "V @ " << comm.rank() << " " << v.global_descriptor() << std::endl;
-								 globalVertexId.push_back(
+								 std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
+								 globalVertexId.push_back(v.local);
 							 }
+							/*
 							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
 							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
 								globalVertexId.push_back(sg.graph.local_to_global(*it));
