@@ -96,15 +96,10 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 
 		// All processes synchronize at this point, then the graph is complete
 		// synchronize(grf.process_group());
-		BOOST_LOG_TRIVIAL(trace) << "DEBUG! Successfully created signed graph with " << n << " vertices.";
+		BOOST_LOG_TRIVIAL(trace) << "Successfully created distributed signed graph with " << n << " vertices.";
 
-		// if(parallelgraph) {  // Only process 0 loads the graph, which is distributed automatically
+		// Only process 0 loads the graph, which is distributed automatically
 		g = boost::make_shared<ParallelBGLSignedGraph>(n, graph);
-
-		// } else {
-		// 	g = boost::make_shared<BGLSignedGraph>(n);
-		// }
-		BOOST_LOG_TRIVIAL(trace) << "Successfully created signed graph with " << n << " vertices.";
 
 		if(formatType == 1) {
 			std::getline(infile, line);
@@ -227,6 +222,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 	} else {
 		BOOST_LOG_TRIVIAL(error) << "Failed to read graph file.";
 	}
+	g->setN(num_vertices(*(g->graph)));
+	BOOST_LOG_TRIVIAL(trace) << "Successfully created local signed graph with " << num_vertices(*(g->graph)) << " vertices.";
 	return g;
 }
 

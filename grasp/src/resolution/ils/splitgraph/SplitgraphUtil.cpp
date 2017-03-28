@@ -198,14 +198,14 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClusters(SignedGra
 	matrix<double> clusterEdgeSumMatrix = zero_matrix<double>(nc, nc);
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 
-	// For each vertex i
-	for(long i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
 		long ki = globalCluster[i];
 		LocalSubgraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 			e = *f;
-			Vertex src = source(e, *(g.graph)).local, targ = target(e, *(g.graph)).local;
+			Vertex src = source(e, lsg).local, targ = target(e, lsg).local;
 			double weight = ew[e].weight;
 			bool sameCluster = (globalCluster[targ.id] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
@@ -295,20 +295,23 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrix(SignedG
 	long nc = numberOfProcesses;
 	long n = g.getN();
 	LocalSubgraph::edge_descriptor e;
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 	// Process to process matrix containing positive / negative contribution to imbalance
 	ImbalanceMatrix clusterImbMatrix(nc);
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	// Vector containing each vertex contribution to imbalance: vertexImbalance
+	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
 
-	// For each vertex i
-	for(long i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
 		long ki = myCluster[i];
 		LocalSubgraph::out_edge_iterator f, l;
 		double positiveSum = double(0.0), negativeSum = double(0.0);
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 			e = *f;
-			Vertex src = source(e, *(g.graph)).local, targ = target(e, *(g.graph)).local;
+			Vertex src = source(e, lsg).local, targ = target(e, lsg).local;
 			double weight = ew[e].weight;
 			bool sameCluster = (myCluster[targ.id] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
@@ -335,7 +338,10 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
 	long n = g.getN();
 	LocalSubgraph::edge_descriptor e;
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
+	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
 	// For each vertex i in listOfModifiedVertices
 	for(long item = 0; item < listOfModifiedVertices.size(); item++) {
 		long i = listOfModifiedVertices[item];
@@ -415,6 +421,7 @@ long SplitgraphUtil::findMostImbalancedVertexInProcessPair(SignedGraph& g,
 	double maxImbalance = -DBL_MAX;
 	long maxVertex = 0;
 
+	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = globalCluster[i];
@@ -587,8 +594,15 @@ bool SplitgraphUtil::isPseudoClique(SignedGraph *g, std::list<long>& cliqueC,
 	long totalEdgeCount = 0, positiveEdgeCount = 0, negativeEdgeCount = 0;
 
 	// validates the edges from vertex u to cliqueC
+	LocalSubgraph::vertex_descriptor vx_u;
+	BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex u
+		if(vx.local == u) {
+			vx_u = vx;
+			break;
+		}
+	}
 	LocalSubgraph::out_edge_iterator f2, l2;
-	for (boost::tie(f2, l2) = out_edges(vertex(u, *(g->graph)), lsg); f2 != l2; ++f2) {
+	for (boost::tie(f2, l2) = out_edges(vx_u, lsg); f2 != l2; ++f2) {
 		e = *f2;
 		long j = target(*f2, lsg).local;
 		if(cliqueCClusterArray[j] >= 0) {
@@ -626,8 +640,15 @@ bool SplitgraphUtil::isPseudoClique(SignedGraph *g, ClusterArray& cliqueCCluster
 	long totalEdgeCountV = 0, positiveEdgeCountV = 0, negativeEdgeCountV = 0;
 
 	// validates the edges from vertex u to cliqueC
+	LocalSubgraph::vertex_descriptor vx_u;
+	BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex u
+		if(vx.local == u) {
+			vx_u = vx;
+			break;
+		}
+	}
 	LocalSubgraph::out_edge_iterator f2, l2;
-	for (boost::tie(f2, l2) = out_edges(vertex(u, *(g->graph)), lsg); f2 != l2; ++f2) {
+	for (boost::tie(f2, l2) = out_edges(vx_u, lsg); f2 != l2; ++f2) {
 		e = *f2;
 		long j = target(*f2, lsg).local;
 		if (cliqueCClusterArray[j] >= 0) {
@@ -648,7 +669,14 @@ bool SplitgraphUtil::isPseudoClique(SignedGraph *g, ClusterArray& cliqueCCluster
 	}
 
 	// validates the edges from vertex v to cliqueC
-	for (boost::tie(f2, l2) = out_edges(vertex(v, *(g->graph)), lsg); f2 != l2; ++f2) {
+	LocalSubgraph::vertex_descriptor vx_v;
+	BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex v
+		if(vx.local == v) {
+			vx_v = vx;
+			break;
+		}
+	}
+	for (boost::tie(f2, l2) = out_edges(vx_v, lsg); f2 != l2; ++f2) {
 		e = *f2;
 		long j = target(*f2, lsg).local;
 		if (cliqueCClusterArray[j] >= 0) {
@@ -675,6 +703,7 @@ std::vector<Imbalance> SplitgraphUtil::calculateProcessInternalImbalance(SignedG
 	LocalSubgraph::edge_descriptor e;
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	std::vector<Imbalance> processInternalImbalance;
+	// TODO REFAZER ESSA FUNCAO PARA A BOOST PARALLEL BGL, OBTENDO O IMBALANCE DE CADA PROCESSO VIA CONSULTA POR MENSAGEM MPI
 
 	for(int px = 0; px < numberOfProcesses; px++) {
 		// For each vertex i

@@ -946,7 +946,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
 							BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
 							 {
-								 std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
+								 // std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
 								 globalVertexId.push_back(v.local);
 							 }
 							/*

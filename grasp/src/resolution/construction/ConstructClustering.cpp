@@ -31,7 +31,7 @@ Clustering ConstructClustering::constructClustering(SignedGraph *g,
 		ClusteringProblem& problem, const int& myRank) {
 	Clustering Cc(*g); // Cc = empty
 	VertexSet lc(randomSeed, g->getN()); // L(Cc) = V(G)
-	BOOST_LOG_TRIVIAL(debug)<< "Construct clustering...\n";
+	BOOST_LOG_TRIVIAL(debug)<< "Invoking construct clustering for n = " << g->getN() << "...\n";
 	// 0. Triggers local processing time calculation
 	boost::timer::cpu_timer timer;
 	timer.start();

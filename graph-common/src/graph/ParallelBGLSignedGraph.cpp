@@ -25,6 +25,10 @@ unsigned long ParallelBGLSignedGraph::getN() {
 	return n;
 }
 
+void ParallelBGLSignedGraph::setN(long num_vertices) {
+	n = num_vertices;
+}
+
 unsigned long ParallelBGLSignedGraph::getM() {
 	return num_edges(*graph);
 }

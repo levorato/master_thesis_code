@@ -64,18 +64,20 @@ Imbalance RCCProblem::objectiveFunction(SignedGraph& g, Clustering& c) {
 	BOOST_LOG_TRIVIAL(trace) << "[RCCProblem] Starting full obj function calculation.";
 	// c.printClustering();
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
 	// For each vertex i
-	for (int i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
 		long ki = myCluster[i];
 		assert(ki < nc);
 		LocalSubgraph::out_edge_iterator f, l;
 		LocalSubgraph::edge_descriptor e;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			Vertex dest = target(e, *(g.graph)).local;
+			Vertex dest = target(e, lsg).local;
 			int j = dest.id;
 			long kj = myCluster[j];
 			// ignores edge loops
@@ -162,13 +164,21 @@ Imbalance RCCProblem::calculateDeltaPlusObjectiveFunction(SignedGraph& g,
 	// gets vertex i's new cluster is k
 
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 	LocalSubgraph::out_edge_iterator f, l;
 	LocalSubgraph::edge_descriptor e;
 	// For each out edge of i => edge (i, j)
-	for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+	LocalSubgraph::vertex_descriptor vx_v;
+	BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex vx
+		if(vx.local == i) {
+			vx_v = vx;
+			break;
+		}
+	}
+	for (boost::tie(f, l) = out_edges(vx_v, lsg); f != l; ++f) {
 		e = *f;
 		double weight = ew[e].weight;
-		Vertex dest = target(e, *(g.graph)).local;
+		Vertex dest = target(e, lsg).local;
 		int j = dest.id;
 		long kj = myCluster[j];
 		// ignores edge loops
@@ -231,13 +241,21 @@ Imbalance RCCProblem::calculateDeltaMinusObjectiveFunction(SignedGraph& g,
 	assert(ki < nc);
 
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 	LocalSubgraph::out_edge_iterator f, l;
 	LocalSubgraph::edge_descriptor e;
 	// For each out edge of i => edge (i, j)
-	for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+	LocalSubgraph::vertex_descriptor vx_v;
+	BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex vx
+		if(vx.local == i) {
+			vx_v = vx;
+			break;
+		}
+	}
+	for (boost::tie(f, l) = out_edges(vx_v, lsg); f != l; ++f) {
 		e = *f;
 		double weight = ew[e].weight;
-		Vertex dest = target(e, *(g.graph)).local;
+		Vertex dest = target(e, lsg).local;
 		int j = dest.id;
 		long kj = myCluster[j];
 		// ignores edge loops
@@ -346,18 +364,19 @@ string RCCProblem::analyzeImbalance(SignedGraph& g, Clustering& c) {
 	ss1 << "Vertex,PositiveSum,NegativeSum" << endl;
 	ss2 << "Imbalance analysis (in edges contribution):" << endl;
 	ss2 << "Vertex,PositiveSum,NegativeSum" << endl;
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
-	// For each vertex i
-	for (int i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
 		long ki = myCluster[i];
 		assert(ki < nc);
 		LocalSubgraph::out_edge_iterator f, l;
 		LocalSubgraph::edge_descriptor e;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			Vertex dest = target(e, *(g.graph)).local;
+			Vertex dest = target(e, lsg).local;
 			int j = dest.id;
 			// ignores edge loops
 			if (i == j)
@@ -483,18 +502,20 @@ list<EdgeContribution> RCCProblem::computeEdges(SignedGraph& g, Clustering& c, i
 	ClusterArray myCluster = c.getClusterArray();
 	list<EdgeContribution> edgeList;
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
 	// For each vertex i in cluster c1
-	for (int i = 0; i < n; i++) {
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = v.local;
 		if(myCluster[i] == c1) {
 			LocalSubgraph::out_edge_iterator f, l;
 			LocalSubgraph::edge_descriptor e;
 			// For each out edge of i
-			for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+			for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 				e = *f;
 				double weight = ew[e].weight;
 				e = *f;
-				Vertex dest = target(e, *(g.graph)).local;
+				Vertex dest = target(e, lsg).local;
 				int j = dest.id;
 				// ignores edge loops
 				if (i == j)

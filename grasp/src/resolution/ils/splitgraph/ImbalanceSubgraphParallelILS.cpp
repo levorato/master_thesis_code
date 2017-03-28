@@ -50,6 +50,7 @@
 #include <boost/graph/distributed/vertex_list_adaptor.hpp>
 #include <boost/graph/named_function_params.hpp>
 #include <boost/graph/distributed/distributed_graph_utility.hpp>
+#include <boost/graph/distributed/vertex_list_adaptor.hpp>
 // #include <boost/graph/distributed/adjlist/redistribute.hpp>
 
 
@@ -455,10 +456,15 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
 	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
 		int rank = get(to_processor_map, *vi);
+		// boost::get(vertex_index2, g, *v) == process_id(pg)
+		// int rank = boost::get(vertex_index2, *(g->graph), *vi);
+		// boost::put(boost::vertex_index2_t(), g, v, group);
 		verticesInProcess[rank].push_back(vi->local);
-		BOOST_LOG_TRIVIAL(info) << "Vertex " << (vi->local) << " is in process number " << (vi->owner);
-	}
+		// boost::put(boost::vertex_index2_t(), *(g->graph), v, rank);
 
+		BOOST_LOG_TRIVIAL(info) << "Vertex " << (vi->local) << " is in process number " << rank;
+	}
+	// redistribute
 
 	// There are numberOfProcesses subgraphs
 	/*
@@ -534,6 +540,26 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	double internalImbalanceNegSum = 0.0;
 	std::vector<unsigned int> clusterProcessOrigin;  // which process a cluster belongs to?
 	std::vector<Imbalance> internalProcessImbalance(numberOfProcesses, Imbalance());  // the internal imbalance calculated by each process
+
+	 // Create a global index map, which takes vertex descriptors and
+	// turns them into numbers in the range [0, N), where N is the
+	// total number of vertices in the distributed graph.
+	/* typedef boost::parallel::global_index_map<vtkGraphDistributedVertexIndexMap, vtkVertexGlobalMap> GlobalIndexMap; */
+
+	// https://github.com/Kitware/VTK/blob/c3ec2495b183e3327820e927af7f8f90d34c3474/Infovis/Parallel/vtkPBGLGraphAdapter.h
+	// http://www.osl.iu.edu/research/pbgl/documentation/vertex_list_adaptor.html#id2
+	/* GlobalIndexMap globalIndexMap(process_group(*(g->graph)),
+								  g->getN(),
+								  MakeDistributedVertexIndexMap(*(g->graph)),
+								  get(boost::vertex_global, *(g->graph))); */
+
+	/* vertex_list_adaptor<ParallelGraph> vla(*(g->graph), globalIndexMap); */
+	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+	{
+		int p_owner = owner(v); // process_id_type
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Owner of vertex " << v.local << ": " << p_owner;
+	}
+
 	for(int procNum = 0; procNum < numberOfSlaves + 1; procNum++) {
 		OutputMessage omsg = messageMap[procNum];
 		// stores the time spent by each process

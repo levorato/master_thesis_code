@@ -126,6 +126,13 @@ GainCalculation ImbalanceGainFunction::calculateIndividualGainCCProblem(
 		BOOST_LOG_TRIVIAL(trace)<< "Sum arrays calculated. Calculating destImbArrays...";
 	} else {
 		BOOST_LOG_TRIVIAL(trace)<< "Reusing sum arrays. Calculating destImbArrays...";
+		BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex v
+			int i = vx.local;
+			if(i == v) {
+				vx_v = vx;
+				break;
+			}
+		}
 	}
 
 	/*

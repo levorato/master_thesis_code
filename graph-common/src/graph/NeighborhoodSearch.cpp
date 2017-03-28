@@ -720,8 +720,15 @@ void NeighborhoodSearch::updateVertexClusterSumArraysDelta(SignedGraph* g, std::
 	// local subgraph creation
 	LocalSubgraph lsg = make_local_subgraph(*(g->graph));
 	LocalSubgraph::out_edge_iterator f, l;
+	LocalSubgraph::vertex_descriptor vx_v;
+	BGL_FORALL_VERTICES(vx, lsg, LocalSubgraph) {  // For each vertex v
+		if(vx.local == i) {
+			vx_v = vx;
+			break;
+		}
+	}
 	// For each out edge of i
-	for (boost::tie(f, l) = out_edges(vertex(i, *(g->graph)), lsg); f != l; ++f) {
+	for (boost::tie(f, l) = out_edges(vx_v, lsg); f != l; ++f) {
 		int j = target(*f, lsg).local;
 		double weight = ((Edge*)f->local.get_property())->weight;
 		int kj = clusterArray[j];
