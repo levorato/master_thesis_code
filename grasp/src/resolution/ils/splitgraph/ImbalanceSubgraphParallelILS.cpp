@@ -82,12 +82,13 @@ ImbalanceSubgraphParallelILS::~ImbalanceSubgraphParallelILS() {
 
 Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-		ClusteringProblem& problem, ExecutionInfo& info) {
+		ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& verticesInLeaderProcess) {
 
 	stringstream constructivePhaseResults;
 	stringstream iterationResults;
 	stringstream iterationTimeSpent;
 	unsigned int numberOfProcesses = numberOfSlaves + 1;
+	this->verticesInLeaderProcess = verticesInLeaderProcess;
 
 	BOOST_LOG_TRIVIAL(info) << "Starting split graph ILS (local ILS time limit = " << LOCAL_ILS_TIME_LIMIT << " s)...";
 
@@ -510,7 +511,11 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	// 3. the leader receives the processing results
 	OutputMessage omsg;
 	std::map<int, OutputMessage> messageMap;
+	leaderProcessingMessage.globalVertexId = this->verticesInLeaderProcess;
 	messageMap[0] = leaderProcessingMessage;
+	// N: the number of vertices in the global graph
+	long N = leaderProcessingMessage.num_vertices;
+
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
 	for(int i = 0; i < numberOfSlaves; i++) {
 		OutputMessage omsg;
@@ -535,10 +540,13 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		// stores the time spent by each process
 		// timeSpent[i+1] = omsg.timeSpent;
 		messageMap[procNum] = omsg;
+		N += omsg.num_vertices;
 	}
 
 	// Global cluster array
-	ClusterArray globalClusterArray(g->getN(), 0);
+	ClusterArray globalClusterArray(N, 0);
+	// g->setGlobalN(N);
+	BOOST_LOG_TRIVIAL(debug) << "Global cluster size is " << N;
 	long clusterOffset = 0;
 	double internalImbalancePosSum = 0.0;
 	double internalImbalanceNegSum = 0.0;
@@ -571,15 +579,18 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		//timeSpent[i+1] = omsg.timeSpent;
 		// 4. Merge the partial solutions into a global solution for the whole graph
 		ClusterArray localClusterArray = omsg.clustering.getClusterArray();
+		BOOST_LOG_TRIVIAL(info) << "1";
 		Imbalance internalImbalance = omsg.clustering.getImbalance();
+		BOOST_LOG_TRIVIAL(info) << "2";
 		internalProcessImbalance[procNum] = internalImbalance;
+		BOOST_LOG_TRIVIAL(info) << "3";
 		internalImbalancePosSum += internalImbalance.getPositiveValue();
 		internalImbalanceNegSum += internalImbalance.getNegativeValue();
 
 		long msg_nc = omsg.clustering.getNumberOfClusters();
 		if(msg_nc > 0) {
-			BOOST_LOG_TRIVIAL(info) << "Num vertices is " << omsg.num_vertices;
-			BOOST_LOG_TRIVIAL(info) << "Gvertexid size is " << omsg.globalVertexId.size();
+			BOOST_LOG_TRIVIAL(info) << "localClusterArray.size() = " << localClusterArray.size();
+			BOOST_LOG_TRIVIAL(info) << "omsg.globalVertexId.size() = " << omsg.globalVertexId.size();
 			assert(omsg.num_vertices == omsg.globalVertexId.size());
 			for(long v = 0; v < omsg.num_vertices; v++) {
 				long vglobal = omsg.globalVertexId[v];
@@ -609,10 +620,12 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	}
 
 	// Calculates the external imbalance sum (between processes)
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Calculating external process imbalance matrix...";
 	Imbalance externalImbalance = util.calculateExternalImbalanceSumBetweenProcesses(splitgraphClustering.getInterProcessImbalanceMatrix());
 
 	// 5. Builds the clustering with the merge of each process local ILS result
 	// EVITA O RECALCULO DA FUNCAO OBJETIVO NA LINHA ABAIXO
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Building global clustering object...";
 	Clustering globalClustering(globalClusterArray, *g, problem, internalImbalancePosSum + externalImbalance.getPositiveValue(),
 			internalImbalanceNegSum + externalImbalance.getNegativeValue(), clusterProcessOrigin, internalProcessImbalance);
 
@@ -2389,6 +2402,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 			timeSpent = resolution.getTotalTimeSpent();
 			num_comb = resolution.getNumberOfTestedCombinations();
 		}
+		assert(leaderClustering.getClusterArray().size() == num_vertices(*(g->graph)));
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P0" << ": num_edges = " <<
 								num_edges(*(g->graph)) << " , num_vertices = " << num_vertices(*(g->graph)) << ", I(P) = "
 								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();

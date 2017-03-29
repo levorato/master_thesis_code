@@ -21,16 +21,20 @@ ParallelBGLSignedGraph::ParallelBGLSignedGraph(const unsigned long &numberOfNode
 
 }
 
-unsigned long ParallelBGLSignedGraph::getN() {
+unsigned long ParallelBGLSignedGraph::getGlobalN() {
 	return n;
 }
 
-void ParallelBGLSignedGraph::setN(long num_vertices) {
+void ParallelBGLSignedGraph::setGlobalN(long num_vertices) {
 	n = num_vertices;
 }
 
 unsigned long ParallelBGLSignedGraph::getM() {
 	return num_edges(*graph);
+}
+
+unsigned long ParallelBGLSignedGraph::getN() {
+	return num_vertices(*graph);
 }
 
 unsigned int ParallelBGLSignedGraph::getId() {

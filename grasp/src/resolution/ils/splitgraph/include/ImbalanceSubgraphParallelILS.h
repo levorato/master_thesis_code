@@ -52,7 +52,7 @@ public:
 	 */
 	virtual Clustering executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-			ClusteringProblem& problem, ExecutionInfo& info);
+			ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& verticesInLeaderProcess);
 
 	ProcessClustering preProcessSplitgraphPartitioning(SignedGraph *g, ClusteringProblem& problem, bool partitionByVertex);
 
@@ -143,8 +143,6 @@ public:
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar, int invocationNumber);
 
-	std::vector<long> verticesInLeaderProcess;
-
 protected:
 	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;
@@ -155,6 +153,8 @@ protected:
 	bool parallelgraph;
 	// counts the number of times the local ILS found solutions worse than the current solution (worse than zero-cost move).
 	long numberOfFrustratedSolutions;
+
+	std::vector<long> verticesInLeaderProcess;
 
 	// data structures containing the imbalance contribution of each vertex and between processes
 	std::vector< pair<long, double> > vertexImbalance;

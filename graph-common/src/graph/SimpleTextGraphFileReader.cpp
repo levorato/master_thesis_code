@@ -222,7 +222,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 	} else {
 		BOOST_LOG_TRIVIAL(error) << "Failed to read graph file.";
 	}
-	g->setN(num_vertices(*(g->graph)));
+	g->setGlobalN(n);
 	BOOST_LOG_TRIVIAL(trace) << "Successfully created local signed graph with " << num_vertices(*(g->graph)) << " vertices.";
 	return g;
 }

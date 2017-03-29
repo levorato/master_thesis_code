@@ -33,9 +33,7 @@ public:
 	 */
 	virtual Clustering executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-			ClusteringProblem& problem, ExecutionInfo& info);
-
-	std::vector<long> verticesInLeaderProcess;
+			ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& verticesInLeaderProcess);
 
 protected:
 	int machineProcessAllocationStrategy;

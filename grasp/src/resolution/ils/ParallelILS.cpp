@@ -64,7 +64,7 @@ ParallelILS::~ParallelILS() {
 
 Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeighborhoodDescent *vnd,
 		SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
-		ClusteringProblem& problem, ExecutionInfo& info) {
+		ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& verticesInLeaderProcess) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Initiating parallel ILS...";
 	// max number of clusters (RCC Problem Only)
@@ -129,8 +129,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 	} else {
 		// use boost parallel graph library
 		ImbalanceSubgraphParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled, parallelgraph);
-		gpils.verticesInLeaderProcess = this->verticesInLeaderProcess;
-		Clustering Gc = gpils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+		Clustering Gc = gpils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info, verticesInLeaderProcess);
 		return Gc;
 	}
 }

@@ -31,14 +31,19 @@ public:
 	~ParallelBGLSignedGraph();
 
 	/**
-	 * Returns the number of vertices of the graph.
+	 * Returns the number of vertices of the local graph.
 	 */
 	virtual unsigned long getN();
 
 	/**
-	 * Sets the number of vertices of the graph.
+	 * Returns the number of vertices of the global graph.
 	 */
-	void setN(long num_vertices);
+	virtual unsigned long getGlobalN();
+
+	/**
+	 * Sets the number of vertices of the global graph.
+	 */
+	void setGlobalN(long num_vertices);
 
 	/**
 	 * Returns the number of edges of the graph

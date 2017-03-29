@@ -167,7 +167,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		BOOST_LOG_TRIVIAL(info) << "Filling property maps...";
 		std::vector<long> verticesInLeaderProcess = fillPropertyMap(pgraph, myRank);
 		synchronize(*pgraph);
-		BOOST_LOG_TRIVIAL(info) << "Done.";
+		BOOST_LOG_TRIVIAL(info) << "Done. Number of vertices in process 0: " << verticesInLeaderProcess.size();
 
 		Clustering c;
 		string fileId = filePath.filename().string();
@@ -235,9 +235,8 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters,
 							numberOfSearchSlaves, splitGraph, cuda, parallelgraph);
-					parallelResolution.verticesInLeaderProcess = verticesInLeaderProcess;
 					c = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
-												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
+												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info, verticesInLeaderProcess);
 				}
 			}
 			// Stops the timer and stores the elapsed time
@@ -313,7 +312,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters,
 								numberOfSearchSlaves, splitGraph, cuda);
 						RCCCluster = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
-								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
+								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info, verticesInLeaderProcess);
 					}
 				}
 			} else {  // RCC equals CC solution ( I(P) = RI(P) = 0 )
@@ -708,6 +707,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		if(mpiparams.isParallelGraph) {
 			// All processes synchronize at this point, then the graph is complete
 			g = boost::make_shared<ParallelBGLSignedGraph>(num_vertices(*pgraph), pgraph);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
+			BOOST_LOG_TRIVIAL(info) << "Created local graph of size " << g->getN();
 			BOOST_LOG_TRIVIAL(info) << "Synchronizing process for global graph creation...";
 			synchronize(*(g->graph));
 			BOOST_LOG_TRIVIAL(info) << "Filling property maps...";
