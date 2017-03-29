@@ -35,6 +35,8 @@ public:
 			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
+	std::vector<long> verticesInLeaderProcess;
+
 protected:
 	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;

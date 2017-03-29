@@ -450,6 +450,10 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	// typedef graph_traits<ParallelGraph>::vertex_descriptor Key;
 	// VertexProcessorMap to_processor_map = get(vertex_rank, *g->graph);
 	// TODO obter a propriedade certa da PBGL que retorna o processador a que o vertice pertence
+	BOOST_LOG_TRIVIAL(info) << "distributeSubgraphsBetweenProcessesAndRunILS started...";
+
+
+
 	property_map<ParallelGraph, vertex_owner_t>::type to_processor_map = get(vertex_owner, *(g->graph));
 	std::vector< std::vector< long > > verticesInProcess(numberOfProcesses, std::vector< long >());
 	// Randomly assign a new distribution
@@ -462,7 +466,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		verticesInProcess[rank].push_back(vi->local);
 		// boost::put(boost::vertex_index2_t(), *(g->graph), v, rank);
 
-		BOOST_LOG_TRIVIAL(info) << "Vertex " << (vi->local) << " is in process number " << rank;
+		// BOOST_LOG_TRIVIAL(info) << "Vertex " << (vi->local) << " is in process number " << rank;
 	}
 	// redistribute
 
@@ -501,7 +505,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	VariableNeighborhoodDescent localVND = *vnd;
 	localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
 	OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
-							problem, info, verticesInProcess[0]);
+							problem, info, this->verticesInLeaderProcess);
 
 	// 3. the leader receives the processing results
 	OutputMessage omsg;
@@ -554,6 +558,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 								  get(boost::vertex_global, *(g->graph))); */
 
 	/* vertex_list_adaptor<ParallelGraph> vla(*(g->graph), globalIndexMap); */
+
 	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
 	{
 		int p_owner = owner(v); // process_id_type
@@ -573,15 +578,24 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 
 		long msg_nc = omsg.clustering.getNumberOfClusters();
 		if(msg_nc > 0) {
+			BOOST_LOG_TRIVIAL(info) << "Num vertices is " << omsg.num_vertices;
+			BOOST_LOG_TRIVIAL(info) << "Gvertexid size is " << omsg.globalVertexId.size();
+			assert(omsg.num_vertices == omsg.globalVertexId.size());
+			for(long v = 0; v < omsg.num_vertices; v++) {
+				long vglobal = omsg.globalVertexId[v];
+				BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution becomes vertex " << vglobal <<
+										" in global solution";
+			}
+
 			assert(localClusterArray.size() == omsg.globalVertexId.size());
 			for(long v = 0; v < localClusterArray.size(); v++) {
 				// Obtains vertex v's number in the global graph
 				long vglobal = omsg.globalVertexId[v];
 				globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
-				/*
+
 				BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution becomes vertex " << vglobal <<
 						" in global solution and belongs to cluster " << localClusterArray[v] <<
-						", that is, global cluster " << globalClusterArray[vglobal]; */
+						", that is, global cluster " << globalClusterArray[vglobal];
 			}
 			clusterOffset += msg_nc;
 			// all the clusters in this interval belong to process 'stat.source()'

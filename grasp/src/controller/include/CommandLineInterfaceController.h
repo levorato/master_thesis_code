@@ -52,6 +52,8 @@ private:
 
 	static void handler();
 
+	std::vector<long> fillPropertyMap(clusteringgraph::ParallelGraph *pgraph, int rank);
+
 	string logSeverity;
 };
 } /* namespace controller */

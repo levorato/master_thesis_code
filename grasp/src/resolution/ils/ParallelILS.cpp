@@ -129,6 +129,7 @@ Clustering ParallelILS::executeILS(ConstructClustering *construct, VariableNeigh
 	} else {
 		// use boost parallel graph library
 		ImbalanceSubgraphParallelILS gpils(machineProcessAllocationStrategy, numberOfSlaves, numberOfSearchSlaves, splitGraph, cudaEnabled, parallelgraph);
+		gpils.verticesInLeaderProcess = this->verticesInLeaderProcess;
 		Clustering Gc = gpils.executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
 		return Gc;
 	}

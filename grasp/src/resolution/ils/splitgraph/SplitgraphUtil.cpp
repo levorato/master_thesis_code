@@ -744,6 +744,7 @@ std::vector<Imbalance> SplitgraphUtil::calculateProcessInternalImbalance(SignedG
 	return processInternalImbalance;
 }
 
+
 void SplitgraphUtil::validaSplitgraphArray(SignedGraph &g, ProcessClustering& processClustering, Clustering& globalClustering) {
 	/*  DISABLED - USE ONLY FOR DEBUGGING PURPOSES
 	const ClusterArray splitgraphClusterArray = processClustering.getClusterArray();

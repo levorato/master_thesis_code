@@ -143,6 +143,8 @@ public:
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar, int invocationNumber);
 
+	std::vector<long> verticesInLeaderProcess;
+
 protected:
 	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;

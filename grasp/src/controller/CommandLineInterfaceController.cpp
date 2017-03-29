@@ -67,6 +67,14 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/log/support/date_time.hpp>
+// Distributed adjacency list
+#include <boost/graph/distributed/adjacency_list.hpp>
+#include <boost/graph/distributed/mpi_process_group.hpp>
+#include <boost/property_map/property_map_iterator.hpp>
+#include <boost/graph/distributed/vertex_list_adaptor.hpp>
+#include <boost/graph/named_function_params.hpp>
+#include <boost/graph/distributed/distributed_graph_utility.hpp>
+#include <boost/graph/distributed/vertex_list_adaptor.hpp>
 #include <boost/graph/distributed/local_subgraph.hpp>
 
 using namespace boost;
@@ -155,6 +163,12 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader(pgraph);
 		SignedGraphPtr g;
 		g = reader.readGraphFromFile(filePath.string(), parallelgraph);
+		// TODO rever chamada abaixo
+		BOOST_LOG_TRIVIAL(info) << "Filling property maps...";
+		std::vector<long> verticesInLeaderProcess = fillPropertyMap(pgraph, myRank);
+		synchronize(*pgraph);
+		BOOST_LOG_TRIVIAL(info) << "Done.";
+
 		Clustering c;
 		string fileId = filePath.filename().string();
 		ClusteringProblemFactory problemFactory;
@@ -221,6 +235,7 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters,
 							numberOfSearchSlaves, splitGraph, cuda, parallelgraph);
+					parallelResolution.verticesInLeaderProcess = verticesInLeaderProcess;
 					c = parallelResolution.executeILS(&construct, &vnd, g.get(), numberOfIterations, iterMaxILS,
 												perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
@@ -688,12 +703,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		SimpleTextGraphFileReader reader = SimpleTextGraphFileReader(NULL);
 		SignedGraphPtr g;
 		unsigned int previousId = 0;
+		std::vector<long> gVertexId;
 
 		if(mpiparams.isParallelGraph) {
 			// All processes synchronize at this point, then the graph is complete
 			g = boost::make_shared<ParallelBGLSignedGraph>(num_vertices(*pgraph), pgraph);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
 			BOOST_LOG_TRIVIAL(info) << "Synchronizing process for global graph creation...";
 			synchronize(*(g->graph));
+			BOOST_LOG_TRIVIAL(info) << "Filling property maps...";
+			gVertexId = fillPropertyMap(pgraph, myRank);
+			synchronize(*pgraph);
 			BOOST_LOG_TRIVIAL(info) << "Done.";
 		}
 
@@ -944,11 +963,13 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							}
 
 							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
-							BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-							 {
-								 // std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
-								 globalVertexId.push_back(v.local);
-							 }
+							if(parallelgraph) {
+								BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+								 {
+									 // std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
+									 globalVertexId.push_back(v.local);
+								 }
+							}
 							/*
 							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
 							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
@@ -972,12 +993,16 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						}
 
 						// Sends the result back to the leader process
-						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations(), timeSpent, globalVertexId, n, e);
+						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations(), timeSpent, gVertexId, n, e);
 						omsg.num_vertices = n;
 						omsg.num_edges = e;
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
 						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader (size = " <<
 								(sizeof(omsg)/1024.0) << " KB).";
+						/*
+						BOOST_LOG_TRIVIAL(info) << "Sync parallel graph...";
+						synchronize(*(g->graph));
+						BOOST_LOG_TRIVIAL(info) << "Sync done."; */
 					}
 				}
 			} else {  // Parallel VND slave
@@ -1149,6 +1174,29 @@ void CommandLineInterfaceController::handler()
     	BOOST_LOG_TRIVIAL(fatal) << stack_syms[i] << "\n";
     }
     free( stack_syms );
+}
+
+std::vector<long> CommandLineInterfaceController::fillPropertyMap(clusteringgraph::ParallelGraph *pgraph, int rank) {
+	// 	// https://github.com/boostorg/graph_parallel/blob/master/test/adjlist_redist_test.cpp
+	// Set the names of the vertices to be the global index in the
+	// initial distribution. Then when we are debugging we'll be able to
+	// see how vertices have moved.
+	std::vector<long> returnVector;
+	typedef typename property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef typename property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	//typedef property_map<RoadMap, int Highway::*>::type road_length = get(&Highway::length, map);
+	typename property_map<ParallelGraph, vertex_properties_t>::type vertex_id_map =
+			get(vertex_properties, *pgraph);
+
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap> global_index(pgraph->process_group(),
+			num_vertices(*pgraph), get(vertex_index, *pgraph), get(vertex_global, *pgraph));
+	BGL_FORALL_VERTICES_T(v, *pgraph, ParallelGraph) {
+		BOOST_LOG_TRIVIAL(info) << "Vertex " << get(global_index, v) << " is in process number " << rank;
+		returnVector.push_back(get(global_index, v));
+		put(vertex_id_map, v, get(global_index, v));
+	}
+	BOOST_LOG_TRIVIAL(info) << "Gvertexid size is " << returnVector.size();
+	return returnVector;
 }
 
 } // namespace controller
