@@ -24,6 +24,7 @@
 								<option id="gnu.cpp.compiler.option.include.paths.607447060" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Mestrado-GraphCommon/src}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
+									<listOptionValue builtIn="false" value="/usr/local/boost/include"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.940807472" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>

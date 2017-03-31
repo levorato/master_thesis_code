@@ -42,7 +42,6 @@
 // Communicate via MPI
 #include <boost/graph/distributed/mpi_process_group.hpp>
 
-#include <boost/property_map/property_map_iterator.hpp>
 // Distributed adjacency list
 #include <boost/graph/distributed/adjacency_list.hpp>
 #include <boost/graph/distributed/mpi_process_group.hpp>
@@ -51,6 +50,10 @@
 #include <boost/graph/named_function_params.hpp>
 #include <boost/graph/distributed/distributed_graph_utility.hpp>
 #include <boost/graph/distributed/vertex_list_adaptor.hpp>
+#include <boost/property_map/parallel/distributed_property_map.hpp>
+#include <boost/property_map/property_map_iterator.hpp>
+#include <boost/graph/distributed/vertex_list_adaptor.hpp>
+#include <boost/graph/iteration_macros.hpp>
 // #include <boost/graph/distributed/adjlist/redistribute.hpp>
 
 
@@ -454,23 +457,6 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	BOOST_LOG_TRIVIAL(info) << "distributeSubgraphsBetweenProcessesAndRunILS started...";
 
 
-
-	property_map<ParallelGraph, vertex_owner_t>::type to_processor_map = get(vertex_owner, *(g->graph));
-	std::vector< std::vector< long > > verticesInProcess(numberOfProcesses, std::vector< long >());
-	// Randomly assign a new distribution
-	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
-	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
-		int rank = get(to_processor_map, *vi);
-		// boost::get(vertex_index2, g, *v) == process_id(pg)
-		// int rank = boost::get(vertex_index2, *(g->graph), *vi);
-		// boost::put(boost::vertex_index2_t(), g, v, group);
-		verticesInProcess[rank].push_back(vi->local);
-		// boost::put(boost::vertex_index2_t(), *(g->graph), v, rank);
-
-		// BOOST_LOG_TRIVIAL(info) << "Vertex " << (vi->local) << " is in process number " << rank;
-	}
-	// redistribute
-
 	// There are numberOfProcesses subgraphs
 	/*
 	std::vector<SubGraph> subgraphList;
@@ -495,7 +481,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		if(k < 0) {
 			imsg.setClustering(&CCclustering);
 		}
-		imsg.setVertexList(verticesInProcess[i+1]);
+		//imsg.setVertexList(verticesInProcess[i+1]); NAO EH MAIS NECESSARIO
 		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
 		imsg.cudaEnabled = is_overloaded_process(verticesInProcess[i+1]);
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
@@ -592,19 +578,14 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 			BOOST_LOG_TRIVIAL(info) << "localClusterArray.size() = " << localClusterArray.size();
 			BOOST_LOG_TRIVIAL(info) << "omsg.globalVertexId.size() = " << omsg.globalVertexId.size();
 			assert(omsg.num_vertices == omsg.globalVertexId.size());
-			for(long v = 0; v < omsg.num_vertices; v++) {
-				long vglobal = omsg.globalVertexId[v];
-				BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution becomes vertex " << vglobal <<
-										" in global solution";
-			}
-
 			assert(localClusterArray.size() == omsg.globalVertexId.size());
 			for(long v = 0; v < localClusterArray.size(); v++) {
 				// Obtains vertex v's number in the global graph
 				long vglobal = omsg.globalVertexId[v];
 				globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
 
-				BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution becomes vertex " << vglobal <<
+				BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution of process P" << procNum <<
+						" becomes vertex " << vglobal <<
 						" in global solution and belongs to cluster " << localClusterArray[v] <<
 						", that is, global cluster " << globalClusterArray[vglobal];
 			}
@@ -618,6 +599,43 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 						omsg.num_edges << " , num_vertices = " << omsg.num_vertices << ", I(P) = " << omsg.clustering.getImbalance().getValue()
 						 << ", k = " << msg_nc;
 	}
+
+	// TODO remove me -> redistribution test
+	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
+	typedef typename property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef typename property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	typename property_map<ParallelGraph, vertex_properties_t>::type name_map
+	  = get(vertex_properties, *(g->graph));
+
+	mpi_process_group pg = g->graph->process_group();
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+	  global_index(pg, num_vertices(*(g->graph)),
+				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
+	BGL_FORALL_VERTICES_T(v, *(g->graph), ParallelGraph)
+	  put(name_map, v, get(global_index, v));
+
+	// property_map<ParallelGraph, vertex_rank_t> to_processor_map = get(vertex_rank, *(g->graph));
+	property_map<ParallelGraph, vertex_index_t> to_processor_map = get(vertex_index, *(g->graph));
+
+	// Randomly assign a new distribution
+	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
+	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi)
+	  put(to_processor_map, *vi, vi->local % num_processes(pg));  // floor(vi->local / (double)g->getN())
+
+	if (process_id(pg) == 0)
+	  std::cout << "Redistributing...";
+	// Perform the actual redistribution
+	(g->graph)->redistribute(to_processor_map);
+
+	if (process_id(pg) == 0)
+	  std::cout << " done." << std::endl;
+
+	//property_map<ParallelGraph, vertex_owner_t>::type to_processor_map = get(vertex_owner, *(g->graph));
+	// boost::detail::parallel::global_descriptor_property_map<LocalDescriptor> vertex_to_processor_map;
+	//property_map<ParallelGraph, vertex_owner_t>::type vertex_to_processor_map = get(vertex_owner, *(g->graph));
+	// Randomly assign a new distribution
+	// for(int v = 0; v < N; v++) {
+
 
 	// Calculates the external imbalance sum (between processes)
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Calculating external process imbalance matrix...";
