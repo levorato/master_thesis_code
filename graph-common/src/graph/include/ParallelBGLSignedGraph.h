@@ -23,8 +23,7 @@ using namespace boost;
 using boost::graph::distributed::mpi_process_group;
 
 typedef boost::adjacency_list<vecS, distributedS<mpi_process_group, vecS>, boost::undirectedS,
-		property<vertex_properties_t, Vertex>,
-		property<edge_properties_t, Edge>, no_property, vecS > ParallelGraph;
+		VertexProperty, EdgeProperty, no_property, vecS > ParallelGraph;
 
 class ParallelBGLSignedGraph: public Graph {
 public:

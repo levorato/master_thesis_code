@@ -614,13 +614,14 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	BGL_FORALL_VERTICES_T(v, *(g->graph), ParallelGraph)
 	  put(name_map, v, get(global_index, v));
 
-	// property_map<ParallelGraph, vertex_rank_t> to_processor_map = get(vertex_rank, *(g->graph));
-	property_map<ParallelGraph, vertex_index_t> to_processor_map = get(vertex_index, *(g->graph));
+	typename property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
 
 	// Randomly assign a new distribution
 	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
-	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi)
-	  put(to_processor_map, *vi, vi->local % num_processes(pg));  // floor(vi->local / (double)g->getN())
+	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
+		// put(to_processor_map, vi, vi->local % num_processes(pg));  // floor(vi->local / (double)g->getN())
+		put(to_processor_map, *vi, vi->local % num_processes(pg));
+	}
 
 	if (process_id(pg) == 0)
 	  std::cout << "Redistributing...";
