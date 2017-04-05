@@ -34,7 +34,7 @@ public:
 
 private:
 	void processInputFile(fs::path filePath, string& outputFolder, string& initPartitionFile, 
-      const bool& initPartitionsFromFileForAllItersEnabled, string& timestamp, const bool& debug, 
+      const bool& initPartitionsFromFileForAllItersEnabled, const bool& minKEnabled, string& timestamp, const bool& debug, 
       const double& alpha, const int& l, const bool& firstImprovementOnOneNeig, const int& numberOfIterations, 
       const long& timeLimit, const int& machineProcessAllocationStrategy, const int& numberOfSlaves, 
       const int& numberOfSearchSlaves, const int& myRank, const int& functionType, const unsigned long& seed,	

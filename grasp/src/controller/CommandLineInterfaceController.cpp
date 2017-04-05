@@ -131,7 +131,7 @@ CommandLineInterfaceController::~CommandLineInterfaceController() {
 }
 
 void CommandLineInterfaceController::processInputFile(fs::path filePath, string& outputFolder, string& initPartitionFile, 
-    const bool& initPartitionsFromFileForAllItersEnabled, string& executionId, const bool& debug, const double& alpha, 
+    const bool& initPartitionsFromFileForAllItersEnabled, const bool& minKEnabled, string& executionId, const bool& debug, const double& alpha, 
     const int& l, const bool& firstImprovementOnOneNeig, const int& numberOfIterations, const long& timeLimit, 
     const int& machineProcessAllocationStrategy, const int& numberOfMasters, const int& numberOfSearchSlaves,
 		const int& myRank, const int& functionType, const unsigned long& seed, const bool& CCEnabled, const bool& RCCEnabled,
@@ -187,12 +187,12 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 				//   I L S
 				if(numberOfMasters == 0) {	// sequential version of ILS
 					resolution::ils::ILS resolution;
-					c = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+					c = resolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS, minKEnabled,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				} else {  // parallel version
 					// distributes ILS processing among numberOfMasters processes and summarizes the result
 					resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-					c = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS,
+					c = parallelResolution.executeILS(construct, vnd, g.get(), numberOfIterations, iterMaxILS, minKEnabled,
 							perturbationLevelMax, problemFactory.build(ClusteringProblem::CC_PROBLEM), info);
 				}
 			}
@@ -261,12 +261,12 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 					//   I L S
 					if(numberOfMasters == 0) {	// sequential version of ILS
 						resolution::ils::ILS resolution;
-						RCCCluster = resolution.executeILS(*RCCConstruct, vnd, g.get(), numberOfIterations, iterMaxILS,
+						RCCCluster = resolution.executeILS(*RCCConstruct, vnd, g.get(), numberOfIterations, iterMaxILS, minKEnabled,
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					} else {  // parallel version
 						// distributes ILS processing among numberOfMasters processes and summarizes the result
 						resolution::ils::ParallelILS parallelResolution(machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlaves);
-						RCCCluster = parallelResolution.executeILS(*RCCConstruct, vnd, g.get(), numberOfIterations, iterMaxILS,
+						RCCCluster = parallelResolution.executeILS(*RCCConstruct, vnd, g.get(), numberOfIterations, iterMaxILS, minKEnabled,
 								perturbationLevelMax, problemFactory.build(ClusteringProblem::RCC_PROBLEM, k), info);
 					}
 				}
@@ -355,7 +355,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 	string s_alpha;
 	int numberOfIterations = 500, l = 1;
 	long k = 0;
-	bool debug = false, profile = false, firstImprovementOnOneNeig = true, CCEnabled = true, RCCEnabled = true, initPartitionsFromFileForAllItersEnabled = false;
+	bool debug = false, profile = false, firstImprovementOnOneNeig = true, CCEnabled = true, RCCEnabled = true, initPartitionsFromFileForAllItersEnabled = false, minKEnabled= false;
 	string inputFileDir, outputFolder, initPartitionFile;
 	int timeLimit = 1800;
 	int functionType = GainFunction::IMBALANCE;
@@ -380,6 +380,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("rcc", po::value<bool>(&RCCEnabled)->default_value(true), "Enable RCC Problem resolution")
 		("k", po::value<long>(&k)->default_value(0), "RCC Problem k parameter (max number of clusters) - optional")
 		("perturbationLevelMax", po::value<int>(&perturbationLevelMax)->default_value(30), "ILS max perturbation level")
+		//("iter-max-ils", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
 		("time-limit", po::value<int>(&timeLimit)->default_value(1800), "maximum execution time (seconds)")
 		("input-file", po::value< std::vector<string> >(), "graph input file")
 		("debug", po::value<bool>(&debug)->default_value(false), "enable debug mode")
@@ -401,8 +402,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		("init-partition-file", po::value<string>(&initPartitionFile), "initial partition file (the file given by a community detection algorithm)") // New
 		("initPartitionsFromFileForAllIters", po::value<bool>(&initPartitionsFromFileForAllItersEnabled)->default_value(false), "Initialize partitions from file provided by the 'init-partition-file' argument for all iters") // New
 // const int& bInitPartitionFromFileForAllIters
-
-		//("ils,i", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
+		("ils-i", po::value<int>(&iterMaxILS)->default_value(5), "number of iterations of internal ILS loop")
+		("min-k", po::value<bool>(&minKEnabled)->default_value(false), "get the solution with min k when there are 2 solutions that have the same imbalance value during the ils iterations") // New
 		//("perturb,p", po::value<int>(&perturbationLevelMax)->default_value(30), "maximum perturbation level in ILS")
 	;
 	po::positional_options_description p;
@@ -575,16 +576,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				if(not profile) { // default mode: use specified parameters
 					BOOST_LOG_TRIVIAL(info) << "Alpha value is " << std::setprecision(2) << fixed << alpha << "\n";
 					BOOST_LOG_TRIVIAL(info) << "Number of iterations is " << numberOfIterations << "\n";
-					processInputFile(filePath, outputFolder, initPartitionFile, initPartitionsFromFileForAllItersEnabled, executionId, debug, alpha, l, firstImprovementOnOneNeig,
-							numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
+					processInputFile(filePath, outputFolder, initPartitionFile, initPartitionsFromFileForAllItersEnabled, minKEnabled, executionId, debug, alpha, l, 								firstImprovementOnOneNeig, numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
 							myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
 				} else {
 					BOOST_LOG_TRIVIAL(info) << "Profile mode on." << endl;
 					for(double alpha2 = 0.0F; alpha2 < 1.1F; alpha2 += 0.1F) {
 						BOOST_LOG_TRIVIAL(info) << "Processing problem with alpha = " << std::setprecision(2) << alpha2 << endl;
-						processInputFile(filePath, outputFolder, initPartitionFile, initPartitionsFromFileForAllItersEnabled, executionId, debug, alpha2, l, firstImprovementOnOneNeig,
-								numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters, numberOfSearchSlavesPerMaster,
-								myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
+						processInputFile(filePath, outputFolder, initPartitionFile, initPartitionsFromFileForAllItersEnabled, minKEnabled, executionId, debug, alpha2, l, 									firstImprovementOnOneNeig,numberOfIterations, timeLimit, mpiparams.machineProcessAllocationStrategy, numberOfMasters,
+		 						numberOfSearchSlavesPerMaster,myRank, functionType, seed, CCEnabled, RCCEnabled, k, strategy, searchType, iterMaxILS, perturbationLevelMax);
 					}
 				}
 			}
@@ -734,7 +733,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
 						resolution::ils::ILS resolution;
 						Clustering bestClustering = resolution.executeILS(*construct, vnd, g.get(), imsgpils.iter,
-								imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+								imsgpils.iterMaxILS, imsgpils.minKEnabled, imsgpils.perturbationLevelMax,
 								problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 
 						// Sends the result back to the leader process

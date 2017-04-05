@@ -45,7 +45,7 @@ ILS::~ILS() {
 }
 
 Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
+		SignedGraph *g, const int& iterMax, const int& iterMaxILS, const bool& minKEnabled, const int& perturbationLevelMax,
 		ClusteringProblem& problem,	ExecutionInfo& info) {
 	BOOST_LOG_TRIVIAL(info) << "Initializing ILS "<< problem.getName() << " procedure for alpha = "
 			<< construct.getAlpha() << " and l = " << vnd.getNeighborhoodSize();
@@ -120,7 +120,10 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 			// if Q(Cl) > Q(Cstar)
 			Imbalance newValue = Cl.getImbalance();
 			Imbalance bestValue = CStar.getImbalance();
-			if(newValue < bestValue) {  // solution improved
+			//if(newValue < bestValue) {  // solution improved ====> OLD
+			if(newValue < bestValue  or 
+				(minKEnabled and newValue == bestValue  and  Cl.getNumberOfClusters() < CStar.getNumberOfClusters()) ) //solution improved OR gets the solution with min k
+			{ 
 				// cout << "A better solution was found." << endl;
 				CStar = Cl;
 				bestValue = newValue;
@@ -171,7 +174,10 @@ Clustering ILS::executeILS(ConstructClustering &construct, VariableNeighborhoodD
 		}
 		Imbalance newValue = CStar.getImbalance();
 		Imbalance bestValue = CBest.getImbalance();
-		if(newValue < bestValue) {
+		//if(newValue < bestValue) { ===> OLD
+		if(newValue < bestValue  or 
+				(minKEnabled and newValue == bestValue  and  Cl.getNumberOfClusters() < CStar.getNumberOfClusters()) ) //solution improved OR gets the solution with min k
+		{ 
 			// cout << "A better solution was found." << endl;
 			CBest = CStar;
 			bestValue = newValue;

@@ -46,7 +46,7 @@ public:
 	 * @param executionInfo auxiliary data about execution
 	 */
 	Clustering executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-			SignedGraph *g, const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
+			SignedGraph *g, const int& iterMax, const int& iterMaxILS,  const bool& minKEnabled, const int& perturbationLevelMax,
 			ClusteringProblem& problem,	ExecutionInfo& info);
 
 	unsigned long getNumberOfTestedCombinations();

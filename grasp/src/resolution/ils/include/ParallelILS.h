@@ -30,7 +30,7 @@ public:
 	 * Triggers the parallel execution of the ILS algorithm using MPI.
 	 */
 	Clustering executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+			SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax, const bool& minKEnabled,
 			ClusteringProblem& problem, ExecutionInfo& info);
 
 private:

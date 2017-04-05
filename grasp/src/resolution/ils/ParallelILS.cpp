@@ -33,7 +33,7 @@ ParallelILS::~ParallelILS() {
 }
 
 Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeighborhoodDescent &vnd,
-		SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
+		SignedGraph *g, const int& iter, const int& iterMaxILS, const int& perturbationLevelMax, const bool& minKEnabled,
 		ClusteringProblem& problem, ExecutionInfo& info) {
 	mpi::communicator world;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Initiating parallel ILS...";
@@ -59,7 +59,7 @@ Clustering ParallelILS::executeILS(ConstructClustering &construct, VariableNeigh
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS] Message sent to process " << slaveList[i];
 	}
 	// the leader does its part of the work
-	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+	Clustering bestClustering = ILS::executeILS(construct, vnd, g, iter, iterMaxILS, minKEnabled, perturbationLevelMax, problem, info);
 
 	// the leader receives the processing results
 	OutputMessage omsg;
