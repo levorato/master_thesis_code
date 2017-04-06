@@ -15,6 +15,7 @@
 #include "graph/include/Graph.h"
 #include "graph/include/Clustering.h"
 #include "graph/include/Imbalance.h"
+#include "graph/include/ParallelBGLSignedGraph.h"
 
 #include "ProcessClustering.h"
 
@@ -118,14 +119,14 @@ public:
 	std::vector<Coordinate> obtainListOfClustersFromProcess(SignedGraph& g,
 				const Clustering& globalClustering, int processNumber);
 
-	std::vector<long> getListOfVeticesInCluster(SignedGraph& g, const Clustering& globalClustering,
+	std::vector<long> getListOfVeticesInCluster(ParallelBGLSignedGraph& g, const Clustering& globalClustering,
 			long clusterNumber);
 
 	Imbalance calculateExternalImbalanceSumBetweenProcesses(const ImbalanceMatrix& processClusterImbMatrix);
 
 	Imbalance calculateInternalImbalanceSumOfAllProcesses(std::vector<Imbalance>& internalProcessImbalance);
 
-	Imbalance calculateProcessInternalImbalance(SignedGraph *g, Clustering& c, unsigned int processNumber);
+	Imbalance calculateProcessInternalImbalance(ParallelBGLSignedGraph *g, Clustering& c, unsigned int processNumber);
 
 	/**
 	  *  Calculates the positive and negative degrees of each vertex v in clusterX
@@ -149,10 +150,10 @@ public:
 	/**
 	 * A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.
 	 */
-	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
+	std::vector<Coordinate> obtainListOfOverloadedProcesses(ParallelBGLSignedGraph& g,
 				const ProcessClustering& processClustering);
 
-	std::vector<Coordinate> obtainListOfOverloadedProcesses(SignedGraph& g,
+	std::vector<Coordinate> obtainListOfOverloadedProcesses(ParallelBGLSignedGraph& g,
 				const ProcessClustering& processClustering, long maximumNumberOfVertices);
 
 	/**

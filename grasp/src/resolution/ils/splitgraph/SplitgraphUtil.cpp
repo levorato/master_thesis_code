@@ -28,15 +28,15 @@ SplitgraphUtil::~SplitgraphUtil() {
 	// TODO Auto-generated destructor stub
 }
 
-std::vector<long> SplitgraphUtil::getListOfVeticesInCluster(SignedGraph& g, const Clustering& globalClustering,
+std::vector<long> SplitgraphUtil::getListOfVeticesInCluster(ParallelBGLSignedGraph& g, const Clustering& globalClustering,
 		long clusterNumber) {
 
-	long n = g.getN();
+	long n = g.getGlobalN();
 	ClusterArray globalClusterArray = globalClustering.getClusterArray();
 	std::vector<long> vertexList;
 	for(long vx = 0; vx < n; vx++) {
 		if(globalClusterArray[vx] == clusterNumber) {
-			//BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Choosing vertex " << vx << " to be moved, it belongs to cluster" << clusterToMove << ".";
+			// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Choosing vertex " << vx << " to be moved, it belongs to cluster" << clusterNumber << ".";
 			vertexList.push_back(vx);
 		}
 	}
@@ -85,12 +85,12 @@ Imbalance SplitgraphUtil::calculateInternalImbalanceSumOfAllProcesses(std::vecto
 	return Imbalance(internalImbalancePosSum, internalImbalanceNegSum);
 }
 
-Imbalance SplitgraphUtil::calculateProcessInternalImbalance(SignedGraph *g, Clustering& c,
+Imbalance SplitgraphUtil::calculateProcessInternalImbalance(ParallelBGLSignedGraph *g, Clustering& c,
 		unsigned int processNumber) {
 
 	double positiveSum = 0.0, negativeSum = 0.0;
 	int nc = c.getNumberOfClusters();
-	int n = g->getN();
+	int n = g->getGlobalN();
 	ClusterArray myCluster = c.getClusterArray();
 	// local subgraph creation
 	LocalSubgraph lsg = make_local_subgraph(*(g->graph));
@@ -252,9 +252,9 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClusters(SignedGra
 	return imbalancedClusterList;
 }
 
-std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(SignedGraph& g,
+std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(ParallelBGLSignedGraph& g,
 		const ProcessClustering& processClustering, long maximumNumberOfVertices) {
-	long n = g.getN();
+	long n = g.getGlobalN();
 	const Clustering& splitgraphClustering = processClustering.getSplitgraphClustering();
 	int numberOfProcesses = splitgraphClustering.getNumberOfClusters();
 	// A vertex-overloaded process is a process with more than (maximumNumberOfVertices) vertices.
@@ -278,10 +278,10 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(SignedGr
 	return overloadedProcessList;
 }
 
-std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(SignedGraph& g,
+std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(ParallelBGLSignedGraph& g,
 		const ProcessClustering& processClustering) {
 
-	long n = g.getN();
+	long n = g.getGlobalN();
 	const Clustering& splitgraphClustering = processClustering.getSplitgraphClustering();
 	int numberOfProcesses = splitgraphClustering.getNumberOfClusters();
 	// A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.

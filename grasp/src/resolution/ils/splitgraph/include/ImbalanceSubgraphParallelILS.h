@@ -173,6 +173,8 @@ protected:
 
 	void moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
 			ProcessClustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess);
+
+	void redistributeVerticesInProcesses(SignedGraph *g, const ClusterArray& newSplitgraphClustering);
 };
 
 } /* namespace ils */
