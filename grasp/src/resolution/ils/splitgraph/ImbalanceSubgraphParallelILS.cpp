@@ -188,6 +188,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 
 	// 6. Runs a local search over the merged global solution, trying to improve it
 	// TODO Run a full ILS iteration over the split graph initial solution
+	/*  DISABLED FOR THE DISTRIBUTED GRAPH, FOR OBVIOUS REASONS
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Applying local search over the initial solution.";
 	NeighborhoodSearch* neigborhoodSearch;
 	GainFunctionFactory functionFactory(g);
@@ -203,6 +204,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 			construct->getAlpha(), &bestClustering);
 	CUDAILS cudails;
 	//bestClustering = cudails.executeILS(&NoConstruct, vnd, g, iter, 1, perturbationLevelMax, problem, info);
+	*/
 
 	// 7. Stops the timer and stores the elapsed time
 	timer.stop();
@@ -239,6 +241,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	return bestClustering;
 }
 
+// TODO: REIMPLEMENT THIS WHOLE METHOD IN ACCORDANCE TO BOOST PARALLEL BGL
 ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning(SignedGraph *g,
 		ClusteringProblem& problem, bool partitionByVertex) {
 	// 1. Divide the graph into (numberOfSlaves + 1) non-overlapping parts
@@ -530,6 +533,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		messageMap[procNum] = omsg;
 		N += omsg.num_vertices;
 	}
+	assert(N == g->getGlobalN());
 
 	// Global cluster array
 	ClusterArray globalClusterArray(N, 0);
@@ -749,28 +753,43 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
 		imsg2.cudaEnabled = true;
 		std::vector<int> participatingProcessList;
-		world.send(destinationProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-		world.send(sourceProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
+		std::vector<InputMessageParallelILS> messagesSent;
+		int leaderParticipates = 0, messagesSent = 0;
+		if(destinationProcess != leaderProcess) {
+			world.send(destinationProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+			messagesSent++;
+		} else { leaderParticipates = 1; }
+		if(sourceProcess != leaderProcess) {
+			world.send(sourceProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
+			messagesSent++;
+		} else { leaderParticipates = 2; }
+		messagesSent.push_back(imsg);
+		messagesSent.push_back(imsg2);
 		participatingProcessList.push_back(destinationProcess);
 		participatingProcessList.push_back(sourceProcess);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to processes " << sourceProcess << " (source) and " <<
 				destinationProcess << "(destination).";
 		// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 
-		/* DISABLED - THE LEADER PROCESS DOES NOT PARTICIPATE IN LOCAL ILS
-		// The leader will process the source-process movement
-		// 2.1. the leader does its part of the work: runs ILS to solve the source subgraph
-		VariableNeighborhoodDescent localVND = *vnd;
-		localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
-		OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
-				problem, info, verticesInSourceProcess);
-		*/
+		// The leader may participate in the source-process movement
+		if(leaderParticipates) {
+			// 2.1. the leader does its part of the work: runs ILS to solve the source subgraph
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
+			VariableNeighborhoodDescent localVND = *vnd;
+			localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
+			InputMessageParallelILS inputMsg = messagesSent[leaderParticipates - 1];
+			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg);
+			  // construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
+			  //		problem, info, verticesInSourceProcess);
+			numberOfTestedCombinations += leaderProcessingMessage.numberOfTestedCombinations;
+			messageMap[leaderProcess] = leaderProcessingMessage;
+		}
 
 		// STEP 3: the leader receives the processing results
 		// Maps the messages according to the movement executed
 		std::map<int, OutputMessage> messageMap;
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
-		for(int i = 0; i < 2; i++) {
+		for(int i = 0; i < messagesSent; i++) {
 			OutputMessage omsg;
 			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
 			int tag = stat.tag();
@@ -1106,6 +1125,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 
 			// moves the affected vertices between processes
 			redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
+			int numberOfMessagesSent = 0;
 
 			if(mov >= 1) {  // 2 ILS procedures will be executed by 2 processes through MPI messages
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
@@ -1119,12 +1139,23 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
 				imsg.cudaEnabled = is_overloaded_process(verticesInSourceProcess);
 				imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
-				world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-				world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
+				std::vector<InputMessageParallelILS> messagesSent;
+				int leaderParticipates = 0;
+				if(workerProcess1 != leaderProcess) {
+					world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+					numberOfMessagesSent++;
+				} else { leaderParticipates = 1; }
+				if(workerProcess2 != leaderProcess) {
+					world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
+					numberOfMessagesSent++;
+				} else { leaderParticipates = 2; }
+				messagesSent.push_back(imsg);
+				messagesSent.push_back(imsg2);
+				participatingProcessList.push_back(workerProcess1);
+				participatingProcessList.push_back(workerProcess2);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to processes " << workerProcess1 << " and " << workerProcess2;
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] verticesInSourceProcess size = " << verticesInSourceProcess.size();
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] verticesInDestinationProcess size = " << verticesInDestinationProcess.size();
-				numberOfMessagesSent += 2;
 				// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 			} else {  // 2 ILS procedures will be executed: one by the leader process (this one) and the other through MPI message
 				// STEP 3.2: Movements to be executed by workerProcess ranks 0 (leader process) and 1
@@ -1151,7 +1182,18 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 		// STEP 3.3: the leader receives the processing results
 		// Maps the messages according to the movement executed
 		std::map<int, OutputMessage> messageMap;
-		messageMap[0] = leaderOutputMessage;
+		if(leaderParticipates) {
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
+			VariableNeighborhoodDescent localVND = *vnd;
+			localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
+			InputMessageParallelILS inputMsg = messagesSent[leaderParticipates - 1];
+			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg);
+			  // construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
+			  //		problem, info, verticesInSourceProcess);
+			numberOfTestedCombinations += leaderProcessingMessage.numberOfTestedCombinations;
+			messageMap[leaderProcess] = leaderProcessingMessage;
+		}
+		
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
 		for(int i = 0; i < numberOfMessagesSent; i++) {
 			OutputMessage omsg;
@@ -1567,23 +1609,43 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcessA);
 			imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcessB);
 			imsg2.cudaEnabled = true;
-			world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-			world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
-			world.send(currentSourceProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg3);
+			std::vector<InputMessageParallelILS> messagesSent;
+			int leaderParticipates = 0;
+			if(workerProcess1 != leaderProcess) {
+				world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+				numberOfMessagesSent++;
+			} else { leaderParticipates = 1; }
+			if(workerProcess2 != leaderProcess) {
+				world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
+				numberOfMessagesSent++;
+			} else { leaderParticipates = 2; }
+			if(currentSourceProcess != leaderProcess) {
+				world.send(currentSourceProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg3);
+				numberOfMessagesSent++;
+			} else { leaderParticipates = 3; }
+			messagesSent.push_back(imsg);
+			messagesSent.push_back(imsg2);
+			messagesSent.push_back(imsg3);
+			participatingProcessList.push_back(workerProcess1);
+			participatingProcessList.push_back(workerProcess2);
+			participatingProcessList.push_back(currentSourceProcess);
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to processes " << workerProcess1 << ", " << workerProcess2 << " and " << currentSourceProcess;
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] verticesInDestinationProcessA size = " << verticesInDestinationProcessA.size();
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] verticesInDestinationProcessB size = " << verticesInDestinationProcessB.size();
-			numberOfMessagesSent += 3;
 			// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 		}
-		/*
-		 * DISABLED - MASTER PROCESS NO LONGER RUNS LOCAL ILS AND DOES NOT OWN PART OF THE GRAPH
-	 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
-		VariableNeighborhoodDescent localVND = *vnd;
-		localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
-		OutputMessage leaderOutputMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
-				problem, info, verticesInSourceProcess);
-		*/
+		
+		if(leaderParticipates) {
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
+			VariableNeighborhoodDescent localVND = *vnd;
+			localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
+			InputMessageParallelILS inputMsg = messagesSent[leaderParticipates - 1];
+			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg);
+			  // construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
+			  //		problem, info, verticesInSourceProcess);
+			numberOfTestedCombinations += leaderProcessingMessage.numberOfTestedCombinations;
+			messageMap[leaderProcess] = leaderProcessingMessage;
+		}
 
 		// STEP 3.3: the leader receives the processing results
 		// Maps the messages according to the movement executed
