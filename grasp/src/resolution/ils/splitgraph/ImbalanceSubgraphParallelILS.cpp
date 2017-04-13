@@ -17,6 +17,7 @@
 #include "graph/include/ParallelNeighborhoodSearch.h"
 #include "graph/include/SequentialNeighborhoodSearch.h"
 #include "util/include/RandomUtil.h"
+#include "problem/include/ClusteringProblemFactory.h"
 
 #include <iomanip>
 #include <cstring>
@@ -71,11 +72,11 @@ using namespace util::parallel;
 //#define is_overloaded_process(list) ((list.size() >= 2*(long)ceil(g->getGlobalN() / (double)numberOfProcesses)) and (g->getN() <= 110000))
 #define is_overloaded_process(list) (true)
 
-ImbalanceSubgraphParallelILS::ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
+ImbalanceSubgraphParallelILS::ImbalanceSubgraphParallelILS(const unsigned long& seed, const int& allocationStrategy, const int& slaves, const int& searchSlaves,
 		const bool& split, const bool& cuda, const bool& pgraph) : ILS(),
 		machineProcessAllocationStrategy(allocationStrategy), numberOfSlaves(slaves), numberOfSearchSlaves(searchSlaves),
 		splitGraph(split), cudaEnabled(cuda), parallelgraph(pgraph), vertexImbalance(), timeSpentAtIteration(), util(),
-		numberOfFrustratedSolutions(0) {
+		numberOfFrustratedSolutions(0), randomSeed(seed) {
 
 }
 
@@ -460,7 +461,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	// VertexProcessorMap to_processor_map = get(vertex_rank, *g->graph);
 	// TODO obter a propriedade certa da PBGL que retorna o processador a que o vertice pertence
 	BOOST_LOG_TRIVIAL(info) << "distributeSubgraphsBetweenProcessesAndRunILS started...";
-
+	BOOST_LOG_TRIVIAL(info) << "Distributing the graph between " << (numberOfSlaves + 1) << " processes.";
 
 	// There are numberOfProcesses subgraphs
 	/*
@@ -477,8 +478,8 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_edges = " <<
 				num_edges(subgraphList.back()) << " , num_vertices = " << num_vertices(subgraphList.back());
 	} */
-
-	for(int i = 0; i < numberOfSlaves; i++) {
+	std::vector<InputMessageParallelILS> messagesSent;
+	for(int i = 0; i < numberOfSlaves + 1; i++) {
 		// 2. Distribute numberOfSlaves graph parts between the ILS Slave processes
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
@@ -488,16 +489,19 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		}
 		//imsg.setVertexList(verticesInProcess[i+1]); NAO EH MAIS NECESSARIO
 		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
-		imsg.cudaEnabled = is_overloaded_process(verticesInProcess[i+1]);
-		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message sent to process " << slaveList[i];
-		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
+		// TODO obter verticesInProcess !
+		imsg.cudaEnabled = is_overloaded_process(verticesInProcess[i]);
+		messagesSent.push_back(imsg);
+		if(i > 0) {  // only sends messages to worker processes, the leader process will process his own message after this loop
+			world.send(slaveList[i - 1], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+			BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message sent to process " << slaveList[i - 1];
+			BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
+		}
 	}
 	// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
 	VariableNeighborhoodDescent localVND = *vnd;
 	localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
-	OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
-							problem, info, this->verticesInLeaderProcess);
+	OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(messagesSent[0], g);
 
 	// 3. the leader receives the processing results
 	OutputMessage omsg;
@@ -754,14 +758,12 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		imsg2.cudaEnabled = true;
 		std::vector<int> participatingProcessList;
 		std::vector<InputMessageParallelILS> messagesSent;
-		int leaderParticipates = 0, messagesSent = 0;
+		int leaderParticipates = 0, leaderProcess = 0;
 		if(destinationProcess != leaderProcess) {
 			world.send(destinationProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-			messagesSent++;
 		} else { leaderParticipates = 1; }
 		if(sourceProcess != leaderProcess) {
 			world.send(sourceProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
-			messagesSent++;
 		} else { leaderParticipates = 2; }
 		messagesSent.push_back(imsg);
 		messagesSent.push_back(imsg2);
@@ -772,13 +774,14 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 
 		// The leader may participate in the source-process movement
+		std::map<int, OutputMessage> messageMap;
 		if(leaderParticipates) {
 			// 2.1. the leader does its part of the work: runs ILS to solve the source subgraph
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
 			VariableNeighborhoodDescent localVND = *vnd;
 			localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
 			InputMessageParallelILS inputMsg = messagesSent[leaderParticipates - 1];
-			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg);
+			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg, g);
 			  // construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
 			  //		problem, info, verticesInSourceProcess);
 			numberOfTestedCombinations += leaderProcessingMessage.numberOfTestedCombinations;
@@ -787,9 +790,8 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 
 		// STEP 3: the leader receives the processing results
 		// Maps the messages according to the movement executed
-		std::map<int, OutputMessage> messageMap;
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
-		for(int i = 0; i < messagesSent; i++) {
+		for(int i = 0; i < messagesSent.size(); i++) {
 			OutputMessage omsg;
 			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
 			int tag = stat.tag();
@@ -1084,7 +1086,8 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 		// Executes the movements inside the list movementsInParallel
 		// STEP 3.1: sends the movements to each pair of processes through MPI
 		OutputMessage leaderOutputMessage;
-		int numberOfMessagesSent = 0;
+		std::vector<InputMessageParallelILS> messagesSent;
+		int leaderParticipates = 0;
 		std::vector<int> participatingProcessList;
 		for(int mov = movementsInParallelA.size() - 1; mov >= 0; mov--) {
 			long clusterToSwapA = movementsInParallelA[mov].x;
@@ -1125,7 +1128,6 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 
 			// moves the affected vertices between processes
 			redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
-			int numberOfMessagesSent = 0;
 
 			if(mov >= 1) {  // 2 ILS procedures will be executed by 2 processes through MPI messages
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
@@ -1139,15 +1141,12 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
 				imsg.cudaEnabled = is_overloaded_process(verticesInSourceProcess);
 				imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
-				std::vector<InputMessageParallelILS> messagesSent;
-				int leaderParticipates = 0;
+				int leaderProcess = 0;
 				if(workerProcess1 != leaderProcess) {
 					world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-					numberOfMessagesSent++;
 				} else { leaderParticipates = 1; }
 				if(workerProcess2 != leaderProcess) {
 					world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
-					numberOfMessagesSent++;
 				} else { leaderParticipates = 2; }
 				messagesSent.push_back(imsg);
 				messagesSent.push_back(imsg2);
@@ -1168,26 +1167,26 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
 				world.send(1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process 1.";
-				numberOfMessagesSent += 1;
+				messagesSent.push_back(imsg);
 
 				// the leader does its part of the work: runs ILS to solve the second subgraph
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
 				VariableNeighborhoodDescent localVND = *vnd;
 				localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
-				leaderOutputMessage = runILSLocallyOnSubgraph(construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
-						problem, info, verticesInSourceProcess);
+				leaderOutputMessage = runILSLocallyOnSubgraph(imsg, g);
 			}
 		}
 
 		// STEP 3.3: the leader receives the processing results
 		// Maps the messages according to the movement executed
 		std::map<int, OutputMessage> messageMap;
+		int leaderProcess = 0;
 		if(leaderParticipates) {
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
 			VariableNeighborhoodDescent localVND = *vnd;
 			localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
 			InputMessageParallelILS inputMsg = messagesSent[leaderParticipates - 1];
-			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg);
+			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg, g);
 			  // construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
 			  //		problem, info, verticesInSourceProcess);
 			numberOfTestedCombinations += leaderProcessingMessage.numberOfTestedCombinations;
@@ -1195,7 +1194,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 		}
 		
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
-		for(int i = 0; i < numberOfMessagesSent; i++) {
+		for(int i = 0; i < messagesSent.size(); i++) {
 			OutputMessage omsg;
 			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
 			int tag = stat.tag();
@@ -1546,9 +1545,12 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 
 		// Executes the movements inside the list movementsInParallel
 		// STEP 3.1: sends the movements to each pair of processes through MPI
-		int numberOfMessagesSent = 0;
 		std::vector<int> participatingProcessList;
 		participatingProcessList.push_back(currentSourceProcess);
+		std::vector<InputMessageParallelILS> messagesSent;
+		std::map<int, OutputMessage> messageMap;
+		int leaderParticipates = 0;
+		int leaderProcess = 0;
 		for(int mov = 0; mov < movementsInParallelA.size(); mov++) {
 
 			long clusterToMoveA = movementsInParallelA[mov].x;
@@ -1609,19 +1611,14 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcessA);
 			imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcessB);
 			imsg2.cudaEnabled = true;
-			std::vector<InputMessageParallelILS> messagesSent;
-			int leaderParticipates = 0;
 			if(workerProcess1 != leaderProcess) {
 				world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-				numberOfMessagesSent++;
 			} else { leaderParticipates = 1; }
 			if(workerProcess2 != leaderProcess) {
 				world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
-				numberOfMessagesSent++;
 			} else { leaderParticipates = 2; }
 			if(currentSourceProcess != leaderProcess) {
 				world.send(currentSourceProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg3);
-				numberOfMessagesSent++;
 			} else { leaderParticipates = 3; }
 			messagesSent.push_back(imsg);
 			messagesSent.push_back(imsg2);
@@ -1640,7 +1637,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			VariableNeighborhoodDescent localVND = *vnd;
 			localVND.setTimeLimit(LOCAL_ILS_TIME_LIMIT);
 			InputMessageParallelILS inputMsg = messagesSent[leaderParticipates - 1];
-			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg);
+			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(inputMsg, g);
 			  // construct, &localVND, g, iter, iterMaxILS, perturbationLevelMax,
 			  //		problem, info, verticesInSourceProcess);
 			numberOfTestedCombinations += leaderProcessingMessage.numberOfTestedCombinations;
@@ -1649,10 +1646,8 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 
 		// STEP 3.3: the leader receives the processing results
 		// Maps the messages according to the movement executed
-		std::map<int, OutputMessage> messageMap;
-		// messageMap[0] = leaderOutputMessage;
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
-		for(int i = 0; i < numberOfMessagesSent; i++) {
+		for(int i = 0; i < messagesSent.size(); i++) {
 			OutputMessage omsg;
 			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
 			int tag = stat.tag();
@@ -2398,22 +2393,51 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 	}
 }
 
-OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClustering *construct,
-		VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
-		const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& vertexList) {
+OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessageParallelILS &imsgpils, SignedGraph* g) {
+	// TODO duvida: deve chamar synchronize(*pgraph); antes?
 
-	BOOST_LOG_TRIVIAL(info) << "[Master process] Creating subgraph";
+	// triggers the local ILS routine
+	// Chooses between the sequential or parallel search algorithm
+	NeighborhoodSearch* neigborhoodSearch;
+	ClusteringProblemFactory problemFactory;
+	NeighborhoodSearchFactory nsFactory(MPIUtil::ALL_MASTERS_FIRST, imsgpils.numberOfMasters, imsgpils.numberOfSearchSlaves);
+	neigborhoodSearch = &nsFactory.build(NeighborhoodSearchFactory::SEQUENTIAL);
+	GainFunctionFactory functionFactory(g);
+	ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), randomSeed, imsgpils.alpha);
+	ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), randomSeed, imsgpils.alpha, &imsgpils.CCclustering);
+	ConstructClustering* construct = &defaultConstruct;
+	if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
+			construct = &noConstruct;
+	}
+	VariableNeighborhoodDescent vnd(*neigborhoodSearch, randomSeed, imsgpils.l, imsgpils.firstImprovementOnOneNeig,
+			imsgpils.timeLimit);
+	// Additional execution info
+	boost::mpi::communicator world;
+	int myRank = world.rank();
+	ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
+	resolution::ils::ILS resolution;
+	resolution::ils::CUDAILS CUDAILS;
+	Clustering bestClustering;
+	// global vertex id array used in split graph
 	std::vector<long> globalVertexId;
-	if(vertexList.size() == 0) {
+	// time spent on processing
+	double timeSpent = 0.0;
+	// info about the processed graph
+	long n = num_vertices(*(g->graph)), e = num_edges(*(g->graph));
+	boost::mpi::environment  env;
+	boost::mpi::communicator comm;
+
+	BOOST_LOG_TRIVIAL(info) << "[runILSLocallyOnSubgraph] Creating subgraph";
+	if(n == 0) {
 		BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
 		std::vector<unsigned int> clusterProcessOrigin;
 		std::vector<Imbalance> internalImbalance;
 		ClusterArray cArray(g->getN(), Clustering::NO_CLUSTER);
-		Clustering leaderClustering = Clustering(cArray, *g, problem, 0.0, 0.0, clusterProcessOrigin, internalImbalance);
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph 0" << ": num_edges = 0" <<
-								" , num_vertices = 0" << ", I(P) = "
-								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
-		return OutputMessage(leaderClustering, 0, 0.0, globalVertexId, 0, 0);
+		bestClustering = Clustering(cArray, *g, problemFactory.build(imsgpils.problemType, imsgpils.k),
+				0.0, 0.0, clusterProcessOrigin, internalImbalance);
+		// n = 0;
+		e = 0;
+		return OutputMessage(bestClustering, 0, 0.0, globalVertexId, 0, 0);
 	} else {
 		// TODO TROCAR POR METODO EQUIVALENTE DA PARALLEL BGL
 		// SignedGraph sg(*(g->graph), vertexList);
@@ -2441,59 +2465,68 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 		 }
 		 BOOST_LOG_TRIVIAL(debug) << "Edgecount is " << edgecount;
 
-
-		BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(*(g->graph)) << ", " << "e =  " << num_edges(*(g->graph));
-
 		// rebuilds construct clustering objects based on partial graph 'sg'
 		GainFunctionFactory functionFactory(g);
-		ConstructClustering defaultConstruct(functionFactory.build(construct->getGainFunctionType()),
-				construct->getRandomSeed(), construct->getAlpha());
-		ConstructClustering noConstruct(functionFactory.build(construct->getGainFunctionType()),
-				construct->getRandomSeed(), construct->getAlpha(), construct->getCCclustering());
-		ConstructClustering* construct2 = &defaultConstruct;
-		if(problem.getType() == ClusteringProblem::RCC_PROBLEM) {
-			RCCProblem& rp = static_cast<RCCProblem&>(problem);
-			int RCCk = rp.getK();
-			if(RCCk < 0) {
-				construct2 = &noConstruct;
-			}
+		ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), randomSeed, imsgpils.alpha);
+		ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), randomSeed, imsgpils.alpha, &imsgpils.CCclustering);
+		ConstructClustering* construct = &defaultConstruct;
+		if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
+				construct = &noConstruct;
 		}
-		// Leader processing his own partition
-		Clustering leaderClustering;
+		ClusteringProblem& problem = problemFactory.build(imsgpils.problemType, imsgpils.k);
+		// Each worker process processing his own partition
+		n = num_vertices(*(g->graph));
+		e = num_edges(*(g->graph));
+		BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;
+		Clustering bestClustering;
 		double timeSpent = 0.0;
 		long num_comb = 0;
 		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
 		unsigned int numberOfProcesses = numberOfSlaves + 1;
 		resolution::ils::ILS resolution;
-		if(is_overloaded_process(vertexList)) {
-			CUDAILS cudails;
+		if(is_overloaded_process(vertexList) and imsgpils.cudaEnabled) {
+			resolution::ils::CUDAILS cudails;
 			try {
-				leaderClustering = cudails.executeILS(construct2, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+				bestClustering = cudails.executeILS(construct, &vnd, g, imsgpils.iter,
+										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 				num_comb = cudails.getNumberOfTestedCombinations();
 				timeSpent = cudails.getTotalTimeSpent();
 			} catch(std::exception& e) {  // possibly an exception caused by lack of GPU CUDA memory
-                                BOOST_LOG_TRIVIAL(error) << e.what() << "\n";
-                                BOOST_LOG_TRIVIAL(error) << "Lack of GPU memory detected: invoking sequential ILS (non CUDA)...";
-                                // try to run the standard sequential ILS algorithm => FALLBACK
-                                leaderClustering = resolution.executeILS(construct2, vnd, g, iter,
-                                            iterMaxILS, perturbationLevelMax,
-                                            problem, info);
+				BOOST_LOG_TRIVIAL(error) << e.what() << "\n";
+				BOOST_LOG_TRIVIAL(error) << "Lack of GPU memory detected: invoking sequential ILS (non CUDA)...";
+				// try to run the standard sequential ILS algorithm => FALLBACK
+				bestClustering = resolution.executeILS(construct, &vnd, g, imsgpils.iter,
+														imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+														problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 				timeSpent = resolution.getTotalTimeSpent();
-	                        num_comb = resolution.getNumberOfTestedCombinations();
-                        }
+	            num_comb = resolution.getNumberOfTestedCombinations();
+            }
 		} else {
-			leaderClustering = resolution.executeILS(construct2, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info);
+			bestClustering = resolution.executeILS(construct, &vnd, g, imsgpils.iter,
+													imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
+													problemFactory.build(imsgpils.problemType, imsgpils.k), info);
+											timeSpent = resolution.getTotalTimeSpent();
 			timeSpent = resolution.getTotalTimeSpent();
 			num_comb = resolution.getNumberOfTestedCombinations();
 		}
-		assert(leaderClustering.getClusterArray().size() == num_vertices(*(g->graph)));
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P0" << ": num_edges = " <<
+		// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
+		if(parallelgraph) {
+			BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+			 {
+				 // std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
+				 globalVertexId.push_back(v.local);
+			 }
+		}
+		assert(bestClustering.getClusterArray().size() == num_vertices(*(g->graph)));
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P" << comm.rank() << ": num_edges = " <<
 								num_edges(*(g->graph)) << " , num_vertices = " << num_vertices(*(g->graph)) << ", I(P) = "
-								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
-		return OutputMessage(leaderClustering, num_comb, timeSpent, globalVertexId,
+								<< bestClustering.getImbalance().getValue() << ", k = " << bestClustering.getNumberOfClusters();
+		return OutputMessage(bestClustering, num_comb, timeSpent, globalVertexId,
 				num_vertices(*(g->graph)), num_edges(*(g->graph)));
 	}
 }
+
 
 void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
 		ProcessClustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess) {

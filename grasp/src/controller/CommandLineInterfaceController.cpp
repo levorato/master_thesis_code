@@ -34,6 +34,7 @@
 #include "../resolution/construction/include/CUDAConstructClustering.h"
 #include "../resolution/construction/include/CUDAImbalanceGainFunction.h"
 #include "../resolution/ils/include/CUDAILS.h"
+#include "../resolution/ils/splitgraph/include/ImbalanceSubgraphParallelILS.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -873,109 +874,20 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 
 						// If split graph is enabled, creates a subgraph induced by the vertex set
 						if(imsgpils.isSplitGraph) {
-							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
-
-							if(imsgpils.isParallelGraph) {
-								BOOST_LOG_TRIVIAL(info) << "Split graph with boost parallel graph enabled.";
-
-								// codigo de teste da parallel bgl
-								// https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
-								BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-								{
-								 BOOST_LOG_TRIVIAL(debug) << "V @ P" << comm.rank() << ": " << v.local << std::endl;
-								}
-								int edgecount = 0;
-								BGL_FORALL_EDGES(e, *(g->graph), ParallelGraph)
-								{
-								 BOOST_LOG_TRIVIAL(debug) << "E @ P" << comm.rank() << " v_src: " << boost::source(e,*(g->graph)).local
-										<< " -> v_dst: " << boost::target(e, *(g->graph)).local << "; srccpu = " <<
-									e.source_processor << " dstcpu = " << e.target_processor << std::endl;
-								 edgecount++;
-								}
-								BOOST_LOG_TRIVIAL(debug) << "Edgecount is " << edgecount;
-
-								BOOST_LOG_TRIVIAL(debug) << "\nLocal vertices and edges:";
-								// local subgraph creation
-								LocalSubgraph lsg = make_local_subgraph(*(g->graph));
-								BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
-									BOOST_LOG_TRIVIAL(debug) << "V @ P" << comm.rank() << ": " << v.local << std::endl;
-								}
-								edgecount = 0;
-								BGL_FORALL_EDGES(e, lsg, LocalSubgraph)
-								{
-								 BOOST_LOG_TRIVIAL(debug) << "E @ P" << comm.rank() << " v_src: " << boost::source(e,lsg).local
-										<< " -> v_dst: " << boost::target(e, lsg).local << "; srccpu = " <<
-									e.source_processor << " dstcpu = " << e.target_processor << std::endl;
-								 edgecount++;
-								}
-								BOOST_LOG_TRIVIAL(debug) << "Local edgecount is " << edgecount;
-
-							} else {
-								if(imsgpils.vertexList.size() == 0) {
-									BOOST_LOG_TRIVIAL(info) << "Empty subgraph, returning zero imbalance.";
-									std::vector<unsigned int> clusterProcessOrigin;
-									std::vector<Imbalance> internalImbalance;
-									ClusterArray cArray(g->getN(), Clustering::NO_CLUSTER);
-									bestClustering = Clustering(cArray, *g, problemFactory.build(imsgpils.problemType, imsgpils.k),
-											0.0, 0.0, clusterProcessOrigin, internalImbalance);
-									n = 0;
-									e = 0;
-
-								}
-							}
-							// SignedGraph sg(g->graph, imsgpils.vertexList);
+							BOOST_LOG_TRIVIAL(info) << "Split graph with boost parallel graph enabled.";
+							resolution::ils::ImbalanceSubgraphParallelILS gpils(seed, machineProcessAllocationStrategy, imsgpils.numberOfMasters,
+									imsgpils.numberOfSearchSlaves, splitGraph, imsgpils.cudaEnabled, true);
+							OutputMessage omsg = gpils.runILSLocallyOnSubgraph(imsgpils, g.get());
+							// Sends the result back to the leader process
+							omsg.num_vertices = n;
+							omsg.num_edges = e;
+							world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+							BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader (size = " <<
+									(sizeof(omsg)/1024.0) << " KB).";
 							/*
-							sg.graph = (g->graph).create_subgraph(); // imsgpils.vertexList.begin(), imsgpils.vertexList.end());
-							for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
-								add_vertex(*it, sg.graph);
-							} */
-							n = num_vertices(*(g->graph));
-							e = num_edges(*(g->graph));
-							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;
-
-							GainFunctionFactory functionFactory(g.get());
-							ConstructClustering defaultConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha);
-							ConstructClustering noConstruct(functionFactory.build(imsgpils.gainFunctionType), seed, imsgpils.alpha, &imsgpils.CCclustering);
-							ConstructClustering* construct = &defaultConstruct;
-							if((imsgpils.problemType == ClusteringProblem::RCC_PROBLEM) and (imsgpils.k < 0)) {
-									construct = &noConstruct;
-							}
-
-							if(imsgpils.cudaEnabled) {
-								try {
-									bestClustering = CUDAILS.executeILS(construct, &vnd, g.get(), imsgpils.iter,
-										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
-								} catch(std::exception& e) {  // possibly an exception caused by lack of GPU CUDA memory
-									BOOST_LOG_TRIVIAL(error) << e.what() << "\n";
-									BOOST_LOG_TRIVIAL(error) << "Lack of GPU memory detected: invoking sequential ILS (non CUDA)...";
-									// try to run the standard sequential ILS algorithm => FALLBACK
-									bestClustering = resolution.executeILS(construct, &vnd, g.get(), imsgpils.iter,
-																					imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-																					problemFactory.build(imsgpils.problemType, imsgpils.k), info);
-								}
-								timeSpent = CUDAILS.getTotalTimeSpent();
-							} else {
-								bestClustering = resolution.executeILS(construct, &vnd, g.get(), imsgpils.iter,
-										imsgpils.iterMaxILS, imsgpils.perturbationLevelMax,
-										problemFactory.build(imsgpils.problemType, imsgpils.k), info);
-								timeSpent = resolution.getTotalTimeSpent();
-							}
-
-							// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
-							if(parallelgraph) {
-								BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-								 {
-									 // std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
-									 globalVertexId.push_back(v.local);
-								 }
-							}
-							/*
-							std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
-							for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-								globalVertexId.push_back(sg.graph.local_to_global(*it));
-							} */
-
+							BOOST_LOG_TRIVIAL(info) << "Sync parallel graph...";
+							synchronize(*(g->graph));
+							BOOST_LOG_TRIVIAL(info) << "Sync done."; */
 						} else {
 							// CUDA ILS is only available to the CC problem
 							if(imsgpils.cudaEnabled and imsgpils.problemType == ClusteringProblem::CC_PROBLEM) {
@@ -990,19 +902,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 														problemFactory.build(imsgpils.problemType, imsgpils.k), info);
 								timeSpent = resolution.getTotalTimeSpent();
 							}
+							OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations(), timeSpent, gVertexId, n, e);
+							// Sends the result back to the leader process
+							omsg.num_vertices = n;
+							omsg.num_edges = e;
+							world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+							BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader (size = " <<
+									(sizeof(omsg)/1024.0) << " KB).";
 						}
-
-						// Sends the result back to the leader process
-						OutputMessage omsg(bestClustering, CUDAILS.getNumberOfTestedCombinations(), timeSpent, gVertexId, n, e);
-						omsg.num_vertices = n;
-						omsg.num_edges = e;
-						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
-						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader (size = " <<
-								(sizeof(omsg)/1024.0) << " KB).";
-						/*
-						BOOST_LOG_TRIVIAL(info) << "Sync parallel graph...";
-						synchronize(*(g->graph));
-						BOOST_LOG_TRIVIAL(info) << "Sync done."; */
 					}
 				}
 			} else {  // Parallel VND slave

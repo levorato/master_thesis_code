@@ -12,6 +12,7 @@
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <list>
+#include <vector>
 
 #include "graph/include/Graph.h"
 #include "graph/include/Clustering.h"
@@ -43,7 +44,8 @@ namespace ils {
  */
 class ImbalanceSubgraphParallelILS: public ILS {
 public:
-	ImbalanceSubgraphParallelILS(const int& allocationStrategy, const int& slaves, const int& searchSlaves,
+	ImbalanceSubgraphParallelILS(const unsigned long& seed, const int& allocationStrategy, const int& slaves,
+			const int& searchSlaves,
 			const bool& split = true, const bool& cuda = true, const bool& parallelgraph = false);
 	virtual ~ImbalanceSubgraphParallelILS();
 
@@ -143,6 +145,11 @@ public:
 			const int& iter, const int& iterMaxILS, const int& perturbationLevelMax,
 			ClusteringProblem& problem, ExecutionInfo& info, const double& timeSpentSoFar, int invocationNumber);
 
+	/**
+	 * Executes ILS locally (execution performed by worker process) on the subgraph of g, induced by vertexList.
+	 */
+	OutputMessage runILSLocallyOnSubgraph(InputMessageParallelILS &imsg, SignedGraph* g);
+
 protected:
 	int machineProcessAllocationStrategy;
 	unsigned int numberOfSearchSlaves;
@@ -157,19 +164,14 @@ protected:
 	std::vector<long> verticesInLeaderProcess;
 
 	// data structures containing the imbalance contribution of each vertex and between processes
-	std::vector< pair<long, double> > vertexImbalance;
+	std::vector< std::pair<long, double> > vertexImbalance;
 
 	// time spent by each process in each iteration
 	std::vector< std::vector<double> > timeSpentAtIteration;
 
 	SplitgraphUtil util;
 
-	/**
-	 * Executes ILS locally (execution performed by leader process, rank 0) on the subgraph of g, induced by vertexList.
-	 */
-	OutputMessage runILSLocallyOnSubgraph(ConstructClustering *construct,
-			VariableNeighborhoodDescent *vnd, SignedGraph *g, const int& iter, const int& iterMaxILS,
-			const int& perturbationLevelMax, ClusteringProblem& problem, ExecutionInfo& info, std::vector<long>& vertexList);
+	unsigned long randomSeed;
 
 	void moveClusterToDestinationProcessZeroCost(SignedGraph *g, Clustering& bestClustering,
 			ProcessClustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess);

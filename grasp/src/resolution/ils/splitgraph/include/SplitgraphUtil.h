@@ -109,7 +109,7 @@ public:
 	virtual ~SplitgraphUtil();
 
 	ImbalanceMatrix calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster,
-			std::vector< pair<long, double> >& vertexImbalance, const int& numberOfProcesses);
+			std::vector< std::pair<long, double> >& vertexImbalance, const int& numberOfProcesses);
 
 	void updateProcessToProcessImbalanceMatrix(SignedGraph& g,
 			const ClusterArray& previousSplitgraphClusterArray,
