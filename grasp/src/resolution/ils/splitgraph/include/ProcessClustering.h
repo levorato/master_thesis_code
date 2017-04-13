@@ -56,7 +56,9 @@ public:
 		return verticesInCluster;
 	}
 
-
+	void setSplitgraphClustering(Clustering& cl) {
+		splitgraphClustering = cl;
+	}
 
 private:
 

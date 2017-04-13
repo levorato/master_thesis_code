@@ -622,6 +622,8 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 	// 6. Stores the time spent in this iteration of distributed MH
 	// timeSpentAtIteration.push_back(timeSpent);
 	util.validaSplitgraphArray(*g, splitgraphClustering, globalClustering);
+	Clustering cl(splitClusterArray, *g, problem, 0.0, 0.0);
+	splitgraphClustering.setSplitgraphClustering(cl);
 
 	return globalClustering;
 }
@@ -677,6 +679,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 	}
 	// obtains the number of clusters from each process 'procNum'
 	int np = bestSplitgraphClustering.getNumberOfClusters();
+	assert(np == world.size());
 	std::vector<long> numberOfClustersInProcess;
 	for(int px = 0; px < np; px++) {
 		numberOfClustersInProcess.push_back(util.obtainListOfClustersFromProcess(*g, bestClustering, px).size());
@@ -695,6 +698,8 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		// finds out to which process the cluster belongs to
 		int sourceProcess = clusterProcessOrigin[clusterToMove];
 		// avoid moving the cluster in case it is the only one inside the process
+		BOOST_LOG_TRIVIAL(trace) << "[Parallel ILS SplitGraph] Testing potential cluster " << clusterToMove << " from process " << sourceProcess
+				<< " which has " << numberOfClustersInProcess[sourceProcess] << " clusters in total.";
 		if(numberOfClustersInProcess[sourceProcess] <= 1)  continue;
 		// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Global cluster " << clusterToMove << " of size " <<
 		//		bestClustering.getClusterSize(clusterToMove) << " and imbalance = " << clusterImbalanceList[nic].value << ".";
