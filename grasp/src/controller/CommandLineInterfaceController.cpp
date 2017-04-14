@@ -1089,15 +1089,15 @@ std::vector<long> CommandLineInterfaceController::fillPropertyMap(clusteringgrap
 	// initial distribution. Then when we are debugging we'll be able to
 	// see how vertices have moved.
 	std::vector<long> returnVector;
-	typedef typename property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
-	typedef typename property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
 	//typedef property_map<RoadMap, int Highway::*>::type road_length = get(&Highway::length, map);
-	typename property_map<ParallelGraph, vertex_properties_t>::type vertex_id_map =
+	property_map<ParallelGraph, vertex_properties_t>::type vertex_id_map =
 			get(vertex_properties, *pgraph);
 
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap> global_index(pgraph->process_group(),
 			num_vertices(*pgraph), get(vertex_index, *pgraph), get(vertex_global, *pgraph));
-	BGL_FORALL_VERTICES_T(v, *pgraph, ParallelGraph) {
+	BGL_FORALL_VERTICES(v, *pgraph, ParallelGraph) {
 		BOOST_LOG_TRIVIAL(info) << "Vertex " << get(global_index, v) << " is in process number " << rank;
 		returnVector.push_back(get(global_index, v));
 		put(vertex_id_map, v, get(global_index, v));

@@ -2578,19 +2578,19 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(SignedGraph *
 
 	// TODO redistribution test
 	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
-	typedef typename property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
-	typedef typename property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	typename property_map<ParallelGraph, vertex_properties_t>::type name_map
+	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	property_map<ParallelGraph, vertex_properties_t>::type name_map
 	  = get(vertex_properties, *(g->graph));
 
 	mpi_process_group pg = g->graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g->graph)),
 				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
-	BGL_FORALL_VERTICES_T(v, *(g->graph), ParallelGraph)
+	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
 	  put(name_map, v, get(global_index, v));
 
-	typename property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
+	property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
 
 	// Randomly assign a new distribution
 	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
