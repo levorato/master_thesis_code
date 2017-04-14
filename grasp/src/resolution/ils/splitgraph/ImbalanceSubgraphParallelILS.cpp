@@ -746,9 +746,6 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to move global cluster " << clusterToMove
 				<< " from process " << sourceProcess << " to process " << destinationProcess;
 
-		// moves the affected vertices between processes
-		redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
-
 		// Each process will execute 1 ILS procedure for each subgraph
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
@@ -777,6 +774,9 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to processes " << sourceProcess << " (source) and " <<
 				destinationProcess << "(destination).";
 		// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
+
+		// moves the affected vertices between processes
+		redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
 
 		// The leader may participate in the source-process movement
 		std::map<int, OutputMessage> messageMap;
@@ -1131,9 +1131,6 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to swap global clusters " << clusterToSwapA << " and " << clusterToSwapB
 					<< " between processes " << sourceProcess << " and " << destinationProcess;
 
-			// moves the affected vertices between processes
-			redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
-
 			if(mov >= 1) {  // 2 ILS procedures will be executed by 2 processes through MPI messages
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
@@ -1181,6 +1178,9 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				leaderOutputMessage = runILSLocallyOnSubgraph(imsg, g);
 			}
 		}
+
+		// moves the affected vertices between processes
+		redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
 
 		// STEP 3.3: the leader receives the processing results
 		// Maps the messages according to the movement executed
@@ -1598,9 +1598,6 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to move global clusters " << clusterToMoveA << " and " << clusterToMoveB
 					<< " from process " << currentSourceProcess << " to processes " << destinationProcessA << " and " << destinationProcessB;
 
-			// moves the affected vertices between processes
-			redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
-
 			// 3 ILS procedures will be executed by 3 processes through MPI messages
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
@@ -1636,7 +1633,10 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] verticesInDestinationProcessB size = " << verticesInDestinationProcessB.size();
 			// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 		}
-		
+
+		// moves the affected vertices between processes
+		redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
+
 		if(leaderParticipates) {
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking local ILS on leader process (P0).";
 			VariableNeighborhoodDescent localVND = *vnd;
@@ -2400,6 +2400,17 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 
 OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessageParallelILS &imsgpils, SignedGraph* g) {
 	// TODO duvida: deve chamar synchronize(*pgraph); antes?
+	boost::mpi::communicator world;
+	int myRank = world.rank();
+	// moves the affected vertices between processes
+	ClusterArray splitgraphClusterArray(g->getGlobalN(), 0);
+	for(int i = 0; i < vertexList.size(); i++) {
+		int v = vertexList[i];
+		// mark the vertices that belong to this process (myRank)
+		splitgraphClusterArray[v] = myRank;
+	}
+	// each worker process calls vertex redistribution locally
+	redistributeVerticesInProcesses(g, splitgraphClusterArray);
 
 	// triggers the local ILS routine
 	// Chooses between the sequential or parallel search algorithm
@@ -2417,8 +2428,6 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	VariableNeighborhoodDescent vnd(*neigborhoodSearch, randomSeed, imsgpils.l, imsgpils.firstImprovementOnOneNeig,
 			imsgpils.timeLimit);
 	// Additional execution info
-	boost::mpi::communicator world;
-	int myRank = world.rank();
 	ExecutionInfo info(imsgpils.executionId, imsgpils.fileId, imsgpils.outputFolder, myRank);
 	resolution::ils::ILS resolution;
 	resolution::ils::CUDAILS CUDAILS;
@@ -2540,6 +2549,7 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(Signe
 	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
 
 	// TODO INCLUIR AQUI CHAMADA AO REDISTRIBUTE DA BOOST PARALLEL BGL!
+	// TODO Check if all worker processes must call the vertex redistribution: would need a message exchange exclusively for vertex redistribution on zero-cost moves
 	redistributeVerticesInProcesses(g, splitgraphClusterArray);
 
 	// However, the internal and external imbalance values of the participating processes must be updated
@@ -2578,17 +2588,19 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(SignedGraph *
 
 	// TODO redistribution test
 	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
-	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
-	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	property_map<ParallelGraph, vertex_properties_t>::type name_map
-	  = get(vertex_properties, *(g->graph));
+	{
+		typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+		typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+		property_map<ParallelGraph, vertex_properties_t>::type name_map
+		  = get(vertex_properties, *(g->graph));
 
-	mpi_process_group pg = g->graph->process_group();
-	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
-	  global_index(pg, num_vertices(*(g->graph)),
-				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
-	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-	  put(name_map, v, get(global_index, v));
+		mpi_process_group pg = g->graph->process_group();
+		boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+		  global_index(pg, num_vertices(*(g->graph)),
+					   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
+		BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+		  put(name_map, v, get(global_index, v));
+	}
 
 	property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
 
@@ -2599,13 +2611,12 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(SignedGraph *
 		put(to_processor_map, *vi, newSplitgraphClustering[vi->local]);
 	}
 
-	if (process_id(pg) == 0) {
-		BOOST_LOG_TRIVIAL(info) << "Redistributing vertices between processes...";
-		// Perform the actual redistribution
-		(g->graph)->redistribute(to_processor_map);
+	// if (process_id(pg) == 0) {
+	BOOST_LOG_TRIVIAL(info) << "[Distributed ILS] Redistributing vertices between processes...";
+	// Perform the actual redistribution
+	(g->graph)->redistribute(to_processor_map);
 
-		BOOST_LOG_TRIVIAL(info) << "Redistribution done." << std::endl;
-	}
+	BOOST_LOG_TRIVIAL(info) << "[Distributed ILS] Redistribution done.";
 }
 
 } /* namespace ils */
