@@ -1094,6 +1094,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 		std::vector<InputMessageParallelILS> messagesSent;
 		int leaderParticipates = 0;
 		std::vector<int> participatingProcessList;
+		ClusterArray tempSplitgraphClusterArray;
 		for(int mov = movementsInParallelA.size() - 1; mov >= 0; mov--) {
 			long clusterToSwapA = movementsInParallelA[mov].x;
 			int destinationProcess = movementsInParallelA[mov].y;
@@ -1108,7 +1109,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 
 			std::vector<long> listOfMovedVerticesFromProcessA = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToSwapA);
 			std::vector<long> listOfMovedVerticesFromProcessB = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToSwapB);
-			ClusterArray tempSplitgraphClusterArray = initialSplitgraphClusterArray;
+			tempSplitgraphClusterArray = initialSplitgraphClusterArray;
 			// SWAP Step 1: Move the vertices from a specific cluster from source process (cluster move from A to B)
 			for(long elem = 0; elem < listOfMovedVerticesFromProcessA.size(); elem++) {
 				tempSplitgraphClusterArray[listOfMovedVerticesFromProcessA[elem]] = destinationProcess;
@@ -1556,6 +1557,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 		std::map<int, OutputMessage> messageMap;
 		int leaderParticipates = 0;
 		int leaderProcess = 0;
+		ClusterArray tempSplitgraphClusterArray;
 		for(int mov = 0; mov < movementsInParallelA.size(); mov++) {
 
 			long clusterToMoveA = movementsInParallelA[mov].x;
@@ -1571,7 +1573,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 
 			std::vector<long> listOfMovedVerticesFromClusterA = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToMoveA);
 			std::vector<long> listOfMovedVerticesFromClusterB = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToMoveB);
-			ClusterArray tempSplitgraphClusterArray = initialSplitgraphClusterArray;
+			tempSplitgraphClusterArray = initialSplitgraphClusterArray;
 			// MOVE Step 1: Move the vertices from a specific cluster A from source process to dest process 1
 			for(long elem = 0; elem < listOfMovedVerticesFromClusterA.size(); elem++) {
 				tempSplitgraphClusterArray[listOfMovedVerticesFromClusterA[elem]] = destinationProcessA;
@@ -2404,11 +2406,11 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	int myRank = world.rank();
 	// only redistributes vertices if vertexList has information available
 	// otherwise this method is being called from distributed ils initialization, when no movement occurs
-	if(vertexList.size() > 0) {
+	if(imsgpils.vertexList.size() > 0) {
 		// moves the affected vertices between processes
 		ClusterArray splitgraphClusterArray(g->getGlobalN(), 0);
-		for(int i = 0; i < vertexList.size(); i++) {
-			int v = vertexList[i];
+		for(int i = 0; i < imsgpils.vertexList.size(); i++) {
+			int v = imsgpils.vertexList[i];
 			// mark the vertices that belong to this process (myRank)
 			splitgraphClusterArray[v] = myRank;
 		}
