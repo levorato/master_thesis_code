@@ -2402,15 +2402,19 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	// TODO duvida: deve chamar synchronize(*pgraph); antes?
 	boost::mpi::communicator world;
 	int myRank = world.rank();
-	// moves the affected vertices between processes
-	ClusterArray splitgraphClusterArray(g->getGlobalN(), 0);
-	for(int i = 0; i < vertexList.size(); i++) {
-		int v = vertexList[i];
-		// mark the vertices that belong to this process (myRank)
-		splitgraphClusterArray[v] = myRank;
+	// only redistributes vertices if vertexList has information available
+	// otherwise this method is being called from distributed ils initialization, when no movement occurs
+	if(vertexList.size() > 0) {
+		// moves the affected vertices between processes
+		ClusterArray splitgraphClusterArray(g->getGlobalN(), 0);
+		for(int i = 0; i < vertexList.size(); i++) {
+			int v = vertexList[i];
+			// mark the vertices that belong to this process (myRank)
+			splitgraphClusterArray[v] = myRank;
+		}
+		// each worker process calls vertex redistribution locally
+		redistributeVerticesInProcesses(g, splitgraphClusterArray);
 	}
-	// each worker process calls vertex redistribution locally
-	redistributeVerticesInProcesses(g, splitgraphClusterArray);
 
 	// triggers the local ILS routine
 	// Chooses between the sequential or parallel search algorithm
