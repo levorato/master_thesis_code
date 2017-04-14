@@ -749,7 +749,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		// Each process will execute 1 ILS procedure for each subgraph
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-							numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, false);
+							numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, k, true, NULL, true);
 		if(k < 0) {  imsg.setClustering(&CCclustering);  }
 		InputMessageParallelILS imsg2 = imsg;
 		// sends the modified subgraphs that will be solved by ILS
@@ -776,7 +776,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
 
 		// moves the affected vertices between processes
-		redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
+		// redistributeVerticesInProcesses(g, tempSplitgraphClusterArray);
 
 		// The leader may participate in the source-process movement
 		std::map<int, OutputMessage> messageMap;
@@ -1135,7 +1135,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 			if(mov >= 1) {  // 2 ILS procedures will be executed by 2 processes through MPI messages
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, false);
+									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true, NULL, true);
 				// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				InputMessageParallelILS imsg2 = imsg;
 				// sends the modified subgraphs that will be solved by ILS
@@ -1163,7 +1163,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				// STEP 3.2: Movements to be executed by workerProcess ranks 0 (leader process) and 1
 				InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, false);
+									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true, NULL, true);
 				// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				imsg.setVertexList(verticesInDestinationProcess);
 				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
@@ -1603,7 +1603,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			// 3 ILS procedures will be executed by 3 processes through MPI messages
 			InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
 								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, false);
+								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true, NULL, true);
 			// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 			InputMessageParallelILS imsg2 = imsg;
 			InputMessageParallelILS imsg3 = imsg;
@@ -2404,9 +2404,11 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	// TODO duvida: deve chamar synchronize(*pgraph); antes?
 	boost::mpi::communicator world;
 	int myRank = world.rank();
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] runILSLocallyOnSubgraph()";
 	// only redistributes vertices if vertexList has information available
 	// otherwise this method is being called from distributed ils initialization, when no movement occurs
 	if(imsgpils.vertexList.size() > 0) {
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking vertex redistribution between processes...";
 		// moves the affected vertices between processes
 		ClusterArray splitgraphClusterArray(g->getGlobalN(), 0);
 		for(int i = 0; i < imsgpils.vertexList.size(); i++) {
@@ -2416,6 +2418,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 		}
 		// each worker process calls vertex redistribution locally
 		redistributeVerticesInProcesses(g, splitgraphClusterArray);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Redistribution done.";
 	}
 
 	// triggers the local ILS routine

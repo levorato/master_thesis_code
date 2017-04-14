@@ -169,14 +169,14 @@ public:
 	InputMessageParallelILS() : InputMessage(),
 			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
-			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(false), vertexList(), isParallelGraph(false) {
+			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(false), vertexList(), isParallelGraph(true) {
 
 	}
 
 	InputMessageParallelILS(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
 			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel,
-			long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL, bool parallelgraph = false) :
+			long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL, bool parallelgraph = true) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves, cuda),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
