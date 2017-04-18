@@ -165,24 +165,29 @@ public:
 	bool isSplitGraph;
 	std::vector<long> vertexList;  // list of vertices of the subgraph (used on split graph feature)
 	bool isParallelGraph;  // indicates that parallel graph from boost parallel bgl is being used
+	bool runILS;  // indicates that local ILS must run in the process
+	bool redistributeVertices;
 
 	InputMessageParallelILS() : InputMessage(),
 			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
-			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(false), vertexList(), isParallelGraph(true) {
+			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(false), vertexList(),
+			isParallelGraph(true), runILS(true), redistributeVertices(true) {
 
 	}
 
 	InputMessageParallelILS(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
 			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel,
-			long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL, bool parallelgraph = true) :
+			long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL,
+			bool parallelgraph = true, bool runILSproc = true, bool redistVertices = true) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves, cuda),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
 					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering(),
-					isSplitGraph(false), vertexList(), isParallelGraph(parallelgraph) {
+					isSplitGraph(false), vertexList(), isParallelGraph(parallelgraph), runILS(runILSproc),
+					redistributeVertices(redistVertices) {
 			if(cl != NULL) {
 				CCclustering = *cl;
 			}
@@ -237,6 +242,8 @@ public:
 		ar & isSplitGraph;
 		ar & vertexList;
 		ar & isParallelGraph;
+		ar & runILS;
+		ar & redistributeVertices;
 	}
 };
 

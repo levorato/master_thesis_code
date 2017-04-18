@@ -107,13 +107,13 @@ class MPIInitParams {
 public:
 	MPIInitParams() : numberOfMasters(0), numberOfSearchSlavesPerMaster(0),
 			machineProcessAllocationStrategy(MPIUtil::MASTER_AND_VND_SLAVES_TOGETHER),
-			searchType(0), isParallelGraph(false)  { }
+			searchType(0), isParallelGraph(false), N(0)  { }
 
-	MPIInitParams(int masters, int slavesPerMaster, int machineAllocationStrategy, int searchTp, bool pgraph) :
+	MPIInitParams(int masters, int slavesPerMaster, int machineAllocationStrategy, int searchTp, bool pgraph, long numVertices = 0) :
 			numberOfMasters(masters),
 			numberOfSearchSlavesPerMaster(slavesPerMaster),
 			machineProcessAllocationStrategy(machineAllocationStrategy),
-			searchType(searchTp), isParallelGraph(pgraph)  { }
+			searchType(searchTp), isParallelGraph(pgraph), N(numVertices)  { }
 
 	int numberOfMasters;
 	int numberOfSearchSlavesPerMaster;
@@ -121,6 +121,7 @@ public:
 	int machineProcessAllocationStrategy;
 	int searchType;
 	bool isParallelGraph;
+	long N;  // the number of vertices of the global graph
 private:
 
 	// serialization-specific code
@@ -133,6 +134,7 @@ private:
 		ar & machineProcessAllocationStrategy;
 		ar & searchType;
 		ar & isParallelGraph;
+		ar & N;
 	}
 };
 

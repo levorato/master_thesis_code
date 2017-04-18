@@ -27,7 +27,7 @@ using namespace boost::numeric::ublas;
 #define PERCENTAGE_OF_MOST_IMBALANCED_VERTICES_TO_BE_MOVED 0.25
 #define PERCENTAGE_OF_MOST_IMBALANCED_CLUSTERS_TO_BE_MOVED 0.05
 // Defines the number of times each neighborhood structure will rerun local ILS while global solution does not improve
-#define MAX_ILS_RETRIES 2
+#define MAX_ILS_RETRIES 0 // 2
 // Defines the time limit (in seconds) of the local ILS procedure on each node
 #define LOCAL_ILS_TIME_LIMIT 60
 #define EPS 10e-6

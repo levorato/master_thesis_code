@@ -625,7 +625,7 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 				return 1;
 			}
 
-			MPIInitParams mpiparams(numberOfMasters, numberOfSearchSlavesPerMaster, MPIUtil::ALL_MASTERS_FIRST, searchType, parallelgraph);
+			MPIInitParams mpiparams(numberOfMasters, numberOfSearchSlavesPerMaster, MPIUtil::ALL_MASTERS_FIRST, searchType, parallelgraph, v);
 			if(totalNumberOfVNDSlaves > 0) {
 				numberOfSearchSlavesPerMaster = MPIUtil::calculateNumberOfSearchSlaves(np, numberOfMasters);
 				mpiparams.numberOfSearchSlavesPerMaster = numberOfSearchSlavesPerMaster;
@@ -708,6 +708,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 		if(mpiparams.isParallelGraph) {
 			// All processes synchronize at this point, then the graph is complete
 			g = boost::make_shared<ParallelBGLSignedGraph>(num_vertices(*pgraph), pgraph);  // TODO CONFIGURAR PARAMETROS DO CONSTRUTOR!
+			g->setGlobalN(mpiparams.N);
+			BOOST_LOG_TRIVIAL(info) << "Created local graph of size " << g->getGlobalN();
 			BOOST_LOG_TRIVIAL(info) << "Created local graph of size " << g->getN();
 			BOOST_LOG_TRIVIAL(info) << "Synchronizing process for global graph creation...";
 			synchronize(*(g->graph));
@@ -1098,7 +1100,7 @@ std::vector<long> CommandLineInterfaceController::fillPropertyMap(clusteringgrap
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap> global_index(pgraph->process_group(),
 			num_vertices(*pgraph), get(vertex_index, *pgraph), get(vertex_global, *pgraph));
 	BGL_FORALL_VERTICES(v, *pgraph, ParallelGraph) {
-		BOOST_LOG_TRIVIAL(info) << "Vertex " << get(global_index, v) << " is in process number " << rank;
+		// BOOST_LOG_TRIVIAL(info) << "Vertex " << get(global_index, v) << " is in process number " << rank;
 		returnVector.push_back(get(global_index, v));
 		put(vertex_id_map, v, get(global_index, v));
 	}
