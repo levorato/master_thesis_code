@@ -686,6 +686,8 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 	for(int px = 0; px < np; px++) {
 		numberOfClustersInProcess.push_back(util.obtainListOfClustersFromProcess(*g, bestClustering, px).size());
 	}
+	const Clustering initialGlobalClustering = bestGlobalClustering;
+	ProcessClustering initialSplitgraphClustering = bestSplitgraphClustering;
 
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] ***************** moveCluster1opt";
 	// stores the list of clusters where x is the cluster that will be moved to another process y
@@ -693,6 +695,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 	// *** STEP 2: POPULATE LIST OF MOVEMENTS
 	std::vector<Coordinate> movementList;
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Number of potential clusters to be moved: " << numberOfImbalancedClustersToBeMoved;
+	long maxVerticesAllowedInProcess = boost::math::lround(n / (double)2.0);
 	for(long nic = 0; nic < numberOfImbalancedClustersToBeMoved; nic++) {
 	// for(std::vector<long>::iterator clIter = movementList.begin(); clIter != movementList.end(); clIter++) {
 	// 	    int clusterNum = *clIter;
@@ -703,11 +706,14 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		BOOST_LOG_TRIVIAL(trace) << "[Parallel ILS SplitGraph] Testing potential cluster " << clusterToMove << " from process " << sourceProcess
 				<< " which has " << numberOfClustersInProcess[sourceProcess] << " clusters in total.";
 		if(numberOfClustersInProcess[sourceProcess] <= 1)  continue;
+		std::vector<long> listOfMovedVertices = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToMove);
 		// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Global cluster " << clusterToMove << " of size " <<
 		//		bestClustering.getClusterSize(clusterToMove) << " and imbalance = " << clusterImbalanceList[nic].value << ".";
 		// TODO VERIFICAR SE COM O NOVO PROCESS GROUP DA BOOST PARALLEL BGL O NUMERO DO VERTICE TEM QUE COMECAR COM 1!
 		for(int destinationProcess = 0; destinationProcess < np; destinationProcess++) {
-			if( destinationProcess != sourceProcess ) {
+			// TODO evaluate the effect of restricting the number of vertices in each process (avoid process overload)
+			if( (destinationProcess != sourceProcess) and ( bestSplitgraphClustering.getClusterSize(destinationProcess) +
+								listOfMovedVertices.size() < maxVerticesAllowedInProcess ) ) {
 				Coordinate movement(clusterToMove, destinationProcess);
 				movementList.push_back(movement);
 			}
@@ -1109,8 +1115,10 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 
 					// TODO only makes the swap if the max vertex threshold is respected - check if it is worth doing this
 					if ( (listOfMovedVerticesFromProcessA.size() > maxVerticesAllowedInProcess)
-							or (initialSplitgraphClustering.getClusterSize(procDestNum) + listOfMovedVerticesFromProcessA.size()
-							- listOfMovedVerticesFromProcessB.size() < maxVerticesAllowedInProcess) ) {
+							or ( (initialSplitgraphClustering.getClusterSize(procDestNum) + listOfMovedVerticesFromProcessA.size()
+							- listOfMovedVerticesFromProcessB.size() < maxVerticesAllowedInProcess) 
+							     and (initialSplitgraphClustering.getClusterSize(procSourceNum) + listOfMovedVerticesFromProcessB.size()
+							- listOfMovedVerticesFromProcessA.size() < maxVerticesAllowedInProcess) ) ) {
 						//BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to swap global cluster " << clusterToSwapA
 						//		<< " to process " << procDestNum;
 						// the cluster 'clusterToSwapA' will be swapped with the smallest cluster from process procDestNum
