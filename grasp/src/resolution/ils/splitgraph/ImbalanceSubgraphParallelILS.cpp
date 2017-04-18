@@ -2750,10 +2750,10 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(Signe
 		// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] vertex " << i << " goes to process " << k;
 	}
 	
-	InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), 0, 1.0, 1,
-							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
-							numberOfSlaves, numberOfSearchSlaves, true, 0, 0, 0, true, NULL, true,
-							/*runILS=*/true, /*redistributeVertices=*/true);
+	InputMessageParallelILS imsg;
+	imsg.l = 1;
+	imsg.isSplitGraph = true;
+	imsg.isParallelGraph = true;
 	imsg.runILS = false;
 	for(int pr = 1; pr < np; pr++) {
 		imsg.setVertexList(verticesInProcess[pr]);
@@ -2769,7 +2769,7 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(Signe
 	// STEP 3: the leader receives the processing results
 	// Maps the messages according to the movement executed
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph Zero-cost move] Waiting for slaves return messages...";
-	for(int i = 0; i < messagesSent.size(); i++) {
+	for(int pr = 1, i = 0; pr < np; pr++) {
 		OutputMessage omsg;
 		mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
 		int tag = stat.tag();
