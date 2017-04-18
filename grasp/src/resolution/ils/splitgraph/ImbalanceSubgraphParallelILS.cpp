@@ -1269,6 +1269,15 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 			  //		problem, info, verticesInSourceProcess);
 			numberOfTestedCombinations += leaderProcessingMessage.numberOfTestedCombinations;
 			messageMap[leaderProcess] = leaderProcessingMessage;
+		} else {
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking redistribution on leader process (P0).";
+			InputMessageParallelILS imsg4(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
+									problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
+									numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true, NULL, true,
+									/*runILS=*/true, /*redistributeVertices=*/true);
+			imsg4.runILS = false;
+			imsg4.setVertexList(verticesInProcess[0]);
+			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(imsg4, g);
 		}
 		
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
@@ -1764,6 +1773,15 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			  //		problem, info, verticesInSourceProcess);
 			numberOfTestedCombinations += leaderProcessingMessage.numberOfTestedCombinations;
 			messageMap[leaderProcess] = leaderProcessingMessage;
+		} else {
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking redistribution on leader process (P0).";
+			InputMessageParallelILS imsg4(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
+								problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
+								numberOfSlaves, numberOfSearchSlaves, vnd->isFirstImprovementOnOneNeig(), iterMaxILS, perturbationLevelMax, -1, true, NULL, true,
+								/*runILS=*/true, /*redistributeVertices=*/true);
+			imsg4.runILS = false;
+			imsg4.setVertexList(verticesInProcess[0]);
+			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(imsg4, g);
 		}
 
 		// STEP 3.3: the leader receives the processing results
@@ -2009,7 +2027,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 					for(int pr = 1; pr < np; pr++) {
 						imsg.setVertexList(verticesInProcess[pr]);
 						world.send(pr, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Rollback message sent to process " << pr << " (runILS = false)";
+						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Rollback message sent to process " << pr << " (runILS = false).";
 					}
 					imsg.setVertexList(verticesInProcess[0]);
 					OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(imsg, g);
@@ -2719,10 +2737,56 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(Signe
 	// Simply moves the cluster to the destination process, with zero-cost imbalance change
 	bestClustering.setProcessOrigin(clusterToMove, destinationProcess);
 	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
+	int np = bestSplitgraphClustering.getNumberOfClusters();
+	long n = g->getGlobalN();
 
 	// TODO INCLUIR AQUI CHAMADA AO REDISTRIBUTE DA BOOST PARALLEL BGL!
-	// TODO Check if all worker processes must call the vertex redistribution: would need a message exchange exclusively for vertex redistribution on zero-cost moves
-	redistributeVerticesInProcesses(g, splitgraphClusterArray);
+	// All worker processes must call the vertex redistribution!
+	std::vector< std::vector<long> > verticesInProcess(np, std::vector<long>());
+	for(long i = 0; i < n; i++) {
+		long k = splitgraphClusterArray[i];
+		assert(k < np);
+		verticesInProcess[k].push_back(i);
+		// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] vertex " << i << " goes to process " << k;
+	}
+	
+	InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), 0, 1.0, 1,
+							problem.getType(), construct->getGainFunctionType(), info.executionId, info.fileId, info.outputFolder, LOCAL_ILS_TIME_LIMIT,
+							numberOfSlaves, numberOfSearchSlaves, true, 0, 0, 0, true, NULL, true,
+							/*runILS=*/true, /*redistributeVertices=*/true);
+	imsg.runILS = false;
+	for(int pr = 1; pr < np; pr++) {
+		imsg.setVertexList(verticesInProcess[pr]);
+		world.send(pr, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
+		messagesSent.push_back(imsg);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph Zero-cost move] Move message sent to process " << pr << " (runILS = false)";
+	}
+
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph Zero-cost move] Invoking redistribution on leader process (P0).";
+	imsg.setVertexList(verticesInProcess[0]);
+	OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(imsg, g);
+
+	// STEP 3: the leader receives the processing results
+	// Maps the messages according to the movement executed
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph Zero-cost move] Waiting for slaves return messages...";
+	for(int i = 0; i < messagesSent.size(); i++) {
+		OutputMessage omsg;
+		mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+		int tag = stat.tag();
+		int procNum = stat.source();
+		if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+			BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+			i++;
+			while(i < numberOfSlaves) {  // receive the remaining messages to empty the buffer
+				stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph Zero-cost move] Message received from process " << stat.source();
+				i++;
+			}
+			throw std::invalid_argument( "Error message received from slave. See error logs." );
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph Zero-cost move] Message received from process " << procNum << ".";
+	}
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph Zero-cost move] Redistribution of vertices done.";
 
 	// However, the internal and external imbalance values of the participating processes must be updated
 	// Assumes the imbalance matrix between processes has already been updated
