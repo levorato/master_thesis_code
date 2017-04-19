@@ -171,7 +171,7 @@ public:
 	InputMessageParallelILS() : InputMessage(),
 			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
-			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(false), vertexList(),
+			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(true), vertexList(),
 			isParallelGraph(true), runILS(true), redistributeVertices(true) {
 
 	}
@@ -186,7 +186,7 @@ public:
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
 					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering(),
-					isSplitGraph(false), vertexList(), isParallelGraph(parallelgraph), runILS(runILSproc),
+					isSplitGraph(true), vertexList(), isParallelGraph(parallelgraph), runILS(runILSproc),
 					redistributeVertices(redistVertices) {
 			if(cl != NULL) {
 				CCclustering = *cl;

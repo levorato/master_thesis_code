@@ -289,6 +289,7 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(Parallel
 	return obtainListOfOverloadedProcesses(g, processClustering, numberOfEquallyDividedVertices);
 }
 
+// TODO REIMPLEMENTAR DE ACORDO COM A BOOST PBGL
 ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster,
 		std::vector< pair<long, double> >& vertexImbalance, const int& numberOfProcesses) {
 
@@ -336,18 +337,20 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
 
 	long nc = numberOfProcesses;
 	long n = g.getN();
-	LocalSubgraph::edge_descriptor e;
+	ParallelGraph::edge_descriptor e;
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	// local subgraph creation
-	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
+	// LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
 	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
+	// TODO: ALTERAR FORMA DE BUSCAR AS ARESTAS A PARTIR DO NUMERO DO VERTICE, POIS O NUMERO I EH ID GLOBAL DO VERTICE
+	// FIXME CADA PROCESSO DEVE ATUALIZAR A PARTE QUE LHE CABE NA MATRIZ, DE MANEIRA DISTRIBUIDA (DISTRIBUTED PROPERTY MAP) ?
 	// For each vertex i in listOfModifiedVertices
 	for(long item = 0; item < listOfModifiedVertices.size(); item++) {
 		long i = listOfModifiedVertices[item];
 		long old_ki = previousSplitgraphClusterArray[i];
 		long new_ki = newSplitgraphClusterArray[i];
-		LocalSubgraph::out_edge_iterator f, l;
+		ParallelGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
 			e = *f;

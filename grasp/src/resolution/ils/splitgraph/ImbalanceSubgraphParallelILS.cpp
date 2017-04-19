@@ -613,6 +613,11 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 						 << ", k = " << msg_nc;
 	}
 
+	// FULL CALCULATION OF PROCESS IMBALANCE MATRIZ, BROUGHT FROM CONTRUCTIVE PHASE
+	ImbalanceMatrix processClusterImbMatrix = util.calculateProcessToProcessImbalanceMatrix(*g, splitClusterArray,
+					this->vertexImbalance, numberOfSlaves + 1);
+	ProcessClustering Cc(g, problem, splitClusterArray, processClusterImbMatrix);
+
 	// Calculates the external imbalance sum (between processes)
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Calculating external process imbalance matrix...";
 	Imbalance externalImbalance = util.calculateExternalImbalanceSumBetweenProcesses(splitgraphClustering.getInterProcessImbalanceMatrix());
@@ -686,7 +691,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 	for(int px = 0; px < np; px++) {
 		numberOfClustersInProcess.push_back(util.obtainListOfClustersFromProcess(*g, bestClustering, px).size());
 	}
-	const Clustering initialGlobalClustering = bestGlobalClustering;
+	const Clustering initialGlobalClustering = bestClustering;
 	ProcessClustering initialSplitgraphClustering = bestSplitgraphClustering;
 
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] ***************** moveCluster1opt";
@@ -723,7 +728,6 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 
 	// *** STEP 3: EVALUATE SEVERAL MOVEMENTS IN PARALLEL (DISTRIBUTED ALGORITHM)
 	ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
-	const Clustering initialGlobalClustering = bestClustering;
 	while(not movementList.empty()) {
 		Coordinate movement = movementList.back();
 		movementList.pop_back();
@@ -782,6 +786,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		} else { leaderParticipates = 2; }
 		messagesSent.push_back(imsg);
 		messagesSent.push_back(imsg2);
+
 		for(int pr = 1; pr < np; pr++) {
 			if((pr != destinationProcess) and (pr != sourceProcess)) {
 				InputMessageParallelILS imsg4 = imsg;
@@ -822,8 +827,12 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 
 		// STEP 3: the leader receives the processing results
 		// Maps the messages according to the movement executed
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
-		for(int i = 0; i < messagesSent.size(); i++) {
+		int totalMessagesSent = messagesSent.size();
+		if(leaderParticipates) {
+			totalMessagesSent--;
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for " << totalMessagesSent << " return messages...";
+		for(int i = 0; i < totalMessagesSent; i++) {
 			OutputMessage omsg;
 			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
 			int tag = stat.tag();
@@ -862,6 +871,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 		// removes all the clusters which belong to the processes participating in this cluster movement
 		// and calculates the new number of clusters, to be used in the offset below
 		Clustering tempClustering = initialGlobalClustering;
+		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Removing all clusters from participating processes...";
 		tempClustering.removeAllClustersFromProcess(g, sourceProcess);
 		tempClustering.removeAllClustersFromProcess(g, destinationProcess);
 		long clusterOffset = tempClustering.getNumberOfClusters();
@@ -870,6 +880,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 
 		for(int workerProcess = 0; workerProcess < 2; workerProcess++) {
 			int process = participatingProcessList[workerProcess];
+			BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Processing clusters from participating process " << process << "...";
 			OutputMessage msg = messageMap[process];
 			ClusterArray localClusterArray = msg.clustering.getClusterArray();
 
@@ -879,6 +890,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 				for(long v = 0; v < localClusterArray.size(); v++) {
 					// Obtains vertex v's number in the global graph
 					long vglobal = msg.globalVertexId[v];
+					BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Processing global vertex " << vglobal;
 					globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
 				}
 				clusterOffset += msg_nc;
@@ -893,14 +905,16 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 
 		// Realiza a movimentacao dos vertices de um cluster especifico (cluster move) para o processo de destino
 		for(long elem = 0; elem < listOfModifiedVertices.size(); elem++) {
+			BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Global vertex " << listOfModifiedVertices[elem] << " goes to process " << destinationProcess;
 			tempSplitgraphClusterArray[listOfModifiedVertices[elem]] = destinationProcess;
 		}
 		// O RECALCULO DA MATRIZ ABAIXO EH FEITO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
 		ImbalanceMatrix tempProcessClusterImbMatrix = initialProcessClusterImbMatrix;
 		// Realiza o calculo do delta da matriz de imbalance entre processos
+		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Updating ProcessToProcessImbalanceMatrix...";
 		util.updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
 				listOfModifiedVertices, tempProcessClusterImbMatrix, numberOfSlaves + 1);
-		// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
+		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
 
 		// Calculates the internal imbalance sum (inside each process)
 		Imbalance internalImbalance = util.calculateInternalImbalanceSumOfAllProcesses(newInternalProcessImbalance);
@@ -1158,6 +1172,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 		int leaderParticipates = 0;
 		std::vector<int> participatingProcessList;
 		ClusterArray tempSplitgraphClusterArray;
+		std::vector< std::vector<long> > verticesInProcess(np, std::vector<long>());
 		for(int mov = movementsInParallelA.size() - 1; mov >= 0; mov--) {
 			long clusterToSwapA = movementsInParallelA[mov].x;
 			int destinationProcess = movementsInParallelA[mov].y;
@@ -1186,6 +1201,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 			std::vector< long > verticesInDestinationProcess;
 			for(long i = 0; i < n; i++) {
 				long k = tempSplitgraphClusterArray[i];
+				verticesInProcess[k].push_back(i);
 				if(k == sourceProcess) {
 					verticesInSourceProcess.push_back(i);
 				} else if(k == destinationProcess) {
@@ -1217,10 +1233,12 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				} else { leaderParticipates = 2; }
 				messagesSent.push_back(imsg);
 				messagesSent.push_back(imsg2);
+
 				for(int pr = 1; pr < np; pr++) {
 					if((pr != destinationProcess) and (pr != sourceProcess)) {
 						InputMessageParallelILS imsg4 = imsg;
 						imsg4.runILS = false;
+						imsg4.setVertexList(verticesInProcess[pr]);
 						world.send(pr, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg4);
 						messagesSent.push_back(imsg4);
 						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << pr << " (runILS = false)";
@@ -1281,7 +1299,11 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 		}
 		
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
-		for(int i = 0; i < messagesSent.size(); i++) {
+		long totalMessagesSent = messagesSent.size();
+		if(leaderParticipates) {
+			totalMessagesSent--;
+		}
+		for(int i = 0; i < totalMessagesSent; i++) {
 			OutputMessage omsg;
 			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
 			int tag = stat.tag();
@@ -1674,6 +1696,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 		int leaderParticipates = 0;
 		int leaderProcess = 0;
 		ClusterArray tempSplitgraphClusterArray;
+		std::vector< std::vector<long> > verticesInProcess(np, std::vector<long>());
 		for(int mov = 0; mov < movementsInParallelA.size(); mov++) {
 
 			long clusterToMoveA = movementsInParallelA[mov].x;
@@ -1703,6 +1726,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			std::vector< long > verticesInDestinationProcessA, verticesInDestinationProcessB;
 			for(long i = 0; i < n; i++) {
 				long k = tempSplitgraphClusterArray[i];
+				verticesInProcess[k].push_back(i);
 				if(k == currentSourceProcess) {
 					if(mov == 0) {  // avoids duplicating elements in this list
 						verticesInSourceProcess.push_back(i);
@@ -1744,10 +1768,12 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			messagesSent.push_back(imsg);
 			messagesSent.push_back(imsg2);
 			messagesSent.push_back(imsg3);
+
 			for(int pr = 1; pr < np; pr++) {
 				if((pr != destinationProcessA) and (pr != destinationProcessB) and (pr != currentSourceProcess)) {
 					InputMessageParallelILS imsg4 = imsg;
 					imsg4.runILS = false;
+					imsg4.setVertexList(verticesInProcess[pr]);
 					world.send(pr, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg4);
 					messagesSent.push_back(imsg4);
 					BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << pr << " (runILS = false)";
@@ -1787,7 +1813,11 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 		// STEP 3.3: the leader receives the processing results
 		// Maps the messages according to the movement executed
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Waiting for slaves return messages...";
-		for(int i = 0; i < messagesSent.size(); i++) {
+		long totalMessagesSent = messagesSent.size();
+		if(leaderParticipates) {
+			totalMessagesSent--;
+		}
+		for(int i = 0; i < totalMessagesSent; i++) {
 			OutputMessage omsg;
 			mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
 			int tag = stat.tag();
@@ -2573,6 +2603,26 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	boost::mpi::communicator world;
 	int myRank = world.rank();
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] runILSLocallyOnSubgraph()";
+
+	BOOST_LOG_TRIVIAL(info) << "Invoking Parallel Graph global vertex mapping...";
+	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
+	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	property_map<ParallelGraph, vertex_properties_t>::type name_map
+	  = get(vertex_properties, *(g->graph));
+
+	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	mpi_process_group pg = g->graph->process_group();
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+	  global_index(pg, num_vertices(*(g->graph)),
+				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
+	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+	  put(name_map, v, get(global_index, v));
+
+	// BOOST_LOG_TRIVIAL(info) << "Obtaining processor_map...";
+	// property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
+
 	// only redistributes vertices if vertexList has information available
 	// otherwise this method is being called from distributed ils initialization, when no movement occurs
 	if(imsgpils.redistributeVertices) {
@@ -2587,7 +2637,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 		for(int i = 0; i < imsgpils.vertexList.size(); i++) {
 			int v = imsgpils.vertexList[i];
 			// mark the vertices that belong to this process (myRank)
-			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Assigning rank " << myRank << " to vertex " << v;
+			// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Assigning rank " << myRank << " to vertex " << v;
 			assert(v < N);
 			splitgraphClusterArray[v] = myRank;
 		}
@@ -2655,6 +2705,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 		 // https://groups.google.com/forum/#!topic/boost-list/A_IOeEGWrWY
 		 boost::mpi::environment  env;
 		 boost::mpi::communicator comm;
+		 /*
 		 BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
 		 {
 			 BOOST_LOG_TRIVIAL(trace) << "V @ P" << comm.rank() << ": " << v.local;
@@ -2667,7 +2718,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 				e.source_processor << " dstcpu = " << e.target_processor;
 			 edgecount++;
 		 }
-		 BOOST_LOG_TRIVIAL(debug) << "Edgecount is " << edgecount;
+		 BOOST_LOG_TRIVIAL(debug) << "Edgecount is " << edgecount; */
 
 		// rebuilds construct clustering objects based on partial graph 'sg'
 		GainFunctionFactory functionFactory(g);
@@ -2715,12 +2766,13 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 			num_comb = resolution.getNumberOfTestedCombinations();
 		}
 		// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
+		BOOST_LOG_TRIVIAL(info) << "Invoking Parallel Graph global vertex mapping 0...";
 		if(parallelgraph) {
-			BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-			 {
-				 // std::cout << "V @ " << comm.rank() << " " << v.local << std::endl;
-				 globalVertexId.push_back(v.local);
-			 }
+			graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
+			BOOST_LOG_TRIVIAL(info) << "Obtaining individual global_index...";
+			for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
+				globalVertexId.push_back(get(global_index, *vi));
+			}
 		}
 		assert(bestClustering.getClusterArray().size() == num_vertices(*(g->graph)));
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P" << comm.rank() << ": num_edges = " <<
@@ -2739,6 +2791,7 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(Signe
 	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
 	int np = bestSplitgraphClustering.getNumberOfClusters();
 	long n = g->getGlobalN();
+	boost::mpi::communicator world;
 
 	// TODO INCLUIR AQUI CHAMADA AO REDISTRIBUTE DA BOOST PARALLEL BGL!
 	// All worker processes must call the vertex redistribution!
@@ -2758,7 +2811,6 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(Signe
 	for(int pr = 1; pr < np; pr++) {
 		imsg.setVertexList(verticesInProcess[pr]);
 		world.send(pr, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
-		messagesSent.push_back(imsg);
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph Zero-cost move] Move message sent to process " << pr << " (runILS = false)";
 	}
 
@@ -2842,8 +2894,8 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(SignedGraph *
 	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
 	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
 		// put(to_processor_map, vi, vi->local % num_processes(pg));  // floor(vi->local / (double)g->getN())
-		BOOST_LOG_TRIVIAL(debug) << "Obtaining newSplitgraphClustering for global vertex " << get(global_index, *vi);
-		BOOST_LOG_TRIVIAL(debug) << "Going to processor " << newSplitgraphClustering[get(global_index, *vi)];
+		// BOOST_LOG_TRIVIAL(debug) << "Obtaining newSplitgraphClustering for global vertex " << get(global_index, *vi);
+		// BOOST_LOG_TRIVIAL(debug) << "Going to processor " << newSplitgraphClustering[get(global_index, *vi)];
 		put(to_processor_map, *vi, newSplitgraphClustering[get(global_index, *vi)]);
 	}
 
