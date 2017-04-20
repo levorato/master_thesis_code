@@ -380,6 +380,13 @@ public:
 
 	}
 
+	InputMessageSplitUtil(int np) : numberOfProcesses(np), myCluster(), vertexImbalance(),
+			previousSplitgraphClusterArray(), newSplitgraphClusterArray(), listOfModifiedVertices(),
+			processClusterImbMatrix(np), splitGraphCluster(), globalCluster(), globalClustering(),
+			functionRequested(0) {
+
+	}
+
 	friend class boost::serialization::access;
 
 	template<class Archive>

@@ -77,6 +77,12 @@ public:
 	ImbalanceMatrix() : pos(), neg() { }
 	ImbalanceMatrix(int nc) : pos(zero_matrix<double>(nc, nc)), neg(zero_matrix<double>(nc, nc)) { }
 
+	ImbalanceMatrix& operator+=(const ImbalanceMatrix &i) {
+		this->pos += (i.pos);
+		this->neg += (i.neg);
+		return *this;
+	}
+
 	// serialization-specific code
 	friend class boost::serialization::access;
 

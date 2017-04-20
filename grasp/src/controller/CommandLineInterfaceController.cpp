@@ -942,6 +942,8 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							std::vector<Coordinate> clusterList = util.obtainListOfImbalancedClustersLocal(*g, imsg.globalClustering);
 							omsg.listOfImbalancedClusters = clusterList;
 							break;
+						} default : {
+							BOOST_LOG_TRIVIAL(error) << "Invalid functionRequested!";
 						}
 						}
 						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);

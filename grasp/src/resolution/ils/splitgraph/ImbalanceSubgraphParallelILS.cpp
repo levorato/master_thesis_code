@@ -106,15 +106,21 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	ClusterArray splitgraphClusterArray(g->getGlobalN());
 	// preenchimento inicial baseado na distribuicao da parallel bgl
 
-	ProcessClustering splitgraphClustering(g, problem, splitgraphClusterArray); // = preProcessSplitgraphPartitioning(g, problem, true);
+	ProcessClustering tmpsplitgraphClustering(g, problem, splitgraphClusterArray); // = preProcessSplitgraphPartitioning(g, problem, true);
 
 	// *** STEP B => Calls the individual ILS processing for each subgraph, invoking Parallel ILS with MPI
 	// WARNING: THE SPLITGRAPHCLUSTERARRAY IS A SEPARATE DATA STRUCTURE, DIFFERENT THAN THE CURRENT CLUSTERING
 	// IT CONTROLS THE PARTITIONING BETWEEN PROCESSORS (SPLIT GRAPH)
-	ClusterArray initialSplitgraphClusterArray = splitgraphClustering.getClusterArray();
-	Clustering Cc(initialSplitgraphClusterArray, *g, problem, 0.0, 0.0);
+	Clustering Cc(splitgraphClusterArray, *g, problem, 0.0, 0.0);
 	Cc = runDistributedILS(construct, vnd, g, iter, iterMaxILS, perturbationLevelMax, problem, info,
-			splitgraphClustering, Cc);
+			tmpsplitgraphClustering, Cc);
+
+	// FULL CALCULATION OF PROCESS IMBALANCE MATRIZ, BROUGHT FROM CONTRUCTIVE PHASE
+	ClusterArray splitClusterArray = tmpsplitgraphClustering.getClusterArray();
+	ImbalanceMatrix processClusterImbMatrix = util.calculateProcessToProcessImbalanceMatrix(*g, splitClusterArray,
+					this->vertexImbalance, numberOfSlaves + 1);
+	ProcessClustering splitgraphClustering(g, problem, splitClusterArray, processClusterImbMatrix);
+	ClusterArray initialSplitgraphClusterArray = splitgraphClustering.getClusterArray();
 
 	timer.stop();
 	boost::timer::cpu_times end_time = timer.elapsed();
@@ -612,11 +618,6 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 						omsg.num_edges << " , num_vertices = " << omsg.num_vertices << ", I(P) = " << omsg.clustering.getImbalance().getValue()
 						 << ", k = " << msg_nc;
 	}
-
-	// FULL CALCULATION OF PROCESS IMBALANCE MATRIZ, BROUGHT FROM CONTRUCTIVE PHASE
-	ImbalanceMatrix processClusterImbMatrix = util.calculateProcessToProcessImbalanceMatrix(*g, splitClusterArray,
-					this->vertexImbalance, numberOfSlaves + 1);
-	ProcessClustering Cc(g, problem, splitClusterArray, processClusterImbMatrix);
 
 	// Calculates the external imbalance sum (between processes)
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Calculating external process imbalance matrix...";
