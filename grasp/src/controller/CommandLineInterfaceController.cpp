@@ -35,6 +35,7 @@
 #include "../resolution/construction/include/CUDAImbalanceGainFunction.h"
 #include "../resolution/ils/include/CUDAILS.h"
 #include "../resolution/ils/splitgraph/include/ImbalanceSubgraphParallelILS.h"
+#include "../resolution/ils/splitgraph/include/SplitgraphUtil.h"
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
@@ -912,6 +913,40 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 							BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": ILS Output Message sent to leader (size = " <<
 									(sizeof(omsg)/1024.0) << " KB).";
 						}
+					} else if(stat.tag() == MPIMessage::INPUT_MSG_SPLITUTIL_TAG) {
+						// Receives a message with ILS parameters and triggers local ILS execution
+						InputMessageSplitUtil imsg;
+						mpi::status msg = world.recv(MPIMessage::LEADER_ID, mpi::any_tag, imsg);
+						BOOST_LOG_TRIVIAL(debug) << "Process " << myRank << " [Parallel ILS Split Util]: Received message from leader.";
+						messageCount++;
+						resolution::ils::SplitgraphUtil util;
+						OutputMessageSplitUtil omsg;
+						switch(imsg.functionRequested) {
+						case InputMessageSplitUtil::calculateProcessToProcessImbalanceMatrix: {
+							ImbalanceMatrix mtx = util.calculateProcessToProcessImbalanceMatrixLocal(*g, imsg.myCluster,
+									imsg.vertexImbalance, imsg.numberOfProcesses);
+							omsg.imbalanceMatrix = mtx;
+							break;
+						} case InputMessageSplitUtil::updateProcessToProcessImbalanceMatrix: {
+							util.updateProcessToProcessImbalanceMatrixLocal(*g,
+									imsg.previousSplitgraphClusterArray,
+									imsg.newSplitgraphClusterArray, imsg.listOfModifiedVertices,
+									imsg.processClusterImbMatrix, imsg.numberOfProcesses);
+							omsg.imbalanceMatrix = imsg.processClusterImbMatrix;
+							break;
+						} case InputMessageSplitUtil::calculateProcessInternalImbalance: {
+							Imbalance imb = util.calculateProcessInternalImbalanceLocal(g.get(), imsg.globalCluster);
+							omsg.imbalance = imb;
+							break;
+						} case InputMessageSplitUtil::obtainListOfImbalancedClusters: {
+							std::vector<Coordinate> clusterList = util.obtainListOfImbalancedClustersLocal(*g, imsg.globalClustering);
+							omsg.listOfImbalancedClusters = clusterList;
+							break;
+						}
+						}
+						world.send(MPIMessage::LEADER_ID, MPIMessage::OUTPUT_MSG_PARALLEL_ILS_TAG, omsg);
+						BOOST_LOG_TRIVIAL(info) << "Process " << myRank << ": SplitUtil Output Message sent to leader (size = " <<
+								(sizeof(omsg)/1024.0) << " KB).";
 					}
 				}
 			} else {  // Parallel VND slave

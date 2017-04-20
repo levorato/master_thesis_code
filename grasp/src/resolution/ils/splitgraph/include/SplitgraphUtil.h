@@ -11,11 +11,18 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <list>
 #include <vector>
+#include <boost/graph/use_mpi.hpp>
+#include <boost/graph/distributed/mpi_process_group.hpp>
+#include <boost/property_map/property_map_iterator.hpp>
+#include <boost/property_map/parallel/global_index_map.hpp>
+// #include <boost/graph/distributed/vertex_list_adaptor.hpp>
+#include <boost/graph/iteration_macros.hpp>
 
 #include "graph/include/Graph.h"
 #include "graph/include/Clustering.h"
 #include "graph/include/Imbalance.h"
 #include "graph/include/ParallelBGLSignedGraph.h"
+#include "util/include/MPIMessage.h"
 
 #include "ProcessClustering.h"
 
@@ -31,12 +38,7 @@ using namespace clusteringgraph;
 namespace resolution {
 namespace ils {
 
-struct Coordinate {
-	int x, y;
-	double value;
-	Coordinate() : x(0), y(0), value(0.0) { }
-	Coordinate(int a, int b, double vl = 0.0) : x(a), y(b), value(vl) { }
-};
+using namespace util;
 
 struct coordinate_ordering_asc
 {
@@ -110,11 +112,17 @@ public:
 
 	ImbalanceMatrix calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster,
 			std::vector< std::pair<long, double> >& vertexImbalance, const int& numberOfProcesses);
+	ImbalanceMatrix calculateProcessToProcessImbalanceMatrixLocal(SignedGraph& g, ClusterArray& myCluster,
+				std::vector< std::pair<long, double> >& vertexImbalance, const int& numberOfProcesses);
 
 	void updateProcessToProcessImbalanceMatrix(SignedGraph& g,
 			const ClusterArray& previousSplitgraphClusterArray,
 			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
 			ImbalanceMatrix& processClusterImbMatrix, const int& numberOfProcesses);
+	void updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
+				const ClusterArray& previousSplitgraphClusterArray,
+				const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
+				ImbalanceMatrix& processClusterImbMatrix, const int& numberOfProcesses);
 
 	std::vector<Coordinate> obtainListOfClustersFromProcess(SignedGraph& g,
 				const Clustering& globalClustering, int processNumber);
@@ -126,7 +134,16 @@ public:
 
 	Imbalance calculateInternalImbalanceSumOfAllProcesses(std::vector<Imbalance>& internalProcessImbalance);
 
+	// OK
+	std::vector<Imbalance> calculateProcessInternalImbalance(SignedGraph& g,
+				ClusterArray& splitGraphCluster, ClusterArray& globalCluster, int numberOfProcesses);
+	Imbalance calculateProcessInternalImbalance(ParallelBGLSignedGraph *g, ClusterArray& c, unsigned int processNumber);
 	Imbalance calculateProcessInternalImbalance(ParallelBGLSignedGraph *g, Clustering& c, unsigned int processNumber);
+	Imbalance calculateProcessInternalImbalanceLocal(ParallelBGLSignedGraph *g, ClusterArray& c);
+
+	//
+	std::vector<Coordinate> obtainListOfImbalancedClusters(SignedGraph& g, Clustering& globalClustering);
+	std::vector<Coordinate> obtainListOfImbalancedClustersLocal(SignedGraph& g, Clustering& globalClustering);
 
 	/**
 	  *  Calculates the positive and negative degrees of each vertex v in clusterX
@@ -144,8 +161,6 @@ public:
 	long findMostImbalancedVertexInProcessPair(SignedGraph& g, const ClusterArray& splitGraphCluster,
 			const ClusterArray& globalCluster, Coordinate processPair) const;
 
-	std::vector<Coordinate> obtainListOfImbalancedClusters(SignedGraph& g,
-			Clustering& globalClustering);
 
 	/**
 	 * A vertex-overloaded process is a process with more than (n / numberOfProcesses) vertices.
@@ -177,8 +192,6 @@ public:
 	bool isPseudoClique(SignedGraph *g, ClusterArray& cliqueCClusterArray, long cliqueSize,
 			long u, long v);
 
-	std::vector<Imbalance> calculateProcessInternalImbalance(SignedGraph& g,
-			ClusterArray& splitGraphCluster, ClusterArray& globalCluster, int numberOfProcesses);
 
 	void validaSplitgraphArray(SignedGraph &g, ProcessClustering& processClustering, Clustering& globalClustering);
 

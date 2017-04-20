@@ -71,10 +71,20 @@ private:
 	}
 };
 
-struct ImbalanceMatrix {
+class ImbalanceMatrix {
+public:
 	matrix<double> pos, neg;
 	ImbalanceMatrix() : pos(), neg() { }
 	ImbalanceMatrix(int nc) : pos(zero_matrix<double>(nc, nc)), neg(zero_matrix<double>(nc, nc)) { }
+
+	// serialization-specific code
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & pos;
+		ar & neg;
+	}
 };
 
 } /* namespace clusteringgraph */

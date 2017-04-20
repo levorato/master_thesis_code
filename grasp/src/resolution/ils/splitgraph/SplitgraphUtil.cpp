@@ -28,6 +28,209 @@ SplitgraphUtil::~SplitgraphUtil() {
 	// TODO Auto-generated destructor stub
 }
 
+// REIMPLEMENTADA DE ACORDO COM A BOOST PBGL
+ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster,
+		std::vector< pair<long, double> >& vertexImbalance, const int& numberOfProcesses) {
+	boost::mpi::communicator world;
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] calculateProcessToProcessImbalanceMatrix invoked.";
+	for(int px = 1; px < numberOfProcesses; px++) {
+		// worker processes, obtain answer via MPI
+		// TODO merge the other matrices
+		InputMessageSplitUtil imsg;
+		imsg.myCluster = myCluster;
+		imsg.vertexImbalance = vertexImbalance;
+		imsg.numberOfProcesses = numberOfProcesses;
+		imsg.functionRequested = InputMessageSplitUtil::calculateProcessToProcessImbalanceMatrix;
+		world.send(px, MPIMessage::INPUT_MSG_SPLITUTIL_TAG, imsg);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << px << ".";
+	}
+	ImbalanceMatrix result = calculateProcessToProcessImbalanceMatrixLocal(g, myCluster, vertexImbalance, numberOfProcesses);
+	for(int i = 1; i < numberOfProcesses; i++) {
+		OutputMessageSplitUtil omsg;
+		mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+		int tag = stat.tag();
+		int procNum = stat.source();
+		if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+			BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+			i++;
+			while(i < numberOfProcesses) {  // receive the remaining messages to empty the buffer
+				stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source();
+				i++;
+			}
+			throw std::invalid_argument( "Error message received from slave. See error logs." );
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ".";
+		// TODO MERGE IMBALANCE MATRIX
+	}
+	return result;
+}
+
+ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(SignedGraph& g, ClusterArray& myCluster,
+		std::vector< pair<long, double> >& vertexImbalance, const int& numberOfProcesses) {
+
+	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	property_map<ParallelGraph, vertex_properties_t>::type name_map
+	  = get(vertex_properties, *(g.graph));
+
+	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	mpi_process_group pg = g.graph->process_group();
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+	  global_index(pg, num_vertices(*(g.graph)),
+				   get(vertex_index, *(g.graph)), get(vertex_global, *(g.graph)));
+	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph)
+	  put(name_map, v, get(global_index, v));
+
+	long nc = numberOfProcesses;
+	long n = g.getN();
+	LocalSubgraph::edge_descriptor e;
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
+	// Process to process matrix containing positive / negative contribution to imbalance
+	ImbalanceMatrix clusterImbMatrix(nc);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	// Vector containing each vertex contribution to imbalance: vertexImbalance
+	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
+
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = get(global_index, v); // v.local;   // TODO TROCADO PELO GLOBAL
+		long ki = myCluster[i];
+		LocalSubgraph::out_edge_iterator f, l;
+		double positiveSum = double(0.0), negativeSum = double(0.0);
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
+			e = *f;
+			int targ = get(global_index, target(e, lsg));  // TODO TROCADO PELO GLOBAL
+			double weight = ew[e].weight;
+			bool sameCluster = (myCluster[targ] == ki);
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are in the same cluster
+				negativeSum += fabs(weight);
+				clusterImbMatrix.neg(ki, myCluster[targ]) += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				positiveSum += weight;
+				clusterImbMatrix.pos(ki, myCluster[targ]) += fabs(weight);
+			}
+		}
+		vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
+	}
+	return clusterImbMatrix;
+}
+
+void SplitgraphUtil::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
+			const ClusterArray& previousSplitgraphClusterArray,
+			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
+			ImbalanceMatrix& processClusterImbMatrix, const int& numberOfProcesses) {
+	boost::mpi::communicator world;
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix invoked.";
+	for(int px = 1; px < numberOfProcesses; px++) {
+		// worker processes, obtain answer via MPI
+		// TODO merge the other matrices
+		InputMessageSplitUtil imsg;
+		imsg.previousSplitgraphClusterArray = previousSplitgraphClusterArray;
+		imsg.newSplitgraphClusterArray = newSplitgraphClusterArray;
+		imsg.listOfModifiedVertices = listOfModifiedVertices;
+		imsg.processClusterImbMatrix = processClusterImbMatrix;
+		imsg.numberOfProcesses = numberOfProcesses;
+		world.send(px, MPIMessage::INPUT_MSG_SPLITUTIL_TAG, imsg);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << px << ".";
+	}
+	updateProcessToProcessImbalanceMatrixLocal(g, previousSplitgraphClusterArray, newSplitgraphClusterArray,
+					listOfModifiedVertices, processClusterImbMatrix, numberOfProcesses);
+	for(int i = 1; i < numberOfProcesses; i++) {
+		OutputMessageSplitUtil omsg;
+		mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+		int tag = stat.tag();
+		int procNum = stat.source();
+		if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+			BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+			i++;
+			while(i < numberOfProcesses) {  // receive the remaining messages to empty the buffer
+				stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source();
+				i++;
+			}
+			throw std::invalid_argument( "Error message received from slave. See error logs." );
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ".";
+		// TODO MERGE IMBALANCE MATRIX
+	}
+}
+
+void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
+			const ClusterArray& previousSplitgraphClusterArray,
+			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
+			ImbalanceMatrix& processClusterImbMatrix, const int& numberOfProcesses) {
+
+	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	property_map<ParallelGraph, vertex_properties_t>::type name_map
+	  = get(vertex_properties, *(g.graph));
+
+	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	mpi_process_group pg = g.graph->process_group();
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+	  global_index(pg, num_vertices(*(g.graph)),
+				   get(vertex_index, *(g.graph)), get(vertex_global, *(g.graph)));
+	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph)
+	  put(name_map, v, get(global_index, v));
+
+	long nc = numberOfProcesses;
+	long n = g.getN();
+	LocalSubgraph::edge_descriptor e;
+	boost::property_map<LocalSubgraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
+
+	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
+	// TODO: ALTERAR FORMA DE BUSCAR AS ARESTAS A PARTIR DO NUMERO DO VERTICE, POIS O NUMERO I EH ID GLOBAL DO VERTICE
+	// FIXME CADA PROCESSO DEVE ATUALIZAR A PARTE QUE LHE CABE NA MATRIZ, DE MANEIRA DISTRIBUIDA (DISTRIBUTED PROPERTY MAP) ?
+	// For each vertex i in listOfModifiedVertices
+	for(long item = 0; item < listOfModifiedVertices.size(); item++) {
+		long i = listOfModifiedVertices[item];
+		long old_ki = previousSplitgraphClusterArray[i];
+		long new_ki = newSplitgraphClusterArray[i];
+		ParallelGraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+			e = *f;
+			int targ = get(global_index, target(e, *(g.graph)));   // TODO TROCADO PELO GLOBAL
+			double weight = ew[e].weight;
+			// Etapa 1: subtracao dos imbalances antigos
+			long old_kj = previousSplitgraphClusterArray[targ];
+			bool sameCluster = (old_kj == old_ki);
+			// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j were in the same cluster
+				processClusterImbMatrix.neg(old_ki, old_kj) -= fabs(weight);
+				processClusterImbMatrix.neg(old_kj, old_ki) -= fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j were NOT in the same cluster
+				processClusterImbMatrix.pos(old_ki, old_kj) -= fabs(weight);
+				processClusterImbMatrix.pos(old_kj, old_ki) -= fabs(weight);
+			}
+			// Etapa 2: acrescimo dos novos imbalances
+			long new_kj = newSplitgraphClusterArray[targ];
+			sameCluster = (new_kj == new_ki);
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are now in the same cluster
+				processClusterImbMatrix.neg(new_ki, new_kj) += fabs(weight);
+				processClusterImbMatrix.neg(new_kj, new_ki) += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				processClusterImbMatrix.pos(new_ki, new_kj) += fabs(weight);
+				processClusterImbMatrix.pos(new_kj, new_ki) += fabs(weight);
+			}
+		}
+		// NAO EH NECESSARIO ATUALIZAR O VERTEX IMBALANCE ABAIXO, POIS A BUSCA LOCAL (VND) EH FIRST IMPROVEMENT
+		// vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
+	}
+}
+
 std::vector<long> SplitgraphUtil::getListOfVeticesInCluster(ParallelBGLSignedGraph& g, const Clustering& globalClustering,
 		long clusterNumber) {
 
@@ -85,60 +288,252 @@ Imbalance SplitgraphUtil::calculateInternalImbalanceSumOfAllProcesses(std::vecto
 	return Imbalance(internalImbalancePosSum, internalImbalanceNegSum);
 }
 
-Imbalance SplitgraphUtil::calculateProcessInternalImbalance(ParallelBGLSignedGraph *g, Clustering& c,
-		unsigned int processNumber) {
+std::vector<Imbalance> SplitgraphUtil::calculateProcessInternalImbalance(SignedGraph& g,
+		ClusterArray& splitGraphCluster, ClusterArray& globalCluster, int numberOfProcesses) {
+	boost::mpi::communicator world;
+	std::vector<Imbalance> processInternalImbalance;
+	for(int px = 1; px < numberOfProcesses; px++) {
+		// worker processes, obtain answer via MPI
+		// TODO merge the other matrices
+		InputMessageSplitUtil imsg;
+		imsg.splitGraphCluster = splitGraphCluster;
+		imsg.globalCluster = globalCluster;
+		imsg.numberOfProcesses = numberOfProcesses;
+		imsg.functionRequested = InputMessageSplitUtil::calculateProcessInternalImbalance;
+		world.send(px, MPIMessage::INPUT_MSG_SPLITUTIL_TAG, imsg);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << px << ".";
+	}
+	processInternalImbalance.push_back(calculateProcessInternalImbalanceLocal(&g, globalCluster));
+	for(int i = 1; i < numberOfProcesses; i++) {
+		OutputMessageSplitUtil omsg;
+		mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+		int tag = stat.tag();
+		int procNum = stat.source();
+		if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+			BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+			i++;
+			while(i < numberOfProcesses) {  // receive the remaining messages to empty the buffer
+				stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source();
+				i++;
+			}
+			throw std::invalid_argument( "Error message received from slave. See error logs." );
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ".";
+		// TODO MERGE IMBALANCE MATRIX
+		processInternalImbalance.push_back(omsg.imbalance);
+	}
+	stringstream ss;
+	ss << "Calulated InternalImbalanceVector: ";
+	for(int x = 0; x < numberOfProcesses; x++) {
+		ss << processInternalImbalance[x].getValue() << " ";
+	}
+	BOOST_LOG_TRIVIAL(info) << ss.str();
+	return processInternalImbalance;
+}
+
+Imbalance SplitgraphUtil::calculateProcessInternalImbalance(ParallelBGLSignedGraph *g, Clustering& c, unsigned int processNumber) {
+	ClusterArray clArray = c.getClusterArray();
+	return calculateProcessInternalImbalance(g, clArray, processNumber);
+}
+
+// FUNCAO MODIFICADA PARA A BOOST PARALLEL BGL, OBTENDO O IMBALANCE DE CADA PROCESSO VIA CONSULTA POR MENSAGEM MPI
+Imbalance SplitgraphUtil::calculateProcessInternalImbalance(ParallelBGLSignedGraph *g, ClusterArray& c, unsigned int processNumber) {
+	boost::mpi::communicator world;
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] calculateProcessInternalImbalance invoked for process " << processNumber;
+	if(processNumber == 0) {  // leader process
+		return calculateProcessInternalImbalanceLocal(g, c);
+	} else {  // worker processes, obtain answer via MPI
+		InputMessageSplitUtil imsg;
+		imsg.globalCluster = c;
+		imsg.functionRequested = InputMessageSplitUtil::calculateProcessInternalImbalance;
+		world.send(processNumber, MPIMessage::INPUT_MSG_SPLITUTIL_TAG, imsg);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << processNumber << ".";
+
+		OutputMessageSplitUtil omsg;
+		mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+		int tag = stat.tag();
+		int procNum = stat.source();
+		if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+			BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+			throw std::invalid_argument( "Error message received from slave. See error logs." );
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ".";
+		// TODO MERGE IMBALANCE MATRIX
+	}
+}
+
+Imbalance SplitgraphUtil::calculateProcessInternalImbalanceLocal(ParallelBGLSignedGraph *g, ClusterArray& c) {
+
+	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	property_map<ParallelGraph, vertex_properties_t>::type name_map
+	  = get(vertex_properties, *(g->graph));
+
+	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	mpi_process_group pg = g->graph->process_group();
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+	  global_index(pg, num_vertices(*(g->graph)),
+				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
+	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+	  put(name_map, v, get(global_index, v));
 
 	double positiveSum = 0.0, negativeSum = 0.0;
-	int nc = c.getNumberOfClusters();
 	int n = g->getGlobalN();
-	ClusterArray myCluster = c.getClusterArray();
+	ClusterArray myCluster = c;
 	// local subgraph creation
 	LocalSubgraph lsg = make_local_subgraph(*(g->graph));
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, lsg);
 	LocalSubgraph::edge_descriptor e;
-
-	// creates a bool array where every cluster in process 'processNumber' is marked with 1
-	const std::vector<unsigned int> clusterProcessOrigin = c.getClusterProcessOrigin();
-	std::vector<bool> processContainsCluster(nc, false);
-	for(long k = 0; k < nc; k++) {
-		if(clusterProcessOrigin[k] == processNumber) {
-			processContainsCluster[k] = true;
-		}
-	}
-	// creates a bool array where every vertex in process 'processNumber' is marked with 1
-	std::vector<bool> processContainsVertex(n, false);
-	for(long i = 0; i < n; i++) {
-		if(processContainsCluster[myCluster[i]]) {  // the vertex belongs to this process
-			processContainsVertex[i] = true;
-		}
-	}
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] calculateProcessInternalImbalanceLocal...";
 
 	// For each vertex i that belongs to process 'processNumber'
 	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
-		int i = v.local;
-		if(processContainsVertex[i]) {  // TODO remove this if since it is now redundant
-			long ki = myCluster[i];
-			LocalSubgraph::out_edge_iterator f, l;
-			// For each out edge of i
-			for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
-				e = *f;
-				double weight = ew[e].weight;
-				long j = target(*f, lsg).local;
-				if(processContainsVertex[j]) {  // only takes into account vertices inside the process
-					long kj = myCluster[j];
-					bool sameCluster = (ki == kj);
-					if(weight < 0 and sameCluster) {  // negative edge
-						// i and j are in the same cluster
-						negativeSum += fabs(weight);
-					} else if(weight > 0 and (not sameCluster)) {  // positive edge
-						// i and j are NOT in the same cluster
-						positiveSum += weight;
-					}
-				}
+		int i = get(global_index, v);  // TODO trocado o local pelo global
+		long ki = myCluster[i];
+		LocalSubgraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
+			e = *f;
+			double weight = ew[e].weight;
+			long j = get(global_index, target(*f, lsg));  // TODO trocado o local pelo global
+			long kj = myCluster[j];
+			bool sameCluster = (ki == kj);
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are in the same cluster
+				negativeSum += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				positiveSum += weight;
 			}
 		}
 	}
 	return Imbalance(positiveSum, negativeSum);
+}
+
+// FUNCAO MODIFICADA PARA A BOOST PARALLEL BGL, OBTENDO OS DADOS DE CADA PROCESSO VIA CONSULTA POR MENSAGEM MPI
+std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClusters(SignedGraph& g,
+		Clustering& globalClustering) {
+	BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] obtainListOfImbalancedClusters invoked.";
+	mpi::communicator world;
+	int numberOfProcesses = world.size();
+	std::vector<Coordinate> result;
+	for(int px = 1; px < numberOfProcesses; px++) {
+		// worker processes, obtain answer via MPI
+		// TODO merge the other matrices
+		InputMessageSplitUtil imsg;
+		imsg.globalClustering = globalClustering;
+		imsg.functionRequested = InputMessageSplitUtil::obtainListOfImbalancedClusters;
+		world.send(px, MPIMessage::INPUT_MSG_SPLITUTIL_TAG, imsg);
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << px << ".";
+	}
+	// leader process
+	std::vector<Coordinate> clusterList = obtainListOfImbalancedClustersLocal(g, globalClustering);
+	// merge to result vector
+	result.insert(result.end(), clusterList.begin(), clusterList.end());
+	for(int i = 1; i < numberOfProcesses; i++) {
+		OutputMessageSplitUtil omsg;
+		mpi::status stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+		int tag = stat.tag();
+		int procNum = stat.source();
+		if(tag == MPIMessage::TERMINATE_MSG_TAG) {  // processing error
+			BOOST_LOG_TRIVIAL(error) << "Error message received from process " << procNum;
+			i++;
+			while(i < numberOfProcesses) {  // receive the remaining messages to empty the buffer
+				stat = world.recv(mpi::any_source, mpi::any_tag, omsg);
+				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << stat.source();
+				i++;
+			}
+			throw std::invalid_argument( "Error message received from slave. See error logs." );
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ".";
+		// TODO MERGE IMBALANCE MATRIX
+	}
+	return result;
+}
+
+std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClustersLocal(SignedGraph& g,
+		Clustering& globalClustering) {
+
+	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	property_map<ParallelGraph, vertex_properties_t>::type name_map
+	  = get(vertex_properties, *(g.graph));
+
+	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	mpi_process_group pg = g.graph->process_group();
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+	  global_index(pg, num_vertices(*(g.graph)),
+				   get(vertex_index, *(g.graph)), get(vertex_global, *(g.graph)));
+	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph)
+	  put(name_map, v, get(global_index, v));
+
+	long n = g.getN();
+	// local subgraph creation
+	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
+
+	LocalSubgraph::edge_descriptor e;
+	// Cluster to cluster matrix containing positive / negative contribution to imbalance
+	long nc = globalClustering.getNumberOfClusters();
+	ClusterArray globalCluster = globalClustering.getClusterArray();
+	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
+	matrix<double> clusterEdgeSumMatrix = zero_matrix<double>(nc, nc);
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+
+	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+		int i = get(global_index, v); // v.local;  // TROCADO POR GLOBAL
+		long ki = globalCluster[i];
+		LocalSubgraph::out_edge_iterator f, l;
+		// For each out edge of i
+		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
+			e = *f;
+			int targ = get(global_index, target(e, lsg));   // TROCADO POR GLOBAL
+			double weight = ew[e].weight;
+			bool sameCluster = (globalCluster[targ] == ki);
+			if(weight < 0 and sameCluster) {  // negative edge
+				// i and j are in the same cluster
+				clusterImbMatrix(ki, globalCluster[targ]) += fabs(weight);
+			} else if(weight > 0 and (not sameCluster)) {  // positive edge
+				// i and j are NOT in the same cluster
+				clusterImbMatrix(ki, globalCluster[targ]) += fabs(weight);
+			}
+			clusterEdgeSumMatrix(ki, globalCluster[targ]) += fabs(weight);
+		}
+	}
+
+	std::vector<Coordinate> imbalancedClusterList;
+	// For each cluster ki
+	for(long ki = 0; ki < nc; ki++) {
+		double percentageOfInternalNegativeEdges = 0.0;
+		double percentageOfExternalPositiveEdges = 0.0;
+
+		double sumOfInternalEdges = clusterEdgeSumMatrix(ki, ki);
+		double sumOfInternalNegativeEdges = clusterImbMatrix(ki, ki);
+		double sumOfExternalEdges = 0.0;
+		double sumOfPositiveExternalEdges = 0.0;
+		for(long kj = 0; kj < nc; kj++) {
+			if(ki != kj) {
+				sumOfExternalEdges += clusterEdgeSumMatrix(ki, kj) + clusterEdgeSumMatrix(kj, ki);
+				sumOfPositiveExternalEdges += clusterImbMatrix(ki, kj) + clusterImbMatrix(kj, ki);
+			}
+		}
+		if(sumOfInternalEdges > 0) {
+			percentageOfInternalNegativeEdges = (100 * sumOfInternalNegativeEdges) / sumOfInternalEdges;  // item A
+		}
+		if(sumOfExternalEdges > 0) {
+			percentageOfExternalPositiveEdges = (100 * sumOfPositiveExternalEdges) / sumOfExternalEdges;  // item B
+		}
+		double imbalancePercentage = max(percentageOfInternalNegativeEdges, percentageOfExternalPositiveEdges);
+		double imbalance = sumOfInternalNegativeEdges + sumOfPositiveExternalEdges;
+		//double imbalancePercentage = percentageOfExternalPositiveEdges;
+		//imbalancedClusterList.push_back(Coordinate(ki, globalClustering.getClusterSize(ki), imbalancePercentage));
+		// WHEN MOVING CLUSTERS BETWEEN PROCESSES, ORDERING BY CLUSTER IMBALANCE,
+		// THE USE OF ABSOLUTE IMBALANCE VALUES (BELOW) YIELDS BETTER RESULTS THAN PERCENTUAL IMBALANCE (ABOVE)
+		imbalancedClusterList.push_back(Coordinate(ki, globalClustering.getClusterSize(ki), imbalance));
+	}
+	return imbalancedClusterList;
 }
 
 /**
@@ -183,74 +578,6 @@ long SplitgraphUtil::chooseRandomVertex(std::list<VertexDegree>& vertexList, lon
 	return selectedVertex.id;
 }
 
-std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClusters(SignedGraph& g,
-		Clustering& globalClustering) {
-
-	long n = g.getN();
-	// local subgraph creation
-	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
-
-	LocalSubgraph::edge_descriptor e;
-	// Cluster to cluster matrix containing positive / negative contribution to imbalance
-	long nc = globalClustering.getNumberOfClusters();
-	ClusterArray globalCluster = globalClustering.getClusterArray();
-	matrix<double> clusterImbMatrix = zero_matrix<double>(nc, nc);
-	matrix<double> clusterEdgeSumMatrix = zero_matrix<double>(nc, nc);
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
-
-	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
-		int i = v.local;
-		long ki = globalCluster[i];
-		LocalSubgraph::out_edge_iterator f, l;
-		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
-			e = *f;
-			Vertex src = source(e, lsg).local, targ = target(e, lsg).local;
-			double weight = ew[e].weight;
-			bool sameCluster = (globalCluster[targ.id] == ki);
-			if(weight < 0 and sameCluster) {  // negative edge
-				// i and j are in the same cluster
-				clusterImbMatrix(ki, globalCluster[targ.id]) += fabs(weight);
-			} else if(weight > 0 and (not sameCluster)) {  // positive edge
-				// i and j are NOT in the same cluster
-				clusterImbMatrix(ki, globalCluster[targ.id]) += fabs(weight);
-			}
-			clusterEdgeSumMatrix(ki, globalCluster[targ.id]) += fabs(weight);
-		}
-	}
-
-	std::vector<Coordinate> imbalancedClusterList;
-	// For each cluster ki
-	for(long ki = 0; ki < nc; ki++) {
-		double percentageOfInternalNegativeEdges = 0.0;
-		double percentageOfExternalPositiveEdges = 0.0;
-
-		double sumOfInternalEdges = clusterEdgeSumMatrix(ki, ki);
-		double sumOfInternalNegativeEdges = clusterImbMatrix(ki, ki);
-		double sumOfExternalEdges = 0.0;
-		double sumOfPositiveExternalEdges = 0.0;
-		for(long kj = 0; kj < nc; kj++) {
-			if(ki != kj) {
-				sumOfExternalEdges += clusterEdgeSumMatrix(ki, kj) + clusterEdgeSumMatrix(kj, ki);
-				sumOfPositiveExternalEdges += clusterImbMatrix(ki, kj) + clusterImbMatrix(kj, ki);
-			}
-		}
-		if(sumOfInternalEdges > 0) {
-			percentageOfInternalNegativeEdges = (100 * sumOfInternalNegativeEdges) / sumOfInternalEdges;  // item A
-		}
-		if(sumOfExternalEdges > 0) {
-			percentageOfExternalPositiveEdges = (100 * sumOfPositiveExternalEdges) / sumOfExternalEdges;  // item B
-		}
-		double imbalancePercentage = max(percentageOfInternalNegativeEdges, percentageOfExternalPositiveEdges);
-		double imbalance = sumOfInternalNegativeEdges + sumOfPositiveExternalEdges;
-		//double imbalancePercentage = percentageOfExternalPositiveEdges;
-		//imbalancedClusterList.push_back(Coordinate(ki, globalClustering.getClusterSize(ki), imbalancePercentage));
-		// WHEN MOVING CLUSTERS BETWEEN PROCESSES, ORDERING BY CLUSTER IMBALANCE,
-		// THE USE OF ABSOLUTE IMBALANCE VALUES (BELOW) YIELDS BETTER RESULTS THAN PERCENTUAL IMBALANCE (ABOVE)
-		imbalancedClusterList.push_back(Coordinate(ki, globalClustering.getClusterSize(ki), imbalance));
-	}
-	return imbalancedClusterList;
-}
 
 std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(ParallelBGLSignedGraph& g,
 		const ProcessClustering& processClustering, long maximumNumberOfVertices) {
@@ -289,103 +616,6 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfOverloadedProcesses(Parallel
 	return obtainListOfOverloadedProcesses(g, processClustering, numberOfEquallyDividedVertices);
 }
 
-// TODO REIMPLEMENTAR DE ACORDO COM A BOOST PBGL
-ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrix(SignedGraph& g, ClusterArray& myCluster,
-		std::vector< pair<long, double> >& vertexImbalance, const int& numberOfProcesses) {
-
-	long nc = numberOfProcesses;
-	long n = g.getN();
-	LocalSubgraph::edge_descriptor e;
-	// local subgraph creation
-	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
-	// Process to process matrix containing positive / negative contribution to imbalance
-	ImbalanceMatrix clusterImbMatrix(nc);
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
-	// Vector containing each vertex contribution to imbalance: vertexImbalance
-	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
-
-	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
-		int i = v.local;
-		long ki = myCluster[i];
-		LocalSubgraph::out_edge_iterator f, l;
-		double positiveSum = double(0.0), negativeSum = double(0.0);
-		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
-			e = *f;
-			Vertex src = source(e, lsg).local, targ = target(e, lsg).local;
-			double weight = ew[e].weight;
-			bool sameCluster = (myCluster[targ.id] == ki);
-			if(weight < 0 and sameCluster) {  // negative edge
-				// i and j are in the same cluster
-				negativeSum += fabs(weight);
-				clusterImbMatrix.neg(ki, myCluster[targ.id]) += fabs(weight);
-			} else if(weight > 0 and (not sameCluster)) {  // positive edge
-				// i and j are NOT in the same cluster
-				positiveSum += weight;
-				clusterImbMatrix.pos(ki, myCluster[targ.id]) += fabs(weight);
-			}
-		}
-		vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
-	}
-	return clusterImbMatrix;
-}
-
-void SplitgraphUtil::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
-			const ClusterArray& previousSplitgraphClusterArray,
-			const ClusterArray& newSplitgraphClusterArray, const std::vector<long>& listOfModifiedVertices,
-			ImbalanceMatrix& processClusterImbMatrix, const int& numberOfProcesses) {
-
-	long nc = numberOfProcesses;
-	long n = g.getN();
-	ParallelGraph::edge_descriptor e;
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
-	// local subgraph creation
-	// LocalSubgraph lsg = make_local_subgraph(*(g.graph));
-
-	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
-	// TODO: ALTERAR FORMA DE BUSCAR AS ARESTAS A PARTIR DO NUMERO DO VERTICE, POIS O NUMERO I EH ID GLOBAL DO VERTICE
-	// FIXME CADA PROCESSO DEVE ATUALIZAR A PARTE QUE LHE CABE NA MATRIZ, DE MANEIRA DISTRIBUIDA (DISTRIBUTED PROPERTY MAP) ?
-	// For each vertex i in listOfModifiedVertices
-	for(long item = 0; item < listOfModifiedVertices.size(); item++) {
-		long i = listOfModifiedVertices[item];
-		long old_ki = previousSplitgraphClusterArray[i];
-		long new_ki = newSplitgraphClusterArray[i];
-		ParallelGraph::out_edge_iterator f, l;
-		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
-			e = *f;
-			Vertex src = source(e, *(g.graph)).local, targ = target(e, *(g.graph)).local;
-			double weight = ew[e].weight;
-			// Etapa 1: subtracao dos imbalances antigos
-			long old_kj = previousSplitgraphClusterArray[targ.id];
-			bool sameCluster = (old_kj == old_ki);
-			// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
-			if(weight < 0 and sameCluster) {  // negative edge
-				// i and j were in the same cluster
-				processClusterImbMatrix.neg(old_ki, old_kj) -= fabs(weight);
-				processClusterImbMatrix.neg(old_kj, old_ki) -= fabs(weight);
-			} else if(weight > 0 and (not sameCluster)) {  // positive edge
-				// i and j were NOT in the same cluster
-				processClusterImbMatrix.pos(old_ki, old_kj) -= fabs(weight);
-				processClusterImbMatrix.pos(old_kj, old_ki) -= fabs(weight);
-			}
-			// Etapa 2: acrescimo dos novos imbalances
-			long new_kj = newSplitgraphClusterArray[targ.id];
-			sameCluster = (new_kj == new_ki);
-			if(weight < 0 and sameCluster) {  // negative edge
-				// i and j are now in the same cluster
-				processClusterImbMatrix.neg(new_ki, new_kj) += fabs(weight);
-				processClusterImbMatrix.neg(new_kj, new_ki) += fabs(weight);
-			} else if(weight > 0 and (not sameCluster)) {  // positive edge
-				// i and j are NOT in the same cluster
-				processClusterImbMatrix.pos(new_ki, new_kj) += fabs(weight);
-				processClusterImbMatrix.pos(new_kj, new_ki) += fabs(weight);
-			}
-		}
-		// NAO EH NECESSARIO ATUALIZAR O VERTEX IMBALANCE ABAIXO, POIS A BUSCA LOCAL (VND) EH FIRST IMPROVEMENT
-		// vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
-	}
-}
 
 Coordinate SplitgraphUtil::findMaximumElementInMatrix(ImbalanceMatrix &mat) {
 	int x = 0, y = 0;
@@ -695,56 +925,6 @@ bool SplitgraphUtil::isPseudoClique(SignedGraph *g, ClusterArray& cliqueCCluster
 	percOfNegativeConnections = negativeEdgeCountV / (double)totalEdgeCountV;
 	return ( percOfPositiveConnections >= POS_EDGE_PERC_RELAX )
 				and ( percOfNegativeConnections <= NEG_EDGE_PERC_RELAX );
-}
-
-std::vector<Imbalance> SplitgraphUtil::calculateProcessInternalImbalance(SignedGraph& g,
-		ClusterArray& splitGraphCluster, ClusterArray& globalCluster, int numberOfProcesses) {
-
-	long n = g.getN();
-	// local subgraph creation
-	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
-	LocalSubgraph::edge_descriptor e;
-	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
-	std::vector<Imbalance> processInternalImbalance;
-	// TODO REFAZER ESSA FUNCAO PARA A BOOST PARALLEL BGL, OBTENDO O IMBALANCE DE CADA PROCESSO VIA CONSULTA POR MENSAGEM MPI
-
-	for(int px = 0; px < numberOfProcesses; px++) {
-		// For each vertex i
-		double positiveSum = double(0.0), negativeSum = double(0.0);
-		for(long i = 0; i < n; i++) {
-			if(splitGraphCluster[i] == px) {
-				long ki = globalCluster[i];
-				LocalSubgraph::out_edge_iterator f, l;
-				// For each out edge of i
-				for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
-					e = *f;
-					Vertex src = source(e, *(g.graph)).local, targ = target(e, *(g.graph)).local;
-					long j = targ.id;
-					if(splitGraphCluster[j] == px) {
-						long kj = globalCluster[targ.id];
-						double weight = ew[e].weight;
-						bool sameCluster = (kj == ki);
-						if(weight < 0 and sameCluster) {  // negative edge
-							// i and j are in the same cluster
-							negativeSum += fabs(weight);
-						} else if(weight > 0 and (not sameCluster)){ // and ((kj == processPair.x) or (kj == processPair.y))) {  // positive edge
-							// only counts the imbalance between the clusters / processes in the processPair (x and y)
-							// i and j are NOT in the same cluster
-							positiveSum += weight;
-						}
-					}
-				}
-			}
-		}
-		processInternalImbalance.push_back(Imbalance(positiveSum, negativeSum));
-	}
-	stringstream ss;
-	ss << "Calulated InternalImbalanceVector: ";
-	for(int x = 0; x < numberOfProcesses; x++) {
-		ss << processInternalImbalance[x].getValue() << " ";
-	}
-	BOOST_LOG_TRIVIAL(info) << ss.str();
-	return processInternalImbalance;
 }
 
 

@@ -26,6 +26,23 @@ namespace bser = boost::serialization;
 
 namespace util {
 
+class Coordinate {
+public:
+	int x, y;
+	double value;
+	Coordinate() : x(0), y(0), value(0.0) { }
+	Coordinate(int a, int b, double vl = 0.0) : x(a), y(b), value(vl) { }
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & x;
+		ar & y;
+		ar & value;
+	}
+};
+
 /**
  * Abstract input message class for use with MPI.
  */
@@ -336,6 +353,76 @@ public:
 	}
 };
 
+class InputMessageSplitUtil {
+public:
+	static const int calculateProcessToProcessImbalanceMatrix = 1;
+	static const int updateProcessToProcessImbalanceMatrix = 2;
+	static const int calculateProcessInternalImbalance = 3;
+	static const int obtainListOfImbalancedClusters = 4;
+
+	// SignedGraph g;
+	ClusterArray myCluster;
+	std::vector< std::pair<long, double> > vertexImbalance;
+	int numberOfProcesses;
+	ClusterArray previousSplitgraphClusterArray;
+	ClusterArray newSplitgraphClusterArray;
+	std::vector<long> listOfModifiedVertices;
+	ImbalanceMatrix processClusterImbMatrix;
+	ClusterArray splitGraphCluster;
+	ClusterArray globalCluster;
+	Clustering globalClustering;
+	int functionRequested;
+
+	InputMessageSplitUtil() : myCluster(), vertexImbalance(), numberOfProcesses(0),
+			previousSplitgraphClusterArray(), newSplitgraphClusterArray(), listOfModifiedVertices(),
+			processClusterImbMatrix(), splitGraphCluster(), globalCluster(), globalClustering(),
+			functionRequested(0) {
+
+	}
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		// ar & g;
+		ar & myCluster;
+		ar & vertexImbalance;
+		ar & numberOfProcesses;
+		ar & previousSplitgraphClusterArray;
+		ar & newSplitgraphClusterArray;
+		ar & listOfModifiedVertices;
+		ar & processClusterImbMatrix;
+		ar & splitGraphCluster;
+		ar & globalCluster;
+		ar & globalClustering;
+		ar & functionRequested;
+	}
+};
+
+class OutputMessageSplitUtil {
+public:
+	ImbalanceMatrix imbalanceMatrix;
+	Imbalance imbalance;
+	std::vector<Coordinate> listOfImbalancedClusters;
+
+	OutputMessageSplitUtil() : imbalanceMatrix(), imbalance(), listOfImbalancedClusters() {
+
+	}
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & imbalanceMatrix;
+		ar & imbalance;
+		ar & listOfImbalancedClusters;
+	}
+};
+
+
+// std::vector<Coordinate> clusterList = obtainListOfImbalancedClustersLocal(g, globalClustering);
+
+
 class MPIMessage {
 public:
 	// Message with the number of heuristic masters
@@ -350,6 +437,9 @@ public:
 	static const int INPUT_MSG_PARALLEL_VND_TAG = 70;
 	static const int OUTPUT_MSG_PARALLEL_VND_TAG = 80;
 	static const int INTERRUPT_MSG_PARALLEL_VND_TAG = 85;
+	// Splitgraph util message tag
+	static const int INPUT_MSG_SPLITUTIL_TAG = 30;
+	static const int OUTPUT_MSG_SPLITUTIL_TAG = 35;
 	// Other tags
 	static const int TERMINATE_MSG_TAG = 90;
 	static const int LEADER_ID = 0;

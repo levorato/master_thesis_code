@@ -2771,6 +2771,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 			graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
 			BOOST_LOG_TRIVIAL(info) << "Obtaining individual global_index...";
 			for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
+				// BOOST_LOG_TRIVIAL(info) << "Local vertex " << vi->local << " is global vertex " << get(global_index, *vi);
 				globalVertexId.push_back(get(global_index, *vi));
 			}
 		}
