@@ -1755,7 +1755,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
 			imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcessA);
 			imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcessB);
-			imsg2.cudaEnabled = true;
+			imsg3.cudaEnabled = true;
 			if(workerProcess1 != leaderProcess) {
 				world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 			} else { leaderParticipates = 1; }
