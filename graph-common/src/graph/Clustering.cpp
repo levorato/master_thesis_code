@@ -295,7 +295,19 @@ void Clustering::removeAllClustersFromProcess(SignedGraph *g, unsigned int proce
 		// removes the cluster c
 		long clusterNumber = clustersToRemove.back();
 		clustersToRemove.pop_back();
-		this->removeCluster(*g, clusterNumber);
+		//this->removeCluster(*g, clusterNumber);
+		assert(clusterArray.size() > 0);
+		// only if cluster has been removed
+		clusterSize.erase(clusterSize.begin()+clusterNumber);
+		processOrigin.erase(processOrigin.begin()+clusterNumber);
+		// if cluster k was removed, all cluster numbers above k
+		// must be subtracted by one
+		long n = g->getGlobalN();
+		for(long i = 0; i < n; i++) {
+			if(clusterArray[i] > clusterNumber) {
+				clusterArray[i]--;
+			}
+		}
 	}
 }
 

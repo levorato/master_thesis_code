@@ -74,35 +74,39 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 	property_map<ParallelGraph, vertex_properties_t>::type name_map
 	  = get(vertex_properties, *(g.graph));
 
-	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtaining global_index...";
 	mpi_process_group pg = g.graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g.graph)),
 				   get(vertex_index, *(g.graph)), get(vertex_global, *(g.graph)));
-	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtaining name_map...";
 	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph)
 	  put(name_map, v, get(global_index, v));
 
 	long nc = numberOfProcesses;
 	long n = g.getN();
-	LocalSubgraph::edge_descriptor e;
+	ParallelGraph::edge_descriptor e;
 	// local subgraph creation
-	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
+	// LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 	// Process to process matrix containing positive / negative contribution to imbalance
 	ImbalanceMatrix clusterImbMatrix(nc);
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	// Vector containing each vertex contribution to imbalance: vertexImbalance
 	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
 
-	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
+	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph) {  // For each vertex v
 		int i = get(global_index, v); // v.local;   // TODO TROCADO PELO GLOBAL
+		// BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing global vertex " << i << " from process " << v.owner;
 		long ki = myCluster[i];
-		LocalSubgraph::out_edge_iterator f, l;
+		ParallelGraph::out_edge_iterator f, l;
 		double positiveSum = double(0.0), negativeSum = double(0.0);
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
 			e = *f;
-			int targ = get(global_index, target(e, lsg));  // TODO TROCADO PELO GLOBAL
+			int v_targ_local = target(e, *(g.graph)).local;
+			// BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << v_targ_local
+			//		<< " from processor " << target(e, *(g.graph)).owner;
+			int targ = get(global_index, target(e, *(g.graph)));  // TODO TROCADO PELO GLOBAL
 			double weight = ew[e].weight;
 			bool sameCluster = (myCluster[targ] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
@@ -117,6 +121,7 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 		}
 		vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
 	}
+	BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Done.";
 	return clusterImbMatrix;
 }
 
@@ -157,8 +162,6 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
 		}
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message received from process " << procNum << ".";
 		// MERGE IMBALANCE MATRIX
-		BOOST_LOG_TRIVIAL(debug) << "Matrix dimensions rs: " << processClusterImbMatrix.neg.size1() << "x" << processClusterImbMatrix.neg.size2();
-		BOOST_LOG_TRIVIAL(debug) << "Matrix dimensions omsg: " << omsg.imbalanceMatrix.neg.size1() << "x" << omsg.imbalanceMatrix.neg.size2();
 		processClusterImbMatrix += omsg.imbalanceMatrix;
 	}
 }
@@ -173,21 +176,21 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 	property_map<ParallelGraph, vertex_properties_t>::type name_map
 	  = get(vertex_properties, *(g.graph));
 
-	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	BOOST_LOG_TRIVIAL(info) << "[updateProcessToProcessImbalanceMatrixLocal] Obtaining global_index...";
 	mpi_process_group pg = g.graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g.graph)),
 				   get(vertex_index, *(g.graph)), get(vertex_global, *(g.graph)));
-	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BOOST_LOG_TRIVIAL(info) << "[updateProcessToProcessImbalanceMatrixLocal] Obtaining name_map...";
 	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph)
 	  put(name_map, v, get(global_index, v));
 
 	long nc = numberOfProcesses;
 	long n = g.getN();
-	LocalSubgraph::edge_descriptor e;
-	boost::property_map<LocalSubgraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	ParallelGraph::edge_descriptor e;
+	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 	// local subgraph creation
-	LocalSubgraph lsg = make_local_subgraph(*(g.graph));
+	// LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
 	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
 	// TODO: ALTERAR FORMA DE BUSCAR AS ARESTAS A PARTIR DO NUMERO DO VERTICE, POIS O NUMERO I EH ID GLOBAL DO VERTICE
@@ -200,12 +203,14 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 		long old_ki = previousSplitgraphClusterArray[i];
 		long new_ki = newSplitgraphClusterArray[i];
 		if(old_ki != new_ki) {
-			BOOST_LOG_TRIVIAL(debug) << "Processing vertex " << i;
+			// BOOST_LOG_TRIVIAL(debug) << "[updateProcessToProcessImbalanceMatrixLocal] Processing vertex " << i << " from process " << v.owner;
 			ParallelGraph::out_edge_iterator f, l;
-			// For each out edge of i
-			for (boost::tie(f, l) = out_edges(vertex(i, *(g.graph)), *(g.graph)); f != l; ++f) {
+			// For each out edge of v
+			for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
 				e = *f;
 				int targ = get(global_index, target(e, *(g.graph)));   // TODO TROCADO PELO GLOBAL
+				// BOOST_LOG_TRIVIAL(info) << "[updateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << targ
+				// 					<< " from processor " << target(e, *(g.graph)).owner;
 				double weight = ew[e].weight;
 				// Etapa 1: subtracao dos imbalances antigos
 				long old_kj = previousSplitgraphClusterArray[targ];

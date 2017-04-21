@@ -891,7 +891,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 				for(long v = 0; v < localClusterArray.size(); v++) {
 					// Obtains vertex v's number in the global graph
 					long vglobal = msg.globalVertexId[v];
-					BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Processing global vertex " << vglobal;
+					// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Processing global vertex " << vglobal;
 					globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
 				}
 				clusterOffset += msg_nc;
@@ -906,7 +906,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 
 		// Realiza a movimentacao dos vertices de um cluster especifico (cluster move) para o processo de destino
 		for(long elem = 0; elem < listOfModifiedVertices.size(); elem++) {
-			BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Global vertex " << listOfModifiedVertices[elem] << " goes to process " << destinationProcess;
+			// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Global vertex " << listOfModifiedVertices[elem] << " goes to process " << destinationProcess;
 			tempSplitgraphClusterArray[listOfModifiedVertices[elem]] = destinationProcess;
 		}
 		// O RECALCULO DA MATRIZ ABAIXO EH FEITO DE FORMA INCREMENTAL, reutilizando a matrix processClusterImbMatrix
@@ -984,9 +984,12 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 				// The internal and external imbalance values of the participating processes must be updated
 				moveClusterToDestinationProcessZeroCost(g, bestClustering, bestSplitgraphClustering, clusterToMove,
 						sourceProcess, destinationProcess);
-				Imbalance imbSrc = util.calculateProcessInternalImbalance(g, bestClustering, sourceProcess);
+				ClusterArray bestClusterArray = bestClustering.getClusterArray();
+				std::vector<Imbalance> processInternalImbalance = util.calculateProcessInternalImbalance(*g, bestClusterArray,
+																			globalClusterArray, numberOfProcesses);
+				Imbalance imbSrc = processInternalImbalance[sourceProcess];
 				bestClustering.setProcessImbalance(sourceProcess, imbSrc);
-				Imbalance imbDest = util.calculateProcessInternalImbalance(g, bestClustering, destinationProcess);
+				Imbalance imbDest = processInternalImbalance[destinationProcess];
 				bestClustering.setProcessImbalance(destinationProcess, imbDest);
 
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Zero-cost moveCluster1opt improving solution found! I(P) = "
@@ -1498,10 +1501,11 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 													<< bestGlobalClustering.getImbalance().getValue();
 
 					// But must update the internal process imbalance
-					bestGlobalClustering.setProcessImbalance(sourceProcess,
-							util.calculateProcessInternalImbalance(g, bestGlobalClustering, sourceProcess));
-					bestGlobalClustering.setProcessImbalance(destinationProcess,
-							util.calculateProcessInternalImbalance(g, bestGlobalClustering, destinationProcess));
+					ClusterArray bestClusterArray = bestGlobalClustering.getClusterArray();
+					std::vector<Imbalance> processInternalImbalance = util.calculateProcessInternalImbalance(*g, bestClusterArray,
+																				globalClusterArray, numberOfProcesses);
+					bestGlobalClustering.setProcessImbalance(sourceProcess, processInternalImbalance[sourceProcess]);
+					bestGlobalClustering.setProcessImbalance(destinationProcess, processInternalImbalance[destinationProcess]);
 					bestClustering = bestGlobalClustering;
 
 					// Must update the imbalance matrix between processes as well
@@ -2028,12 +2032,12 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 													<< bestGlobalClustering.getImbalance().getValue();
 
 					// But must update the internal process imbalance
-					bestGlobalClustering.setProcessImbalance(sourceProcess,
-							util.calculateProcessInternalImbalance(g, bestClustering, sourceProcess));
-					bestGlobalClustering.setProcessImbalance(destinationProcessA,
-							util.calculateProcessInternalImbalance(g, bestClustering, destinationProcessA));
-					bestGlobalClustering.setProcessImbalance(destinationProcessB,
-							util.calculateProcessInternalImbalance(g, bestClustering, destinationProcessB));
+					ClusterArray bestClusterArray = bestClustering.getClusterArray();
+					std::vector<Imbalance> processInternalImbalance = util.calculateProcessInternalImbalance(*g, bestClusterArray,
+																				globalClusterArray, numberOfProcesses);
+					bestGlobalClustering.setProcessImbalance(sourceProcess, processInternalImbalance[sourceProcess]);
+					bestGlobalClustering.setProcessImbalance(destinationProcessA, processInternalImbalance[destinationProcessA]);
+					bestGlobalClustering.setProcessImbalance(destinationProcessB, processInternalImbalance[destinationProcessB]);
 
 					bestClustering = bestGlobalClustering;
 
@@ -2688,8 +2692,13 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 		std::vector<unsigned int> clusterProcessOrigin;
 		std::vector<Imbalance> internalImbalance;
 		ClusterArray cArray(g->getN(), Clustering::NO_CLUSTER);
-		bestClustering = Clustering(cArray, *g, problemFactory.build(imsgpils.problemType, imsgpils.k),
-				0.0, 0.0, clusterProcessOrigin, internalImbalance);
+		CCProblem ccProblem;
+		if(g->getN() > 0) {
+			bestClustering = Clustering(cArray, *g, ccProblem, 0.0, 0.0, clusterProcessOrigin, internalImbalance);
+		} else {
+			ClusterArray cArray2(10, Clustering::NO_CLUSTER);
+			bestClustering = Clustering(cArray2, *g, ccProblem, 0.0, 0.0, clusterProcessOrigin, internalImbalance);
+		}
 		// n = 0;
 		e = 0;
 		return OutputMessage(bestClustering, 0, 0.0, globalVertexId, 0, 0);
