@@ -60,6 +60,10 @@ public:
 		splitgraphClustering = cl;
 	}
 
+	void setInterProcessImbalanceMatrix(ImbalanceMatrix& ipiMtx) {
+		interProcessImbalanceMatrix = ipiMtx;
+	}
+
 private:
 
 	Clustering splitgraphClustering;

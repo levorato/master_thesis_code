@@ -184,12 +184,13 @@ public:
 	bool isParallelGraph;  // indicates that parallel graph from boost parallel bgl is being used
 	bool runILS;  // indicates that local ILS must run in the process
 	bool redistributeVertices;
+	ClusterArray splitgraphClusterArray;
 
 	InputMessageParallelILS() : InputMessage(),
 			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
 			iterMaxILS(3), perturbationLevelMax(7), CCclustering(), isSplitGraph(true), vertexList(),
-			isParallelGraph(true), runILS(true), redistributeVertices(true) {
+			isParallelGraph(true), runILS(true), redistributeVertices(true), splitgraphClusterArray() {
 
 	}
 
@@ -197,7 +198,8 @@ public:
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
 			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel,
 			long numberOfClustersInSolution = 0, bool cuda = false, Clustering* cl = NULL,
-			bool parallelgraph = true, bool runILSproc = true, bool redistVertices = true) :
+			bool parallelgraph = true, bool runILSproc = true, bool redistVertices = true,
+			ClusterArray* splitgraphCArray = NULL) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves, cuda),
 					alpha(a), iter(it), gainFunctionType(gfType),
 					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
@@ -207,6 +209,9 @@ public:
 					redistributeVertices(redistVertices) {
 			if(cl != NULL) {
 				CCclustering = *cl;
+			}
+			if(splitgraphCArray != NULL) {
+				splitgraphClusterArray = *splitgraphCArray;
 			}
 	}
 
@@ -261,6 +266,7 @@ public:
 		ar & isParallelGraph;
 		ar & runILS;
 		ar & redistributeVertices;
+		ar & splitgraphClusterArray;
 	}
 };
 
