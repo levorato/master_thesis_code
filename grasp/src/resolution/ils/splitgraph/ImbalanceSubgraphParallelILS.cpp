@@ -452,7 +452,7 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBet
 	std::vector<int> slaveList;
 	MPIUtil::populateListOfMasters(machineProcessAllocationStrategy, slaveList, info.processRank, numberOfSlaves, numberOfSearchSlaves);
 
-	long n = g->getN();
+	// long n = g->getN();
 	unsigned int numberOfProcesses = numberOfSlaves + 1;
 	// max number of clusters (RCC Problem Only)
 	long k = 0;
@@ -671,6 +671,8 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
 	const ImbalanceMatrix initialProcessClusterImbMatrix = bestSplitgraphClustering.getInterProcessImbalanceMatrix();
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best global solution so far: I(P) = " << bestClustering.getImbalance().getValue();
+	assert(splitgraphClusterArray.size() == g->getGlobalN());
+	assert(bestClustering.getClusterArray().size() == g->getGlobalN());
 	long nc = bestClustering.getNumberOfClusters();
 	std::vector<unsigned int> clusterProcessOrigin = bestClustering.getClusterProcessOrigin();
 	// ----------------------------------------------------------------------
@@ -911,6 +913,8 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 					// Obtains vertex v's number in the global graph
 					long vglobal = msg.globalVertexId[v];
 					// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Processing global vertex " << vglobal;
+					// BOOST_LOG_TRIVIAL(debug) << "vglobal = " << vglobal;
+					assert(vglobal < globalClusterArray.size());
 					globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
 				}
 				clusterOffset += msg_nc;
@@ -2661,25 +2665,6 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	int myRank = world.rank();
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] runILSLocallyOnSubgraph()";
 
-	BOOST_LOG_TRIVIAL(info) << "Invoking Parallel Graph global vertex mapping...";
-	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
-	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
-	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	property_map<ParallelGraph, vertex_properties_t>::type name_map
-	  = get(vertex_properties, *(g->graph));
-
-	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
-	mpi_process_group pg = g->graph->process_group();
-	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
-	  global_index(pg, num_vertices(*(g->graph)),
-				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
-	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
-	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-	  put(name_map, v, get(global_index, v));
-
-	// BOOST_LOG_TRIVIAL(info) << "Obtaining processor_map...";
-	// property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
-
 	// only redistributes vertices if vertexList has information available
 	// otherwise this method is being called from distributed ils initialization, when no movement occurs
 	if(imsgpils.redistributeVertices) {
@@ -2706,6 +2691,38 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Vertex redistribution disabled.";
 	}
 
+	// FIXME Obtains the updated globalVertexId array
+	BOOST_LOG_TRIVIAL(info) << "Invoking Parallel Graph global vertex mapping...";
+	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
+	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+	property_map<ParallelGraph, vertex_properties_t>::type name_map
+	  = get(vertex_properties, *(g->graph));
+
+	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	mpi_process_group pg = g->graph->process_group();
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+	  global_index(pg, num_vertices(*(g->graph)),
+				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
+	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
+	  put(name_map, v, get(global_index, v));
+
+	// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
+	// global vertex id array used in split graph
+	std::vector<long> globalVertexId;
+	if(parallelgraph) {
+		graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
+		BOOST_LOG_TRIVIAL(info) << "Obtaining individual global_index...";
+		for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
+			// BOOST_LOG_TRIVIAL(info) << "Local vertex " << vi->local << " is global vertex " << get(global_index, *vi);
+			globalVertexId.push_back(get(global_index, *vi));
+		}
+	}
+
+	// BOOST_LOG_TRIVIAL(info) << "Obtaining processor_map...";
+	// property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
+
 	// triggers the local ILS routine
 	// Chooses between the sequential or parallel search algorithm
 	NeighborhoodSearch* neigborhoodSearch;
@@ -2726,8 +2743,6 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	resolution::ils::ILS resolution;
 	resolution::ils::CUDAILS CUDAILS;
 	clusteringgraph::Clustering bestClustering;
-	// global vertex id array used in split graph
-	std::vector<long> globalVertexId;
 	// time spent on processing
 	double timeSpent = 0.0;
 	// info about the processed graph
@@ -2754,7 +2769,8 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 		}
 		// n = 0;
 		e = 0;
-		return OutputMessage(bestClustering, 0, 0.0, globalVertexId, 0, 0);
+		OutputMessage omsg(bestClustering, 0, 0.0, globalVertexId, 0, 0);
+		return omsg;
 	} else {
 		// TODO TROCAR POR METODO EQUIVALENTE DA PARALLEL BGL
 		// clusteringgraph::SignedGraph sg(*(g->graph), vertexList);
@@ -2828,16 +2844,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 			timeSpent = resolution.getTotalTimeSpent();
 			num_comb = resolution.getNumberOfTestedCombinations();
 		}
-		// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
-		BOOST_LOG_TRIVIAL(info) << "Invoking Parallel Graph global vertex mapping 0...";
-		if(parallelgraph) {
-			graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
-			BOOST_LOG_TRIVIAL(info) << "Obtaining individual global_index...";
-			for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
-				// BOOST_LOG_TRIVIAL(info) << "Local vertex " << vi->local << " is global vertex " << get(global_index, *vi);
-				globalVertexId.push_back(get(global_index, *vi));
-			}
-		}
+
 		assert(bestClustering.getClusterArray().size() == num_vertices(*(g->graph)));
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P" << comm.rank() << ": num_edges = " <<
 								num_edges(*(g->graph)) << " , num_vertices = " << num_vertices(*(g->graph)) << ", I(P) = "
