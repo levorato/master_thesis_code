@@ -182,7 +182,7 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructCl
 			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
 			break;
 		}
-	} while(improvements > 0);
+	} while(improvements > 0 and executionCount < 1);
 
 	// prints all the info about time spent in each distributed MH invocation
 	for(int it = 0; it < timeSpentAtIteration.size(); it++) {
@@ -591,6 +591,12 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBet
 		internalImbalancePosSum += internalImbalance.getPositiveValue();
 		internalImbalanceNegSum += internalImbalance.getNegativeValue();
 
+		for(long v = 0; v < localClusterArray.size(); v++) {
+			// Obtains vertex v's number in the global graph
+			long vglobal = omsg.globalVertexId[v];
+			splitClusterArray[vglobal] = procNum;
+		}
+
 		long msg_nc = omsg.clustering.getNumberOfClusters();
 		if(msg_nc > 0) {
 			BOOST_LOG_TRIVIAL(info) << "localClusterArray.size() = " << localClusterArray.size();
@@ -601,8 +607,6 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBet
 				// Obtains vertex v's number in the global graph
 				long vglobal = omsg.globalVertexId[v];
 				globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
-				splitClusterArray[vglobal] = procNum;
-
 				/*
 				BOOST_LOG_TRIVIAL(info) << "Vertex " << v << " in local solution of process P" << procNum <<
 						" becomes vertex " << vglobal <<
@@ -810,7 +814,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 		for(int pr = 1; pr < np; pr++) {
 			if((pr != destinationProcess) and (pr != sourceProcess)) {
 				InputMessageParallelILS imsg4 = imsg;
-				imsg4.runILS = false;
+				imsg4.runILS = true;  // FIXME trocar de volta para false
 				imsg4.setVertexList(verticesInProcess[pr]);
 				world.send(pr, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg4);
 				messagesSent.push_back(imsg4);
@@ -844,6 +848,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 			imsg4.setVertexList(verticesInProcess[0]);
 			imsg4.splitgraphClusterArray = tempSplitgraphClusterArray;
 			OutputMessage leaderProcessingMessage = runILSLocallyOnSubgraph(imsg4, g);
+			messageMap[leaderProcess] = leaderProcessingMessage;
 		}
 
 		// STEP 3: the leader receives the processing results
@@ -942,6 +947,57 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 		util.updateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, tempSplitgraphClusterArray,
 				listOfModifiedVertices, tempProcessClusterImbMatrix, numberOfSlaves + 1);
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
+
+
+
+		// FIXME remover codigo de validacao
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** VALIDATION *** Calculating internal process imbalance matrix...";
+		std::vector<Imbalance> internalProcessImbalanceValidation = util.calculateProcessInternalImbalance(*g,
+									tempSplitgraphClusterArray, globalClusterArray, numberOfSlaves + 1);
+		Imbalance internalImbalanceValidation = util.calculateInternalImbalanceSumOfAllProcesses(internalProcessImbalanceValidation);
+		Imbalance tmpinternalImbalance = util.calculateInternalImbalanceSumOfAllProcesses(newInternalProcessImbalance);
+		bool imbIgual = tmpinternalImbalance == internalImbalanceValidation;
+		BOOST_LOG_TRIVIAL(info) << "OpX *** Os imbalances internos sao iguais: " << imbIgual;
+		if(not imbIgual) {
+			stringstream ss1, ss2;
+			ss1 << "Vetor imbalance algoritmo: ";
+			ss2 << "Vetor imbalance VALIDACAO: ";
+			for(int p = 0; p < np; p++) {
+				ss1 << newInternalProcessImbalance[p].getValue() << " ";
+				ss2 << internalProcessImbalanceValidation[p].getValue() << " ";
+			}
+			BOOST_LOG_TRIVIAL(info) << ss1.str();
+			BOOST_LOG_TRIVIAL(info) << ss2.str();
+		}
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** SPLITGRAPH ARRAY VALIDATION ***";
+		for(int p = 0; p < np; p++) {
+			OutputMessage omsg = messageMap[p];
+			ClusterArray splitgraphArray = omsg.splitgraphClusterArray;
+			BOOST_LOG_TRIVIAL(info) << "omsg.splitgraphClusterArray size is :" << omsg.splitgraphClusterArray.size();
+			int count = 0;
+			for(int i = 0; i < g->getGlobalN(); i++) {
+				if(splitgraphArray[i] >= 0) {
+					count++;
+					if(splitgraphArray[i] != tempSplitgraphClusterArray[i]) {
+						BOOST_LOG_TRIVIAL(error) << "Splitgraph array invalid for i = " << i << " (tempSplitgraphClusterArray[i] = "
+								<< tempSplitgraphClusterArray[i] << ") / (omsg.splitgraphClusterArray[i]" << splitgraphArray[i] << ").";
+					}
+				}
+			}
+			BOOST_LOG_TRIVIAL(info) << "Total vertex count for process " << p << " is " << count;
+		}
+
+
+
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** VALIDATION *** Calculating external process imbalance matrix...";
+		ImbalanceMatrix processClusterImbMatrixValidation = util.calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray,
+							this->vertexImbalance, numberOfSlaves + 1);
+		bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, processClusterImbMatrixValidation.pos, 0.001, 0.1);
+		bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, processClusterImbMatrixValidation.neg, 0.001, 0.1);
+		BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+		tempProcessClusterImbMatrix = processClusterImbMatrixValidation;
+
+
 
 		newInternalProcessImbalance = util.calculateProcessInternalImbalance(*g, currentSplitgraphClusterArray,
 								globalClusterArray, numberOfProcesses);
@@ -2176,7 +2232,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(clusteringgraph::
 		boost::timer::cpu_times start_time = timer.elapsed();
 		BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
 
-		rebalanceClustersBetweenProcessesWithZeroCost(g, problem, bestSplitgraphClusteringVND, bestClusteringVND, numberOfProcesses);
+		// rebalanceClustersBetweenProcessesWithZeroCost(g, problem, bestSplitgraphClusteringVND, bestClusteringVND, numberOfProcesses);
 
 		bool improved = false;
 		if(r == 1) {
@@ -2626,6 +2682,24 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 	}  // next overloaded processor
 	// recalculates the process-process imbalance matrix
 	// processClusterImbMatrix = util.calculateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray, this->vertexImbalance, numberOfSlaves + 1);
+
+
+
+
+	// FIXME remover codigo de validacao
+	ImbalanceMatrix tempProcessClusterImbMatrix = bestSplitgraphClustering.getInterProcessImbalanceMatrix();
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** zero-cost move VALIDATION *** Calculating external process imbalance matrix...";
+
+	ImbalanceMatrix processClusterImbMatrixValidation = util.calculateProcessToProcessImbalanceMatrix(*g, currentSplitgraphClusterArray,
+						this->vertexImbalance, numberOfSlaves + 1);
+	bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, processClusterImbMatrixValidation.pos, 0.001, 0.1);
+	bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, processClusterImbMatrixValidation.neg, 0.001, 0.1);
+	BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+
+
+
+
+
 	// Recalculates internal process imbalance array
 	// este calculo full eh feito apenas uma vez (nao tao custoso assim)
 	if(overloadedProcessList.size() > 0) {
@@ -2663,6 +2737,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	// TODO duvida: deve chamar synchronize(*pgraph); antes?
 	boost::mpi::communicator world;
 	int myRank = world.rank();
+	long N = g->getGlobalN();
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] runILSLocallyOnSubgraph()";
 
 	// only redistributes vertices if vertexList has information available
@@ -2670,7 +2745,6 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	if(imsgpils.redistributeVertices) {
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking vertex redistribution between processes...";
 		// moves the affected vertices between processes
-		long N = g->getGlobalN();
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Graph size is " << N;
 		// ClusterArray splitgraphClusterArray(N, 0);
 		// for(int i = 0; i < N; i++) {
@@ -2705,19 +2779,20 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	  global_index(pg, num_vertices(*(g->graph)),
 				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
 	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
-	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-	  put(name_map, v, get(global_index, v));
+	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph) {
+		put(name_map, v, get(global_index, v));
+		BOOST_LOG_TRIVIAL(info) << "Vertex " << get(global_index, v) << " is in process " << myRank << " (" << owner(v) << ")";
+	}
 
 	// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
 	// global vertex id array used in split graph
 	std::vector<long> globalVertexId;
-	if(parallelgraph) {
-		graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
-		BOOST_LOG_TRIVIAL(info) << "Obtaining individual global_index...";
-		for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
-			// BOOST_LOG_TRIVIAL(info) << "Local vertex " << vi->local << " is global vertex " << get(global_index, *vi);
-			globalVertexId.push_back(get(global_index, *vi));
-		}
+	BOOST_LOG_TRIVIAL(info) << "Obtaining individual global_index...";
+	ClusterArray localSplitgraphClusterArray(N, -1);
+	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph) {  // For each vertex v
+		// BOOST_LOG_TRIVIAL(info) << "Local vertex " << vi->local << " is global vertex " << get(global_index, *vi);
+		globalVertexId.push_back(get(global_index, v));
+		localSplitgraphClusterArray[get(global_index, v)] = myRank;
 	}
 
 	// BOOST_LOG_TRIVIAL(info) << "Obtaining processor_map...";
@@ -2770,6 +2845,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 		// n = 0;
 		e = 0;
 		OutputMessage omsg(bestClustering, 0, 0.0, globalVertexId, 0, 0);
+		omsg.splitgraphClusterArray = localSplitgraphClusterArray;
 		return omsg;
 	} else {
 		// TODO TROCAR POR METODO EQUIVALENTE DA PARALLEL BGL
@@ -2849,8 +2925,10 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P" << comm.rank() << ": num_edges = " <<
 								num_edges(*(g->graph)) << " , num_vertices = " << num_vertices(*(g->graph)) << ", I(P) = "
 								<< bestClustering.getImbalance().getValue() << ", k = " << bestClustering.getNumberOfClusters();
-		return OutputMessage(bestClustering, num_comb, timeSpent, globalVertexId,
-				num_vertices(*(g->graph)), num_edges(*(g->graph)));
+		OutputMessage omsg(bestClustering, num_comb, timeSpent, globalVertexId,
+						num_vertices(*(g->graph)), num_edges(*(g->graph)));
+		omsg.splitgraphClusterArray = localSplitgraphClusterArray;
+		return omsg;
 	}
 }
 

@@ -335,14 +335,16 @@ public:
 	std::vector<long> globalVertexId;
 	// number of vertices and edges in the processor subgraph
 	long num_vertices, num_edges;
+	ClusterArray splitgraphClusterArray;
 
 	OutputMessage() : clustering(), numberOfTestedCombinations(0), timeSpent(0.0), globalVertexId(),
-			num_vertices(0), num_edges(0) {
+			num_vertices(0), num_edges(0), splitgraphClusterArray() {
 
 	}
 
 	OutputMessage(Clustering &c, long nc, double time, std::vector<long> gVertexId, long n, long m) : clustering(c),
-			numberOfTestedCombinations(nc), timeSpent(time), globalVertexId(gVertexId), num_vertices(n), num_edges(m) {
+			numberOfTestedCombinations(nc), timeSpent(time), globalVertexId(gVertexId), num_vertices(n), num_edges(m),
+			splitgraphClusterArray() {
 
 	}
 
@@ -356,6 +358,7 @@ public:
 		ar & globalVertexId;
 		ar & num_vertices;
 		ar & num_edges;
+		ar & splitgraphClusterArray;
 	}
 };
 

@@ -57,6 +57,10 @@ bool operator>= (Imbalance &i1, Imbalance &i2) {
 	return i1.getValue() >= i2.getValue();
 }
 
+bool operator== (Imbalance &i1, Imbalance &i2) {
+	return i1.getValue() == i2.getValue();
+}
+
 ostream& Imbalance::operator<<(ostream &out) {     //output
 	out << "I(P) = " << std::fixed << std::setprecision(2) << getValue()
 			<< " (" << positiveValue << "+, " << negativeValue << "-)";

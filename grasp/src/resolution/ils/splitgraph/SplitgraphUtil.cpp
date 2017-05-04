@@ -84,7 +84,8 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 	  put(name_map, v, get(global_index, v));
 
 	long nc = numberOfProcesses;
-	long n = g.getN();
+	boost::mpi::communicator world;
+	int myRank = world.rank();
 	ParallelGraph::edge_descriptor e;
 	// local subgraph creation
 	// LocalSubgraph lsg = make_local_subgraph(*(g.graph));
@@ -97,29 +98,33 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph) {  // For each vertex v
 		int i = get(global_index, v); // v.local;   // TODO TROCADO PELO GLOBAL
 		// BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing global vertex " << i << " from process " << v.owner;
-		long ki = myCluster[i];
-		ParallelGraph::out_edge_iterator f, l;
-		double positiveSum = double(0.0), negativeSum = double(0.0);
-		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
-			e = *f;
-			int v_targ_local = target(e, *(g.graph)).local;
-			// BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << v_targ_local
-			//		<< " from processor " << target(e, *(g.graph)).owner;
-			int targ = get(global_index, target(e, *(g.graph)));  // TODO TROCADO PELO GLOBAL
-			double weight = ew[e].weight;
-			bool sameCluster = (myCluster[targ] == ki);
-			if(weight < 0 and sameCluster) {  // negative edge
-				// i and j are in the same cluster
-				negativeSum += fabs(weight);
-				clusterImbMatrix.neg(ki, myCluster[targ]) += fabs(weight);
-			} else if(weight > 0 and (not sameCluster)) {  // positive edge
-				// i and j are NOT in the same cluster
-				positiveSum += weight;
-				clusterImbMatrix.pos(ki, myCluster[targ]) += fabs(weight);
+		if(owner(v) != myRank) {
+			BOOST_LOG_TRIVIAL(error) << "**** VERTICE DE OUTRO PROCESSO! ****";
+		} else {
+			long ki = myCluster[i];
+			ParallelGraph::out_edge_iterator f, l;
+			double positiveSum = double(0.0), negativeSum = double(0.0);
+			// For each out edge of i
+			for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
+				e = *f;
+				// int v_targ_local = target(e, *(g.graph)).local;
+				// BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << v_targ_local
+				//		<< " from processor " << target(e, *(g.graph)).owner;
+				int targ = get(global_index, target(e, *(g.graph)));  // TODO TROCADO PELO GLOBAL
+				double weight = ew[e].weight;
+				bool sameCluster = (myCluster[targ] == ki);
+				if(weight < 0 and sameCluster) {  // negative edge
+					// i and j are in the same cluster
+					negativeSum += fabs(weight);
+					clusterImbMatrix.neg(ki, myCluster[targ]) += fabs(weight);
+				} else if(weight > 0 and (not sameCluster)) {  // positive edge
+					// i and j are NOT in the same cluster
+					positiveSum += weight;
+					clusterImbMatrix.pos(ki, myCluster[targ]) += fabs(weight);
+				}
 			}
+			vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
 		}
-		vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
 	}
 	BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Done.";
 	return clusterImbMatrix;
@@ -186,9 +191,10 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 	  put(name_map, v, get(global_index, v));
 
 	long nc = numberOfProcesses;
-	long n = g.getN();
 	ParallelGraph::edge_descriptor e;
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
+	boost::mpi::communicator world;
+	int myRank = world.rank();
 	// local subgraph creation
 	// LocalSubgraph lsg = make_local_subgraph(*(g.graph));
 
@@ -202,6 +208,10 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 		// long i = listOfModifiedVertices[item];
 		long old_ki = previousSplitgraphClusterArray[i];
 		long new_ki = newSplitgraphClusterArray[i];
+		if(owner(v) != myRank) {
+			BOOST_LOG_TRIVIAL(error) << "**** VERTICE DE OUTRO PROCESSO! ****";
+		}
+		else
 		if(old_ki != new_ki) {
 			// BOOST_LOG_TRIVIAL(debug) << "[updateProcessToProcessImbalanceMatrixLocal] Processing vertex " << i << " from process " << v.owner;
 			ParallelGraph::out_edge_iterator f, l;
