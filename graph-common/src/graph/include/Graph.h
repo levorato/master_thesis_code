@@ -28,9 +28,10 @@ namespace clusteringgraph {
 
 // typedef property< edge_index_t, size_t, Edge > EdgeProp;
 // Vertex properties
-typedef property< vertex_properties_t, Vertex,
+typedef property<vertex_name_t, std::size_t,
 		property<vertex_rank_t, int,
-		property<vertex_index_t, std::size_t> > > VertexProperty;
+		property<vertex_index_t, std::size_t,
+		property< vertex_properties_t, Vertex> > > > VertexProperty;
 
 typedef property< edge_properties_t, Edge, property< edge_index_t, std::size_t > > EdgeProperty;
 

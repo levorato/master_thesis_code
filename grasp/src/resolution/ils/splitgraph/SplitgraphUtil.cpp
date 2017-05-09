@@ -71,17 +71,8 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	property_map<ParallelGraph, vertex_properties_t>::type name_map
-	  = get(vertex_properties, *(g.graph));
-
-	BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtaining global_index...";
-	mpi_process_group pg = g.graph->process_group();
-	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
-	  global_index(pg, num_vertices(*(g.graph)),
-				   get(vertex_index, *(g.graph)), get(vertex_global, *(g.graph)));
 	BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtaining name_map...";
-	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph)
-	  put(name_map, v, get(global_index, v));
+	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g.graph));
 
 	long nc = numberOfProcesses;
 	boost::mpi::communicator world;
@@ -96,8 +87,9 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 	// TODO VERIFICAR A MELHOR FORMA DE REPROGRAMAR A LEITURA DE ARESTAS COM A PARALLEL BGL
 
 	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph) {  // For each vertex v
-		int i = get(global_index, v); // v.local;   // TODO TROCADO PELO GLOBAL
-		// BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing global vertex " << i << " from process " << v.owner;
+		int i = get(name_map, v); // v.local;   // TODO TROCADO PELO GLOBAL
+		BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing local vertex " << v.local << " from process " << v.owner;
+		 BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing global vertex " << i << " from process " << v.owner;
 		if(owner(v) != myRank) {
 			BOOST_LOG_TRIVIAL(error) << "**** VERTICE DE OUTRO PROCESSO! ****";
 		} else {
@@ -110,7 +102,7 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 				// int v_targ_local = target(e, *(g.graph)).local;
 				// BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << v_targ_local
 				//		<< " from processor " << target(e, *(g.graph)).owner;
-				int targ = get(global_index, target(e, *(g.graph)));  // TODO TROCADO PELO GLOBAL
+				int targ = get(name_map, target(e, *(g.graph)));  // TODO TROCADO PELO GLOBAL
 				double weight = ew[e].weight;
 				bool sameCluster = (myCluster[targ] == ki);
 				if(weight < 0 and sameCluster) {  // negative edge
@@ -178,17 +170,14 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	property_map<ParallelGraph, vertex_properties_t>::type name_map
-	  = get(vertex_properties, *(g.graph));
+	BOOST_LOG_TRIVIAL(info) << "[updateProcessToProcessImbalanceMatrixLocal] Obtaining name_map...";
+	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g.graph));
 
 	BOOST_LOG_TRIVIAL(info) << "[updateProcessToProcessImbalanceMatrixLocal] Obtaining global_index...";
 	mpi_process_group pg = g.graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g.graph)),
 				   get(vertex_index, *(g.graph)), get(vertex_global, *(g.graph)));
-	BOOST_LOG_TRIVIAL(info) << "[updateProcessToProcessImbalanceMatrixLocal] Obtaining name_map...";
-	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph)
-	  put(name_map, v, get(global_index, v));
 
 	long nc = numberOfProcesses;
 	ParallelGraph::edge_descriptor e;
@@ -204,7 +193,7 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 	// For each vertex i in listOfModifiedVertices
 	// for(long item = 0; item < listOfModifiedVertices.size(); item++) {
 	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph) {
-		int i = get(global_index, v);
+		int i = get(name_map, v);
 		// long i = listOfModifiedVertices[item];
 		long old_ki = previousSplitgraphClusterArray[i];
 		long new_ki = newSplitgraphClusterArray[i];
@@ -218,7 +207,7 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 			// For each out edge of v
 			for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
 				e = *f;
-				int targ = get(global_index, target(e, *(g.graph)));   // TODO TROCADO PELO GLOBAL
+				int targ = get(name_map, target(e, *(g.graph)));   // TODO TROCADO PELO GLOBAL
 				// BOOST_LOG_TRIVIAL(info) << "[updateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << targ
 				// 					<< " from processor " << target(e, *(g.graph)).owner;
 				double weight = ew[e].weight;
@@ -391,17 +380,14 @@ Imbalance SplitgraphUtil::calculateProcessInternalImbalanceLocal(ParallelBGLSign
 
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	property_map<ParallelGraph, vertex_properties_t>::type name_map
-	  = get(vertex_properties, *(g->graph));
+	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g->graph));
 
 	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
 	mpi_process_group pg = g->graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g->graph)),
 				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
-	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
-	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-	  put(name_map, v, get(global_index, v));
 
 	double positiveSum = 0.0, negativeSum = 0.0;
 	int n = g->getGlobalN();
@@ -414,14 +400,14 @@ Imbalance SplitgraphUtil::calculateProcessInternalImbalanceLocal(ParallelBGLSign
 
 	// For each vertex i that belongs to process 'processNumber'
 	BGL_FORALL_VERTICES(v, lsg, LocalSubgraph) {  // For each vertex v
-		int i = get(global_index, v);  // TODO trocado o local pelo global
+		int i = get(name_map, v);  // TODO trocado o local pelo global
 		long ki = myCluster[i];
 		LocalSubgraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(v, lsg); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			long j = get(global_index, target(*f, lsg));  // TODO trocado o local pelo global
+			long j = get(name_map, target(*f, lsg));  // TODO trocado o local pelo global
 			long kj = myCluster[j];
 			bool sameCluster = (ki == kj);
 			if(weight < 0 and sameCluster) {  // negative edge
@@ -482,17 +468,14 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClustersLocal(Sign
 
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	property_map<ParallelGraph, vertex_properties_t>::type name_map
-	  = get(vertex_properties, *(g.graph));
+	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g.graph));
 
 	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
 	mpi_process_group pg = g.graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g.graph)),
 				   get(vertex_index, *(g.graph)), get(vertex_global, *(g.graph)));
-	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
-	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph)
-	  put(name_map, v, get(global_index, v));
 
 	long n = g.getN();
 	// local subgraph creation
@@ -507,13 +490,13 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClustersLocal(Sign
 	boost::property_map<ParallelGraph, edge_properties_t>::type ew = boost::get(edge_properties, *(g.graph));
 
 	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph) {  // For each vertex v
-		int i = get(global_index, v); // v.local;  // TROCADO POR GLOBAL
+		int i = get(name_map, v); // v.local;  // TROCADO POR GLOBAL
 		long ki = globalCluster[i];
 		ParallelGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
 			e = *f;
-			int targ = get(global_index, target(e, *(g.graph)));   // TROCADO POR GLOBAL
+			int targ = get(name_map, target(e, *(g.graph)));   // TROCADO POR GLOBAL
 			double weight = ew[e].weight;
 			bool sameCluster = (globalCluster[targ] == ki);
 			if(weight < 0 and sameCluster) {  // negative edge

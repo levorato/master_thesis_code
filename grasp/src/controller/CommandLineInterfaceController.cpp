@@ -1122,6 +1122,7 @@ void CommandLineInterfaceController::handler()
     free( stack_syms );
 }
 
+// Este metodo eh executado apenas uma vez por cada processo / para cada arquivo de entrada
 std::vector<long> CommandLineInterfaceController::fillPropertyMap(clusteringgraph::ParallelGraph *pgraph, int rank) {
 	// 	// https://github.com/boostorg/graph_parallel/blob/master/test/adjlist_redist_test.cpp
 	// Set the names of the vertices to be the global index in the
@@ -1133,13 +1134,16 @@ std::vector<long> CommandLineInterfaceController::fillPropertyMap(clusteringgrap
 	//typedef property_map<RoadMap, int Highway::*>::type road_length = get(&Highway::length, map);
 	property_map<ParallelGraph, vertex_properties_t>::type vertex_id_map =
 			get(vertex_properties, *pgraph);
+	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *pgraph);
+	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+	      global_index(pgraph->process_group(), num_vertices(*pgraph),
+	                   get(vertex_index, *pgraph), get(vertex_global, *pgraph));
 
-	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap> global_index(pgraph->process_group(),
-			num_vertices(*pgraph), get(vertex_index, *pgraph), get(vertex_global, *pgraph));
 	BGL_FORALL_VERTICES(v, *pgraph, ParallelGraph) {
-		// BOOST_LOG_TRIVIAL(info) << "Vertex " << get(global_index, v) << " is in process number " << rank;
-		returnVector.push_back(get(global_index, v));
-		put(vertex_id_map, v, get(global_index, v));
+		// BOOST_LOG_TRIVIAL(info) << "Vertex " << get(name_map, v) << " is in process number " << rank;
+		put(name_map, v, get(global_index, v));
+		returnVector.push_back(get(name_map, v));
+		// put(vertex_id_map, v, get(name_map, v));
 	}
 	BOOST_LOG_TRIVIAL(info) << "Gvertexid size is " << returnVector.size();
 	return returnVector;

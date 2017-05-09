@@ -2770,8 +2770,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	property_map<ParallelGraph, vertex_properties_t>::type name_map
-	  = get(vertex_properties, *(g->graph));
+	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g->graph));
 
 	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
 	mpi_process_group pg = g->graph->process_group();
@@ -2780,8 +2779,8 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
 	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
 	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph) {
-		put(name_map, v, get(global_index, v));
-		BOOST_LOG_TRIVIAL(info) << "Vertex " << get(global_index, v) << " is in process " << myRank << " (" << owner(v) << ")";
+		int idx = get(name_map, v);
+		BOOST_LOG_TRIVIAL(info) << "Vertex " << idx << " is in process " << myRank << " (" << owner(v) << ")";
 	}
 
 	// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
@@ -2789,10 +2788,13 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	std::vector<long> globalVertexId;
 	BOOST_LOG_TRIVIAL(info) << "Obtaining individual global_index...";
 	ClusterArray localSplitgraphClusterArray(N, -1);
-	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph) {  // For each vertex v
-		// BOOST_LOG_TRIVIAL(info) << "Local vertex " << vi->local << " is global vertex " << get(global_index, *vi);
-		globalVertexId.push_back(get(global_index, v));
-		localSplitgraphClusterArray[get(global_index, v)] = myRank;
+	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
+	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {  // For each vertex v
+		// BOOST_LOG_TRIVIAL(info) << "Local vertex " << vi->local << " is global vertex " << get(name_map, *vi);
+		// Vertex vx = get(name_map, *vi);
+		int idx = get(name_map, *vi);//vx.id;
+		globalVertexId.push_back(idx);
+		localSplitgraphClusterArray[idx] = myRank;
 	}
 
 	// BOOST_LOG_TRIVIAL(info) << "Obtaining processor_map...";
@@ -3036,8 +3038,6 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgra
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g->graph)),
 				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
-	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph)
-	  put(name_map, v, get(global_index, v));
 
 	property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
 
@@ -3045,9 +3045,11 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgra
 	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
 	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
 		// put(to_processor_map, vi, vi->local % num_processes(pg));  // floor(vi->local / (double)g->getN())
-		// BOOST_LOG_TRIVIAL(debug) << "Obtaining newSplitgraphClustering for global vertex " << get(global_index, *vi);
-		// BOOST_LOG_TRIVIAL(debug) << "Going to processor " << newSplitgraphClustering[get(global_index, *vi)];
-		put(to_processor_map, *vi, newSplitgraphClustering[get(global_index, *vi)]);
+		// BOOST_LOG_TRIVIAL(debug) << "Obtaining newSplitgraphClustering for global vertex " << get(name_map, *vi);
+		// BOOST_LOG_TRIVIAL(debug) << "Going to processor " << newSplitgraphClustering[get(name_map, *vi)];
+		Vertex vx = get(name_map, *vi);
+		int idx = vx.id;
+		put(to_processor_map, *vi, newSplitgraphClustering[idx]);
 	}
 
 	// if (process_id(pg) == 0) {
