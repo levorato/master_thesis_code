@@ -99,12 +99,14 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 			// For each out edge of i
 			for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
 				e = *f;
-				// int v_targ_local = target(e, *(g.graph)).local;
-				// BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << v_targ_local
-				//		<< " from processor " << target(e, *(g.graph)).owner;
+				 int v_targ_local = target(e, *(g.graph)).local;
+				 BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << v_targ_local
+						<< " from processor " << target(e, *(g.graph)).owner;
 				int targ = get(name_map, target(e, *(g.graph)));  // TODO TROCADO PELO GLOBAL
 				double weight = ew[e].weight;
+				BOOST_LOG_TRIVIAL(debug) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtained edge weight.";
 				bool sameCluster = (myCluster[targ] == ki);
+				assert(sameCluster == ( owner(v) == owner(target( e, *(g.graph) ) ) ) );
 				if(weight < 0 and sameCluster) {  // negative edge
 					// i and j are in the same cluster
 					negativeSum += fabs(weight);
@@ -118,6 +120,8 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 			vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
 		}
 	}
+	BOOST_LOG_TRIVIAL(info) << "Synchronizing processes...";
+	synchronize(*(g.graph));
 	BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Done.";
 	return clusterImbMatrix;
 }
@@ -241,6 +245,8 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 		// NAO EH NECESSARIO ATUALIZAR O VERTEX IMBALANCE ABAIXO, POIS A BUSCA LOCAL (VND) EH FIRST IMPROVEMENT
 		// vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
 	}
+	BOOST_LOG_TRIVIAL(info) << "Synchronizing processes...";
+	synchronize(*(g.graph));
 	BOOST_LOG_TRIVIAL(debug) << "updateProcessToProcessImbalanceMatrixLocal done.";
 }
 
@@ -380,10 +386,10 @@ Imbalance SplitgraphUtil::calculateProcessInternalImbalanceLocal(ParallelBGLSign
 
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BOOST_LOG_TRIVIAL(debug) << "Obtaining name_map...";
 	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g->graph));
 
-	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	BOOST_LOG_TRIVIAL(debug) << "Obtaining global_index...";
 	mpi_process_group pg = g->graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g->graph)),
@@ -419,6 +425,10 @@ Imbalance SplitgraphUtil::calculateProcessInternalImbalanceLocal(ParallelBGLSign
 			}
 		}
 	}
+	// FIXME verificar se esse eh o melhor local de sincronizacao (antes ou depois do loop acima)
+	BOOST_LOG_TRIVIAL(debug) << "Synchronizing processes...";
+	synchronize(*(g->graph));
+	BOOST_LOG_TRIVIAL(debug) << "[calculateProcessInternalImbalanceLocal] Done.";
 	return Imbalance(positiveSum, negativeSum);
 }
 
@@ -468,10 +478,10 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClustersLocal(Sign
 
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	BOOST_LOG_TRIVIAL(debug) << "Obtaining name_map...";
 	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g.graph));
 
-	BOOST_LOG_TRIVIAL(info) << "Obtaining global_index...";
+	BOOST_LOG_TRIVIAL(debug) << "Obtaining global_index...";
 	mpi_process_group pg = g.graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 	  global_index(pg, num_vertices(*(g.graph)),
@@ -509,6 +519,8 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClustersLocal(Sign
 			clusterEdgeSumMatrix(ki, globalCluster[targ]) += fabs(weight);
 		}
 	}
+	BOOST_LOG_TRIVIAL(debug) << "Synchronizing processes...";
+	synchronize(*(g.graph));
 
 	std::vector<Coordinate> imbalancedClusterList;
 	// For each cluster ki
@@ -540,6 +552,7 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClustersLocal(Sign
 		// THE USE OF ABSOLUTE IMBALANCE VALUES (BELOW) YIELDS BETTER RESULTS THAN PERCENTUAL IMBALANCE (ABOVE)
 		imbalancedClusterList.push_back(Coordinate(ki, globalClustering.getClusterSize(ki), imbalance));
 	}
+	BOOST_LOG_TRIVIAL(debug) << "[obtainListOfImbalancedClustersLocal] Done.";
 	return imbalancedClusterList;
 }
 
@@ -652,6 +665,7 @@ std::vector< Coordinate > SplitgraphUtil::getMatrixElementsAsList(ImbalanceMatri
 	return returnList;
 }
 
+// TODO FIXME reimplementar para parallel bgl
 long SplitgraphUtil::findMostImbalancedVertexInProcessPair(SignedGraph& g,
 		const ClusterArray& splitGraphCluster, const ClusterArray& globalCluster, Coordinate processPair) const {
 
