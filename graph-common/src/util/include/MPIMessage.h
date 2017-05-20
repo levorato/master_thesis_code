@@ -137,6 +137,7 @@ public:
 	}
 };
 
+
 class InputMessageParallelILS : public InputMessage {
 public:
 	static const int TAG = 60;
@@ -153,9 +154,10 @@ public:
 	int iterMaxILS;
 	int perturbationLevelMax;
 	Clustering CCclustering;  // best solution found by CC problem (for use on RCC problem solve)
+	bool minKEnabled;
 
 	InputMessageParallelILS() : InputMessage(),
-			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0),
+			alpha(0.0F), iter(400), gainFunctionType(0), problemType(0), k(0), minKEnabled(false),
 			fileId("noId"), outputFolder(""), timeLimit(1800), firstImprovementOnOneNeig(false),
 			iterMaxILS(3), perturbationLevelMax(7), CCclustering() {
 
@@ -164,10 +166,10 @@ public:
 	InputMessageParallelILS(unsigned int i, string graphFilePath, int it, double a, int neigh,
 			int pType, int gfType, string eid, string fid, string folder, long t, unsigned int masters,
 			unsigned int searchSlaves, bool fiOneNeig, int maxilsiter, int maxpertlevel,
-			long numberOfClustersInSolution = 0, Clustering* cl = NULL) :
+			long numberOfClustersInSolution = 0, bool minKEnab = false, Clustering* cl = NULL) :
 				InputMessage(i, graphFilePath, neigh, masters, searchSlaves),
 					alpha(a), iter(it), gainFunctionType(gfType),
-					problemType(pType), k(numberOfClustersInSolution), executionId(eid), fileId(fid),
+					problemType(pType), k(numberOfClustersInSolution), minKEnabled(minKEnab), executionId(eid), fileId(fid),
 					outputFolder(folder), timeLimit(t), firstImprovementOnOneNeig(fiOneNeig),
 					iterMaxILS(maxilsiter), perturbationLevelMax(maxpertlevel), CCclustering() {
 			if(cl != NULL) {
