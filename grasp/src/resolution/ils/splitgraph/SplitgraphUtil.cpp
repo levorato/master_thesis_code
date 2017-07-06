@@ -88,9 +88,11 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 
 	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph) {  // For each vertex v
 		int i = get(name_map, v); // v.local;   // TODO TROCADO PELO GLOBAL
-		BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing local vertex " << v.local << " from process " << v.owner;
-		 BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing global vertex " << i << " from process " << v.owner;
+		BOOST_LOG_TRIVIAL(trace) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing local vertex " << v.local << " from process " << v.owner;
+		BOOST_LOG_TRIVIAL(trace) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing global vertex " << i << " from process " << v.owner;
 		if(owner(v) != myRank) {
+			BOOST_LOG_TRIVIAL(error) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing local vertex " << v.local << " from process " << v.owner;
+			BOOST_LOG_TRIVIAL(error) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing global vertex " << i << " from process " << v.owner;
 			BOOST_LOG_TRIVIAL(error) << "**** VERTICE DE OUTRO PROCESSO! ****";
 		} else {
 			long ki = myCluster[i];
@@ -100,11 +102,11 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 			for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
 				e = *f;
 				 int v_targ_local = target(e, *(g.graph)).local;
-				 BOOST_LOG_TRIVIAL(info) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << v_targ_local
+				 BOOST_LOG_TRIVIAL(trace) << "[calculateProcessToProcessImbalanceMatrixLocal] Processing neighbor " << v_targ_local
 						<< " from processor " << target(e, *(g.graph)).owner;
 				int targ = get(name_map, target(e, *(g.graph)));  // TODO TROCADO PELO GLOBAL
 				double weight = ew[e].weight;
-				BOOST_LOG_TRIVIAL(debug) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtained edge weight.";
+				BOOST_LOG_TRIVIAL(trace) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtained edge weight.";
 				bool sameCluster = (myCluster[targ] == ki);
 				assert(sameCluster == ( owner(v) == owner(target( e, *(g.graph) ) ) ) );
 				if(weight < 0 and sameCluster) {  // negative edge

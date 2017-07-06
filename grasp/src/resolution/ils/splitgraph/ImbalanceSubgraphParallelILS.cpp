@@ -784,6 +784,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 		}
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Trying to move global cluster " << clusterToMove
 				<< " from process " << sourceProcess << " to process " << destinationProcess;
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] " << listOfModifiedVertices.size() << " vertices will be moved.";
 
 		// Each process will execute 1 ILS procedure for each subgraph
 		InputMessageParallelILS imsg(g->getId(), g->getGraphFileLocation(), iter, construct->getAlpha(), vnd->getNeighborhoodSize(),
@@ -796,6 +797,12 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 		// sends the modified subgraphs that will be solved by ILS
 		imsg.setVertexList(verticesInDestinationProcess);
 		imsg2.setVertexList(verticesInSourceProcess);
+		// FIXME remover o codigo de debug abaixo
+		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Vertices to be in source process (P " << sourceProcess << "): ";
+		Print(verticesInSourceProcess);
+		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Vertices to be in destination process (P " << destinationProcess << "): ";
+		Print(verticesInDestinationProcess);
+
 		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
 		imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
 		imsg2.cudaEnabled = true;
@@ -2224,13 +2231,15 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(clusteringgraph::
 								info, bestSplitgraphClusteringVND, bestClusteringVND);
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best global solution so far: I(P) = " << bestClustering.getImbalance().getValue();
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best VND solution so far: I(P) = " << bestClusteringVND.getImbalance().getValue();
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Initial solution built.";
+	int global_vnd_loop_count = 1;
 
 	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
-		BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
+		BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND neighborhood (count = " << global_vnd_loop_count++ << ") r = " << r << " ...";
 
 		// rebalanceClustersBetweenProcessesWithZeroCost(g, problem, bestSplitgraphClusteringVND, bestClusteringVND, numberOfProcesses);
 
@@ -2745,7 +2754,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	if(imsgpils.redistributeVertices) {
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Invoking vertex redistribution between processes...";
 		// moves the affected vertices between processes
-		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Graph size is " << N;
+		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Global graph size is " << N;
 		// ClusterArray splitgraphClusterArray(N, 0);
 		// for(int i = 0; i < N; i++) {
 		// 	splitgraphClusterArray[i] = 0;
@@ -2778,10 +2787,13 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	  global_index(pg, num_vertices(*(g->graph)),
 				   get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
 	BOOST_LOG_TRIVIAL(info) << "Obtaining name_map...";
+	std::stringstream ss;
 	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph) {
 		int idx = get(name_map, v);
-		BOOST_LOG_TRIVIAL(info) << "Vertex " << idx << " is in process " << myRank << " (" << owner(v) << ")";
+		ss << idx << "; ";
+		assert(owner(v) == myRank);
 	}
+	BOOST_LOG_TRIVIAL(debug) << "Vertices in this process (P " << myRank << "): " << ss.str() << ".";
 
 	// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
 	// global vertex id array used in split graph
@@ -3026,7 +3038,8 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(clust
 }
 
 void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgraph::SignedGraph *g, const ClusterArray& newSplitgraphClustering) {
-
+	boost::mpi::communicator world;
+	int myRank = world.rank();
 	// TODO redistribution test
 	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
@@ -3041,15 +3054,20 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgra
 
 	property_map<ParallelGraph, vertex_rank_t>::type to_processor_map = get(vertex_rank, *(g->graph));
 
-	// Randomly assign a new distribution
+	// Assign a new distribution
 	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
+	std::vector<int> my_vertices_before;
 	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
 		// put(to_processor_map, vi, vi->local % num_processes(pg));  // floor(vi->local / (double)g->getN())
 		// BOOST_LOG_TRIVIAL(debug) << "Obtaining newSplitgraphClustering for global vertex " << get(name_map, *vi);
 		// BOOST_LOG_TRIVIAL(debug) << "Going to processor " << newSplitgraphClustering[get(name_map, *vi)];
 		Vertex vx = get(name_map, *vi);
 		int idx = vx.id;
+		my_vertices_before.push_back(idx);
 		put(to_processor_map, *vi, newSplitgraphClustering[idx]);
+		if(newSplitgraphClustering[idx] != myRank) {
+			BOOST_LOG_TRIVIAL(debug) << "Moving global vertex " << idx << " to process " << newSplitgraphClustering[idx];
+		}
 	}
 
 	// if (process_id(pg) == 0) {
@@ -3057,7 +3075,47 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgra
 	// Perform the actual redistribution
 	(g->graph)->redistribute(to_processor_map);
 
+	std::vector<int> my_vertices_after;
+    {
+		typedef typename property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+		typedef typename property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+		typename property_map<ParallelGraph, vertex_properties_t>::type name_map
+		= get(vertex_properties, *(g->graph));
+
+		boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
+		global_index(pg, num_vertices(*(g->graph)),
+					get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
+		typename graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
+		for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
+			Vertex vx = get(name_map, *vi); // get(global_index, *vi);
+			int idx = vx.id;
+			my_vertices_after.push_back(idx);
+			// validation(idx) = process_id(pg);
+		}
+    }
+
+	BOOST_LOG_TRIVIAL(info) << "*** P" << process_id(pg) << ": Before redist, my vertices are: ";
+	Print(my_vertices_before);// clusterArray;
+	BOOST_LOG_TRIVIAL(info) << "*** P" << process_id(pg) << ": After redist, they are: ";
+	Print(my_vertices_after);// validation;
+
 	BOOST_LOG_TRIVIAL(info) << "[Distributed ILS] Redistribution done.";
+}
+
+void ImbalanceSubgraphParallelILS::Print(const std::vector<int>& v){
+	std::stringstream ss;
+    for(unsigned i = 0; i< v.size(); ++i) {
+        ss << v[i] << " ";
+    }
+    BOOST_LOG_TRIVIAL(info) << ss.str();
+}
+
+void ImbalanceSubgraphParallelILS::Print(const std::vector<long>& v){
+	std::stringstream ss;
+    for(unsigned i = 0; i< v.size(); ++i) {
+        ss << v[i] << " ";
+    }
+    BOOST_LOG_TRIVIAL(info) << ss.str();
 }
 
 } /* namespace ils */

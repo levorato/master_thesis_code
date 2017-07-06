@@ -177,6 +177,9 @@ protected:
 			ProcessClustering& bestSplitgraphClustering, long clusterToMove, unsigned int sourceProcess, unsigned int destinationProcess);
 
 	void redistributeVerticesInProcesses(SignedGraph *g, const ClusterArray& newSplitgraphClustering);
+
+	void Print(const std::vector<int>& v);
+	void Print(const std::vector<long>& v);
 };
 
 } /* namespace ils */
