@@ -81,9 +81,11 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 					formatType = 3;
 				} else {
 					BOOST_LOG_TRIVIAL(trace) << "Format type is 2 (.g)" << endl;
-					e = boost::lexical_cast<int>(vec.at(1));
+					BOOST_LOG_TRIVIAL(trace) << "vec.at(0) = " << vec.at(0);
+					//BOOST_LOG_TRIVIAL(trace) << "vec.at(1) = " << vec.at(1);
+					// e = boost::lexical_cast<int>(vec.at(1));
 					formatType = 2;
-					BOOST_LOG_TRIVIAL(trace) << "Num of edges is e = " << e;
+					// BOOST_LOG_TRIVIAL(trace) << "Num of edges is e = " << e;
 				}
 			}
 		} catch( boost::bad_lexical_cast const& e ) {
@@ -148,6 +150,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 					}
 				} catch( boost::bad_lexical_cast const& ) {
 					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+					BOOST_LOG_TRIVIAL(error) << "vec.at(0) = " << vec.at(0);
+					BOOST_LOG_TRIVIAL(error) << "vec.at(1) = " << vec.at(1);
+					BOOST_LOG_TRIVIAL(error) << "vec.at(2) = " << vec.at(2);
 				}
 
 			}
@@ -186,6 +191,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 						// g->addEdge(b - 1, a - 1, value);
 					} catch( boost::bad_lexical_cast const& ) {
 						BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+						BOOST_LOG_TRIVIAL(error) << "vec.at(0) = " << vec2.at(i);
+						BOOST_LOG_TRIVIAL(error) << "vec.at(1) = " << vec2.at(1+1);
+						BOOST_LOG_TRIVIAL(error) << "vec.at(2) = " << vec2.at(i+2);
 					}
 				}
 			}
@@ -212,6 +220,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 						g->addEdge(a, b, value);
 					} catch( boost::bad_lexical_cast const& ) {
 						BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+						BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+						BOOST_LOG_TRIVIAL(error) << "vec.at(b) = " << vec.at(b);
 					}
 				}
 				a++;
@@ -276,7 +286,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				formatType = 3;
 			} else {
 				BOOST_LOG_TRIVIAL(trace) << "Format type is 2" << endl;
-				e = boost::lexical_cast<int>(vec.at(1));
+				// e = boost::lexical_cast<int>(vec.at(1));
 				formatType = 2;
 			}
 		}
@@ -331,6 +341,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				}
 			} catch( boost::bad_lexical_cast const& ) {
 				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+				BOOST_LOG_TRIVIAL(error) << "vec.at(0) = " << vec.at(0);
+				BOOST_LOG_TRIVIAL(error) << "vec.at(1) = " << vec.at(1);
+				BOOST_LOG_TRIVIAL(error) << "vec.at(2) = " << vec.at(2);
 			}
 
 		}
@@ -368,6 +381,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				// g->addEdge(b - 1, a - 1, value);
 			} catch( boost::bad_lexical_cast const& ) {
 				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+				BOOST_LOG_TRIVIAL(error) << "vec.at(0) = " << vec2.at(i);
+				BOOST_LOG_TRIVIAL(error) << "vec.at(1) = " << vec2.at(1+1);
+				BOOST_LOG_TRIVIAL(error) << "vec.at(2) = " << vec2.at(i+2);
 			}
 		}
 	} else {  // formatType == 3, .dat files
