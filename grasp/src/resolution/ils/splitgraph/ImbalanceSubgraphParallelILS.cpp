@@ -649,6 +649,34 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBet
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] distributeSubgraphsBetweenProcessesAndRunILS: I(P) OK!";
 	}
 
+	// FIXME remover codigo de validacao
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** VALIDATION *** Calculating internal process imbalance matrix...";
+	std::vector<Imbalance> internalProcessImbalanceValidation = util.calculateProcessInternalImbalance(*g,
+					splitClusterArray, globalClusterArray, numberOfSlaves + 1);
+	Imbalance internalImbalanceValidation = util.calculateInternalImbalanceSumOfAllProcesses(internalProcessImbalanceValidation);
+	Imbalance tmpinternalImbalance = util.calculateInternalImbalanceSumOfAllProcesses(internalProcessImbalance);
+	bool imbIgual = tmpinternalImbalance == internalImbalanceValidation;
+	BOOST_LOG_TRIVIAL(info) << "OpX *** Os imbalances internos sao iguais: " << imbIgual;
+	if(not imbIgual) {
+		stringstream ss1, ss2;
+		ss1 << "Vetor imbalance algoritmo: ";
+		ss2 << "Vetor imbalance VALIDACAO: ";
+		for(int p = 0; p < numberOfSlaves + 1; p++) {
+			ss1 << internalProcessImbalance[p].getValue() << " ";
+			ss2 << internalProcessImbalanceValidation[p].getValue() << " ";
+		}
+		BOOST_LOG_TRIVIAL(info) << ss1.str();
+		BOOST_LOG_TRIVIAL(info) << ss2.str();
+	}
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** VALIDATION *** Calculating external process imbalance matrix...";
+	ImbalanceMatrix processClusterImbMatrixValidation = util.calculateProcessToProcessImbalanceMatrix(*g, splitClusterArray,
+						this->vertexImbalance, numberOfSlaves + 1);
+	bool igual = ublas::equals(processClusterImbMatrix.pos, processClusterImbMatrixValidation.pos, 0.001, 0.1);
+	bool igual2 = ublas::equals(processClusterImbMatrix.neg, processClusterImbMatrixValidation.neg, 0.001, 0.1);
+	BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
+	processClusterImbMatrix = processClusterImbMatrixValidation;
+
+
 	// 6. Stores the time spent in this iteration of distributed MH
 	// timeSpentAtIteration.push_back(timeSpent);
 	util.validaSplitgraphArray(*g, splitgraphClustering, globalClustering);
@@ -3044,8 +3072,7 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgra
 	// https://github.com/boostorg/graph_parallel/blob/develop/test/adjlist_redist_test.cpp
 	typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 	typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-	property_map<ParallelGraph, vertex_properties_t>::type name_map
-	  = get(vertex_properties, *(g->graph));
+	property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g->graph));
 
 	mpi_process_group pg = g->graph->process_group();
 	boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
@@ -3057,16 +3084,16 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgra
 	// Assign a new distribution
 	graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
 	std::vector<int> my_vertices_before;
+	std::vector<int> moved_vertices;
 	for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
 		// put(to_processor_map, vi, vi->local % num_processes(pg));  // floor(vi->local / (double)g->getN())
 		// BOOST_LOG_TRIVIAL(debug) << "Obtaining newSplitgraphClustering for global vertex " << get(name_map, *vi);
 		// BOOST_LOG_TRIVIAL(debug) << "Going to processor " << newSplitgraphClustering[get(name_map, *vi)];
-		Vertex vx = get(name_map, *vi);
-		int idx = vx.id;
+		int idx = get(name_map, *vi);
 		my_vertices_before.push_back(idx);
 		put(to_processor_map, *vi, newSplitgraphClustering[idx]);
 		if(newSplitgraphClustering[idx] != myRank) {
-			BOOST_LOG_TRIVIAL(debug) << "Moving global vertex " << idx << " to process " << newSplitgraphClustering[idx];
+			moved_vertices.push_back(idx);
 		}
 	}
 
@@ -3079,24 +3106,23 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgra
     {
 		typedef typename property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
 		typedef typename property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-		typename property_map<ParallelGraph, vertex_properties_t>::type name_map
-		= get(vertex_properties, *(g->graph));
+		typename property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g->graph));
 
 		boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 		global_index(pg, num_vertices(*(g->graph)),
 					get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
 		typename graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
 		for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
-			Vertex vx = get(name_map, *vi); // get(global_index, *vi);
-			int idx = vx.id;
+			int idx = get(name_map, *vi);
 			my_vertices_after.push_back(idx);
 			// validation(idx) = process_id(pg);
 		}
     }
-
-	BOOST_LOG_TRIVIAL(info) << "*** P" << process_id(pg) << ": Before redist, my vertices are: ";
+    BOOST_LOG_TRIVIAL(debug) << "Moved vertex list: ";
+    Print(moved_vertices);
+	BOOST_LOG_TRIVIAL(debug) << "*** P" << process_id(pg) << ": Before redist, my vertices are: ";
 	Print(my_vertices_before);// clusterArray;
-	BOOST_LOG_TRIVIAL(info) << "*** P" << process_id(pg) << ": After redist, they are: ";
+	BOOST_LOG_TRIVIAL(debug) << "*** P" << process_id(pg) << ": After redist, they are: ";
 	Print(my_vertices_after);// validation;
 
 	BOOST_LOG_TRIVIAL(info) << "[Distributed ILS] Redistribution done.";
@@ -3107,7 +3133,7 @@ void ImbalanceSubgraphParallelILS::Print(const std::vector<int>& v){
     for(unsigned i = 0; i< v.size(); ++i) {
         ss << v[i] << " ";
     }
-    BOOST_LOG_TRIVIAL(info) << ss.str();
+    BOOST_LOG_TRIVIAL(debug) << ss.str();
 }
 
 void ImbalanceSubgraphParallelILS::Print(const std::vector<long>& v){
@@ -3115,7 +3141,7 @@ void ImbalanceSubgraphParallelILS::Print(const std::vector<long>& v){
     for(unsigned i = 0; i< v.size(); ++i) {
         ss << v[i] << " ";
     }
-    BOOST_LOG_TRIVIAL(info) << ss.str();
+    BOOST_LOG_TRIVIAL(debug) << ss.str();
 }
 
 } /* namespace ils */
