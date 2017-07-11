@@ -164,6 +164,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 
 	// 6. Runs a local search over the merged global solution, trying to improve it
 	// TODO Run a full ILS iteration over the split graph initial solution
+	/*  DISABLED!
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Applying local search over the initial solution.";
 	NeighborhoodSearch* neigborhoodSearch;
 	GainFunctionFactory functionFactory(g);
@@ -179,6 +180,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 			construct->getAlpha(), &bestClustering);
 	CUDAILS cudails;
 	//bestClustering = cudails.executeILS(&NoConstruct, vnd, g, iter, 1, perturbationLevelMax, problem, info);
+	*/
 
 	// 7. Stops the timer and stores the elapsed time
 	timer.stop();
@@ -274,7 +276,7 @@ ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning
 
 	// For each process pi
 	for(int pi = 0; pi < numberOfProcesses; pi++) {
-		BOOST_LOG_TRIVIAL(debug) << "Processing partition for processor " << pi;
+		BOOST_LOG_TRIVIAL(trace) << "Processing partition for processor " << pi;
 		// *** STEP 1: Chooses a node with the smallest negative cardinality INSIDE the residual graph Gr
 		//  (will probably result in the smallest increase in the imbalance)
 		Clustering GrCluster(*g);  // uses Clustering data structure to control the elements in the set
@@ -283,7 +285,7 @@ ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning
 		for(int i = 1; i < Gr.size(); i++) {
 			GrCluster.addNodeToCluster(*g, problem, Gr[i].id, 0, false);
 		}
-		BOOST_LOG_TRIVIAL(debug) << "Created initial residual graph list of size " << GrCluster.getClusterSize(0);
+		BOOST_LOG_TRIVIAL(trace) << "Created initial residual graph list of size " << GrCluster.getClusterSize(0);
 
 		// updates the negative edge sum of each vertex ni in Gr (neg edge sum between ni and Si)
 		for(int i = 0; i < Gr.size(); i++) {
@@ -294,7 +296,7 @@ ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning
 		// Obtains the vertex in Gr which has the SMALLEST absolute negative edge sum
 		std::vector<VertexDegree>::iterator it_min = std::min_element(Gr.begin(), Gr.end(), neg_degree_ordering_asc());  // O(n)
 		long vertex_y = it_min->id;
-		BOOST_LOG_TRIVIAL(debug) << "The vertex in Gr with the smallest neg edge sum is " << vertex_y << " with sum = " << it_min->negativeDegree;
+		BOOST_LOG_TRIVIAL(trace) << "The vertex in Gr with the smallest neg edge sum is " << vertex_y << " with sum = " << it_min->negativeDegree;
 		// the Si clustering will have only 1 cluster, cluster zero
 		Clustering Si(*g);  // Si = empty, uses Clustering data structure to control the elements in the set
 		Si.addCluster(*g, problem, vertex_y, false);
@@ -309,7 +311,7 @@ ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning
 
 		while(Gr.size() > 0) {
 			std::vector<VertexDegree>::iterator it_max = std::max_element(Gr.begin(), Gr.end(), pos_degree_ordering_asc());  // O(n)
-			BOOST_LOG_TRIVIAL(debug) << "ClusterSize = " << Si.getClusterSize(0) << ": The vertex in (Gr - Si) with the biggest pos edge sum is " << it_max->id << " with sum = " << it_max->positiveDegree;
+			BOOST_LOG_TRIVIAL(trace) << "ClusterSize = " << Si.getClusterSize(0) << ": The vertex in (Gr - Si) with the biggest pos edge sum is " << it_max->id << " with sum = " << it_max->positiveDegree;
 
 			// Chooses a node max_ni belonging to (Gr \ Si) with the biggest cardinality of positive edges between ni and Si;
 			long max_ni = it_max->id;
@@ -1860,6 +1862,8 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	}
 	splitgraphVNDResults << "I(P), " << bestClusteringVND.getImbalance().getValue() << "\n";
 	splitgraphVNDResults << "Time spent, " << timeSpentOnLocalSearch << "\n";
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] I(P), " << bestClusteringVND.getImbalance().getValue() << "\n";
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Time spent, " << timeSpentOnLocalSearch << "\n";
 
 	// Saves the splitgraph statistics to csv file
 	stringstream filePrefix;
@@ -1868,6 +1872,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	filePrefix << "-statistics-splitgraph";
 	generateOutputFile(problem, splitgraphVNDResults, info.outputFolder, info.fileId, info.executionId,
 			info.processRank, filePrefix.str(), construct->getAlpha(), l, iter);
+	BOOST_LOG_TRIVIAL(info) << "Generated split VND statistics file.";
 
 	// Exports the splitgraph solutions to csv file
 	stringstream sshistory;
@@ -1894,6 +1899,8 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 		}
 		sshistory << "\n";
 	}
+	BOOST_LOG_TRIVIAL(info) << "Process balancing history saved.";
+
 	// includes the biggest cluster size of each process in the best solution
 	Clustering globalClustering = solutionHistory.back().first;
 	ProcessClustering splitgraphClustering = solutionHistory.back().second;
@@ -1912,6 +1919,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	sshistory << "Frustrated ILS solutions, " << numberOfFrustratedSolutions << "\n";
 
 	// Saves the splitgraph solution history to csv file
+	BOOST_LOG_TRIVIAL(info) << "Saving split solution history to csv file.";
 	stringstream filePrefix2;
 	filePrefix2 << "VND";
 	filePrefix2 << (invocationNumber);
