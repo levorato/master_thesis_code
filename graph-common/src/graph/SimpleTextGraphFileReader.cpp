@@ -55,7 +55,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 		std::getline(infile, line);
 
 		char_separator<char> sep2(" \t");
-		BOOST_LOG_TRIVIAL(trace) << "Line read: " << line;
+		// BOOST_LOG_TRIVIAL(trace) << "Line read: " << line;
 		try {
 			if(line.find("people") != string::npos) {  // xpress files
 				BOOST_LOG_TRIVIAL(trace) << "Format type is 0 (xpress)" << endl;
@@ -121,7 +121,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 
 				if (vec.size() < 3) continue;
 				//if(vec.at(2).rfind('\n') != string::npos)
-				BOOST_LOG_TRIVIAL(trace) << vec.at(0) << "; " << vec.at(1) << "; " << vec.at(2) << "/" << std::endl;
+				// BOOST_LOG_TRIVIAL(trace) << vec.at(0) << "; " << vec.at(1) << "; " << vec.at(2) << "/" << std::endl;
 
 				try {
 					int a = boost::lexical_cast<int>(vec.at(0));
