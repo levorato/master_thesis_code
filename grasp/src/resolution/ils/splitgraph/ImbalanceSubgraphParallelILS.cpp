@@ -126,6 +126,7 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 				construct, vnd,
 				iter, iterMaxILS, perturbationLevelMax,
 				problem, info, timeSpentInILS, executionCount);
+		BOOST_LOG_TRIVIAL(info) << "Returned from splitgraph VND procedure.";
 		executionCount++;
 		improvementCount += improvements;
 		totalFrustratedSolutions += numberOfFrustratedSolutions;
@@ -1862,8 +1863,8 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	}
 	splitgraphVNDResults << "I(P), " << bestClusteringVND.getImbalance().getValue() << "\n";
 	splitgraphVNDResults << "Time spent, " << timeSpentOnLocalSearch << "\n";
-	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] I(P), " << bestClusteringVND.getImbalance().getValue() << "\n";
-	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Time spent, " << timeSpentOnLocalSearch << "\n";
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] I(P), " << bestClusteringVND.getImbalance().getValue();
+	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Time spent, " << timeSpentOnLocalSearch;
 
 	// Saves the splitgraph statistics to csv file
 	stringstream filePrefix;
@@ -1874,7 +1875,8 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 			info.processRank, filePrefix.str(), construct->getAlpha(), l, iter);
 	BOOST_LOG_TRIVIAL(info) << "Generated split VND statistics file.";
 
-	// Exports the splitgraph solutions to csv file
+	// Exports the splitgraph solutions to csv file DISABLED FIXME
+	/*
 	stringstream sshistory;
 	sshistory << "Iteration, Time, I(P)";
 	for(int i = 1; i <= numberOfProcesses; i++) {
@@ -1899,7 +1901,6 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 		}
 		sshistory << "\n";
 	}
-	BOOST_LOG_TRIVIAL(info) << "Process balancing history saved.";
 
 	// includes the biggest cluster size of each process in the best solution
 	Clustering globalClustering = solutionHistory.back().first;
@@ -1926,6 +1927,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	filePrefix2 << "-solutionHistory-splitgraph";
 	generateOutputFile(problem, sshistory, info.outputFolder, info.fileId, info.executionId,
 			info.processRank, filePrefix2.str(), construct->getAlpha(), l, iter);
+	BOOST_LOG_TRIVIAL(info) << "Process balancing history saved."; */
 
 	if( (fabs(bestClusteringVND.getImbalance().getValue() - bestClustering.getImbalance().getValue()) > EPS)
 			and (bestClusteringVND.getImbalance().getValue() - bestClustering.getImbalance().getValue() < EPS) ) {  // a < b

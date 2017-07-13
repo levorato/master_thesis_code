@@ -235,10 +235,12 @@ void CommandLineInterfaceController::processInputFile(fs::path filePath, string&
 			stringstream ss;
 			c.printClustering(ss, g->getN());
 			out << ss.str();
-			// Outputs additional graph analysis data
-			CCProblem& ccp = static_cast<CCProblem&>(problemFactory.build(ClusteringProblem::CC_PROBLEM));
-			string analysis = ccp.analyzeImbalance(*g, c);
-			out << analysis << endl;
+			if(not splitGraph) {
+				// Outputs additional graph analysis data
+				CCProblem& ccp = static_cast<CCProblem&>(problemFactory.build(ClusteringProblem::CC_PROBLEM));
+				string analysis = ccp.analyzeImbalance(*g, c);
+				out << analysis << endl;
+			}
 			// Closes the file
 			out.close();
 		}

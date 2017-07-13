@@ -1451,7 +1451,7 @@ using namespace std;
 					// assert(bestImbalance == destPositiveImbalance + destNegativeImbalance);
 					
 					if(fabs(destPositiveImbalance + destNegativeImbalance - Clnew.getImbalance().getValue()) > EPS) {  // (destPositiveImbalance + destNegativeImbalance != Clnew.getImbalance().getValue()) => different values
-						printf("Warning: imbalance does not match. CUDA I(P) = %.6f, CPU: %.6f\n", bestImbalance, Clnew.getImbalance().getValue());
+						// printf("Warning: imbalance does not match. CUDA I(P) = %.6f, CPU: %.6f\n", bestImbalance, Clnew.getImbalance().getValue());
 						destPositiveImbalance = Clnew.getImbalance().getPositiveValue();
 						destNegativeImbalance = Clnew.getImbalance().getNegativeValue();
 						bestImbalance = Clnew.getImbalance().getValue();
