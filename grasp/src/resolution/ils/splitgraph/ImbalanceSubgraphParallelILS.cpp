@@ -2254,10 +2254,13 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 		return OutputMessage(leaderClustering, 0, 0.0, globalVertexId, 0, 0);
 	} else {
 		SignedGraph sg(g->graph, vertexList);
-		std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
-		for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-			globalVertexId.push_back(sg.graph.local_to_global(*it));
+		graph_traits<SubGraph>::vertex_iterator vi, vi_end, next;
+		boost::tie(vi, vi_end) = vertices(sg.graph);
+		for(next = vi; vi != vi_end; vi = next) {
+			++next;
+			globalVertexId.push_back(sg.graph.local_to_global(*vi));
 		}
+		BOOST_LOG_TRIVIAL(info) << "globalVertexId assembly done.";
 		BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
 
 		// rebuilds construct clustering objects based on partial graph 'sg'

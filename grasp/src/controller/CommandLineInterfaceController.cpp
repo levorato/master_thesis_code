@@ -901,10 +901,14 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								}
 
 								// builds a global cluster array, containing each vertex'es true id in the global / full parent graph
-								std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
-								for(graph_traits<SubGraph>::vertex_iterator it = v_it.first; it != v_it.second; it++) {
-									globalVertexId.push_back(sg.graph.local_to_global(*it));
+								// std::pair< graph_traits<SubGraph>::vertex_iterator, graph_traits<SubGraph>::vertex_iterator > v_it = vertices(sg.graph);
+								graph_traits<SubGraph>::vertex_iterator vi, vi_end, next;
+								boost::tie(vi, vi_end) = vertices(sg.graph);
+								for(next = vi; vi != vi_end; vi = next) {
+									++next;
+									globalVertexId.push_back(sg.graph.local_to_global(*vi));
 								}
+								BOOST_LOG_TRIVIAL(info) << "globalVertexId assembly done.";
 							}
 						} else {
 							// CUDA ILS is only available to the CC problem
