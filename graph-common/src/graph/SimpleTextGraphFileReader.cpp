@@ -74,6 +74,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			vector<string> vec;
 			vec.assign(tokens2.begin(),tokens2.end());
 			n = boost::lexical_cast<long>(vec.at(0));
+			formatType = 4;
 		}else if(line.find("people") != string::npos) {  // xpress files
 			BOOST_LOG_TRIVIAL(trace) << "Format type is 0" << endl;
 			string firstLine = lines.at(0);
