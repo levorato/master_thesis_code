@@ -66,10 +66,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 
 		if(line.find("%%MatrixMarket") != string::npos) {  // matrix market files
 			BOOST_LOG_TRIVIAL(trace) << "Format type is 4 (matrix market)" << endl;
-			lines.pop_back(); // avanca para a proxima linha
-			string line = lines.back();
+			string line = lines.at(0);
 			trim(line);
-			lines.pop_back();
+			lines.erase(lines.begin());
 			// captura as dimensoes da matriz e o numero de arestas
 			tokenizer< char_separator<char> > tokens2(line, sep2);
 			vector<string> vec;
