@@ -31,10 +31,10 @@ struct Edge {
     Edge(double w) : weight(w) { }
 };
 struct Vertex {
-    int id;
+    long id;
     std::size_t edge_index_t;
     Vertex() : id(0) { }
-    Vertex(int w) : id(w) { }
+    Vertex(long w) : id(w) { }
 };
 
 
@@ -101,9 +101,9 @@ public:
 	/**
 	 * Return the id of the graph.
 	 */
-	unsigned int getId();
+	unsigned long getId();
 
-	void setId(const unsigned int& i);
+	void setId(const unsigned long& i);
 
 	/**
 	 * Add an edge to the graph. Accepts only edges whose weight is

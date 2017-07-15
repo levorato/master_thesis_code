@@ -55,11 +55,11 @@ unsigned long SignedGraph::getM() {
 	return num_edges(graph);
 }
 
-unsigned int SignedGraph::getId() {
+unsigned long SignedGraph::getId() {
 	return id;
 }
 
-void SignedGraph::setId(const unsigned int& i) {
+void SignedGraph::setId(const unsigned long& i) {
 	id = i;
 }
 
@@ -167,7 +167,7 @@ string SignedGraph::getGraphFileLocation() {
 
 string SignedGraph::convertToGraclusInputFormat() {
 	stringstream ss;
-	int n = this->getN();
+	long n = this->getN();
 	// # of nodes and edges and format (format number 1 for integer-weighted edges)
 	ss << n << " " << this->getM() << " 1\n";
 	// nodes adjacent to vertex i and corresponding edge weight
