@@ -42,7 +42,7 @@ SimpleTextGraphFileReader::~SimpleTextGraphFileReader() {
 
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& filepath, const bool& parallelgraph) {
 	typedef tokenizer< escaped_list_separator<char> > Tokenizer;
-	int n = 0, e = 0;
+	long n = 0, e = 0;
 	// defines the format of the input file
 	int formatType = 0;
 	std::ifstream infile(filepath.c_str(), std::ios::in | std::ios::binary);
@@ -57,25 +57,35 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 		char_separator<char> sep2(" \t");
 		// BOOST_LOG_TRIVIAL(trace) << "Line read: " << line;
 		try {
-			if(line.find("people") != string::npos) {  // xpress files
+			if(line.find("%%MatrixMarket") != string::npos) {  // matrix market files
+				BOOST_LOG_TRIVIAL(trace) << "Format type is 4 (matrix market)" << endl;
+				std::getline(infile, line);
+				trim(line);
+				// captura as dimensoes da matriz e o numero de arestas
+				tokenizer< char_separator<char> > tokens2(line, sep2);
+				vector<string> vec;
+				vec.assign(tokens2.begin(),tokens2.end());
+				n = boost::lexical_cast<long>(vec.at(0));
+				formatType = 4;
+			} else if(line.find("people") != string::npos) {  // xpress files
 				BOOST_LOG_TRIVIAL(trace) << "Format type is 0 (xpress)" << endl;
 				string number = line.substr(line.find("people:") + 7);
 				trim(number);
-				n = boost::lexical_cast<int>(number);
+				n = boost::lexical_cast<long>(number);
 				BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
 				formatType = 0;
 			} else if(line.find("Vertices") != string::npos) {
 				BOOST_LOG_TRIVIAL(trace) << "Format type is 1 (pajek)" << endl;
 				string number = line.substr(line.find("Vertices") + 8);
 				trim(number);
-				n = boost::lexical_cast<int>(number);
+				n = boost::lexical_cast<long>(number);
 				BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
 				formatType = 1;
 			} else {
 				tokenizer< char_separator<char> > tokens2(line, sep2);
 				vector<string> vec;
 				vec.assign(tokens2.begin(),tokens2.end());
-				n = boost::lexical_cast<int>(vec.at(0));
+				n = boost::lexical_cast<long>(vec.at(0));
 				if(vec.size() == 1) { // .dat files
 					BOOST_LOG_TRIVIAL(trace) << "Format type is 3 (dat)" << endl;
 					formatType = 3;
@@ -83,7 +93,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 					BOOST_LOG_TRIVIAL(trace) << "Format type is 2 (.g)" << endl;
 					BOOST_LOG_TRIVIAL(trace) << "vec.at(0) = " << vec.at(0);
 					//BOOST_LOG_TRIVIAL(trace) << "vec.at(1) = " << vec.at(1);
-					// e = boost::lexical_cast<int>(vec.at(1));
+					// e = boost::lexical_cast<long>(vec.at(1));
 					formatType = 2;
 					// BOOST_LOG_TRIVIAL(trace) << "Num of edges is e = " << e;
 				}
@@ -124,8 +134,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 				// BOOST_LOG_TRIVIAL(trace) << vec.at(0) << "; " << vec.at(1) << "; " << vec.at(2) << "/" << std::endl;
 
 				try {
-					int a = boost::lexical_cast<int>(vec.at(0));
-					int b = boost::lexical_cast<int>(vec.at(1));
+					long a = boost::lexical_cast<long>(vec.at(0));
+					long b = boost::lexical_cast<long>(vec.at(1));
 					double value = 0.0;
 					if(vec.at(2) != "*") {
 						sscanf(vec.at(2).c_str(), "%lf", &value);
@@ -170,15 +180,15 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 				vector<string> vec2;
 				vec2.assign(tokens2.begin(),tokens2.end());
 
-				int size = vec2.size();
+				long size = vec2.size();
 				if (size % 3 != 0) {
 					BOOST_LOG_TRIVIAL(fatal) << "Error: invalid XPRESS file format!" << std::endl;
 				}
-				for(int i = 0; i + 2 < size; i = i + 3) {
+				for(long i = 0; i + 2 < size; i = i + 3) {
 					try {
 						// std::cout << "Processing line " << vec2.at(i) << " " << vec2.at(i+1) << " " << vec2.at(i+2) << std::endl;
-						int a = boost::lexical_cast<int>(vec2.at(i));
-						int b = boost::lexical_cast<int>(vec2.at(i + 1));
+						long a = boost::lexical_cast<long>(vec2.at(i));
+						long b = boost::lexical_cast<long>(vec2.at(i + 1));
 						double value = 0.0;
 						sscanf(vec2.at(i + 2).c_str(), "%lf", &value);
 						// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
@@ -197,9 +207,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 					}
 				}
 			}
-		} else {  // formatType == 3, .dat files
+		} else if(formatType == 3) {  // formatType == 3, .dat files
 			char_separator<char> sep3(" \t");
-			unsigned int a = 0;
+			unsigned long a = 0;
 			while (std::getline(infile, line)) {
 				trim(line);
 				tokenizer< char_separator<char> > tokens2(line, sep3);
@@ -207,7 +217,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 				vec.assign(tokens2.begin(),tokens2.end());
 				// cout << "Line is: " << line << " vec.size = " << vec.size() << endl;
 
-				for(unsigned int b = 0; b < vec.size(); b++) {
+				for(unsigned long b = 0; b < vec.size(); b++) {
 					try {
 						double value = 0.0;
 						sscanf(vec.at(b).c_str(), "%lf", &value);
@@ -226,6 +236,32 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 				}
 				a++;
 			}
+		} else {  // formatType == 4, matrix market files
+			while (std::getline(infile, line)) {
+				trim(line);
+				tokenizer< char_separator<char> > tokens2(line, sep2);
+				vector<string> vec;
+				vec.assign(tokens2.begin(),tokens2.end());
+
+				if (vec.size() < 2) continue;
+				try {
+					long a = boost::lexical_cast<long>(vec.at(0));
+					long b = boost::lexical_cast<long>(vec.at(1));
+					double value = 1.0;
+					if(a > n or b > n) {
+						BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+						cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+					}
+					g->addEdge(a - 1, b - 1, value);
+					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+				} catch( boost::bad_lexical_cast const& ) {
+					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+					BOOST_LOG_TRIVIAL(error) << "vec.at(0) = " << vec.at(0);
+					BOOST_LOG_TRIVIAL(error) << "vec.at(1) = " << vec.at(1);
+					BOOST_LOG_TRIVIAL(error) << "vec.at(2) = " << vec.at(2);
+				}
+
+			}
 		}
 		infile.close();
 		BOOST_LOG_TRIVIAL(info) << "Successfully read graph file.";
@@ -239,7 +275,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 
 SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& graphContents) {
 	typedef tokenizer< escaped_list_separator<char> > Tokenizer;
-	int n = 0, e = 0;
+	long n = 0, e = 0;
 	// defines the format of the input file
 	int formatType = 0;
 	vector< string > lines;
@@ -257,19 +293,30 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 		trim(line);
 		BOOST_LOG_TRIVIAL(trace) << "Line: " << line << endl;
 
-		if(line.find("people") != string::npos) {  // xpress files
+		if(line.find("%%MatrixMarket") != string::npos) {  // matrix market files
+			BOOST_LOG_TRIVIAL(trace) << "Format type is 4 (matrix market)" << endl;
+			string line = lines.at(0);
+			trim(line);
+			lines.erase(lines.begin());
+			// captura as dimensoes da matriz e o numero de arestas
+			tokenizer< char_separator<char> > tokens2(line, sep2);
+			vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
+			n = boost::lexical_cast<long>(vec.at(0));
+			formatType = 4;
+		} else if(line.find("people") != string::npos) {  // xpress files
 			BOOST_LOG_TRIVIAL(trace) << "Format type is 0" << endl;
 			string firstLine = lines.at(0);
 			string number = line.substr(line.find("people:") + 7);
 			trim(number);
-			n = boost::lexical_cast<int>(number);
+			n = boost::lexical_cast<long>(number);
 			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
 			formatType = 0;
 		} else if(line.find("Vertices") != string::npos) {
 			BOOST_LOG_TRIVIAL(trace) << "Format type is 1" << endl;
 			string number = line.substr(line.find("Vertices") + 8);
 			trim(number);
-			n = boost::lexical_cast<int>(number);
+			n = boost::lexical_cast<long>(number);
 			BOOST_LOG_TRIVIAL(trace) << "n value is " << n << endl;
 			while(lines.at(0).find("Arcs") == string::npos && lines.at(0).find("Edges") == string::npos) {
 				lines.erase(lines.begin());
@@ -280,13 +327,13 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			tokenizer< char_separator<char> > tokens2(line, sep2);
 			vector<string> vec;
 			vec.assign(tokens2.begin(),tokens2.end());
-			n = boost::lexical_cast<int>(vec.at(0));
+			n = boost::lexical_cast<long>(vec.at(0));
 			if(vec.size() == 1) { // .dat files
 				BOOST_LOG_TRIVIAL(trace) << "Format type is 3" << endl;
 				formatType = 3;
 			} else {
 				BOOST_LOG_TRIVIAL(trace) << "Format type is 2" << endl;
-				// e = boost::lexical_cast<int>(vec.at(1));
+				// e = boost::lexical_cast<long>(vec.at(1));
 				formatType = 2;
 			}
 		}
@@ -315,8 +362,8 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			// BOOST_LOG_TRIVIAL(trace) << vec.at(0) << vec.at(1) << vec.at(2) << "/" << std::endl;
 
 			try {
-				int a = boost::lexical_cast<int>(vec.at(0));
-				int b = boost::lexical_cast<int>(vec.at(1));
+				long a = boost::lexical_cast<long>(vec.at(0));
+				long b = boost::lexical_cast<long>(vec.at(1));
 				double value = 0.0;
 				if(vec.at(2) != "*") {
 					sscanf(vec.at(2).c_str(), "%lf", &value);
@@ -360,15 +407,15 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			vec2.pop_back();
 		}
 
-		int size = vec2.size();
+		long size = vec2.size();
 		if (size % 3 != 0) {
 			BOOST_LOG_TRIVIAL(fatal) << "Error: invalid XPRESS file format!" << std::endl;
 		}
-		for(int i = 0; i + 2 < size; i = i + 3) {
+		for(long i = 0; i + 2 < size; i = i + 3) {
 			try {
 				// std::cout << "Processing line " << vec2.at(i) << " " << vec2.at(i+1) << " " << vec2.at(i+2) << std::endl;
-				int a = boost::lexical_cast<int>(vec2.at(i));
-				int b = boost::lexical_cast<int>(vec2.at(i + 1));
+				long a = boost::lexical_cast<long>(vec2.at(i));
+				long b = boost::lexical_cast<long>(vec2.at(i + 1));
 				double value = 0.0;
 				sscanf(vec2.at(i + 2).c_str(), "%lf", &value);
 				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
@@ -386,9 +433,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				BOOST_LOG_TRIVIAL(error) << "vec.at(2) = " << vec2.at(i+2);
 			}
 		}
-	} else {  // formatType == 3, .dat files
+	} else if(formatType == 3) {  // formatType == 3, .dat files
 		char_separator<char> sep3(" \t");
-		unsigned int a = 0;
+		unsigned long a = 0;
 		while (not lines.empty()) {
 			string line = lines.back();
 			trim(line);
@@ -398,7 +445,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 			vec.assign(tokens2.begin(),tokens2.end());
 			// cout << "Line is: " << line << " vec.size = " << vec.size() << endl;
 
-			for(unsigned int b = 0; b < vec.size(); b++) {
+			for(unsigned long b = 0; b < vec.size(); b++) {
 				try {
 					double value = 0.0;
 	                sscanf(vec.at(b).c_str(), "%lf", &value);
@@ -414,6 +461,31 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				}
 			}
 			a++;
+		}
+	} else {  // formatType == 4, matrix market files
+		long imbalance = 0;
+		while (not lines.empty()) {
+			string line = lines.back();
+			trim(line);
+			lines.pop_back();
+			tokenizer< char_separator<char> > tokens2(line, sep2);
+			vector<string> vec;
+			vec.assign(tokens2.begin(),tokens2.end());
+
+			if (vec.size() < 2) continue;
+			try {
+				long a = boost::lexical_cast<long>(vec.at(0));
+				long b = boost::lexical_cast<long>(vec.at(1));
+				double value = 1.0;
+				if(a > n or b > n) {
+					BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+					cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+				}
+				g->addEdge(a - 1, b - 1, value);
+				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+			} catch( boost::bad_lexical_cast const& ) {
+				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
+			}
 		}
 	}
 	// g->printGraph();
