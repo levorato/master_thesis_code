@@ -108,10 +108,10 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 
 		// All processes synchronize at this point, then the graph is complete
 		// synchronize(grf.process_group());
-		BOOST_LOG_TRIVIAL(trace) << "Successfully created distributed signed graph with " << n << " vertices.";
 
 		// Only process 0 loads the graph, which is distributed automatically
 		g = boost::make_shared<ParallelBGLSignedGraph>(n, graph);
+		BOOST_LOG_TRIVIAL(info) << "Successfully created distributed signed graph with " << n << " vertices.";
 
 		if(formatType == 1) {
 			std::getline(infile, line);
@@ -146,6 +146,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 								cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
 							}
 							g->addEdge(a, b, value);
+							e++;
 							// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
 						} else {
 							if(a > n or b > n) {
@@ -153,6 +154,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 								cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
 							}
 							g->addEdge(a - 1, b - 1, value);
+							e++;
 							// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 						}
 					} else {  // special notation for directed edges (add 1 to imbalance)
@@ -198,6 +200,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 							cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
 						}
 						g->addEdge(a - 1, b - 1, value);
+						e++;
 						// g->addEdge(b - 1, a - 1, value);
 					} catch( boost::bad_lexical_cast const& ) {
 						BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
@@ -228,6 +231,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 							cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
 						}
 						g->addEdge(a, b, value);
+						e++;
 					} catch( boost::bad_lexical_cast const& ) {
 						BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 						BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
@@ -237,7 +241,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 				a++;
 			}
 		} else {  // formatType == 4, matrix market files
+			bool first_line = true, begin_zero = false;
 			while (std::getline(infile, line)) {
+				// BOOST_LOG_TRIVIAL(trace) << "Line read: " << line;
 				trim(line);
 				tokenizer< char_separator<char> > tokens2(line, sep2);
 				vector<string> vec;
@@ -248,12 +254,27 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 					long a = boost::lexical_cast<long>(vec.at(0));
 					long b = boost::lexical_cast<long>(vec.at(1));
 					double value = 1.0;
-					if(a > n or b > n) {
-						BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
-						cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+					if(begin_zero and (a >= n or b >= n)) {
+						BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << "). Skipping line.";
+						cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+						continue;
 					}
-					g->addEdge(a - 1, b - 1, value);
-					// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
+					if(not begin_zero and (a > n or b > n)) {
+						BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << "). Skipping line.";
+						cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+						continue;
+					}
+					if(first_line and (a == 0 or b == 0)) {
+						begin_zero = true;
+					}
+					first_line = false;
+					if(begin_zero) {
+						g->addEdge(a, b, value);
+					} else {
+						g->addEdge(a - 1, b - 1, value);
+					}
+					e++;
+					// BOOST_LOG_TRIVIAL(trace) << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 				} catch( boost::bad_lexical_cast const& ) {
 					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 					BOOST_LOG_TRIVIAL(error) << "vec.at(0) = " << vec.at(0);
@@ -264,12 +285,13 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 			}
 		}
 		infile.close();
-		BOOST_LOG_TRIVIAL(info) << "Successfully read graph file.";
+		BOOST_LOG_TRIVIAL(info) << "Successfully read graph file. Number of edges (m) is " << e;
+		BOOST_LOG_TRIVIAL(info) << "Successfully read graph file. Number of edges (m) is " << num_edges(*(g->graph));
 	} else {
 		BOOST_LOG_TRIVIAL(error) << "Failed to read graph file.";
 	}
 	g->setGlobalN(n);
-	BOOST_LOG_TRIVIAL(trace) << "Successfully created local signed graph with " << num_vertices(*(g->graph)) << " vertices.";
+	BOOST_LOG_TRIVIAL(info) << "Successfully created local signed graph with " << num_vertices(*(g->graph)) << " vertices.";
 	return g;
 }
 
