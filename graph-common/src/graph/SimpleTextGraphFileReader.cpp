@@ -58,7 +58,7 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromFilepath(const string& fi
 		// BOOST_LOG_TRIVIAL(trace) << "Line read: " << line;
 		try {
 			if(line.find("%%MatrixMarket") != string::npos) {  // matrix market files
-				BOOST_LOG_TRIVIAL(trace) << "Format type is 4 (matrix market)" << endl;
+				BOOST_LOG_TRIVIAL(info) << "Format type is 4 (matrix market)" << endl;
 				std::getline(infile, line);
 				trim(line);
 				// captura as dimensoes da matriz e o numero de arestas
