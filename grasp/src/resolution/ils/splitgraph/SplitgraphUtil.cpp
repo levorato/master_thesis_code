@@ -96,6 +96,10 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 			BOOST_LOG_TRIVIAL(error) << "**** VERTICE DE OUTRO PROCESSO! ****";
 		} else {
 			long ki = myCluster[i];
+			if(ki < 0 or ki > nc) {
+				BOOST_LOG_TRIVIAL(error) << "[calculateProcessToProcessImbalanceMatrixLocal] ki out of range!: " << ki;
+				ki = 0;
+			}
 			ParallelGraph::out_edge_iterator f, l;
 			double positiveSum = double(0.0), negativeSum = double(0.0);
 			// For each out edge of i
@@ -106,17 +110,22 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 						<< " from processor " << target(e, *(g.graph)).owner;
 				int targ = get(name_map, target(e, *(g.graph)));  // TODO TROCADO PELO GLOBAL
 				double weight = ew[e].weight;
+				long kj = myCluster[targ];
+				if(kj < 0 or kj > nc) {
+					BOOST_LOG_TRIVIAL(error) << "[calculateProcessToProcessImbalanceMatrixLocal] kj out of range!: " << kj;
+					kj = 0;
+				}
 				BOOST_LOG_TRIVIAL(trace) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtained edge weight.";
-				bool sameCluster = (myCluster[targ] == ki);
+				bool sameCluster = (kj == ki);
 				assert(sameCluster == ( owner(v) == owner(target( e, *(g.graph) ) ) ) );
 				if(weight < 0 and sameCluster) {  // negative edge
 					// i and j are in the same cluster
 					negativeSum += fabs(weight);
-					clusterImbMatrix.neg(ki, myCluster[targ]) += fabs(weight);
+					clusterImbMatrix.neg(ki, kj) += fabs(weight);
 				} else if(weight > 0 and (not sameCluster)) {  // positive edge
 					// i and j are NOT in the same cluster
 					positiveSum += weight;
-					clusterImbMatrix.pos(ki, myCluster[targ]) += fabs(weight);
+					clusterImbMatrix.pos(ki, kj) += fabs(weight);
 				}
 			}
 			vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
@@ -203,6 +212,14 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 		// long i = listOfModifiedVertices[item];
 		long old_ki = previousSplitgraphClusterArray[i];
 		long new_ki = newSplitgraphClusterArray[i];
+		if(old_ki < 0 or old_ki > nc) {
+			BOOST_LOG_TRIVIAL(error) << "[updateProcessToProcessImbalanceMatrixLocal] old_ki out of range!: " << old_ki;
+			old_ki = 0;
+		}
+		if(new_ki < 0 or new_ki > nc) {
+			BOOST_LOG_TRIVIAL(error) << "[updateProcessToProcessImbalanceMatrixLocal] new_ki out of range!: " << new_ki;
+			new_ki = 0;
+		}
 		if(owner(v) != myRank) {
 			BOOST_LOG_TRIVIAL(error) << "**** VERTICE DE OUTRO PROCESSO! ****";
 		}
@@ -219,6 +236,10 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrixLocal(SignedGraph& g,
 				double weight = ew[e].weight;
 				// Etapa 1: subtracao dos imbalances antigos
 				long old_kj = previousSplitgraphClusterArray[targ];
+				if(old_kj < 0 or old_kj > nc) {
+					BOOST_LOG_TRIVIAL(error) << "[updateProcessToProcessImbalanceMatrixLocal] old_kj out of range!: " << old_kj;
+					old_kj = 0;
+				}
 				bool sameCluster = (old_kj == old_ki);
 				// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
 				if(weight < 0 and sameCluster) {  // negative edge
@@ -504,21 +525,30 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClustersLocal(Sign
 	BGL_FORALL_VERTICES(v, *(g.graph), ParallelGraph) {  // For each vertex v
 		int i = get(name_map, v); // v.local;  // TROCADO POR GLOBAL
 		long ki = globalCluster[i];
+		if(ki < 0 or ki > nc) {
+			BOOST_LOG_TRIVIAL(error) << "[obtainListOfImbalancedClustersLocal] ki out of range!: " << ki;
+			ki = 0;
+		}
 		ParallelGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(v, *(g.graph)); f != l; ++f) {
 			e = *f;
 			int targ = get(name_map, target(e, *(g.graph)));   // TROCADO POR GLOBAL
 			double weight = ew[e].weight;
-			bool sameCluster = (globalCluster[targ] == ki);
+			long kj = globalCluster[targ];
+			if(kj < 0 or kj > nc) {
+				BOOST_LOG_TRIVIAL(error) << "[obtainListOfImbalancedClustersLocal] kj out of range!: " << kj;
+				kj = 0;
+			}
+			bool sameCluster = (kj == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
-				clusterImbMatrix(ki, globalCluster[targ]) += fabs(weight);
+				clusterImbMatrix(ki, kj) += fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
-				clusterImbMatrix(ki, globalCluster[targ]) += fabs(weight);
+				clusterImbMatrix(ki, kj) += fabs(weight);
 			}
-			clusterEdgeSumMatrix(ki, globalCluster[targ]) += fabs(weight);
+			clusterEdgeSumMatrix(ki, kj) += fabs(weight);
 		}
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Synchronizing processes...";
