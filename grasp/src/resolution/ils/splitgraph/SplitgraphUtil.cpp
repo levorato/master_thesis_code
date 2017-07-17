@@ -99,6 +99,7 @@ Imbalance SplitgraphUtil::calculateProcessInternalImbalance(SignedGraph *g, Clus
 	const std::vector<unsigned int> clusterProcessOrigin = c.getClusterProcessOrigin();
 	std::vector<bool> processContainsCluster(nc, false);
 	for(long k = 0; k < nc; k++) {
+		assert(k < clusterProcessOrigin.size());
 		if(clusterProcessOrigin[k] == processNumber) {
 			processContainsCluster[k] = true;
 		}
@@ -106,7 +107,12 @@ Imbalance SplitgraphUtil::calculateProcessInternalImbalance(SignedGraph *g, Clus
 	// creates a bool array where every vertex in process 'processNumber' is marked with 1
 	std::vector<bool> processContainsVertex(n, false);
 	for(long i = 0; i < n; i++) {
-		if(processContainsCluster[myCluster[i]]) {  // the vertex belongs to this process
+		long cluster_of_i = myCluster[i];
+		if(cluster_of_i < 0 or cluster_of_i > nc) {
+			BOOST_LOG_TRIVIAL(error) << "[calculateProcessInternalImbalance] cluster_of_i out of range!: " << cluster_of_i;
+			cluster_of_i = 0;
+		}
+		if(processContainsCluster[cluster_of_i]) {  // the vertex belongs to this process
 			processContainsVertex[i] = true;
 		}
 	}
@@ -115,6 +121,10 @@ Imbalance SplitgraphUtil::calculateProcessInternalImbalance(SignedGraph *g, Clus
 	for(long i = 0; i < n; i++) {
 		if(processContainsVertex[i]) {
 			long ki = myCluster[i];
+			if(ki < 0 or ki > nc) {
+				BOOST_LOG_TRIVIAL(error) << "[calculateProcessInternalImbalance] ki out of range!: " << ki;
+				ki = 0;
+			}
 			UndirectedGraph::out_edge_iterator f, l;
 			// For each out edge of i
 			for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {
@@ -195,21 +205,30 @@ std::vector<Coordinate> SplitgraphUtil::obtainListOfImbalancedClusters(SignedGra
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = globalCluster[i];
+		if(ki < 0 or ki > nc) {
+			BOOST_LOG_TRIVIAL(error) << "[obtainListOfImbalancedClusters] ki out of range!: " << ki;
+			ki = 0;
+		}
 		UndirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
 			e = *f;
 			Vertex src = source(e, g.graph), targ = target(e, g.graph);
 			double weight = ew[e].weight;
-			bool sameCluster = (globalCluster[targ.id] == ki);
+			long kj = globalCluster[targ.id];
+			if(kj < 0 or kj > nc) {
+				BOOST_LOG_TRIVIAL(error) << "[obtainListOfImbalancedClusters] kj out of range!: " << kj;
+				kj = 0;
+			}
+			bool sameCluster = (kj == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
-				clusterImbMatrix(ki, globalCluster[targ.id]) += fabs(weight);
+				clusterImbMatrix(ki, kj) += fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
-				clusterImbMatrix(ki, globalCluster[targ.id]) += fabs(weight);
+				clusterImbMatrix(ki, kj) += fabs(weight);
 			}
-			clusterEdgeSumMatrix(ki, globalCluster[targ.id]) += fabs(weight);
+			clusterEdgeSumMatrix(ki, kj) += fabs(weight);
 		}
 	}
 
@@ -297,6 +316,10 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrix(SignedG
 	// For each vertex i
 	for(long i = 0; i < n; i++) {
 		long ki = myCluster[i];
+		if(ki < 0 or ki > nc) {
+			BOOST_LOG_TRIVIAL(error) << "[calculateProcessToProcessImbalanceMatrix] ki out of range!: " << ki;
+			ki = 0;
+		}
 		UndirectedGraph::out_edge_iterator f, l;
 		double positiveSum = double(0.0), negativeSum = double(0.0);
 		// For each out edge of i
@@ -304,15 +327,20 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrix(SignedG
 			e = *f;
 			Vertex src = source(e, g.graph), targ = target(e, g.graph);
 			double weight = ew[e].weight;
-			bool sameCluster = (myCluster[targ.id] == ki);
+			long kj = myCluster[targ.id];
+			if(kj < 0 or kj > nc) {
+				BOOST_LOG_TRIVIAL(error) << "[calculateProcessToProcessImbalanceMatrix] kj out of range!: " << kj;
+				kj = 0;
+			}
+			bool sameCluster = (kj == ki);
 			if(weight < 0 and sameCluster) {  // negative edge
 				// i and j are in the same cluster
 				negativeSum += fabs(weight);
-				clusterImbMatrix.neg(ki, myCluster[targ.id]) += fabs(weight);
+				clusterImbMatrix.neg(ki, kj) += fabs(weight);
 			} else if(weight > 0 and (not sameCluster)) {  // positive edge
 				// i and j are NOT in the same cluster
 				positiveSum += weight;
-				clusterImbMatrix.pos(ki, myCluster[targ.id]) += fabs(weight);
+				clusterImbMatrix.pos(ki, kj) += fabs(weight);
 			}
 		}
 		vertexImbalance.push_back(std::make_pair(i, positiveSum + negativeSum));
@@ -335,6 +363,14 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
 		long i = listOfModifiedVertices[item];
 		long old_ki = previousSplitgraphClusterArray[i];
 		long new_ki = newSplitgraphClusterArray[i];
+		if(old_ki < 0 or old_ki > nc) {
+			BOOST_LOG_TRIVIAL(error) << "[updateProcessToProcessImbalanceMatrix] old_ki out of range!: " << old_ki;
+			old_ki = 0;
+		}
+		if(new_ki < 0 or new_ki > nc) {
+			BOOST_LOG_TRIVIAL(error) << "[updateProcessToProcessImbalanceMatrix] new_ki out of range!: " << new_ki;
+			new_ki = 0;
+		}
 		UndirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
 		for (boost::tie(f, l) = out_edges(i, g.graph); f != l; ++f) {
@@ -343,6 +379,10 @@ void SplitgraphUtil::updateProcessToProcessImbalanceMatrix(SignedGraph& g,
 			double weight = ew[e].weight;
 			// Etapa 1: subtracao dos imbalances antigos
 			long old_kj = previousSplitgraphClusterArray[targ.id];
+			if(old_kj < 0 or old_kj > nc) {
+				BOOST_LOG_TRIVIAL(error) << "[updateProcessToProcessImbalanceMatrix] old_kj out of range!: " << old_kj;
+				old_kj = 0;
+			}
 			bool sameCluster = (old_kj == old_ki);
 			// TODO VERIFICAR SE DEVE SER RECALCULADO TAMBEM O PAR OPOSTO DA MATRIZ: (KJ, KI)
 			if(weight < 0 and sameCluster) {  // negative edge

@@ -2128,7 +2128,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 	long numberOfMaxVertices = (long)ceil(2 * n / (double)numberOfProcesses);
 	std::vector<Coordinate> overloadedProcessList = util.obtainListOfOverloadedProcesses(*g, bestSplitgraphClustering, numberOfMaxVertices);
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] ***************** rebalanceClustersBetweenProcessesWithZeroCost";
-	BOOST_LOG_TRIVIAL(debug) << "[SplitGraph twoMoveCluster] Found " << overloadedProcessList.size()  << " overloaded processes (with more than "
+	BOOST_LOG_TRIVIAL(info) << "[SplitGraph twoMoveCluster] Found " << overloadedProcessList.size()  << " overloaded processes (with more than "
 			<< numberOfMaxVertices << " vertices.";
 	// sorts the list of overloaded processes according to the number of vertices, descending order
 	std::sort(overloadedProcessList.begin(), overloadedProcessList.end(), coordinate_ordering_desc());
