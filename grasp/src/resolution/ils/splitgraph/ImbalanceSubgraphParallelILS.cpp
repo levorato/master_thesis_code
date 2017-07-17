@@ -116,6 +116,11 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	int improvementCount = 0, improvements = 0, executionCount = 0;
 	long totalFrustratedSolutions = 0;
 	do {
+		// if elapsed time is bigger than timeLimit, break
+		if(timeSpentInILS >= vnd->getTimeLimit()) {
+			BOOST_LOG_TRIVIAL(info) << "[Distributed VND Splitgraph] Time limit exceeded!";
+			break;
+		}
 		// 1. O processo mestre será o responsável por manter duas estruturas de dados de controle do imbalance:
 		//		Um vetor com os vértices que mais contribuem para I(P) (soma de imbalance de cada vertice)
 		//		Uma matriz com a soma do imbalance entre processos
@@ -145,11 +150,6 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 				<< "," << improvements << "," << numberOfFrustratedSolutions << "\n";
 		timer.resume();
 		start_time = timer.elapsed();
-		// if elapsed time is bigger than timeLimit, break
-		if(timeSpentInILS >= vnd->getTimeLimit()) {
-			BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
-			break;
-		}
 	} while(improvements > 0);
 
 	// prints all the info about time spent in each distributed MH invocation
@@ -1761,12 +1761,17 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best global solution so far: I(P) = " << bestClustering.getImbalance().getValue();
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best VND solution so far: I(P) = " << bestClusteringVND.getImbalance().getValue();
 
-	while (r <= l && (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
+	while (r <= l and (timeSpentSoFar + timeSpentOnLocalSearch < vnd->getTimeLimit())) {
 		// 0. Triggers local processing time calculation
 		boost::timer::cpu_timer timer;
 		timer.start();
 		boost::timer::cpu_times start_time = timer.elapsed();
 		BOOST_LOG_TRIVIAL(info)<< "[Splitgraph] Global VND neighborhood " << r << " ...";
+
+		if(timeSpentSoFar + timeSpentOnLocalSearch >= vnd->getTimeLimit()) {
+			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Global VND Time limit exceeded!";
+			break;
+		}
 
 		rebalanceClustersBetweenProcessesWithZeroCost(g, problem, bestSplitgraphClusteringVND, bestClusteringVND, numberOfProcesses);
 
