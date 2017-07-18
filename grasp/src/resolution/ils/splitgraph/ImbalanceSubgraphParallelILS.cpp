@@ -118,7 +118,8 @@ Clustering ImbalanceSubgraphParallelILS::executeILS(ConstructClustering *constru
 	do {
 		// if elapsed time is bigger than timeLimit, break
 		if(timeSpentInILS >= vnd->getTimeLimit()) {
-			BOOST_LOG_TRIVIAL(info) << "[Distributed VND Splitgraph] Time limit exceeded!";
+			BOOST_LOG_TRIVIAL(info) << "[Distributed VND Splitgraph] Time limit exceeded! " << timeSpentInILS << "seconds elapsed. "
+					<< "Global VND time limit is " << vnd->getTimeLimit();
 			break;
 		}
 		// 1. O processo mestre será o responsável por manter duas estruturas de dados de controle do imbalance:

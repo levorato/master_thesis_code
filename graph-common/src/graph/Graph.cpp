@@ -43,8 +43,8 @@ SignedGraph::SignedGraph(UndirectedGraph &g, std::vector<long> subGraphNodeList)
 	for(std::list<UndirectedGraph*>::iterator it = g.m_children.begin(); it != g.m_children.end(); it++) {
 	// for(UndirectedGraph::children_iterator it = ch_iter_pair.first; it != ch_iter_pair.second; it++) {
 		delete *it;
-		g.m_children.clear();
 	}
+	g.m_children.clear();
 	BOOST_LOG_TRIVIAL(info) << "Deleted previous subgraphs.";
 
 	// create the new subgraph
