@@ -458,7 +458,7 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 		}
 		imsg.setVertexList(verticesInProcess[i+1]);
 		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
-		imsg.cudaEnabled = is_overloaded_process(verticesInProcess[i+1]);
+		imsg.cudaEnabled = is_overloaded_process(verticesInProcess[i+1]) and cudaEnabled;
 		world.send(slaveList[i], MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Message sent to process " << slaveList[i];
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Size of ILS Input Message: " << (sizeof(imsg)/1024.0) << "kB.";
@@ -666,7 +666,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 				// sends the modified subgraphs that will be solved by ILS
 				imsg.setVertexList(verticesInDestinationProcess);
 				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
-				imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
+				imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess) and cudaEnabled;
 				world.send(workerProcess, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process " << workerProcess;
 				workerProcess++;
@@ -1043,8 +1043,8 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				imsg.setVertexList(verticesInSourceProcess);
 				imsg2.setVertexList(verticesInDestinationProcess);
 				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
-				imsg.cudaEnabled = is_overloaded_process(verticesInSourceProcess);
-				imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
+				imsg.cudaEnabled = is_overloaded_process(verticesInSourceProcess) and cudaEnabled;
+				imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcess) and cudaEnabled;
 				world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 				world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to processes " << workerProcess1 << " and " << workerProcess2;
@@ -1060,7 +1060,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 				// if(k < 0) {  imsg.setClustering(&CCclustering);  }
 				imsg.setVertexList(verticesInDestinationProcess);
 				// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
-				imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess);
+				imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcess) and cudaEnabled;
 				world.send(1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 				BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to process 1.";
 				numberOfMessagesSent += 1;
@@ -1476,8 +1476,8 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 			imsg.setVertexList(verticesInDestinationProcessA);
 			imsg2.setVertexList(verticesInDestinationProcessB);
 			// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
-			imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcessA);
-			imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcessB);
+			imsg.cudaEnabled = is_overloaded_process(verticesInDestinationProcessA) and cudaEnabled;
+			imsg2.cudaEnabled = is_overloaded_process(verticesInDestinationProcessB) and cudaEnabled;
 			world.send(workerProcess1, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg);
 			world.send(workerProcess2, MPIMessage::INPUT_MSG_PARALLEL_ILS_TAG, imsg2);
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Message sent to processes " << workerProcess1 << " and " << workerProcess2;
@@ -2290,7 +2290,7 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 		// only executes CUDA ILS on vertex overloaded processes; reason: lack of GPU memory resources
 		unsigned int numberOfProcesses = numberOfSlaves + 1;
 		resolution::ils::ILS resolution;
-		if(is_overloaded_process(vertexList)) {
+		if(cudaEnabled and is_overloaded_process(vertexList)) {
 			CUDAILS cudails;
 			try {
 				leaderClustering = cudails.executeILS(construct2, vnd, &sg, iter, iterMaxILS, perturbationLevelMax, problem, info);
