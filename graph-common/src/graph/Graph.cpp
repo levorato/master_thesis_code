@@ -31,15 +31,25 @@ using namespace boost;
 namespace clusteringgraph {
 
 SignedGraph::SignedGraph(const unsigned long &numberOfNodes) :
-		graph(numberOfNodes), n(numberOfNodes) {
+		graph(numberOfNodes), n(numberOfNodes), id(0) {
 
 }
 
 SignedGraph::SignedGraph(UndirectedGraph &g, std::vector<long> subGraphNodeList) :
 		graph(),
-		n(subGraphNodeList.size()) {
+		n(subGraphNodeList.size()), id(0) {
+	// delete the previous subgraphs created on g -> to save memory
+	// std::pair<UndirectedGraph::children_iterator, UndirectedGraph::children_iterator> ch_iter_pair = g.children();
+	for(std::list<UndirectedGraph*>::iterator it = g.m_children.begin(); it != g.m_children.end(); it++) {
+	// for(UndirectedGraph::children_iterator it = ch_iter_pair.first; it != ch_iter_pair.second; it++) {
+		delete *it;
+		g.m_children.clear();
+	}
+	BOOST_LOG_TRIVIAL(info) << "Deleted previous subgraphs.";
 
+	// create the new subgraph
 	graph = g.create_subgraph(subGraphNodeList.begin(), subGraphNodeList.end());
+	BOOST_LOG_TRIVIAL(info) << "Created subgraph of size n = " << subGraphNodeList.size();
 }
 
 SignedGraph::~SignedGraph() {
