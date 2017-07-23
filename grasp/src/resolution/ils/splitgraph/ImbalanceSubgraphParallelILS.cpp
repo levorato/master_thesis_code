@@ -639,6 +639,8 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBet
 	clusteringgraph::Clustering globalClustering(globalClusterArray, *g, problem, internalImbalancePosSum + externalImbalance.getPositiveValue(),
 			internalImbalanceNegSum + externalImbalance.getNegativeValue(), clusterProcessOrigin, internalProcessImbalance);
 
+
+	/*
 	clusteringgraph::validation::CCImbalanceCalculator calc = CCImbalanceCalculator::instance(g->getGraphFileLocation());
 	Imbalance validation = calc.objectiveFunction(globalClusterArray);
 	if(fabs(validation.getValue() - globalClustering.getImbalance().getValue()) > EPS) {
@@ -674,7 +676,7 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBet
 	bool igual = ublas::equals(processClusterImbMatrix.pos, processClusterImbMatrixValidation.pos, 0.001, 0.1);
 	bool igual2 = ublas::equals(processClusterImbMatrix.neg, processClusterImbMatrixValidation.neg, 0.001, 0.1);
 	BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
-	processClusterImbMatrix = processClusterImbMatrixValidation;
+	processClusterImbMatrix = processClusterImbMatrixValidation; */
 
 
 	// 6. Stores the time spent in this iteration of distributed MH
@@ -984,7 +986,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 		BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] updateProcessToProcessImbalanceMatrix done.";
 
 
-
+		/*
 		// FIXME remover codigo de validacao
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** VALIDATION *** Calculating internal process imbalance matrix...";
 		std::vector<Imbalance> internalProcessImbalanceValidation = util.calculateProcessInternalImbalance(*g,
@@ -1022,8 +1024,6 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 			BOOST_LOG_TRIVIAL(info) << "Total vertex count for process " << p << " is " << count;
 		}
 
-
-
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** VALIDATION *** Calculating external process imbalance matrix...";
 		ImbalanceMatrix processClusterImbMatrixValidation = util.calculateProcessToProcessImbalanceMatrix(*g, tempSplitgraphClusterArray,
 							this->vertexImbalance, numberOfSlaves + 1);
@@ -1031,7 +1031,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 		bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, processClusterImbMatrixValidation.neg, 0.001, 0.1);
 		BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
 		tempProcessClusterImbMatrix = processClusterImbMatrixValidation;
-
+		*/
 
 
 		newInternalProcessImbalance = util.calculateProcessInternalImbalance(*g, currentSplitgraphClusterArray,
@@ -1052,7 +1052,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 				internalImbalance.getNegativeValue() + externalImbalance.getNegativeValue(), clusterProcessOrigin, newInternalProcessImbalance);
 
 		// Validacao do calculo da FO
-		// FIXME
+		/*
 		clusteringgraph::validation::CCImbalanceCalculator calc = CCImbalanceCalculator::instance(g->getGraphFileLocation());
 		Imbalance validation = calc.objectiveFunction(globalClusterArray);
 		if(fabs(validation.getValue() - globalClustering.getImbalance().getValue()) > EPS) {
@@ -1061,7 +1061,7 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 				<< " vs I(P) = " << globalClustering.getImbalance().getValue();
 		} else {
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] move-cluster-1opt: I(P) OK!";
-		}
+		} */
 
 		if(globalClustering.getImbalance().getValue() < bestClustering.getImbalance().getValue()) {
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] 1-move-Cluster Improved solution found! I(P) = "
@@ -2722,7 +2722,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 
 
 
-
+	/*
 	// FIXME remover codigo de validacao
 	ImbalanceMatrix tempProcessClusterImbMatrix = bestSplitgraphClustering.getInterProcessImbalanceMatrix();
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] *** zero-cost move VALIDATION *** Calculating external process imbalance matrix...";
@@ -2732,7 +2732,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 	bool igual = ublas::equals(tempProcessClusterImbMatrix.pos, processClusterImbMatrixValidation.pos, 0.001, 0.1);
 	bool igual2 = ublas::equals(tempProcessClusterImbMatrix.neg, processClusterImbMatrixValidation.neg, 0.001, 0.1);
 	BOOST_LOG_TRIVIAL(info) << "Op2 *** As matrizes de delta sao iguais: " << igual << " e " << igual2;
-
+	*/
 
 
 
@@ -2750,6 +2750,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 
 	// Validacao do calculo da FO
 	// FIXME
+	/*
 	clusteringgraph::validation::CCImbalanceCalculator calc = CCImbalanceCalculator::instance(g->getGraphFileLocation());
 	Imbalance validation = calc.objectiveFunction(globalClusterArray);
 	if(fabs(validation.getValue() - bestClustering.getImbalance().getValue()) > EPS) {
@@ -2758,7 +2759,7 @@ void ImbalanceSubgraphParallelILS::rebalanceClustersBetweenProcessesWithZeroCost
 			<< " vs I(P) = " << bestClustering.getImbalance().getValue();
 	} else {
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] rebalanceClustersBetweenProcessesWithZeroCost: I(P) OK!";
-	}
+	}  */
 
 	// prints the new process x vertex configuration
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] RebalanceClusters done.";
