@@ -143,16 +143,18 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 						if(a >= n or b >= n) {
 							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
 							cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+						} else {
+							g->addEdge(a, b, value);
+							// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
 						}
-						g->addEdge(a, b, value);
-						// std::cout << "Adding edge (" << a << ", " << b << ") = " << value << std::endl;
 					} else {
 						if(a > n or b > n) {
 							BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
 							cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+						} else {
+							g->addEdge(a - 1, b - 1, value);
+							// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 						}
-						g->addEdge(a - 1, b - 1, value);
-						// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 					}
 				} else {  // special notation for directed edges (add 1 to imbalance)
 					imbalance++;
@@ -191,9 +193,10 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				if(a > n or b > n) {
 					BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
 					cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+				} else {
+					g->addEdge(a - 1, b - 1, value);
+					// g->addEdge(b - 1, a - 1, value);
 				}
-				g->addEdge(a - 1, b - 1, value);
-				// g->addEdge(b - 1, a - 1, value);
 			} catch( boost::bad_lexical_cast const& ) {
 				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 			}
@@ -219,8 +222,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 	                if(a >= n or b >= n) {
 						BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
 						cerr << "Error: invalid edge. Vertex number must be less than n (" << n << ").";
+					} else {
+						g->addEdge(a, b, value);
 					}
-					g->addEdge(a, b, value);
 				} catch( boost::bad_lexical_cast const& ) {
 					BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
 				}
@@ -245,8 +249,9 @@ SignedGraphPtr SimpleTextGraphFileReader::readGraphFromString(const string& grap
 				if(a > n or b > n) {
 					BOOST_LOG_TRIVIAL(error) << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
 					cerr << "Error: invalid edge. Vertex number must be less or equal to n (" << n << ").";
+				} else {
+					g->addEdge(a - 1, b - 1, value);
 				}
-				g->addEdge(a - 1, b - 1, value);
 				// std::cout << "Adding edge (" << a-1 << ", " << b-1 << ") = " << value << std::endl;
 			} catch( boost::bad_lexical_cast const& ) {
 				BOOST_LOG_TRIVIAL(fatal) << "Error: input string was not valid" << std::endl;
