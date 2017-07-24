@@ -3105,14 +3105,14 @@ void ImbalanceSubgraphParallelILS::redistributeVerticesInProcesses(clusteringgra
 
 	std::vector<int> my_vertices_after;
     {
-		typedef typename property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
-		typedef typename property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
-		typename property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g->graph));
+		typedef property_map<ParallelGraph, vertex_index_t>::type VertexIndexMap;
+		typedef property_map<ParallelGraph, vertex_global_t>::type VertexGlobalMap;
+		property_map<ParallelGraph, vertex_name_t>::type name_map = get(vertex_name, *(g->graph));
 
 		boost::parallel::global_index_map<VertexIndexMap, VertexGlobalMap>
 		global_index(pg, num_vertices(*(g->graph)),
 					get(vertex_index, *(g->graph)), get(vertex_global, *(g->graph)));
-		typename graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
+		graph_traits<ParallelGraph>::vertex_iterator vi, vi_end;
 		for (boost::tie(vi, vi_end) = vertices(*(g->graph)); vi != vi_end; ++vi) {
 			int idx = get(name_map, *vi);
 			my_vertices_after.push_back(idx);
