@@ -117,7 +117,9 @@ ImbalanceMatrix SplitgraphUtil::calculateProcessToProcessImbalanceMatrixLocal(Si
 				}
 				BOOST_LOG_TRIVIAL(trace) << "[calculateProcessToProcessImbalanceMatrixLocal] Obtained edge weight.";
 				bool sameCluster = (kj == ki);
-				assert(sameCluster == ( owner(v) == owner(target( e, *(g.graph) ) ) ) );
+				if(sameCluster != ( owner(v) == owner(target( e, *(g.graph) ) ) )) {
+					BOOST_LOG_TRIVIAL(error) << "Assert FAILED: sameCluster == ( owner(v) == owner(target( e, *(g.graph) ) ) )";
+				}
 				if(weight < 0 and sameCluster) {  // negative edge
 					// i and j are in the same cluster
 					negativeSum += fabs(weight);

@@ -1331,7 +1331,7 @@ using namespace std;
 
 						// printf("Max idx is %ld\n", numberOfChunks - 1);
 						// printf("Idx = %ld: The best src vertex is %ld to cluster %ld with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, min_val);
-						if(bestImbalance < EPS) {  printf("WARNING: I(P) < 0 !!!\n");  break;  }
+						if(bestImbalance < EPS) {  /* printf("WARNING: I(P) < 0 !!!\n"); */  break;  }
 						d_old_nc = d_nc;
 						old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
 						updateClustering1opt<<< 1, 1 >>>(bestSrcVertex, destCluster, destPositiveImbalance, destNegativeImbalance, clusterArray, funcArray, n, ncArray);
@@ -1414,7 +1414,7 @@ using namespace std;
                         timer.resume();
 						
 						// printf("Preparing new VND loop...\n");
-						if(bestImbalance <= -EPS)   {  printf("WARNING: I(P) <= 0 !!!\n");  break;  }
+						if(bestImbalance <= -EPS)   {  /* printf("WARNING: I(P) <= 0 !!!\n"); */  break;  }
 					} else {  // no better result found in neighborhood
 						// printf("Breaking VND loop...\n");
 						break;
@@ -1451,7 +1451,7 @@ using namespace std;
 					// assert(bestImbalance == destPositiveImbalance + destNegativeImbalance);
 					
 					if(fabs(destPositiveImbalance + destNegativeImbalance - Clnew.getImbalance().getValue()) > EPS) {  // (destPositiveImbalance + destNegativeImbalance != Clnew.getImbalance().getValue()) => different values
-						printf("Warning: imbalance does not match. CUDA I(P) = %.6f, CPU: %.6f\n", bestImbalance, Clnew.getImbalance().getValue());
+						//printf("Warning: imbalance does not match. CUDA I(P) = %.6f, CPU: %.6f\n", bestImbalance, Clnew.getImbalance().getValue());
 						destPositiveImbalance = Clnew.getImbalance().getPositiveValue();
 						destNegativeImbalance = Clnew.getImbalance().getNegativeValue();
 						bestImbalance = Clnew.getImbalance().getValue();
@@ -1544,7 +1544,7 @@ using namespace std;
 			double newImbValue = newValue.getValue();
 			double bestImbValue = bestValue.getValue();
 			if((newImbValue - bestImbValue < EPS) && (fabs(newImbValue - bestImbValue) > EPS)) {  // (newValue < bestValue) => improvement in imbalance
-				printf("A better global solution was found: I(P) = %.5f\n", newValue.getValue());
+				//printf("A better global solution was found: I(P) = %.5f\n", newValue.getValue());
 				CBest = CStar;
 				bestValue = newValue;
 				iterationValue = i;

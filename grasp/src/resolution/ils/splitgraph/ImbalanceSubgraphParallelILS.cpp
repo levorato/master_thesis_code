@@ -546,7 +546,9 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBet
 		messageMap[procNum] = omsg;
 		N += omsg.num_vertices;
 	}
-	assert(N == g->getGlobalN());
+	if(N != g->getGlobalN()) {
+		BOOST_LOG_TRIVIAL(error) << "N != g->getGlobalN() !!!";
+	}
 
 	// Global cluster array
 	ClusterArray globalClusterArray(N, 0);
@@ -601,6 +603,9 @@ clusteringgraph::Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBet
 		if(msg_nc > 0) {
 			BOOST_LOG_TRIVIAL(info) << "localClusterArray.size() = " << localClusterArray.size();
 			BOOST_LOG_TRIVIAL(info) << "omsg.globalVertexId.size() = " << omsg.globalVertexId.size();
+			if((omsg.num_vertices != omsg.globalVertexId.size()) or (localClusterArray.size() != omsg.globalVertexId.size())) {
+				BOOST_LOG_TRIVIAL(fatal) << "Falha na validacao do numero de vertices e tamanho do clusterArray!";
+			}
 			assert(omsg.num_vertices == omsg.globalVertexId.size());
 			assert(localClusterArray.size() == omsg.globalVertexId.size());
 			for(long v = 0; v < localClusterArray.size(); v++) {
@@ -705,6 +710,10 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 	ClusterArray splitgraphClusterArray = bestSplitgraphClustering.getClusterArray();
 	const ImbalanceMatrix initialProcessClusterImbMatrix = bestSplitgraphClustering.getInterProcessImbalanceMatrix();
 	BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Best global solution so far: I(P) = " << bestClustering.getImbalance().getValue();
+	if((splitgraphClusterArray.size() != g->getGlobalN()) or (bestClustering.getClusterArray().size() != g->getGlobalN())) {
+		BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Falha na validacao splitgraphClusterArray.size() == g->getGlobalN() e "
+				"bestClustering.getClusterArray().size() == g->getGlobalN()";
+	}
 	assert(splitgraphClusterArray.size() == g->getGlobalN());
 	assert(bestClustering.getClusterArray().size() == g->getGlobalN());
 	long nc = bestClustering.getNumberOfClusters();
@@ -803,7 +812,9 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 		std::vector< std::vector<long> > verticesInProcess(np, std::vector<long>());
 		for(long i = 0; i < n; i++) {
 			long k = tempSplitgraphClusterArray[i];
-			assert(k < np);
+			if(not (k < np)) {
+				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Assertion k < np FAILED!";
+			}
 			verticesInProcess[k].push_back(i);
 			// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] vertex " << i << " goes to process " << k;
 			if(k == destinationProcess) {
@@ -950,12 +961,18 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(clusteringgraph::SignedGraph*
 
 			long msg_nc = msg.clustering.getNumberOfClusters();
 			if(msg_nc > 0) {
+				if(localClusterArray.size() == msg.globalVertexId.size()) {
+					BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion localClusterArray.size() == msg.globalVertexId.size() FAILED!";
+				}
 				assert(localClusterArray.size() == msg.globalVertexId.size());
 				for(long v = 0; v < localClusterArray.size(); v++) {
 					// Obtains vertex v's number in the global graph
 					long vglobal = msg.globalVertexId[v];
 					// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] Processing global vertex " << vglobal;
 					// BOOST_LOG_TRIVIAL(debug) << "vglobal = " << vglobal;
+					if(not (vglobal < globalClusterArray.size())) {
+						BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion vglobal < globalClusterArray.size() FAILED!";
+					}
 					assert(vglobal < globalClusterArray.size());
 					globalClusterArray[vglobal] = clusterOffset + localClusterArray[v];
 				}
@@ -1245,7 +1262,7 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(clusteringgraph::SignedGraph*
 			std::vector<long> listOfMovedVerticesFromProcessA = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToSwapA);
 			int currentProcess = initialSplitgraphClusterArray[listOfMovedVerticesFromProcessA[0]];
 			if(currentProcess != procSourceNum) {
-				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers.";
+				BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion FAILED! Inconsistency detected between source process numbers.";
 			}
 			assert(currentProcess == procSourceNum);
 			//BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Swap from process " << procSourceNum <<
@@ -1534,6 +1551,9 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(clusteringgraph::SignedGraph*
 
 				long msg_nc = msg.clustering.getNumberOfClusters();
 				if(msg_nc > 0) {
+					if(not (localClusterArray.size() == msg.globalVertexId.size())) {
+						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Assertion localClusterArray.size() == msg.globalVertexId.size() FAILED!";
+					}
 					assert(localClusterArray.size() == msg.globalVertexId.size());
 					for(long v = 0; v < localClusterArray.size(); v++) {
 						// Obtains vertex v's number in the global graph
@@ -1762,7 +1782,7 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(clusteringgraph::SignedGraph* 
 					std::vector<long> listOfMovedVerticesFromClusterB = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToMoveB);
 					int currentProcess = initialSplitgraphClusterArray[listOfMovedVerticesFromClusterA[0]];
 					if(currentProcess != procSourceNum) {
-						BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers.";
+						BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion FAILED! Inconsistency detected between source process numbers.";
 					}
 					assert(currentProcess == procSourceNum);
 					// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] 2-Move from process " << procSourceNum << ": Moving global clusters "
@@ -1806,6 +1826,9 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(clusteringgraph::SignedGraph* 
 		// all movements must involve the same source process
 		std::vector<Coordinate> movementsInParallelA, movementsInParallelB;
 		int currentSourceProcess = clusterProcessOrigin[movementListA.back().x];
+		if(not (clusterProcessOrigin[movementListA.back().x] == clusterProcessOrigin[movementListB.back().x])) {
+			BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion FAILED: clusterProcessOrigin[movementListA.back().x] == clusterProcessOrigin[movementListB.back().x]";
+		}
 		assert(clusterProcessOrigin[movementListA.back().x] == clusterProcessOrigin[movementListB.back().x]);
 		for(int mov = 0; mov < numberOfParallelEvaluations; mov++) {
 			int sourceProcess = clusterProcessOrigin[movementListA.back().x];
@@ -2061,6 +2084,9 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(clusteringgraph::SignedGraph* 
 
 				long msg_nc = msg.clustering.getNumberOfClusters();
 				if(msg_nc > 0) {
+					if(not (localClusterArray.size() == msg.globalVertexId.size())) {
+						BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Assertion FAILED: localClusterArray.size() == msg.globalVertexId.size()";
+					}
 					assert(localClusterArray.size() == msg.globalVertexId.size());
 					for(long v = 0; v < localClusterArray.size(); v++) {
 						// Obtains vertex v's number in the global graph
@@ -2487,12 +2513,15 @@ bool ImbalanceSubgraphParallelILS::splitClusterMove(clusteringgraph::SignedGraph
 			// finds out to which process the cluster belongs to
 			int currentProcess = splitgraphClusterArray[cliqueC.front()];
 			if(currentProcess != procSourceNum) {
-				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers.";
+				BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion FAILED! Inconsistency detected between source process numbers.";
 			}
 			assert(currentProcess == procSourceNum);
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Move pseudo clique of size " << cliqueC.size()
 					<<  " from process " << procSourceNum <<
 					": Moving from global cluster " << clusterX << " of size " << bestClustering.getClusterSize(clusterX);
+			if(not (bigClustersList[clusterCount].y == procSourceNum)) {
+				BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion FAILED! bigClustersList[clusterCount].y == procSourceNum";
+			}
 			assert(bigClustersList[clusterCount].y == procSourceNum);
 
 			// LOAD BALANCING: Try to move the clique to a process with less vertices than a given threshold (less loaded process)
@@ -2820,6 +2849,9 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 	BGL_FORALL_VERTICES(v, *(g->graph), ParallelGraph) {
 		int idx = get(name_map, v);
 		ss << idx << "; ";
+		if(not (owner(v) == myRank)) {
+			BOOST_LOG_TRIVIAL(fatal) << "Assertion FAILED: owner(v) == myRank";
+		}
 		assert(owner(v) == myRank);
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Vertices in this process (P " << myRank << "): " << ss.str() << ".";
@@ -2964,6 +2996,9 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(InputMessage
 			num_comb = resolution.getNumberOfTestedCombinations();
 		}
 
+		if(not (bestClustering.getClusterArray().size() == num_vertices(*(g->graph)))) {
+			BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion FAILED: bestClustering.getClusterArray().size() == num_vertices(*(g->graph))";
+		}
 		assert(bestClustering.getClusterArray().size() == num_vertices(*(g->graph)));
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph P" << comm.rank() << ": num_edges = " <<
 								num_edges(*(g->graph)) << " , num_vertices = " << num_vertices(*(g->graph)) << ", I(P) = "
@@ -2990,6 +3025,9 @@ void ImbalanceSubgraphParallelILS::moveClusterToDestinationProcessZeroCost(clust
 	std::vector< std::vector<long> > verticesInProcess(np, std::vector<long>());
 	for(long i = 0; i < n; i++) {
 		long k = splitgraphClusterArray[i];
+		if(not (k < np)) {
+			BOOST_LOG_TRIVIAL(fatal) << "[Parallel ILS SplitGraph] Assertion FAILED: k < np";
+		}
 		assert(k < np);
 		verticesInProcess[k].push_back(i);
 		// BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] vertex " << i << " goes to process " << k;
