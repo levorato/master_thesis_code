@@ -124,8 +124,12 @@ Clustering ParallelNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* g,
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialSearchIndex,
 		unsigned long finalSearchIndex, bool firstImprovementOnOneNeig, unsigned long k) {
 
-	assert(initialSearchIndex < g->getN());
-	assert(finalSearchIndex < g->getN());
+	if(not (initialSearchIndex < g->getN())) {
+		BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! initialSearchIndex < g->getN()";
+	}
+	if(not (finalSearchIndex < g->getN())) {
+		BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! finalSearchIndex < g->getN()";
+	}
 
 	if (l == 1) {  // 1-opt
 		// Parallel search always does best improvement in 1-opt

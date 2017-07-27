@@ -68,7 +68,9 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 
 		long n = g.getN();
 		for(unsigned long i = 0; i < n; i++) {
-			assert(clusterArray[i] < numberOfClusters);
+			if(not (clusterArray[i] < numberOfClusters))  {
+				BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! clusterArray[i] < numberOfClusters";
+			}
 			clusters[clusterArray[i]].push_back(i);
 		}
 		// compute clusters' size
@@ -100,7 +102,9 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 
 		long n = g.getN();
 		for(unsigned long i = 0; i < n; i++) {
-			assert(clusterArray[i] < numberOfClusters);
+			if(not (clusterArray[i] < numberOfClusters)) {
+				BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! clusterArray[i] < numberOfClusters)";
+			}
 			clusters[clusterArray[i]].push_back(i);
 		}
 		// compute clusters' size
@@ -132,7 +136,9 @@ Clustering::Clustering(ClusterArray &cArray, SignedGraph& g, ClusteringProblem &
 
 		long n = g.getN();
 		for(unsigned long i = 0; i < n; i++) {
-			assert(clusterArray[i] < numberOfClusters);
+			if(not (clusterArray[i] < numberOfClusters)) {
+				BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! clusterArray[i] < numberOfClusters";
+			}
 			clusters[clusterArray[i]].push_back(i);
 		}
 		// compute clusters' size
@@ -152,7 +158,9 @@ const unsigned long Clustering::getNumberOfClusters() const {
 }
 
 void Clustering::addCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, bool updateImbalance) {
-	assert(clusterArray.size() > 0);
+	if(not (clusterArray.size() > 0)) {
+		BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! clusterArray.size() > 0";
+	}
 	// 1. Increase the number of clusters
 	this->clusterSize.push_back(1);
 	// 2. Set the process origin for this new cluster
@@ -178,7 +186,9 @@ int Clustering::getBiggestClusterIndex() const {
 
 void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, const unsigned long& k,
 		bool updateImbalance) {
-	assert(clusterArray.size() > 0);
+	if(not (clusterArray.size() > 0)) {
+		BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! clusterArray.size() > 0";
+	}
 	//BOOST_LOG_TRIVIAL(trace) << "Adding vertex " << i << " to cluster " << k;
 	this->clusterArray[i] = k;
 	this->clusterSize[k]++;
@@ -193,7 +203,9 @@ void Clustering::addNodeToCluster(SignedGraph& g, ClusteringProblem& p, const un
 }
 
 void Clustering::removeCluster(SignedGraph& g, unsigned long k) {
-	assert(clusterArray.size() > 0);
+	if(not (clusterArray.size() > 0)) {
+		BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! clusterArray.size() > 0";
+	}
 	// clusterArray.erase(clusterArray.begin()+k);
 	// TODO complete code
 	// only if cluster has been removed
@@ -219,7 +231,9 @@ void Clustering::setClusterSize(unsigned long k, unsigned long size) {
 
 void Clustering::removeNodeFromCluster(SignedGraph& g, ClusteringProblem& p, const unsigned long& i, 
 		const unsigned long& k, bool updateImbalance) {
-	assert(clusterArray.size() > 0);
+	if(not (clusterArray.size() > 0)) {
+		BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! clusterArray.size() > 0";
+	}
 	// verifica se o cluster eh unitario
 	//BOOST_LOG_TRIVIAL(trace) << "Removing vertex " << i << " from cluster " << k;
 	if(updateImbalance) {

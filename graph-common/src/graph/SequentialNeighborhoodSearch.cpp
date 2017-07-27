@@ -8,9 +8,11 @@
 #include "include/SequentialNeighborhoodSearch.h"
 #include "../problem/include/CCProblem.h"
 #include "../problem/include/RCCProblem.h"
-
+#include <boost/log/trivial.hpp>
 
 namespace clusteringgraph {
+
+using namespace boost;
 
 SequentialNeighborhoodSearch::SequentialNeighborhoodSearch() {
 
@@ -36,8 +38,12 @@ Clustering SequentialNeighborhoodSearch::searchNeighborhood(int l, SignedGraph* 
 		double timeLimit, unsigned long randomSeed, int myRank, unsigned long initialSearchIndex,
 		unsigned long finalSearchIndex, bool firstImprovementOnOneNeig, unsigned long k) {
 
-	assert(initialSearchIndex < g->getN());
-	assert(finalSearchIndex < g->getN());
+	if(not (initialSearchIndex < g->getN())) {
+		BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! initialSearchIndex < g->getN()";
+	}
+	if(not (finalSearchIndex < g->getN())) {
+		BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! finalSearchIndex < g->getN()";
+	}
 
 	if (l == 1) {  // 1-opt
 		// Sequential search does first improvement in 1-opt, depending on parameter value

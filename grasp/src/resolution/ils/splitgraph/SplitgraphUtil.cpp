@@ -99,7 +99,9 @@ Imbalance SplitgraphUtil::calculateProcessInternalImbalance(SignedGraph *g, Clus
 	const std::vector<unsigned int> clusterProcessOrigin = c.getClusterProcessOrigin();
 	std::vector<bool> processContainsCluster(nc, false);
 	for(long k = 0; k < nc; k++) {
-		assert(k < clusterProcessOrigin.size());
+		if(not (k < clusterProcessOrigin.size())) {
+			BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! k < clusterProcessOrigin.size()";
+		}
 		if(clusterProcessOrigin[k] == processNumber) {
 			processContainsCluster[k] = true;
 		}

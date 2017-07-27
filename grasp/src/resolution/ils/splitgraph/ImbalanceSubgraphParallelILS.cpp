@@ -282,7 +282,9 @@ ProcessClustering ImbalanceSubgraphParallelILS::preProcessSplitgraphPartitioning
 		// *** STEP 1: Chooses a node with the smallest negative cardinality INSIDE the residual graph Gr
 		//  (will probably result in the smallest increase in the imbalance)
 		Clustering GrCluster(*g);  // uses Clustering data structure to control the elements in the set
-		assert(Gr.size() > 0);
+		if(not (Gr.size() > 0)) {
+			BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! Gr.size() > 0";
+		}
 		GrCluster.addCluster(*g, problem, Gr[0].id, false);
 		for(int i = 1; i < Gr.size(); i++) {
 			GrCluster.addNodeToCluster(*g, problem, Gr[i].id, 0, false);
@@ -519,7 +521,9 @@ Clustering ImbalanceSubgraphParallelILS::distributeSubgraphsBetweenProcessesAndR
 
 		long msg_nc = omsg.clustering.getNumberOfClusters();
 		if(msg_nc > 0) {
-			assert(localClusterArray.size() == omsg.globalVertexId.size());
+			if(not (localClusterArray.size() == omsg.globalVertexId.size())) {
+				BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! localClusterArray.size() == omsg.globalVertexId.size()";
+			}
 			for(long v = 0; v < localClusterArray.size(); v++) {
 				// Obtains vertex v's number in the global graph
 				long vglobal = omsg.globalVertexId[v];
@@ -756,7 +760,9 @@ bool ImbalanceSubgraphParallelILS::moveCluster1opt(SignedGraph* g, ProcessCluste
 
 				long msg_nc = msg.clustering.getNumberOfClusters();
 				if(msg_nc > 0) {
-					assert(localClusterArray.size() == msg.globalVertexId.size());
+					if(not (localClusterArray.size() == msg.globalVertexId.size())) {
+						BOOST_LOG_TRIVIAL(error) << "Assertion FAILED! localClusterArray.size() == msg.globalVertexId.size()";
+					}
 					for(long v = 0; v < localClusterArray.size(); v++) {
 						// Obtains vertex v's number in the global graph
 						long vglobal = msg.globalVertexId[v];
@@ -944,9 +950,9 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 			std::vector<long> listOfMovedVerticesFromProcessA = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToSwapA);
 			int currentProcess = initialSplitgraphClusterArray[listOfMovedVerticesFromProcessA[0]];
 			if(currentProcess != procSourceNum) {
-				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers.";
+				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers."
+						"Failed to assert (currentProcess == procSourceNum)";
 			}
-			assert(currentProcess == procSourceNum);
 			//BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Swap from process " << procSourceNum <<
 			//		": Moving global cluster " << clusterToSwapA << " of size " << initialGlobalClustering.getClusterSize(clusterToSwapA);
 
@@ -1175,7 +1181,9 @@ bool ImbalanceSubgraphParallelILS::swapCluster1opt(SignedGraph* g, ProcessCluste
 
 				long msg_nc = msg.clustering.getNumberOfClusters();
 				if(msg_nc > 0) {
-					assert(localClusterArray.size() == msg.globalVertexId.size());
+					if(not (localClusterArray.size() == msg.globalVertexId.size())) {
+						BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] FAILED to assert: localClusterArray.size() == msg.globalVertexId.size()";
+					}
 					for(long v = 0; v < localClusterArray.size(); v++) {
 						// Obtains vertex v's number in the global graph
 						long vglobal = msg.globalVertexId[v];
@@ -1362,9 +1370,9 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 					std::vector<long> listOfMovedVerticesFromClusterB = util.getListOfVeticesInCluster(*g, initialGlobalClustering, clusterToMoveB);
 					int currentProcess = initialSplitgraphClusterArray[listOfMovedVerticesFromClusterA[0]];
 					if(currentProcess != procSourceNum) {
-						BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers.";
+						BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers."
+								"Failed to assert: currentProcess == procSourceNum";
 					}
-					assert(currentProcess == procSourceNum);
 					// BOOST_LOG_TRIVIAL(debug) << "[Parallel ILS SplitGraph] 2-Move from process " << procSourceNum << ": Moving global clusters "
 					//		<< clusterToMoveA << " and " <<	clusterToMoveB << ".";
 					// LOAD BALANCING: Try to move the clusters to 2 processes with less vertices than a given threshold (less loaded process)
@@ -1406,7 +1414,9 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 		// all movements must involve the same source process
 		std::vector<Coordinate> movementsInParallelA, movementsInParallelB;
 		int currentSourceProcess = clusterProcessOrigin[movementListA.back().x];
-		assert(clusterProcessOrigin[movementListA.back().x] == clusterProcessOrigin[movementListB.back().x]);
+		if(not (clusterProcessOrigin[movementListA.back().x] == clusterProcessOrigin[movementListB.back().x])) {
+			BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] FAILED to assert: clusterProcessOrigin[movementListA.back().x] == clusterProcessOrigin[movementListB.back().x]";
+		}
 		for(int mov = 0; mov < numberOfParallelEvaluations; mov++) {
 			int sourceProcess = clusterProcessOrigin[movementListA.back().x];
 			// all movements must involve the same source process
@@ -1602,7 +1612,9 @@ bool ImbalanceSubgraphParallelILS::twoMoveCluster(SignedGraph* g, ProcessCluster
 
 				long msg_nc = msg.clustering.getNumberOfClusters();
 				if(msg_nc > 0) {
-					assert(localClusterArray.size() == msg.globalVertexId.size());
+					if(not (localClusterArray.size() == msg.globalVertexId.size())) {
+						BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] FAILED to assert: localClusterArray.size() == msg.globalVertexId.size()";
+					}
 					for(long v = 0; v < localClusterArray.size(); v++) {
 						// Obtains vertex v's number in the global graph
 						long vglobal = msg.globalVertexId[v];
@@ -1994,13 +2006,15 @@ bool ImbalanceSubgraphParallelILS::splitClusterMove(SignedGraph* g, ProcessClust
 			// finds out to which process the cluster belongs to
 			int currentProcess = splitgraphClusterArray[cliqueC.front()];
 			if(currentProcess != procSourceNum) {
-				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers.";
+				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] Inconsistency detected between source process numbers."
+						"FAILED to assert: currentProcess == procSourceNum";
 			}
-			assert(currentProcess == procSourceNum);
 			BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Move pseudo clique of size " << cliqueC.size()
 					<<  " from process " << procSourceNum <<
 					": Moving from global cluster " << clusterX << " of size " << bestClustering.getClusterSize(clusterX);
-			assert(bigClustersList[clusterCount].y == procSourceNum);
+			if(not (bigClustersList[clusterCount].y == procSourceNum)) {
+				BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] FAILED to assert: bigClustersList[clusterCount].y == procSourceNum";
+			}
 
 			// LOAD BALANCING: Try to move the clique to a process with less vertices than a given threshold (less loaded process)
 			const ClusterArray currentSplitgraphClusterArray = bestSplitgraphClustering.getClusterArray();

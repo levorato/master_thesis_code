@@ -209,7 +209,9 @@ Clustering GraclusParallelILS::executeILS(ConstructClustering *construct, Variab
 		numberOfTestedCombinations += omsg.numberOfTestedCombinations;
 		// 4. Merge the partial solutions into a global solution for the whole graph
 		ClusterArray localClusterArray = omsg.clustering.getClusterArray();
-		assert(localClusterArray.size() == omsg.globalVertexId.size());
+		if(not (localClusterArray.size() == omsg.globalVertexId.size())) {
+			BOOST_LOG_TRIVIAL(error) << "[Parallel ILS SplitGraph] FAILED to assert: localClusterArray.size() == omsg.globalVertexId.size()";
+		}
 		for(long v = 0; v < localClusterArray.size(); v++) {
 			// Obtains vertex v's number in the global graph
 			long vglobal = omsg.globalVertexId[v];
