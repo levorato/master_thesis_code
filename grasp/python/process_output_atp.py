@@ -102,9 +102,16 @@ def processCCResult(folder):
         print "Processing folder " + ''.join(root)
         if (len(files) and ''.join(root) != folder):
             file_list = []
-            file_list.extend(glob.glob(root + "/CC*.csv"))
-            file_list.extend(glob.glob(root + "/Node*.csv"))
+            file_list.extend(glob.glob(root + os.path.sep + "CC-Node*-iterations-splitgraph.csv"))
             count = len(file_list) - 1
+            if count >= 0:
+                print "*** Processing splitgraph results..."
+                splitgraph = True
+            else:
+                file_list.extend(glob.glob(root + os.path.sep + "CC-Node*-iterations.csv"))
+                count = len(file_list) - 1
+                print "*** Processing NORMAL results..."
+                splitgraph = False
 
             # Process CC results
             if os.path.isfile(root + "/cc-result.txt"):
@@ -152,6 +159,9 @@ def processCCResult(folder):
 
                         for row in reader:
                             if linecount == 0:
+                                linecount += 1
+                                continue
+                            if linecount == 1 and splitgraph:
                                 linecount += 1
                                 continue
                             linestring = ''.join(row)

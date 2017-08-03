@@ -333,7 +333,8 @@ def main(argv):
                                     "Cluster " + str(c + 1) + str(" (%%IntNegEdges = %.2f" % (PIntNegEdges)) + str(
                                         " and %%ExtPosEdges = %.2f" % (PExtPosEdges)) + ")")
                                     MediatorsClusterIndices.append((current_year, graph_version, c, 'Plus mutually hostile mediators',
-                                                                        str("%%IntNegEdges = %.2f" % (" and %%ExtPosEdges = %.2f" % (PExtPosEdges))) ))
+                                                                        str("%%IntPosEdges = %.2f" % (PIntPosEdges)) + str(
+                                                                        " and %%ExtPosEdges = %.2f" % (PExtPosEdges))) )
                                 if (PIntNegEdges > threshold and PExtNegEdges > threshold):
                                     InternalSubgroupHostility[graphfile] = (
                                     "Cluster " + str(c + 1) + str(" (%%IntNegEdges = %.2f" % (PIntNegEdges)) + str(

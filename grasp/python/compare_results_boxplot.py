@@ -414,9 +414,15 @@ def processTimeToTarget(folder, worse_sol, exclude):
         #print "Processing folder " + ''.join(root)
         if (len(files) and ''.join(root) != folder):
             file_list = []
-            file_list.extend(glob.glob(root + os.path.sep + "CC*-iterations.csv"))
-            file_list.extend(glob.glob(root + os.path.sep + "Node*-iterations.csv"))
-            count = len(file_list) - 1
+            #file_list.extend(glob.glob(root + os.path.sep + "CC*-iterations.csv"))
+            file_list.extend(glob.glob(root + os.path.sep + "CC-Node*-iterations-splitgraph.csv"))
+            count = len(file_list)
+            if count > 0:
+                print "*** Processing splitgraph results..."
+            else:
+                file_list.extend(glob.glob(root + os.path.sep + "CC-Node*-iterations.csv"))
+                count = len(file_list)
+                print "*** Processing NORMAL results..."
 
             # Process CC results
             if os.path.isfile(root + os.path.sep + "cc-result.txt"):
@@ -473,9 +479,16 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
         #print "Processing folder " + ''.join(root)
         if (len(files) and ''.join(root) != folder):
             file_list = []
-            file_list.extend(glob.glob(root + os.path.sep + "CC*-iterations.csv"))
-            file_list.extend(glob.glob(root + os.path.sep + "Node*-iterations.csv"))
+            file_list.extend(glob.glob(root + os.path.sep + "CC-Node*-iterations-splitgraph.csv"))
             count = len(file_list) - 1
+            if count >= 0:
+                print "*** Processing splitgraph results..."
+                splitgraph = True
+            else:
+                file_list.extend(glob.glob(root + os.path.sep + "CC-Node*-iterations.csv"))
+                count = len(file_list) - 1
+                print "*** Processing NORMAL results..."
+                splitgraph = False
 
             # Process CC results
             if os.path.isfile(root + os.path.sep + "cc-result.txt"):
@@ -503,6 +516,9 @@ def processTimeToTargetOnInstance(folder, filename, worse_sol):
                         linecount = 0
                         for row in reader:
                             if linecount == 0:  # skip the first line of csv file
+                                linecount += 1
+                                continue
+                            if linecount == 1 and splitgraph:
                                 linecount += 1
                                 continue
                             linestring = ''.join(row)
@@ -756,6 +772,10 @@ def generate_box_plot(data_to_plot, instance_names, labels, result_file_prefix):
     ylabels = instance_names
     print ylabels
     axis_count = -1
+    print axes
+    print instance_names
+    if len(instance_names) == 1:
+        axes = [axes]
     for ax, name in zip(axes, instance_names):
         print "Processing instance " + name
         axis_count += 1
