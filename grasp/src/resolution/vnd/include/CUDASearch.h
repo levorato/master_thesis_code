@@ -55,10 +55,10 @@ using namespace clusteringgraph;
 	bool runILSKernel(ClusteringProblem& problem, ConstructClustering &construct,
 				SignedGraph *g, int processRank, unsigned long timeLimit,
 				const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
-				thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
-				thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
+				thrust::host_vector<float>& h_weights, thrust::host_vector<long>& h_dest,
+				thrust::host_vector<long>& h_numedges, thrust::host_vector<long>& h_offset,
 				unsigned long n, unsigned long m, unsigned short threadsCount, bool firstImprovement,
-				Clustering& result, int &totalIterations, double& timeSpentConstruct, double& timeSpentILS,
+				Clustering& result, long &totalIterations, double& timeSpentConstruct, double& timeSpentILS,
 				stringstream &constructivePhaseResults, stringstream &iterationResults);
 
 	bool runConstructKernel(unsigned long randomSeed, thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,

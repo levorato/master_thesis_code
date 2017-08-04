@@ -66,21 +66,21 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 	unsigned long m = g->getM();
 	// CUDA graph structure (adapted adjacency list)
 	thrust::host_vector<float> h_weights(2 * m);  // in/out edge weights
-	thrust::host_vector<int> h_dest(2 * m);  // edge destination (vertex j)
-	thrust::host_vector<int> h_numedges(n);  // number of edges of each vertex i
-	thrust::host_vector<int> h_offset(n);  // initial edge number for vertex i
+	thrust::host_vector<long> h_dest(2 * m);  // edge destination (vertex j)
+	thrust::host_vector<long> h_numedges(n);  // number of edges of each vertex i
+	thrust::host_vector<long> h_offset(n);  // initial edge number for vertex i
 	// For each vertex, creates a list of in and out edges
-	int i = 0, offset = 0;
+	long i = 0, offset = 0;
 	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, g->graph);
 	UndirectedGraph::edge_descriptor e;
 	for(long i = 0, edge = 0; i < n; i++) {  // For each vertex i
 		UndirectedGraph::out_edge_iterator f, l;  // For each out edge of i
-		int count = 0;
+		long count = 0;
 		h_offset[i] = offset;
 		for (boost::tie(f, l) = out_edges(i, g->graph); f != l; ++f) {  // out edges of i
 			e = *f;
 			double weight = ew[e].weight;
-			int j = target(*f, g->graph);
+			long j = target(*f, g->graph);
 			h_dest[edge] = j;
 			h_weights[edge] = weight;
 			count++; edge++;
@@ -92,7 +92,7 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 	// number of threads per block
 	unsigned short threadsCount = 1024;  // limited by shared memory size
 	// Pass raw array and its size to kernel
-	int totalIter = 0;
+	long totalIter = 0;
 	Clustering CStar;
 	CStar.setImbalance(Imbalance(-1.0, -1.0));
 	double totalTimeSpentOnConstruction = 0, timeSpentOnLocalSearch = 0;
@@ -109,7 +109,7 @@ Clustering CUDAILS::executeILS(ConstructClustering *construct, VariableNeighborh
 	boost::timer::cpu_times end_time = timer.elapsed();
 	timeSpentInILS = (end_time.wall - start_time.wall) / double(1000000000);
 
-	int iterationValue = 0;
+	long iterationValue = 0;
 	iterationResults << "Best value," << fixed << setprecision(4) << bestValue.getValue()
 			<< "," << bestValue.getPositiveValue()
 			<< "," << bestValue.getNegativeValue()

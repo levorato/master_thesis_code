@@ -76,11 +76,11 @@ using namespace std;
 	}	
 	
 	/// CUDA Kernel to update the cluster array and the objective function value on 1-opt search.
-	__global__ void updateClustering1opt(const int bestSrcVertex, const int destcluster, float positiveFunctionValue,
+	__global__ void updateClustering1opt(const long bestSrcVertex, const long destcluster, float positiveFunctionValue,
 			float negativeFunctionValue, ulong* clusterArray, float* funcArray, long n, ulong* nc) {
 		funcArray[0] = positiveFunctionValue;
 		funcArray[1] = negativeFunctionValue;
-		int previousCluster = clusterArray[bestSrcVertex];
+		ulong previousCluster = clusterArray[bestSrcVertex];
 		clusterArray[bestSrcVertex] = destcluster;
 		
 		// validate the current number of clusters in the solution
@@ -90,14 +90,14 @@ using namespace std;
 		// Option 2 (harder): bestSrcVertex's previous cluster no longer exists (removed its only element)
 		// Check if there are other vertices in the previous cluster of bestSrcVertex
 		bool found = false;
-		for(int i = 0; i < n; i++) {
+		for(long i = 0; i < n; i++) {
 			if(clusterArray[i] == previousCluster) {
 				found = true;
 				break;
 			}
 		}
 		if(not found) {  // previousCluster is empty, has to be removed
-			for(int i = 0; i < n; i++) {
+			for(long i = 0; i < n; i++) {
 				if(clusterArray[i] > previousCluster) {
 					clusterArray[i]--;
 				}
@@ -198,7 +198,7 @@ using namespace std;
 	/// CUDA Kernel to update the vertex-cluster edge-weight sum arrays after a change in the clustering.
 	__global__ void updateVertexClusterSumArrays(const float* weightArray, const long* destArray, const long* numArray,
 			const long* offsetArray, const ulong* clusterArray, float* vertexClusterPosSumArray, float* vertexClusterNegSumArray, 
-			int* isNeighborClusterArray, long n, ulong* ncArray) {
+			long* isNeighborClusterArray, long n, ulong* ncArray) {
 		
 		long i = blockDim.x*blockIdx.x + threadIdx.x;
 		ulong nc = ncArray[0];
@@ -212,7 +212,7 @@ using namespace std;
 		__syncthreads(); */
 	    if(i < n) {
             // For each vertex i, stores the sum of edge weights between vertex i and all clusters
-            for(int k = 0; k <= nc; k++) {
+            for(long k = 0; k <= nc; k++) {
             	vertexClusterPosSumArray[k * n + i] = 0.0;
             	vertexClusterNegSumArray[k * n + i] = 0.0;
             	isNeighborClusterArray[k * n + i] = 0;
@@ -246,7 +246,7 @@ using namespace std;
 	/// CUDA Kernel to update the vertex-cluster edge-weight sum arrays after a change in the clustering.
 	__global__ void updateVertexClusterSumArraysDelta(const float* weightArray, const long* destArray, const long* numArray,
 			const long* offsetArray, const ulong* clusterArray, float* vertexClusterPosSumArray, float* vertexClusterNegSumArray, 
-			int* isNeighborClusterArray, long n, ulong* old_ncArray, ulong* ncArray, int i, int k1, int k2) {  // vertex i is being moved from cluster k1 to k2
+			long* isNeighborClusterArray, long n, ulong* old_ncArray, ulong* ncArray, int i, int k1, int k2) {  // vertex i is being moved from cluster k1 to k2
 		ulong nc = old_ncArray[0];
 		ulong new_nc = ncArray[0];
 		// shared memory
@@ -321,15 +321,15 @@ using namespace std;
 	/// CUDA kernel for simple 1-opt search.
 	__global__ void simpleSearchKernel(const ulong* clusterArray, const float* funcArray, ulong n, ulong m,
 		float* destImbArray, float* destPosImbArray, float* destNegImbArray, ulong nc, ulong numberOfChunks,
-		float* positiveSumArray, float* negativeSumArray, int* isNeighborClusterArray) {
+		float* positiveSumArray, float* negativeSumArray, long* isNeighborClusterArray) {
 
 		// ulong idx = blockIdx.x * blockDim.x + threadIdx.x;
-		int index_x = blockIdx.x * blockDim.x + threadIdx.x;
-		int index_y = blockIdx.y * blockDim.y + threadIdx.y;
+		ulong index_x = blockIdx.x * blockDim.x + threadIdx.x;
+		ulong index_y = blockIdx.y * blockDim.y + threadIdx.y;
 
 		// map the two 	2D indices to a single linear, 1D index
-		int grid_width = gridDim.x * blockDim.x;
-		int idx = index_y * grid_width + index_x;
+		ulong grid_width = gridDim.x * blockDim.x;
+		ulong idx = index_y * grid_width + index_x;
 
 		ulong i  = idx % n;  // kernel executes local search for vertex i
 		ulong k2 = idx / n;  // kernel executes local search for vertex i, moving it to cluster k2
@@ -717,7 +717,7 @@ using namespace std;
 		thrust::device_vector<float> d_destFunctionValue(1);
 		thrust::device_vector<float> d_destPosFunctionValue(1);
 		thrust::device_vector<float> d_destNegFunctionValue(1);
-		thrust::device_vector<int> d_neighbor_cluster(n * (h_nc[0]+1), 0);
+		thrust::device_vector<long> d_neighbor_cluster(n * (h_nc[0]+1), 0);
 		
 		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
 		long* destArray = thrust::raw_pointer_cast( &d_dest[0] );
@@ -730,7 +730,7 @@ using namespace std;
 		float* vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 		ulong* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 		ulong* old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
-		int* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+		long* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 		
 		int i = 0, totalIter = 0;
 		while(i <= iter || iter < 0) {
@@ -833,7 +833,7 @@ using namespace std;
                                         destNegativeImbalance = 0.0;
 
 					// printf("Idx = %d: The best src vertex is %d to cluster %d with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, bestImbalance);
-					if(bestImbalance < EPS) {  printf("WARNING: I(P) < 0 !!!\n");  }
+					// if(bestImbalance < EPS) {  printf("WARNING: I(P) < 0 !!!\n");  }
 					d_old_nc = d_nc;
 					old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
 					updateClustering1opt<<< 1, 1 >>>(bestSrcVertex, destCluster, destPositiveImbalance, destNegativeImbalance, clusterArray, funcArray, n, ncArray);
@@ -978,7 +978,7 @@ using namespace std;
 		thrust::device_vector<ulong> d_nc(1);
 		thrust::device_vector<ulong> d_old_nc(1);
 		thrust::device_vector<float> d_destFunctionValue(1);
-		thrust::device_vector<int> d_neighbor_cluster;
+		thrust::device_vector<long> d_neighbor_cluster;
 		
 		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
 		long* destArray = thrust::raw_pointer_cast( &d_dest[0] );
@@ -991,7 +991,7 @@ using namespace std;
 		float* vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 		ulong* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 		ulong* old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
-		int* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] ); // TODO calcular valor aqui
+		long* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] ); // TODO calcular valor aqui
 		
 		VertexSet lc(randomSeed, n); // L(Cc) = V(G)
 		thrust::host_vector<ulong> h_nc(1);
@@ -1116,10 +1116,10 @@ using namespace std;
 	bool runILSKernel(ClusteringProblem& problem, ConstructClustering &construct,
 					SignedGraph *g, int processRank, ulong timeLimit,
 					const int& iterMax, const int& iterMaxILS, const int& perturbationLevelMax,
-					thrust::host_vector<float>& h_weights, thrust::host_vector<int>& h_dest,
-					thrust::host_vector<int>& h_numedges, thrust::host_vector<int>& h_offset,
+					thrust::host_vector<float>& h_weights, thrust::host_vector<long>& h_dest,
+					thrust::host_vector<long>& h_numedges, thrust::host_vector<long>& h_offset,
 					ulong n, ulong m, ushort threadsCount, bool firstImprovement,
-					Clustering& result, int &totalIterations, double& timeSpentConstruct, double& timeSpentILS,
+					Clustering& result, long &totalIterations, double& timeSpentConstruct, double& timeSpentILS,
 					stringstream &constructivePhaseResults, stringstream &iterationResults) {		
 
 		double timeSpentInILS = 0;
@@ -1170,7 +1170,7 @@ using namespace std;
 		// current clustering data - changes every ILS iteration
 		thrust::device_vector<float> d_functionValue(2);
 		thrust::device_vector<unsigned long> d_mycluster(1);
-		thrust::device_vector<uint> d_randomIndex(n * (h_nc[0]+1));
+		thrust::device_vector<long> d_randomIndex(n * (h_nc[0]+1));
 		thrust::device_vector<float> d_VertexClusterPosSum(n * (h_nc[0]+1), 0.0);
 		thrust::device_vector<float> d_VertexClusterNegSum(n * (h_nc[0]+1), 0.0);
 		thrust::device_vector<ulong> d_nc(1);
@@ -1178,7 +1178,7 @@ using namespace std;
 		thrust::device_vector<float> d_destFunctionValue(1);
 		thrust::device_vector<float> d_destPosFunctionValue(1);
 		thrust::device_vector<float> d_destNegFunctionValue(1);
-		thrust::device_vector<int> d_neighbor_cluster(n * (h_nc[0]+1), 0);
+		thrust::device_vector<long> d_neighbor_cluster(n * (h_nc[0]+1), 0);
 		
 		float* weightArray = thrust::raw_pointer_cast( &d_weights[0] );
 		long* destArray = thrust::raw_pointer_cast( &d_dest[0] );
@@ -1191,12 +1191,12 @@ using namespace std;
 		float* vertexClusterNegSumArray = thrust::raw_pointer_cast( &d_VertexClusterNegSum[0] );
 		ulong* ncArray = thrust::raw_pointer_cast( &d_nc[0] );
 		ulong* old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
-		int* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
+		long* isNeighborClusterArray = thrust::raw_pointer_cast( &d_neighbor_cluster[0] );
 		
 		// Multi-start ILS
 		for (int i = 0; i < iterMax || iterMax < 0 ; i++, previousCc = Cc) {
 			double totalTime = 0.0;
-			 printf("ILS iteration %d, best solution so far: %.2f\n", i, CBest.getImbalance().getValue());
+			// printf("ILS iteration %d, best solution so far: %.2f\n", i, CBest.getImbalance().getValue());
 			// cout << "Best solution so far: I(P) = " << fixed << setprecision(0) << bestValue.getValue() << endl;
 			//    Store initial solution value in corresponding results file
 			constructivePhaseResults << (i+1) << "," << Cc.getImbalance().getValue() << ","
@@ -1301,14 +1301,14 @@ using namespace std;
 					// chooses one combination at random
 					// the algorithm starts the search with a random initial index
 					/*
-					thrust::host_vector<int> h_result_index(1);
+					thrust::host_vector<long> h_result_index(1);
 					h_result_index[0] = -1;
-					thrust::device_vector<int> d_result_index = h_result_index;
-					int* resultIndexArray = thrust::raw_pointer_cast( &d_result_index[0] );
+					thrust::device_vector<long> d_result_index = h_result_index;
+					long* resultIndexArray = thrust::raw_pointer_cast( &d_result_index[0] );
 					blocksPerGrid = (numberOfChunks + threadsCount - 1) / threadsCount;
 					shuffleBestResult1opt<<< blocksPerGrid, threadsCount >>>(destImbArray, numberOfChunks, bestImbalance, resultIndexArray);
 					h_result_index = d_result_index;
-					int resultIdx = h_result_index[0];
+					long resultIdx = h_result_index[0];
 					float min_val = bestImbalance;
 					if(resultIdx >= 0) {
 						min_val = d_destFunctionValue[resultIdx];
@@ -1331,7 +1331,7 @@ using namespace std;
 
 						// printf("Max idx is %ld\n", numberOfChunks - 1);
 						// printf("Idx = %ld: The best src vertex is %ld to cluster %ld with I(P) = %.2f\n", resultIdx, bestSrcVertex, destCluster, min_val);
-						if(bestImbalance < EPS) {  printf("WARNING: I(P) < 0 !!!\n");  break;  }
+						// if(bestImbalance < EPS) {  printf("WARNING: I(P) < 0 !!!\n");  break;  }
 						d_old_nc = d_nc;
 						old_ncArray = thrust::raw_pointer_cast( &d_old_nc[0] );
 						updateClustering1opt<<< 1, 1 >>>(bestSrcVertex, destCluster, destPositiveImbalance, destNegativeImbalance, clusterArray, funcArray, n, ncArray);
@@ -1414,7 +1414,7 @@ using namespace std;
                         timer.resume();
 						
 						// printf("Preparing new VND loop...\n");
-						if(bestImbalance <= -EPS)   {  printf("WARNING: I(P) <= 0 !!!\n");  break;  }
+						//if(bestImbalance <= -EPS)   {  printf("WARNING: I(P) <= 0 !!!\n");  break;  }
 					} else {  // no better result found in neighborhood
 						// printf("Breaking VND loop...\n");
 						break;
@@ -1495,12 +1495,12 @@ using namespace std;
 				long n = g->getN();
 				long nc = Cl.getNumberOfClusters();
 				/*
-				std::vector<int> nodeList(n, 0);
-				for(int i = 0; i < n; i++) {
+				std::vector<long> nodeList(n, 0);
+				for(long i = 0; i < n; i++) {
 					nodeList[i] = i;
 				}
 				std::random_shuffle(nodeList.begin(), nodeList.end());
-				std::vector<int> nodeList; */
+				std::vector<long> nodeList; */
 				//generateRandomNumbers(perturbationLevel, 0, n - 1, nodeList);
 				/* Allocate n floats on device */
 				d_random.resize(perturbationLevel, 0);
@@ -1516,8 +1516,8 @@ using namespace std;
 					// int k2 = randomUtil.next(0, nc - 1);
 					// int idx = randomUtil.next(0, n - 1);
 					// cout << "k2 = " << k2 << endl;
-					int rnd_integer_range = 0 + h_random[i] * (n - 1 - 0);
-					int k2 = 0 + h_random2[i] * (nc - 1 - 0);
+					long rnd_integer_range = 0 + h_random[i] * (n - 1 - 0);
+					long k2 = 0 + h_random2[i] * (nc - 1 - 0);
 					Cl = perturbation.move1optCCProblem(g, Cl, problem, rnd_integer_range, k2);
 				}
 				// printf("Perturbated I(P) = %.2f\n", Cl.getImbalance().getValue());
@@ -1544,7 +1544,7 @@ using namespace std;
 			double newImbValue = newValue.getValue();
 			double bestImbValue = bestValue.getValue();
 			if((newImbValue - bestImbValue < EPS) && (fabs(newImbValue - bestImbValue) > EPS)) {  // (newValue < bestValue) => improvement in imbalance
-				printf("A better global solution was found: I(P) = %.5f\n", newValue.getValue());
+				// printf("A better global solution was found: I(P) = %.5f\n", newValue.getValue());
 				CBest = CStar;
 				bestValue = newValue;
 				iterationValue = i;
@@ -1558,7 +1558,7 @@ using namespace std;
 			iterationResults << (i+1) << "," << bestValue.getValue() << "," << bestValue.getPositiveValue()
 					<< "," << bestValue.getNegativeValue() << "," << CBest.getNumberOfClusters()
 					<< "," << fixed << setprecision(4) << timeSpentInILS << "\n";
-			printf("total time spent on matrix recalc: %.2f\n", totalTime);
+			// printf("total time spent on matrix recalc: %.2f\n", totalTime);
 			// if elapsed time is bigger than timeLimit, break
 			if(timeSpentInILS >= timeLimit) {
 				// BOOST_LOG_TRIVIAL(info) << "Time limit exceeded." << endl;
@@ -1588,7 +1588,7 @@ using namespace std;
 		curandDestroyGenerator(gen);
 		curandDestroyGenerator(gen2);
 
-		printf("I(P) = %.5f\n", CBest.getImbalance().getValue());
+		printf("CUDAILS done: I(P) = %.5f\n", CBest.getImbalance().getValue());
 		result = CBest;
 		totalIterations = iterMax;
 		timeSpentConstruct = timeSpentInConstruction;
