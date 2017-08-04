@@ -35,20 +35,21 @@ SignedGraph::SignedGraph(const unsigned long &numberOfNodes) :
 
 }
 
-SignedGraph::SignedGraph(UndirectedGraph &g, std::vector<long> subGraphNodeList) :
+SignedGraph::SignedGraph(UndirectedGraph *g, std::vector<long> subGraphNodeList) :
 		graph(),
 		n(subGraphNodeList.size()), id(0) {
 	// delete the previous subgraphs created on g -> to save memory
 	// std::pair<UndirectedGraph::children_iterator, UndirectedGraph::children_iterator> ch_iter_pair = g.children();
+	/*
 	for(std::list<UndirectedGraph*>::iterator it = g.m_children.begin(); it != g.m_children.end(); it++) {
 	// for(UndirectedGraph::children_iterator it = ch_iter_pair.first; it != ch_iter_pair.second; it++) {
 		delete *it;
 	}
 	g.m_children.clear();
-	BOOST_LOG_TRIVIAL(info) << "Deleted previous subgraphs.";
+	BOOST_LOG_TRIVIAL(info) << "Deleted previous subgraphs."; */
 
 	// create the new subgraph
-	graph = g.create_subgraph(subGraphNodeList.begin(), subGraphNodeList.end());
+	graph = g->create_subgraph(subGraphNodeList.begin(), subGraphNodeList.end());
 	BOOST_LOG_TRIVIAL(info) << "Created subgraph of size n = " << subGraphNodeList.size();
 }
 
@@ -87,7 +88,7 @@ unsigned long SignedGraph::getOutDegree(const unsigned long &a) {
 
 unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
 	unsigned long sum = 0;
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, graph);
 	UndirectedGraph::edge_descriptor e;
 	// O(n)
 	UndirectedGraph::out_edge_iterator f, l;
@@ -102,7 +103,7 @@ unsigned long SignedGraph::getNegativeDegree(const unsigned long &a) {
 
 unsigned long SignedGraph::getPositiveDegree(const unsigned long &a) {
 	unsigned long sum = 0;
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, graph);
 	UndirectedGraph::edge_descriptor e;
 	// O(n)
 	UndirectedGraph::out_edge_iterator f, l;
@@ -118,13 +119,13 @@ unsigned long SignedGraph::getPositiveDegree(const unsigned long &a) {
 double SignedGraph::getNegativeEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray &cluster) {
 	double sum = double(0.0);
 
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, graph);
 	UndirectedGraph::edge_descriptor e;
 	// O(n)
 	UndirectedGraph::out_edge_iterator f2, l2;
 	for (boost::tie(f2, l2) = out_edges(ni, graph); f2 != l2; ++f2) {
 		e = *f2;
-		long j = target(*f2, this->graph);
+		long j = target(*f2, graph);
 		if((ew[e].weight < 0) and (cluster[j] >= 0)) {
 			sum += ew[e].weight;
 		}
@@ -135,13 +136,13 @@ double SignedGraph::getNegativeEdgeSumBetweenVertexAndClustering(const unsigned 
 double SignedGraph::getPositiveEdgeSumBetweenVertexAndClustering(const unsigned long &ni, const ClusterArray &cluster) {
 	double sum = double(0.0);
 
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, graph);
 	UndirectedGraph::edge_descriptor e;
 	// O(n)
 	UndirectedGraph::out_edge_iterator f2, l2;
 	for (boost::tie(f2, l2) = out_edges(ni, graph); f2 != l2; ++f2) {
 		e = *f2;
-		long j = target(*f2, this->graph);
+		long j = target(*f2, graph);
 		if((ew[e].weight > 0) and (cluster[j] >= 0)) {
 			sum += ew[e].weight;
 		}
@@ -152,13 +153,13 @@ double SignedGraph::getPositiveEdgeSumBetweenVertexAndClustering(const unsigned 
 long SignedGraph::getNumberOfEdgesInClustering(const ClusterArray& cluster, const long& clusterNumber) {
 	long sum = 0;
 	for(long ni = 0; ni < n; ni++) {  // O(n)
-		boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+		boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, graph);
 		UndirectedGraph::edge_descriptor e;
 		// O(m)
 		UndirectedGraph::out_edge_iterator f2, l2;
 		for (boost::tie(f2, l2) = out_edges(ni, graph); f2 != l2; ++f2) {
 			e = *f2;
-			long j = target(*f2, this->graph);
+			long j = target(*f2, graph);
 			if((cluster[ni] >= 0) or (cluster[j] >= 0)) {
 				sum++;
 			}
@@ -185,14 +186,14 @@ string SignedGraph::convertToGraclusInputFormat() {
 	// TODO: check if input graph can be directed!
 	long edgeCount = 0;
 	UndirectedGraph::edge_descriptor e;
-	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, this->graph);
+	boost::property_map<UndirectedGraph, edge_properties_t>::type ew = boost::get(edge_properties, graph);
 	for(long i = 0; i < n; i++) {
 		UndirectedGraph::out_edge_iterator f, l;
 		// For each out edge of i
-		for (boost::tie(f, l) = out_edges(i, this->graph); f != l; ++f) {
+		for (boost::tie(f, l) = out_edges(i, graph); f != l; ++f) {
 			e = *f;
 			double weight = ew[e].weight;
-			long j = target(*f, this->graph);
+			long j = target(*f, graph);
 			// edge weights must be integer values!
 			ss << (j+1) << " " << int(weight) << " ";
 			edgeCount++;

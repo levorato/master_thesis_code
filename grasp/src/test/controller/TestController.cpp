@@ -304,7 +304,7 @@ void TestController::testSubgraphCreationPerformance(string executionId, unsigne
 			timer.start();
 			start_time = timer.elapsed();
 
-			SignedGraph sg(g->graph, verticesInCluster[k]);
+			SignedGraph sg(&(g->graph), verticesInCluster[k]);
 			BOOST_LOG_TRIVIAL(info) << "Created subgraph " << k << " with n =  " << num_vertices(sg.graph) << ", " << "e =  " << num_edges(sg.graph);
 
 			// Stops the timer and stores the elapsed time

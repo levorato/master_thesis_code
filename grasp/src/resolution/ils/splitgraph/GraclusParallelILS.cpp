@@ -167,7 +167,7 @@ Clustering GraclusParallelILS::executeILS(ConstructClustering *construct, Variab
 	}
 	// 2.1. the leader does its part of the work: runs ILS using the first part of the divided graph
 	CUDAILS cudails;
-	SignedGraph sg(g->graph, verticesInCluster[0]);
+	SignedGraph sg(&(g->graph), verticesInCluster[0]);
 	// sg.graph = (g->graph).create_subgraph(verticesInCluster[0].begin(), verticesInCluster[0].end());
 
 	/*

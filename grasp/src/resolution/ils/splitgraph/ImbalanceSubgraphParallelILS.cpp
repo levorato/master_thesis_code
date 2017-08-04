@@ -1872,7 +1872,7 @@ long ImbalanceSubgraphParallelILS::variableNeighborhoodDescent(SignedGraph* g, P
 	}
 	splitgraphVNDResults << "Subgraph, n, m, k \n";
 	for(int p = 0; p < numberOfProcesses; p++) {
-		SignedGraph sg(g->graph, verticesInProcess[p]);
+		SignedGraph sg(&(g->graph), verticesInProcess[p]);
 		std::vector<Coordinate> clusterList = util.obtainListOfClustersFromProcess(*g, bestClusteringVND, p);
 
 		BOOST_LOG_TRIVIAL(info) << "[Parallel ILS SplitGraph] Subgraph " << p << ": num_vertices = " << sg.getN() <<
@@ -2273,7 +2273,8 @@ OutputMessage ImbalanceSubgraphParallelILS::runILSLocallyOnSubgraph(ConstructClu
 								<< leaderClustering.getImbalance().getValue() << ", k = " << leaderClustering.getNumberOfClusters();
 		return OutputMessage(leaderClustering, 0, 0.0, globalVertexId, 0, 0);
 	} else {
-		SignedGraph sg(g->graph, vertexList);
+		UndirectedGraph newSubgraph(g->graph);
+		SignedGraph sg(&newSubgraph, vertexList);
 		graph_traits<SubGraph>::vertex_iterator vi, vi_end, next;
 		boost::tie(vi, vi_end) = vertices(sg.graph);
 		for(next = vi; vi != vi_end; vi = next) {

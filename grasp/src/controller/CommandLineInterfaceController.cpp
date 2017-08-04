@@ -751,13 +751,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 						// If split graph is enabled (= vertexList not empty), creates a subgraph induced by the vertex set
 						if(imsgpg.vertexList.size() > 0) {
 							BOOST_LOG_TRIVIAL(info) << "Split graph partial graph";
-							// SubGraph subg = (g->graph).create_subgraph();
-							SignedGraph sg(g->graph, imsgpg.vertexList);
-							/*
-							for(std::vector<long>::iterator it = imsgpg.vertexList.begin(); it != imsgpg.vertexList.end(); it++) {
-								add_vertex(*it, subg);
-							}
-							sg.graph = subg; */
+							// SignedGraph sg(g->graph, imsgpg.vertexList);
+							const SubGraph ud = g->getGraph();
+							SubGraph newSubgraph(ud);
+							SignedGraph sg(&newSubgraph, imsgpg.vertexList);
+
 							n = num_vertices(sg.graph);
 							m = num_edges(sg.graph);
 							BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << m;
@@ -861,12 +859,11 @@ int CommandLineInterfaceController::processArgumentsAndExecute(int argc, char *a
 								n = 0;
 								e = 0;
 							} else {
-								SignedGraph sg(g->graph, imsgpils.vertexList);
-								/*
-								sg.graph = (g->graph).create_subgraph(); // imsgpils.vertexList.begin(), imsgpils.vertexList.end());
-								for(std::vector<long>::iterator it = imsgpils.vertexList.begin(); it != imsgpils.vertexList.end(); it++) {
-									add_vertex(*it, sg.graph);
-								} */
+								// SignedGraph sg(g->graph, imsgpils.vertexList);
+								const SubGraph ud = g->getGraph();
+								SubGraph newSubgraph(ud);
+								SignedGraph sg(&newSubgraph, imsgpils.vertexList);
+
 								n = num_vertices(sg.graph);
 								e = num_edges(sg.graph);
 								BOOST_LOG_TRIVIAL(info) << "Processing subgraph with n =  " << n << ", " << "e =  " << e;

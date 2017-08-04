@@ -85,7 +85,7 @@ public:
 	 * Builds a subgraph based on the graph g provided as parameter, induced by the
 	 * vertex node list subGraphNodeList.
 	 */
-	SignedGraph(UndirectedGraph &g, std::vector<long> subGraphNodeList);
+	SignedGraph(UndirectedGraph *g, std::vector<long> subGraphNodeList);
 	virtual ~SignedGraph();
 
 	/**
@@ -177,6 +177,9 @@ public:
 	 */
 	string convertToGraclusInputFormat();
 
+	const SubGraph& getGraph() {
+		return graph;
+	}
 
 	UndirectedGraph graph;
 
