@@ -137,7 +137,7 @@ def processCCResult(folders, labels, sol_multiplier, exclude):
                                 content_file.close()
 
                             # captura o resultado de imbalance dadas todas as execucoes de um mesmo grafo / instancia
-                            print "Storing result for filename = " + filename + " and algorithm: " + algorithm
+                            print "Storing result for filename = " + filename + " and algorithm: " + algorithm + ': I(P) = ' + str(float(best_value))
                             if not imbalance_file_summary.has_key(filename):
                                 imbalance_file_summary[filename] = dict()
                             if not imbalance_file_summary[filename].has_key(algorithm):
@@ -192,17 +192,19 @@ def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_fi
     data_to_plot[dummy_instance].append([])
 
     # group boxplots - http://stackoverflow.com/questions/20365122/how-to-make-a-grouped-boxplot-graph-in-matplotlib
+    print 'Number of instances: ' + str(len(instance_names))
     height = 2 * len(instance_names)
-    padding = 40  #60
+    padding = 60 # 40
     bbox_to_anchor = (0.98, 0.965)
     if instance_names[0].rfind('file_') >= 0:
         height = 6 #20
         padding = 40
         bbox_to_anchor = (0.98, 0.955)
     elif instance_names[0].find('ml-') >= 0:
-        height = len(instance_names)
+        height = 2.75 #len(instance_names)
     elif instance_names[0][0] == 'c':
         height = 1.2 * len(instance_names)
+
     fig, axes = plt.subplots(nrows=len(instance_names), sharex=False,
                              figsize=(12, height))  # ncols=len(labels)) #, sharex=True, sharey=True)
     if len(instance_names) == 1:
@@ -352,6 +354,13 @@ def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_fi
         #ax.get_xaxis().tick_bottom()
         #if axis_count == 0:
         ax.get_xaxis().tick_top()
+        ax.xaxis.tick_top()
+        #ax.set_xlabel('')
+        #ax.xaxis.set_label_position('top')
+        #ax.get_xaxis().set_label_position('top')
+        #ax.tick_params(direction='out', pad=5)
+        #ax.xaxis.set_tick_params(labeltop='on')
+        #ax.get_xaxis().set_tick_params(labeltop='on')
         #if axis_count == 1:
 
 
