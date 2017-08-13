@@ -217,7 +217,11 @@ def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_fi
     # draw temporary colored lines and use them to create a legend
     hB, = plt.plot([1, 1], '#800080')
     hR, = plt.plot([1, 1], '#DAA520')
-    fig.legend((hB, hR), ('(1) ' + labels[0], '(2) ' + labels[1]), loc='upper right', shadow=True,
+    if len(labels) == 1:
+        fig.legend((hB, hR), ('(1) ' + labels[0], '(2) ' + labels[0]), loc='upper right', shadow=True,
+               bbox_to_anchor=bbox_to_anchor, ncol=2, borderaxespad=0.9)
+    else:
+        fig.legend((hB, hR), ('(1) ' + labels[0], '(2) ' + labels[1]), loc='upper right', shadow=True,
                bbox_to_anchor=bbox_to_anchor, ncol=2, borderaxespad=0.9)
 
     # bbox_to_anchor=(0., 1.02, 1., .102))  # bbox_to_anchor=(0, 1))
@@ -237,16 +241,26 @@ def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_fi
         if len(labels) != len(data_to_plot[name]):
             print 'WARNING: Skipping instance ' + name  + ' due to lack of results!'
             continue
-        bp = ax.boxplot([data_to_plot[name][1-item] for item in xrange(0, len(labels))], patch_artist=True, vert=False) #, showfliers=False)
+        if len(labels) > 1:
+            bp = ax.boxplot([data_to_plot[name][1-item] for item in xrange(0, len(labels))], patch_artist=True, vert=False) #, showfliers=False)
+        else:
+            bp = ax.boxplot([data_to_plot[name][0]], patch_artist=True, vert=False)  # , showfliers=False)
         if name != 'dummy':
-            xmin = min([min(data_to_plot[name][1-item]) for item in xrange(0, len(labels))])
-            xmax = max([max(data_to_plot[name][1-item]) for item in xrange(0, len(labels))])
+            if len(labels) > 1:
+                xmin = min([min(data_to_plot[name][1-item]) for item in xrange(0, len(labels))])
+                xmax = max([max(data_to_plot[name][1-item]) for item in xrange(0, len(labels))])
+            else:
+                xmin = min(data_to_plot[name][0])
+                xmax = max(data_to_plot[name][0])
         ax.set_xlim([xmin - 0.01 * xmin, xmax + 0.01 * xmax])
         #axes.set_ylim([ymin, ymax])
         #ax.set(yticklabels=labels) #, ylabel=name)
         ax.set(yticklabels=['(2)', '(1)'])  # , ylabel=name)
         # remove the .g file extension from instance name
-        name = ylabels[axis_count - 1]
+        if len(labels) == 1:
+            name = ylabels[axis_count]
+        else:
+            name = ylabels[axis_count - 1]
         additional_line = ''
         if '.g' in name:
             name = name[:name.rfind('.g')]
@@ -264,6 +278,7 @@ def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_fi
             label_name_3 = 'd- = ' + d_minus
             additional_line = '\n'
         elif name[0] == 'c':  # chinese instance files
+            print 'Chinese random instance type.'
             c = name[name.find('c')+1:name.find('n')]
             n = name[name.find('n')+1:name.find('k')]
             k = name[name.find('k')+1:name.find('pin')]
