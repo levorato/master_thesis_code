@@ -41,6 +41,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 mpl.use('agg')
 
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy import stats
 
 def main(argv):
 
@@ -236,6 +238,7 @@ def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_fi
     print ylabels
     axis_count = -1
     for ax, name in zip(axes, instance_names):
+        original_name = name
         print "Processing instance " + name
         print "Number of series to plot: " + str(len(data_to_plot[name]))
         axis_count += 1
@@ -366,6 +369,17 @@ def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_fi
 
         ax.get_yaxis().tick_left()
 
+        print(str(data_to_plot[original_name]))
+        print('Comparing sets: ' + str(data_to_plot[original_name][0]) + ' and ' + str(data_to_plot[original_name][1]))
+        f, p = stats.f_oneway(data_to_plot[original_name][0],
+                              data_to_plot[original_name][1])
+
+        print ('One-way ANOVA')
+        print ('=============')
+
+        print ('F value:', f)
+        print ('P value:', p, '\n')
+
     ## Custom y-axis labels
     #ax.set_yticklabels(instance_names)
 
@@ -380,6 +394,7 @@ def generate_box_plot_horizontal(data_to_plot, instance_names, labels, result_fi
     pp = PdfPages(result_file_prefix + '-box_plot.pdf')
     pp.savefig(plt.gcf())
     pp.close()
+
 
 
 # Vertical box plots
